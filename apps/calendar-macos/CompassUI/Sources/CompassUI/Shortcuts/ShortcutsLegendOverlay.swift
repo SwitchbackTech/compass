@@ -23,7 +23,7 @@ public struct ShortcutsLegendOverlay: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Keyboard shortcuts")
-                            .font(.custom("Rubik", size: 16, relativeTo: .headline))
+                            .font(.rubik(16))
                             .foregroundStyle(theme.textColor)
                         Spacer()
                         Button("Close") { legendStore.close() }
@@ -33,7 +33,7 @@ public struct ShortcutsLegendOverlay: View {
 
                     TextField("Search shortcuts", text: $legendStore.searchQuery)
                         .textFieldStyle(.plain)
-                        .font(.custom("Rubik", size: 14, relativeTo: .body))
+                        .font(.rubik(14))
                         .focused($searchFocused)
 
                     ScrollView {
@@ -41,7 +41,7 @@ public struct ShortcutsLegendOverlay: View {
                             ForEach(model.filteredLegendSections()) { section in
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(section.title)
-                                        .font(.custom("Rubik", size: 13, relativeTo: .headline))
+                                        .font(.rubik(13))
                                         .foregroundStyle(theme.textMutedColor)
                                     ForEach(section.rows, id: \.id) { row in
                                         legendRow(row)
@@ -66,11 +66,11 @@ public struct ShortcutsLegendOverlay: View {
     private func legendRow(_ row: ShortcutLegendRow) -> some View {
         HStack(alignment: .top) {
             Text(row.label)
-                .font(.custom("Rubik", size: 13, relativeTo: .body))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
             Spacer()
             Text(row.keycaps.joined(separator: " "))
-                .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
         }
         .accessibilityIdentifier("compass-native-legend-row-\(row.id.rawValue)")

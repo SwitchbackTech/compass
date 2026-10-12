@@ -12,7 +12,7 @@ struct UpNextCard: View {
         let snapshot = state.snapshot
         VStack(alignment: .leading, spacing: 8) {
             Text("Up next")
-                .font(.custom("Rubik", size: 13, relativeTo: .headline))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
                 .accessibilityIdentifier("compass-native-up-next")
             if let presentation = UpNextFormatting.resolve(state) {
@@ -20,11 +20,10 @@ struct UpNextCard: View {
                 let countdown = presentation.countdown
                 VStack(alignment: .leading, spacing: 4) {
                     Text(snapshot.isCurrentEvent ? "Now" : countdown)
-                        .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.accentColor)
                     Text(upNext.title)
-                        .font(.custom("Rubik", size: 14, relativeTo: .body))
-                        .fontWeight(.medium)
+                        .font(.rubik(14, weight: .medium))
                         .foregroundStyle(theme.textColor)
                         .lineLimit(1)
                     if state.conferenceURL != nil {
@@ -32,7 +31,7 @@ struct UpNextCard: View {
                             Image(systemName: "video.fill")
                                 .font(.system(size: 10))
                             Text("Join")
-                                .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                                .font(.rubik(12))
                         }
                         .foregroundStyle(theme.accentColor)
                     }
@@ -53,8 +52,7 @@ struct UpNextCard: View {
                 .accessibilityIdentifier("compass-native-up-next-card")
             } else {
                 Text("All clear")
-                    .font(.custom("Rubik", size: 14, relativeTo: .body))
-                    .fontWeight(.medium)
+                    .font(.rubik(14, weight: .medium))
                     .foregroundStyle(theme.textMutedColor)
                     .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                     .padding(.horizontal, 8)

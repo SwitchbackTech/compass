@@ -62,7 +62,7 @@ struct EventFormRecurrenceSection: View {
 
                 if !summaryText.isEmpty {
                     Text(summaryText)
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                         .accessibilityIdentifier("compass-event-form-recurrence-summary")
                 }

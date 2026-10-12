@@ -10,11 +10,11 @@ struct BookingConnectPromptView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(BookingConnectPromptCopy.prompt(connectable: connectableProviders))
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             if connectableProviders.isEmpty {
                 Text(BookingConnectPromptCopy.emptyEnvironment)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
             } else {
                 BookingProviderConnectButtons(

@@ -33,7 +33,7 @@ public struct QuickAddView: View {
 
             if !model.draftStore.quickTimeDigits.isEmpty {
                 Text(quickTimeStatus(model.draftStore.quickTimeDigits))
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .accessibilityIdentifier("compass-native-quick-add-time-hint")

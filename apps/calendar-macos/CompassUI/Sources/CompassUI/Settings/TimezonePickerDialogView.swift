@@ -25,13 +25,13 @@ struct TimezonePickerDialogView: View {
 
     var body: some View {
         ZStack {
-            theme.overlayBackdropColor
+            theme.panelBackdropColor
                 .ignoresSafeArea()
                 .onTapGesture { settingsStore.dismissTimezoneDialog() }
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(title)
-                        .font(.custom("Rubik", size: 18))
+                        .font(.rubik(18))
                         .foregroundStyle(theme.textColor)
                     Spacer()
                     Button("Close") { settingsStore.dismissTimezoneDialog() }
@@ -40,7 +40,7 @@ struct TimezonePickerDialogView: View {
                 }
                 if purpose == .timeTravel {
                     Text("Compare your calendar hours in a second timezone.")
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 TextField("Search timezones", text: $query)
@@ -91,6 +91,6 @@ struct TimezonePickerDialogView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
         .foregroundStyle(theme.textColor)
-        .font(.custom("Rubik", size: 13))
+        .font(.rubik(13))
     }
 }

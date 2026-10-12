@@ -18,7 +18,7 @@ public struct DedicationDialogView: View {
                     .onTapGesture(perform: onClose)
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Compass Calendar is dedicated to Derek John Benton (1993-2014).")
-                        .font(.custom("Rubik", size: 16))
+                        .font(.rubik(16))
                         .foregroundStyle(theme.textMutedColor)
                     Text(
                         "\"I have such amazing friends and family and I wish I could slow "
@@ -26,7 +26,7 @@ public struct DedicationDialogView: View {
                             + "relationships in as much as possible. Time is the biggest enemy "
                             + "we all face.\""
                     )
-                    .font(.custom("Rubik", size: 20))
+                    .font(.rubik(20))
                     .foregroundStyle(theme.textColor)
                 }
                 .padding(24)

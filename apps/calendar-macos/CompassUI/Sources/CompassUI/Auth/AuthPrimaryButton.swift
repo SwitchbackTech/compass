@@ -15,7 +15,7 @@ struct AuthPrimaryButton: View {
                         .controlSize(.small)
                 }
                 Text(title)
-                    .font(.custom("Rubik", size: 14, relativeTo: .body))
+                    .font(.rubik(14))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
@@ -36,7 +36,7 @@ struct AuthLinkButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.accentSecondaryColor)
         }
         .buttonStyle(.plain)

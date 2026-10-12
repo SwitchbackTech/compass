@@ -11,8 +11,7 @@ public struct DesktopUpdateReadyBannerView: View {
     public var body: some View {
         HStack(spacing: 12) {
             Text("A Compass update is ready")
-                .font(.custom("Rubik", size: 14, relativeTo: .body))
-                .fontWeight(.medium)
+                .font(.rubik(14, weight: .medium))
                 .foregroundStyle(theme.textColor)
             Spacer(minLength: 8)
             Button("Restart to update", action: onRestart)

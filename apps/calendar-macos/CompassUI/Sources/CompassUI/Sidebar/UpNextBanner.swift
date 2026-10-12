@@ -25,15 +25,14 @@ struct UpNextBanner: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(countdown)
-                        .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                     HStack(spacing: 6) {
                         Circle()
                             .fill(theme.accentColor)
                             .frame(width: 6, height: 6)
                         Text(upNext.title)
-                            .font(.custom("Rubik", size: 14, relativeTo: .body))
-                            .fontWeight(.medium)
+                            .font(.rubik(14, weight: .medium))
                             .foregroundStyle(theme.textColor)
                             .lineLimit(1)
                     }

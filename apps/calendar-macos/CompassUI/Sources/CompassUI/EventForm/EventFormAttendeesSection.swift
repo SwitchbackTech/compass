@@ -16,7 +16,7 @@ struct EventFormAttendeesSection: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let tally = attendeeTally {
                     Text(tally)
-                        .font(.custom("Rubik", size: 11))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 FlowLayout(spacing: 6) {
@@ -26,7 +26,7 @@ struct EventFormAttendeesSection: View {
                 }
                 TextField("Add guest email", text: $query)
                     .textFieldStyle(.plain)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .focused($fieldFocused)
                     .onChange(of: query) { _, value in
                         model.scheduleAttendeeSuggestions(for: value)
@@ -44,7 +44,7 @@ struct EventFormAttendeesSection: View {
                                     Text(suggestion.displayName ?? suggestion.email)
                                         .foregroundStyle(theme.textColor)
                                     Text(suggestion.email)
-                                        .font(.custom("Rubik", size: 11))
+                                        .font(.rubik(11))
                                         .foregroundStyle(theme.textMutedColor)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -87,7 +87,7 @@ struct EventFormAttendeesSection: View {
         let label = attendee.displayName?.isEmpty == false ? attendee.displayName! : attendee.email
         return HStack(spacing: 4) {
             Text(label)
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textColor)
             Button {
                 removeAttendee(email: attendee.email)

@@ -25,7 +25,7 @@ public struct CommandPaletteOverlay: View {
                         text: $paletteStore.query
                     )
                     .textFieldStyle(.plain)
-                    .font(.custom("Rubik", size: 15, relativeTo: .body))
+                    .font(.rubik(15))
                     .foregroundStyle(theme.textColor)
                     .focused($searchFocused)
                     .accessibilityIdentifier("compass-native-command-palette-search")
@@ -35,7 +35,7 @@ public struct CommandPaletteOverlay: View {
                             ForEach(model.filteredPaletteSections()) { section in
                                 if !section.heading.isEmpty {
                                     Text(section.heading)
-                                        .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                                        .font(.rubik(12))
                                         .foregroundStyle(theme.textMutedColor)
                                 }
                                 ForEach(section.items) { item in
@@ -70,12 +70,12 @@ public struct CommandPaletteOverlay: View {
         } label: {
             HStack {
                 Text(item.label)
-                    .font(.custom("Rubik", size: 14, relativeTo: .body))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textColor)
                 Spacer()
                 if let shortcut = item.shortcut {
                     Text(shortcut)
-                        .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                 }
             }

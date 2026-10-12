@@ -14,7 +14,7 @@ struct ModalDialogChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         ZStack {
-            theme.overlayBackdropColor
+            theme.panelBackdropColor
                 .ignoresSafeArea()
             content
                 .padding(20)

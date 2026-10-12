@@ -72,13 +72,13 @@ private struct BillingDialogPanel: View {
 
     var body: some View {
         ZStack {
-            theme.overlayBackdropColor.ignoresSafeArea()
+            theme.panelBackdropColor.ignoresSafeArea()
             VStack(alignment: .leading, spacing: 12) {
                 Text(title)
-                    .font(.custom("Rubik", size: 18))
+                    .font(.rubik(18))
                     .foregroundStyle(theme.textColor)
                 Text(message)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 HStack(spacing: 8) {
                     Button(primaryTitle, action: primaryAction)

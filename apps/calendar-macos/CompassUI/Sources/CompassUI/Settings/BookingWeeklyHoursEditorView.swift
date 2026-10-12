@@ -24,7 +24,7 @@ struct BookingWeeklyHoursEditorView: View {
                 set: { value = BookingWeeklyHours.setDayAvailable(value, weekday: weekday, available: $0) }
             )) {
                 Text(weekdayLabel(weekday))
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textColor)
             }
             .disabled(disabled)

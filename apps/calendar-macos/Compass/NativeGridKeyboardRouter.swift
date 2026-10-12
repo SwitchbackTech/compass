@@ -137,6 +137,10 @@ final class NativeGridKeyboardRouter {
         }
         guard let keyEvent = KeyEvent(nsEvent: event) else { return false }
 
+        if model.isWelcomeModalActive, handleWelcomeKeyDown(keyEvent) {
+            return true
+        }
+
         if model.blockPartyKeyboardCaptureActive {
             if model.handleBlockPartyKeyDown(keyEvent) {
                 return true
@@ -440,6 +444,46 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    /// Web `WelcomeModal` keys. Bare keys never reach the grid behind the
+    /// modal; keys with Command, Option, or Control fall through so menu
+    /// shortcuts keep working.
+    private func handleWelcomeKeyDown(_ keyEvent: KeyEvent) -> Bool {
+        guard keyEvent.modifiers.subtracting(.shift).isEmpty else { return false }
+        let step = model.onboardingStore.welcomeStep
+        switch keyEvent.key {
+        case .named(.enter):
+            // A held Enter would blast through every screen and into signup.
+            if !keyEvent.isRepeat {
+                model.welcomePrimaryAction()
+            }
+        case .named(.escape):
+            model.welcomeBack()
+        case .character(let char):
+            if char == "i" {
+                model.welcomeLogIn()
+            } else if step == 2, let digit = char.wholeNumberValue, (1 ... 5).contains(digit) {
+                model.onboardingStore.toggleWelcomeFaq(digit - 1)
+            } else if step == 3 {
+                handleWelcomeLastStepKey(char)
+            }
+        default:
+            break
+        }
+        return true
+    }
+
+    private func handleWelcomeLastStepKey(_ char: Character) {
+        if let provider = model.authStore.availableSignInProviders().first(where: { $0.shortcutLetter == char }) {
+            model.welcomeSignIn(with: provider)
+        } else if char == "u" {
+            model.welcomeSignUp()
+        } else if char == "s" {
+            model.welcomeExplore()
+        } else if let link = WelcomeLinks.items.first(where: { $0.key == char }) {
+            NSWorkspace.shared.open(link.url)
+        }
     }
 
     private func performShortcut(_ id: ShortcutId) {

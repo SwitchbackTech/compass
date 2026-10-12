@@ -12,25 +12,25 @@ struct BlockPartyEndScreenView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(heading)
-                .font(.custom("Rubik", size: 22, relativeTo: .title))
+                .font(.rubik(22))
                 .foregroundStyle(theme.textColor)
             Text(subcopy)
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Score")
-                        .font(.custom("Rubik", size: 10))
+                        .font(.rubik(10))
                         .foregroundStyle(theme.textMutedColor)
                         .textCase(.uppercase)
                     Text("\(game.score)")
-                        .font(.custom("Rubik", size: 28, relativeTo: .title))
+                        .font(.rubik(28))
                         .foregroundStyle(theme.textColor)
                 }
                 Spacer()
                 Text("\(game.tasksDone)/\(game.runTasks.count) tasks cleared")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
             }
             .padding(12)
@@ -77,7 +77,7 @@ private struct BlockPartyPrimaryButtonStyle: ButtonStyle {
     let theme: NativeWebTheme
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom("Rubik", size: 14))
+            .font(.rubik(14))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(theme.accentColor.opacity(configuration.isPressed ? 0.85 : 1))
@@ -90,7 +90,7 @@ private struct BlockPartySecondaryButtonStyle: ButtonStyle {
     let theme: NativeWebTheme
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.custom("Rubik", size: 14))
+            .font(.rubik(14))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .background(theme.surfacePanelColor.opacity(configuration.isPressed ? 0.85 : 1))

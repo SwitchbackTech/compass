@@ -28,7 +28,7 @@ struct AuthInputField: View {
 
             if let error {
                 Text(error)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
         }

@@ -6,6 +6,11 @@ public struct RootView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable public var model: NativeCalendarRootModel
     @State private var titleBarLeadingInset: CGFloat = 72
+    /// Web `SIDEBAR_DEFAULT_WIDTH` and `SIDEBAR_DIVIDER_WIDTH`.
+    private let sidebarWidth: CGFloat = 345
+    private let sidebarDividerWidth: CGFloat = 32
+    /// Web main column `pl-8`.
+    private let contentLeadingInset: CGFloat = 32
     public init(model: NativeCalendarRootModel) {
         self.model = model
     }
@@ -13,7 +18,6 @@ public struct RootView: View {
     public var body: some View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
-                sidebar
                 VStack(spacing: 0) {
                     header
                     if model.showsDemoEventsBanner {
@@ -22,16 +26,24 @@ public struct RootView: View {
                         }
                     }
                     content
+                        .padding(.leading, contentLeadingInset)
+                }
+                // Web: Day/Week keep the panel mounted for event details even
+                // when the sidebar preference is closed.
+                if model.isSidebarOpen || model.isEventFormVisible {
+                    Color.clear
+                        .frame(width: sidebarDividerWidth)
+                    sidebar
                 }
             }
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .padding(.top, 52)
-                .padding(.leading, 268)
+                .padding(.leading, contentLeadingInset + 8)
         }
         .background(theme.backgroundColor)
-        .font(.custom("Rubik", size: 14))
+        .font(.rubik(14))
         .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in
             ModHoldChipsOverlay(
                 targets: model.focusStore.pageJumpTargets,
@@ -148,21 +160,14 @@ public struct RootView: View {
                 onConfirm: { scope in Task { await model.confirmRsvpScope(scope) } }
             )
         }
-        .overlay {
-            EventFormView(model: model)
-        }
         .background {
             GeometryReader { geometry in
                 Color.clear
                     .onAppear {
                         applyTitleBarInset(geometry.safeAreaInsets.leading)
-                        model.updateContentTrackWidth(geometry.size.width - 260)
                     }
                     .onChange(of: geometry.safeAreaInsets.leading) { _, leading in
                         applyTitleBarInset(leading)
-                    }
-                    .onChange(of: geometry.size.width) { _, width in
-                        model.updateContentTrackWidth(width - 260)
                     }
             }
         }
@@ -175,32 +180,25 @@ public struct RootView: View {
         }
     }
 
+    /// Mirrors the web sidebar: month picker, Up Next, accounts, then the
+    /// status line and the actions bar pinned to the bottom.
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
-            Text("Calendars")
-                .font(.custom("Rubik", size: 13, relativeTo: .headline))
-                .foregroundStyle(theme.textMutedColor)
-            SidebarMonthPicker(
-                displayedMonth: $model.monthPickerMonth,
-                selectedDate: model.viewStore.anchorDate,
-                onSelectDate: { model.goToDate($0) },
-                trailingHeader: {
-                    TrialBadgeView(billingStore: model.billingStore)
-                }
-            )
-            .pageJumpChipAnchor(id: "month-picker")
-            if model.isSignedIn {
-                SyncAccountsListView(store: model.syncConnectionsStore)
+        VStack(alignment: .leading, spacing: 0) {
+            if model.isEventFormVisible {
+                EventFormView(model: model)
+            } else {
+                sidebarBody
             }
-            Spacer()
             ShortcutSidebarFooter(levelsStore: model.levelsStore)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+            sidebarActions
         }
-        .padding(16)
         .pageJumpChipAnchor(id: "calendars")
-        .frame(width: 260)
+        .frame(width: sidebarWidth)
+        .frame(maxHeight: .infinity)
         .background(theme.surfacePanelColor)
-        .overlay(alignment: .trailing) {
+        .overlay(alignment: .leading) {
             Rectangle()
                 .fill(theme.borderColor)
                 .frame(width: 1)
@@ -211,6 +209,69 @@ public struct RootView: View {
                 .accessibilityIdentifier("compass-native-sidebar")
                 .allowsHitTesting(false)
         }
+    }
+
+    private var sidebarBody: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            SidebarMonthPicker(
+                displayedMonth: $model.monthPickerMonth,
+                selectedDate: model.viewStore.anchorDate,
+                onSelectDate: { model.goToDate($0) },
+                trailingHeader: {
+                    TrialBadgeView(billingStore: model.billingStore)
+                }
+            )
+            .pageJumpChipAnchor(id: "month-picker")
+            UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
+            CalendarListView(model: model)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 20)
+    }
+
+    /// Web `SidebarActions`: shortcuts on the left, settings and palette on the right.
+    private var sidebarActions: some View {
+        HStack(spacing: 8) {
+            sidebarActionButton(
+                label: model.shortcutsLegendStore.isOpen ? "Close shortcuts" : "Open shortcuts",
+                systemImage: "keyboard"
+            ) {
+                model.toggleShortcutsLegend()
+            }
+            Spacer()
+            sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
+                model.settingsStore.open()
+            }
+            sidebarActionButton(label: "Open command palette", systemImage: "command") {
+                model.toggleCommandPalette()
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(theme.borderColor)
+                .frame(height: 1)
+        }
+    }
+
+    private func sidebarActionButton(
+        label: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14))
+                .foregroundStyle(theme.textMutedColor)
+                .frame(width: 36, height: 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
     }
 
     private var header: some View {
@@ -229,7 +290,7 @@ public struct RootView: View {
                     model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
                 }
                 Text(model.headerTitle)
-                    .font(.custom("Rubik", size: 15, relativeTo: .headline))
+                    .font(.rubik(15))
                     .foregroundStyle(theme.textColor)
                     .lineLimit(1)
                     .padding(.horizontal, 4)
@@ -257,15 +318,18 @@ public struct RootView: View {
             .padding(.leading, titleBarLeadingInset)
 
             Spacer()
+
+            headerButton(
+                label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
+                systemImage: "sidebar.right"
+            ) {
+                model.isSidebarOpen.toggle()
+            }
+            .padding(.trailing, 20)
         }
         .frame(height: 48)
         .frame(maxWidth: .infinity)
-        .background(theme.surfaceColor)
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(theme.borderColor)
-                .frame(height: 1)
-        }
+        .background(theme.backgroundColor)
         .overlay {
             Color.clear
                 .accessibilityElement()
@@ -292,6 +356,15 @@ public struct RootView: View {
                 }
                 .background(theme.backgroundColor)
                 .accessibilityIdentifier("compass-native-content")
+            }
+        }
+        .background {
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear { model.updateContentTrackWidth(geometry.size.width) }
+                    .onChange(of: geometry.size.width) { _, width in
+                        model.updateContentTrackWidth(width)
+                    }
             }
         }
     }
@@ -328,7 +401,7 @@ public struct RootView: View {
                         .font(.system(size: 12, weight: .semibold))
                 } else if let title {
                     Text(title)
-                        .font(.custom("Rubik", size: 13, relativeTo: .body))
+                        .font(.rubik(13))
                 }
             }
             .foregroundStyle(theme.textMutedColor)

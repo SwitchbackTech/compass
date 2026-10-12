@@ -7,16 +7,16 @@ struct WelcomeGuideModalView: View {
 
     var body: some View {
         ZStack {
-            theme.overlayBackdropColor
+            theme.panelBackdropColor
                 .ignoresSafeArea()
             VStack(alignment: .leading, spacing: 16) {
                 Text("The Keyboard Calendar")
-                    .font(.custom("Rubik", size: 22, relativeTo: .title))
+                    .font(.rubik(22))
                     .foregroundStyle(theme.textColor)
                 Text(
                     "Rediscover the joy of shortcuts as you build your perfect schedule. "
                         + "Press ? for every shortcut once you are on the calendar.")
-                    .font(.custom("Rubik", size: 14))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textMutedColor)
                 Button("Close") {
                     onboardingStore.closeWelcomeGuide()

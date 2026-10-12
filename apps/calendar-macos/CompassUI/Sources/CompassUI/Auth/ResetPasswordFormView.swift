@@ -11,7 +11,7 @@ struct ResetPasswordFormView: View {
     var body: some View {
         VStack(spacing: 16) {
             Text("Enter a new password for your account.")
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
                 .multilineTextAlignment(.center)
 
@@ -23,7 +23,7 @@ struct ResetPasswordFormView: View {
 
             if let submitError = authStore.submitError {
                 Text(submitError)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.errorColor)
                     .multilineTextAlignment(.center)
             }

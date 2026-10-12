@@ -25,7 +25,7 @@ public struct SendInvitationsDialogView: View {
             VStack(alignment: .leading, spacing: 16) {
                 ModalDialogTitle("Send invitation emails?")
                 Text("\(prompt.hostLabel) will email the affected guests about this event.")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 HStack {
                     Spacer()

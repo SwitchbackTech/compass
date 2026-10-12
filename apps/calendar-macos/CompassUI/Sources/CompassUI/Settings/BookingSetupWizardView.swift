@@ -22,15 +22,15 @@ struct BookingSetupWizardView: View {
                 writableCalendarCount: writableCalendarCount
             )
             Text("Step \(progress.current) of \(progress.total)")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             Text(BookingSetupSteps.setupStepSentence(step, writableCalendarCount: writableCalendarCount))
-                .font(.custom("Rubik", size: 14))
+                .font(.rubik(14))
                 .foregroundStyle(theme.textColor)
             stepContent
             if let saveErrorMessage = bookingStore.saveErrorMessage {
                 Text(saveErrorMessage)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
             HStack {
@@ -54,7 +54,7 @@ struct BookingSetupWizardView: View {
         case .address:
             HStack(spacing: 4) {
                 Text(addressPrefix)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 TextField("your-name", text: bookingStore.form.slugBinding)
                     .textFieldStyle(.roundedBorder)
@@ -75,7 +75,7 @@ struct BookingSetupWizardView: View {
         case .destination:
             if writableCalendarCount == 0 {
                 Text("Connect a calendar account from Accounts settings first.")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
             } else {
                 Picker("Destination", selection: bookingStore.form.destinationBinding(calendars: writableCalendars)) {
@@ -103,6 +103,6 @@ struct BookingSetupWizardView: View {
             Text(value)
                 .foregroundStyle(theme.textColor)
         }
-        .font(.custom("Rubik", size: 13))
+        .font(.rubik(13))
     }
 }

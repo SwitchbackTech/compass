@@ -17,7 +17,7 @@ public struct SettingsWindowOverlay: View {
     public var body: some View {
         if model.settingsStore.isPresented {
             ZStack {
-                theme.overlayBackdropColor
+                theme.panelBackdropColor
                     .ignoresSafeArea()
                     .onTapGesture { model.closeSettingsIfAllowed() }
                 HStack(alignment: .top, spacing: 0) {
@@ -42,7 +42,7 @@ public struct SettingsWindowOverlay: View {
     private var nav: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Settings")
-                .font(.custom("Rubik", size: 18))
+                .font(.rubik(18))
                 .foregroundStyle(theme.textColor)
             navButton("Accounts", page: .accounts)
             if model.isSignedIn
@@ -65,7 +65,7 @@ public struct SettingsWindowOverlay: View {
     private func navButton(_ title: String, page: SettingsPage, attention: Bool = false) -> some View {
         Button(title) { model.settingsStore.page = page }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 14))
+            .font(.rubik(14))
             .foregroundStyle(model.settingsStore.page == page ? theme.textColor : theme.textMutedColor)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .trailing) {
@@ -115,7 +115,7 @@ public struct SettingsWindowOverlay: View {
     private var billingContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Billing")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             BillingPlanSectionView(billingStore: model.billingStore)
         }

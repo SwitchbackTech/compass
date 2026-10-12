@@ -14,7 +14,7 @@ public struct AuthModalOverlay: View {
     public var body: some View {
         if authStore.isModalPresented {
             ZStack {
-                theme.overlayBackdropColor
+                theme.panelBackdropColor
                     .ignoresSafeArea()
                     .onTapGesture { authStore.closeModal() }
 
@@ -41,14 +41,14 @@ public struct AuthModalOverlay: View {
     private var header: some View {
         HStack(alignment: .top) {
             Text(title)
-                .font(.custom("Rubik", size: 20, relativeTo: .title2))
+                .font(.rubik(20))
                 .foregroundStyle(theme.textColor)
                 .multilineTextAlignment(.leading)
             Spacer()
             if showsAuthSwitch {
                 Button(action: toggleAuthView) {
                     Text(authStore.currentView == .signUp ? "Log in" : "Sign up")
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
                         .background(theme.borderColor.opacity(0.35))
@@ -80,7 +80,7 @@ public struct AuthModalOverlay: View {
 
         if showsSubmitError, let submitError = authStore.submitError {
             Text(submitError)
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.errorColor)
                 .multilineTextAlignment(.center)
         }
@@ -89,7 +89,7 @@ public struct AuthModalOverlay: View {
             HStack {
                 Rectangle().fill(theme.borderColor).frame(height: 1)
                 Text("or")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 Rectangle().fill(theme.borderColor).frame(height: 1)
             }
@@ -98,7 +98,7 @@ public struct AuthModalOverlay: View {
 
         if authStore.currentView == .signUp {
             Text("Signing up also gets you occasional product emails. Unsubscribe anytime.")
-                .font(.custom("Rubik", size: 11))
+                .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)
                 .multilineTextAlignment(.center)
         }
@@ -116,7 +116,7 @@ public struct AuthModalOverlay: View {
                 Text("·").foregroundStyle(theme.textMutedColor)
                 footerLink("Privacy", url: "https://www.compasscalendar.com/privacy")
             }
-            .font(.custom("Rubik", size: 11))
+            .font(.rubik(11))
         }
     }
 

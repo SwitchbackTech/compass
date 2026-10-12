@@ -19,7 +19,7 @@ struct EventFormConferenceSection: View {
                 )
             ) {
                 Text("Add \(CalendarCapabilities.conferenceKindLabel(kind))")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textColor)
             }
             .toggleStyle(.switch)

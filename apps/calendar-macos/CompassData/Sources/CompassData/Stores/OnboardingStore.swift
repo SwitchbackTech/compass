@@ -12,6 +12,8 @@ public enum FirstEventDoneReason: String, Sendable {
 @Observable
 public final class OnboardingStore {
     public private(set) var welcomeStep = 1
+    /// Open welcome FAQ rows, by index into `WelcomeFaq.items`.
+    public private(set) var welcomeFaqExpanded: Set<Int> = []
     public var isWelcomeFirstVisitOpen = false
     public var isWelcomeGuideOpen = false
     public private(set) var isFirstEventDone = false
@@ -63,6 +65,15 @@ public final class OnboardingStore {
 
     public func retreatWelcomeStep() {
         welcomeStep = max(welcomeStep - 1, 1)
+    }
+
+    public func toggleWelcomeFaq(_ index: Int) {
+        guard WelcomeFaq.items.indices.contains(index) else { return }
+        if welcomeFaqExpanded.contains(index) {
+            welcomeFaqExpanded.remove(index)
+        } else {
+            welcomeFaqExpanded.insert(index)
+        }
     }
 
     public func markWelcomeSeen(exit: String?) {

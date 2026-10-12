@@ -56,12 +56,12 @@ public struct BlockPartyOverlay: View {
     private var howToCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Block Party")
-                .font(.custom("Rubik", size: 26, relativeTo: .title))
+                .font(.rubik(26))
                 .foregroundStyle(theme.textColor)
             Text(
                 "Practice the keyboard moves on a sandbox calendar. "
                     + "Your first run is untimed. Press Enter when you are ready.")
-                .font(.custom("Rubik", size: 14))
+                .font(.rubik(14))
                 .foregroundStyle(theme.textMutedColor)
             Button("Start practicing") {
                 model.blockPartyStore.startPracticeRun()

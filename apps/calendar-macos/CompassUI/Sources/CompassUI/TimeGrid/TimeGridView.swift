@@ -184,7 +184,7 @@ public final class TimeGridView: NSView {
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
         if state.layoutMode == .week {
             for subview in headerRowView.subviews {
-                guard let header = subview as? NSTextField, header.stringValue == todayKey else {
+                guard let header = subview as? NSTextField, header.identifier?.rawValue == todayKey else {
                     continue
                 }
                 pulseHeaderBackground(header, accent: accent)
@@ -350,7 +350,7 @@ public final class TimeGridView: NSView {
         for hour in 0 ..< GridTimeConstants.timedVisibleHours {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
-            label.font = NSFont(name: "Rubik", size: 11) ?? .systemFont(ofSize: 11)
+            label.font = CompassFont.nsFont(size: 11)
             label.textColor = palette.textMuted
             label.alignment = .right
             label.frame = NSRect(
@@ -383,7 +383,7 @@ public final class TimeGridView: NSView {
     private func renderHeaders(snapshot: GridLayoutSnapshot, headerHeight: Double) {
         headerRowView.subviews.forEach { $0.removeFromSuperview() }
         let palette = themePalette
-        headerRowView.layer?.backgroundColor = palette.surface.cgColor
+        headerRowView.layer?.backgroundColor = palette.background.cgColor
 
         renderTimezoneHeader(snapshot: snapshot, headerHeight: headerHeight, palette: palette)
 
@@ -419,15 +419,51 @@ public final class TimeGridView: NSView {
             return
         }
 
+        let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
+        let viewStartMonth = snapshot.columns.first.map { String($0.key.prefix(7)) }
         for column in snapshot.columns {
-            let header = NSTextField(labelWithString: column.key)
-            header.font = NSFont(name: "Rubik", size: 12) ?? .systemFont(ofSize: 12)
-            header.textColor = palette.text
+            let header = NSTextField(
+                labelWithAttributedString: weekDayLabel(
+                    dayKey: column.key,
+                    viewStartMonth: viewStartMonth,
+                    color: column.key == todayKey ? themeAccentColor : palette.textMuted
+                )
+            )
+            header.identifier = NSUserInterfaceItemIdentifier(column.key)
             header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
             header.alignment = .center
             header.setAccessibilityIdentifier(column.accessibilityIdentifier)
             headerRowView.addSubview(header)
         }
+    }
+
+    /// Web `DayLabels`: a large day number ("7", or "Jul 1" when the month
+    /// changes mid-view) followed by the short weekday. Today is accented.
+    private func weekDayLabel(dayKey: String, viewStartMonth: String?, color: NSColor) -> NSAttributedString {
+        guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else {
+            return NSAttributedString(string: dayKey)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = EffectiveTimeZone.calendar
+        formatter.timeZone = EffectiveTimeZone.timeZone
+        let isNewMonth = dayKey.hasSuffix("-01") && viewStartMonth.map { !dayKey.hasPrefix($0) } == true
+        formatter.dateFormat = isNewMonth ? "MMM d" : "d"
+        let number = formatter.string(from: date)
+        formatter.dateFormat = "EEE"
+        let weekday = formatter.string(from: date)
+
+        let label = NSMutableAttributedString(
+            string: number,
+            attributes: [.font: CompassFont.nsFont(size: 18), .foregroundColor: color]
+        )
+        label.append(
+            NSAttributedString(
+                string: " \(weekday)",
+                attributes: [.font: CompassFont.nsFont(size: 13), .foregroundColor: color]
+            )
+        )
+        return label
     }
 
     private func renderAllDayColumns(
@@ -654,7 +690,7 @@ public final class TimeGridView: NSView {
     ) {
         let button = NSButton(title: title, target: self, action: #selector(openTimeTravel(_:)))
         button.isBordered = false
-        button.font = NSFont(name: "Rubik", size: 10) ?? .systemFont(ofSize: 10)
+        button.font = CompassFont.nsFont(size: 10)
         button.contentTintColor = palette.textMuted
         button.frame = NSRect(x: x, y: 4, width: width, height: headerHeight - 8)
         button.setAccessibilityLabel(accessibilityLabel)

@@ -12,14 +12,14 @@ struct PointerHintView: View {
             if store.isVisible, let attempt = store.attempt {
                 HStack(alignment: .top, spacing: 8) {
                     Text(attributedMessage(attempt))
-                        .font(.custom("Rubik", size: 14, relativeTo: .body))
+                        .font(.rubik(14))
                         .foregroundStyle(theme.textColor)
                         .multilineTextAlignment(.leading)
                     Button("Dismiss") {
                         store.hide()
                     }
                     .buttonStyle(.plain)
-                    .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
                     .accessibilityLabel("Turn off keyboard tips")
                 }

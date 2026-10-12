@@ -23,7 +23,7 @@ public struct TrialBadgeView: View {
                 billingStore.isUpgradeConfirmationPresented = true
             } label: {
                 Text(BillingTrialFormatting.badgeLabel(daysLeft: days))
-                    .font(.custom("Rubik", size: 11))
+                    .font(.rubik(11))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(theme.borderColor.opacity(0.35))

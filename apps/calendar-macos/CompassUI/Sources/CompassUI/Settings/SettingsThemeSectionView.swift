@@ -9,7 +9,7 @@ struct SettingsThemeSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Theme")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             Picker(
                 "Theme",

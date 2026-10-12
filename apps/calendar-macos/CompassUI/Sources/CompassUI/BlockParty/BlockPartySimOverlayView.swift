@@ -11,15 +11,15 @@ struct BlockPartySimOverlayView: View {
                 .ignoresSafeArea()
             VStack(alignment: .leading, spacing: 12) {
                 Text(title)
-                    .font(.custom("Rubik", size: 18, relativeTo: .headline))
+                    .font(.rubik(18))
                     .foregroundStyle(theme.textColor)
                 ForEach(rows, id: \.self) { row in
                     Text(row)
-                        .font(.custom("Rubik", size: 13))
+                        .font(.rubik(13))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 Text("Press Esc to close")
-                    .font(.custom("Rubik", size: 11))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
             }
             .padding(20)

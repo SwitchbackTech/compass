@@ -24,7 +24,7 @@ public struct ConvertToStandaloneDialogView: View {
             VStack(alignment: .leading, spacing: 16) {
                 ModalDialogTitle("Convert to standalone event?")
                 Text("\"\(eventTitle)\" will be removed from its recurring series.")
-                    .font(.custom("Rubik", size: 14))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textMutedColor)
                 HStack {
                     Spacer()

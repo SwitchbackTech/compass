@@ -18,7 +18,7 @@ struct EventFormRsvpSection: View {
         if model.showRsvpControl(for: draft) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Going?")
-                    .font(.custom("Rubik", size: 11))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
                 HStack(spacing: 0) {
                     ForEach(options, id: \.0.rawValue) { status, label in
@@ -26,7 +26,7 @@ struct EventFormRsvpSection: View {
                             Task { await model.selectRsvpResponse(status) }
                         } label: {
                             Text(label)
-                                .font(.custom("Rubik", size: 12))
+                                .font(.rubik(12))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .frame(maxWidth: .infinity)

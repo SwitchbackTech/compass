@@ -38,7 +38,7 @@ final class EventCardView: NSView {
         focusRingLayer.isHidden = true
         layer?.addSublayer(focusRingLayer)
 
-        titleField.font = NSFont(name: "Rubik", size: 13) ?? .systemFont(ofSize: 13)
+        titleField.font = CompassFont.nsFont(size: 13)
         titleField.lineBreakMode = .byTruncatingTail
         titleField.maximumNumberOfLines = 2
         titleField.isEditable = false

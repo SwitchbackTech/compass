@@ -8,22 +8,22 @@ struct ConnectCalendarPromptView: View {
 
     var body: some View {
         ZStack {
-            theme.overlayBackdropColor
+            theme.panelBackdropColor
                 .ignoresSafeArea()
             VStack(alignment: .leading, spacing: 16) {
                 Text("Connect the calendar you use")
-                    .font(.custom("Rubik", size: 22, relativeTo: .title))
+                    .font(.rubik(22))
                     .foregroundStyle(theme.textColor)
                     .accessibilityAddTraits(.isHeader)
                 Text("Compass stays in sync with your existing calendars.")
-                    .font(.custom("Rubik", size: 14))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textMutedColor)
                 providerButtons
                 Button("Skip for now, my calendar stays empty") {
                     model.onboardingStore.snoozeConnectCalendarPrompt()
                 }
                 .buttonStyle(.plain)
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
                 .frame(maxWidth: .infinity)
             }
