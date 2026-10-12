@@ -33,7 +33,7 @@ describe("PointerHint", () => {
   });
 
   it("marks grid slot teaching with a subtler layout", () => {
-    const { container, rerender } = render(<PointerHint />);
+    const { rerender } = render(<PointerHint />);
 
     pointerHintActions.pulse({
       source: "pointer",
@@ -42,10 +42,9 @@ describe("PointerHint", () => {
       keys: [["1400"], ["C"]],
     });
     rerender(<PointerHint />);
-    expect(
-      container.querySelector("[data-pointer-hint-grid-slot]"),
-    ).not.toBeNull();
-    expect(screen.getByRole("status")).toHaveTextContent("Type 1400");
+    const hint = screen.getByRole("status");
+    expect(hint).toHaveAttribute("data-pointer-hint-grid-slot");
+    expect(hint).toHaveTextContent("Type 1400");
   });
 
   it("renders pointer teaching with shortcutKey only", () => {
