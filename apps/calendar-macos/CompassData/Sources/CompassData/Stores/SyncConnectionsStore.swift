@@ -11,15 +11,21 @@ public final class SyncConnectionsStore {
     private let oauthService: OAuthAuthorizationService
     private let userAPI: UserAPI
     private let configStore: ConfigStore
+    private let systemCalendarConnector: SystemCalendarConnector
+    private let calendarRepository: CalendarRepository
 
     public init(
         oauthService: OAuthAuthorizationService,
         userAPI: UserAPI,
-        configStore: ConfigStore
+        configStore: ConfigStore,
+        systemCalendarConnector: SystemCalendarConnector = SystemCalendarConnector(),
+        calendarRepository: CalendarRepository
     ) {
         self.oauthService = oauthService
         self.userAPI = userAPI
         self.configStore = configStore
+        self.systemCalendarConnector = systemCalendarConnector
+        self.calendarRepository = calendarRepository
     }
 
     public func reloadFromMetadata() async {
@@ -52,6 +58,25 @@ public final class SyncConnectionsStore {
                 connectionId: nil,
                 oauthClients: oauthClients())
             applyOutcome(outcome, fallback: "We couldn't connect your calendar.")
+        }
+    }
+
+    public func connectAppleViaEventKit() async {
+        await runBusy {
+            let outcome = await systemCalendarConnector.connect()
+            switch outcome {
+            case let .success(calendars):
+                do {
+                    try calendarRepository.upsert(calendars: calendars)
+                    lastError = nil
+                } catch {
+                    lastError = SystemCalendarConnectCopy.connectFailedMessage
+                }
+            case let .failure(.denied):
+                lastError = SystemCalendarConnectCopy.deniedMessage
+            case let .failure(.restricted):
+                lastError = SystemCalendarConnectCopy.restrictedMessage
+            }
         }
     }
 

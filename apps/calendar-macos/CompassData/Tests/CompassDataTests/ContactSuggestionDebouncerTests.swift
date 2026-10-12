@@ -10,9 +10,12 @@ final class ContactSuggestionDebouncerTests: XCTestCase {
             return [DraftAttendeeInput(email: "\(query)@example.com", displayName: nil)]
         }
 
-        async let first = debouncer.suggestions(for: "ad")
-        async let second = debouncer.suggestions(for: "ada")
-        _ = await (first, second)
+        // Enqueue "ad" before "ada". Unordered async let child tasks can enter the
+        // actor out of call order and cancel the newer debounce with a stale query.
+        let first = Task { await debouncer.suggestions(for: "ad") }
+        await Task.yield()
+        let second = Task { await debouncer.suggestions(for: "ada") }
+        _ = await (first.value, second.value)
 
         let recorded = await calls.queries
         XCTAssertEqual(recorded, ["ada"])
