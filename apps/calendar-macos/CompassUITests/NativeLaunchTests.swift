@@ -81,7 +81,7 @@ final class NativeLaunchTests: XCTestCase {
         window.typeKey("l", modifierFlags: [])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-life-grid"].waitForExistence(timeout: 5))
-        XCTAssertTrue(window.staticTexts["Life"].waitForExistence(timeout: 3))
+        XCTAssertTrue(window.buttons["Life"].waitForExistence(timeout: 3))
 
         window.typeKey("w", modifierFlags: [])
         XCTAssertTrue(
