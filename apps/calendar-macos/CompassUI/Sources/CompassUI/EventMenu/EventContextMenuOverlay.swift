@@ -53,7 +53,7 @@ public struct EventContextMenuOverlay: View {
         Button(action: action) {
             HStack {
                 Text(label)
-                    .font(.custom("Rubik", size: 14, relativeTo: .body))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textColor)
                 Spacer()
                 HStack(spacing: 4) {

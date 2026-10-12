@@ -14,7 +14,7 @@ public struct BillingPlanSectionView: View {
         if let badge = BillingPlanBadgeResolver.badge(access: billingStore.appAccess) {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Plan")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 planBadgeView(badge)
                 if let summary = billingStore.subscription {
@@ -23,12 +23,12 @@ public struct BillingPlanSectionView: View {
                     receiptsTable(summary.invoices)
                 } else if billingStore.isLoadingSubscription {
                     Text("Loading your plan")
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 if let actionError = billingStore.actionError {
                     Text(actionError)
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.errorColor)
                 }
             }
@@ -53,7 +53,7 @@ public struct BillingPlanSectionView: View {
     @ViewBuilder
     private func planBadgeView(_ badge: BillingPlanBadge) -> some View {
         Text(badge.label)
-            .font(.custom("Rubik", size: 11))
+            .font(.rubik(11))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.borderColor))
@@ -70,12 +70,12 @@ public struct BillingPlanSectionView: View {
                     interval: price.interval.rawValue
                 )
             )
-            .font(.custom("Rubik", size: 13))
+            .font(.rubik(13))
             .foregroundStyle(theme.textColor)
         }
         if let periodEnd = summary.currentPeriodEnd {
             Text("\(summary.cancelAtPeriodEnd ? "Ends" : "Renews") \(BillingDisplayFormatting.formatBillingDate(iso: periodEnd))")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
         }
         if case let .server(server) = billingStore.appAccess,
@@ -83,7 +83,7 @@ public struct BillingPlanSectionView: View {
            let trialEndsAt = server.trialEndsAt
         {
             Text("Your trial ends \(BillingDisplayFormatting.formatBillingDate(iso: trialEndsAt))\(server.cancelAtPeriodEnd ? " and will not renew" : "").")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
         }
         if let card = summary.paymentMethod {
@@ -95,11 +95,11 @@ public struct BillingPlanSectionView: View {
                     expYear: Int(card.expYear)
                 )
             )
-            .font(.custom("Rubik", size: 13))
+            .font(.rubik(13))
             .foregroundStyle(theme.textColor)
         } else {
             Text("No card on file")
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
         }
     }
@@ -140,7 +140,7 @@ public struct BillingPlanSectionView: View {
         if !rows.isEmpty {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Receipts")
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textColor)
                 ForEach(rows, id: \.id) { invoice in
                     HStack {
@@ -157,7 +157,7 @@ public struct BillingPlanSectionView: View {
                             Link("Receipt", destination: url)
                         }
                     }
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
                 }
             }

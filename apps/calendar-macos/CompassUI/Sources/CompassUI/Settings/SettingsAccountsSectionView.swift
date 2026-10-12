@@ -11,7 +11,7 @@ struct SettingsAccountsSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Accounts")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             ForEach(syncStore.connections, id: \.id) { connection in
                 accountRow(connection)
@@ -19,7 +19,7 @@ struct SettingsAccountsSectionView: View {
             connectButtons
             if let error = syncStore.lastError {
                 Text(error)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
         }
@@ -30,7 +30,7 @@ struct SettingsAccountsSectionView: View {
     private func accountRow(_ connection: UserMetadataConnections) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(connection.accountEmail ?? connection.id)
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
             HStack(spacing: 8) {
                 Button("Reconnect") {
@@ -43,7 +43,7 @@ struct SettingsAccountsSectionView: View {
                 .disabled(syncStore.isBusy)
             }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 12))
+            .font(.rubik(12))
             .foregroundStyle(theme.accentColor)
         }
         .accessibilityIdentifier("settings-accounts-list")
@@ -72,7 +72,7 @@ struct SettingsAccountsSectionView: View {
             .accessibilityIdentifier("settings-icloud-connect")
         }
         .buttonStyle(.plain)
-        .font(.custom("Rubik", size: 12))
+        .font(.rubik(12))
         .foregroundStyle(theme.accentColor)
         .disabled(syncStore.isBusy)
     }

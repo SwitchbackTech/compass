@@ -27,7 +27,7 @@ struct BookingBlockerNoticeView: View {
         if let blocker {
             VStack(alignment: .leading, spacing: 8) {
                 Text(blocker.message)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textColor)
                     .accessibilityIdentifier("booking-blocker-message")
                 if blocker.action == .reconnect {
@@ -36,7 +36,7 @@ struct BookingBlockerNoticeView: View {
                             onReconnect(connection)
                         }
                         .buttonStyle(.plain)
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.accentColor)
                         .disabled(isBusy)
                     }

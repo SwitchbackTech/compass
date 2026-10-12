@@ -24,4 +24,17 @@ final class OnboardingStoreTests: XCTestCase {
             defaults.string(forKey: OnboardingStorageKeys.firstEventDone),
             FirstEventDoneReason.dismissed.rawValue)
     }
+
+    func testToggleWelcomeFaqOpensAndClosesRowsIndependently() {
+        let defaults = UserDefaults(suiteName: "OnboardingStoreTests.faq")!
+        defaults.removePersistentDomain(forName: "OnboardingStoreTests.faq")
+        let store = OnboardingStore(defaults: defaults)
+        store.toggleWelcomeFaq(0)
+        store.toggleWelcomeFaq(2)
+        XCTAssertEqual(store.welcomeFaqExpanded, [0, 2])
+        store.toggleWelcomeFaq(0)
+        XCTAssertEqual(store.welcomeFaqExpanded, [2])
+        store.toggleWelcomeFaq(WelcomeFaq.items.count)
+        XCTAssertEqual(store.welcomeFaqExpanded, [2])
+    }
 }

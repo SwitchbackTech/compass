@@ -19,7 +19,7 @@ struct QuickAddFieldRepresentable: NSViewRepresentable {
         field.isBezeled = false
         field.drawsBackground = true
         field.focusRingType = .none
-        field.font = NSFont.systemFont(ofSize: 13)
+        field.font = CompassFont.nsFont(size: 13)
         field.placeholderString = "Add an event, or type a time like 1130"
         field.setAccessibilityIdentifier("compass-native-quick-add-field")
         field.delegate = context.coordinator

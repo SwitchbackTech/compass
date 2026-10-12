@@ -1,32 +1,26 @@
+import AppKit
 import CompassData
 import CompassKit
 import SwiftUI
 
+/// Mirrors web `WelcomeModal`: commit (1), learn (2), choose how to start (3).
+/// Keys (Enter, Esc, I, S, U, provider letters, FAQ digits) are routed by
+/// `NativeGridKeyboardRouter` through the same model actions as the buttons.
 struct WelcomeModalView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
 
+    private var step: Int { model.onboardingStore.welcomeStep }
+
     var body: some View {
         ZStack {
-            theme.overlayBackdropColor
+            theme.panelBackdropColor
                 .ignoresSafeArea()
-            VStack(spacing: 20) {
-                headerRow
-                stepContent
-                stepDots
+            ScrollView {
+                panel
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 32)
             }
-            .padding(24)
-            .frame(maxWidth: 480)
-            .background(theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(theme.borderColor, lineWidth: 1)
-            )
-            .accessibilityElement(children: .contain)
-            .accessibilityAddTraits(.isModal)
-            .accessibilityLabel("Welcome to Compass Calendar")
-            .accessibilityIdentifier("compass-native-welcome-modal")
         }
         .onAppear {
             model.onboardingStore.setWelcomeFirstVisitOpen(true)
@@ -37,105 +31,165 @@ struct WelcomeModalView: View {
         }
     }
 
+    private var panel: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            headerRow
+            stepContent
+            stepDots
+            if step == 3 {
+                WelcomeLinksView()
+            }
+        }
+        .padding(32)
+        .frame(width: 480)
+        .background(theme.surfacePanelColor)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityLabel("Welcome to Compass Calendar")
+        .accessibilityIdentifier("compass-native-welcome-modal")
+    }
+
     private var headerRow: some View {
         HStack {
-            Text("Compass")
-                .font(.custom("Rubik", size: 14, relativeTo: .headline))
-                .foregroundStyle(theme.textMutedColor)
+            PixelPirateView()
+                .frame(width: 56, height: 56)
+                .help("No signup required")
             Spacer()
-            if model.onboardingStore.welcomeStep > 1 {
-                Button("Back") {
-                    model.onboardingStore.retreatWelcomeStep()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(theme.textMutedColor)
+            if step > 1 {
+                pillButton(title: "Back", hint: "Esc") { model.welcomeBack() }
             }
-            Button("Log in") {
-                model.onboardingStore.markWelcomeSeen(exit: "log_in")
-                model.authStore.openModal(.login)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.textMutedColor)
+            pillButton(title: "Log in", hint: "i") { model.welcomeLogIn() }
         }
     }
 
     @ViewBuilder
     private var stepContent: some View {
-        switch model.onboardingStore.welcomeStep {
+        switch step {
         case 1:
-            VStack(alignment: .leading, spacing: 12) {
-                Text("The Keyboard Calendar")
-                    .font(.custom("Rubik", size: 22, relativeTo: .title))
-                    .foregroundStyle(theme.textColor)
+            VStack(alignment: .leading, spacing: 8) {
+                heading("The Keyboard Calendar")
                 Text(
                     "Rediscover the joy of shortcuts as you build your perfect schedule. "
                         + "Click any button here, or use Enter and the key hints beside each action.")
-                    .font(.custom("Rubik", size: 14))
+                    .font(.rubik(16))
                     .foregroundStyle(theme.textMutedColor)
-                primaryButton(title: "Get started for free") {
-                    model.onboardingStore.advanceWelcomeStep()
-                }
+                Text(
+                    "Compass is a faster, simpler, open-source calendar for busy professionals "
+                        + "who live at their keyboard.")
+                    .font(.rubik(14))
+                    .foregroundStyle(theme.textMutedColor)
+            }
+            VStack(spacing: 12) {
+                primaryButton(title: "Get started for free", hint: "Enter") { model.welcomePrimaryAction() }
+                Text("No account needed.")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textMutedColor)
             }
         case 2:
-            VStack(alignment: .leading, spacing: 12) {
-                Text("How Compass works")
-                    .font(.custom("Rubik", size: 22, relativeTo: .title))
-                    .foregroundStyle(theme.textColor)
-                Text("Compass is keyboard-only on the calendar. Press ? for every shortcut.")
-                    .font(.custom("Rubik", size: 14))
+            VStack(alignment: .leading, spacing: 8) {
+                heading("How Compass works")
+                Text("Click a question or press its number to open it.")
+                    .font(.rubik(16))
                     .foregroundStyle(theme.textMutedColor)
-                primaryButton(title: "Next") {
-                    model.onboardingStore.advanceWelcomeStep()
-                }
             }
+            WelcomeFaqListView(expanded: model.onboardingStore.welcomeFaqExpanded) { index in
+                model.onboardingStore.toggleWelcomeFaq(index)
+            }
+            primaryButton(title: "Next", hint: "Enter") { model.welcomePrimaryAction() }
         default:
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Let's get started")
-                    .font(.custom("Rubik", size: 22, relativeTo: .title))
-                    .foregroundStyle(theme.textColor)
+            VStack(alignment: .leading, spacing: 8) {
+                heading("Let's get started")
                 Text("Connect a calendar or start fresh")
-                    .font(.custom("Rubik", size: 14))
+                    .font(.rubik(16))
                     .foregroundStyle(theme.textMutedColor)
-                primaryButton(title: "Explore without an account") {
-                    model.onboardingStore.markWelcomeSeen(exit: "explore")
-                    model.authStore.closeModal()
+            }
+            VStack(spacing: 12) {
+                primaryButton(title: "Explore without an account", hint: "S") { model.welcomeExplore() }
+                Text("Ready to keep it? Start your free 7-day trial.")
+                    .font(.rubik(14))
+                    .foregroundStyle(theme.textMutedColor)
+                ForEach(model.authStore.availableSignInProviders(), id: \.self) { provider in
+                    secondaryButton(title: provider.continueLabel, hint: String(provider.shortcutLetter).uppercased()) {
+                        model.welcomeSignIn(with: provider)
+                    }
                 }
-                Button("Sign up with email") {
-                    model.onboardingStore.markWelcomeSeen(exit: "sign_up")
-                    model.authStore.openModal(.signUp)
+                secondaryButton(
+                    title: model.authStore.availableSignInProviders().isEmpty ? "Sign up" : "Sign up with email",
+                    hint: "U"
+                ) {
+                    model.welcomeSignUp()
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(theme.textColor)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(theme.borderColor.opacity(0.35))
-                .clipShape(Capsule())
             }
         }
     }
 
     private var stepDots: some View {
         HStack(spacing: 8) {
-            ForEach(1 ... 3, id: \.self) { step in
+            ForEach(1 ... 3, id: \.self) { dot in
                 Circle()
-                    .fill(step == model.onboardingStore.welcomeStep ? theme.textColor : theme.borderColor)
+                    .fill(dot == step ? theme.textColor : theme.borderColor)
                     .frame(width: 6, height: 6)
             }
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement()
+        .accessibilityLabel("Step \(step) of 3")
     }
 
-    private func primaryButton(title: String, action: @escaping () -> Void) -> some View {
+    private func heading(_ title: String) -> some View {
+        Text(title)
+            .font(.rubik(24, weight: .bold))
+            .foregroundStyle(theme.textColor)
+    }
+
+    private func primaryButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.custom("Rubik", size: 14, relativeTo: .body))
-                .foregroundStyle(theme.surfaceColor)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(theme.accentColor)
-                .clipShape(Capsule())
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.rubik(14, weight: .medium))
+                ShortcutHintChip(label: hint)
+            }
+            .foregroundStyle(theme.surfaceColor)
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .background(theme.accentColor)
+            .clipShape(Capsule())
+            .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
         }
         .buttonStyle(.plain)
-        .keyboardShortcut(.defaultAction)
+    }
+
+    private func secondaryButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.rubik(14, weight: .medium))
+                ShortcutHintChip(label: hint)
+            }
+            .foregroundStyle(theme.textColor)
+            .frame(maxWidth: .infinity, minHeight: 40)
+            .background(theme.surfaceColor)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(theme.borderColor, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func pillButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.rubik(12, weight: .medium))
+                ShortcutHintChip(label: hint)
+            }
+            .foregroundStyle(theme.textColor)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .background(theme.surfaceColor)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(theme.borderColor, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }

@@ -48,6 +48,8 @@ public final class NativeCalendarRootModel {
     public private(set) var paletteEventSearchHits: [CommandPaletteEventHit] = []
     var paletteSearchTask: Task<Void, Never>?
     public var dedicationDialogVisible = false
+    /// Right-hand sidebar, toggled with `]` like the web.
+    public var isSidebarOpen = true
     public var pendingDiscardDraftConfirmation = false
     public var pendingRecurrenceScopePrompt: RecurrenceScopePromptKind? {
         didSet {
@@ -467,6 +469,8 @@ public final class NativeCalendarRootModel {
             toggleCommandPalette()
         case .otherShortcuts:
             toggleShortcutsLegend()
+        case .otherSidebar:
+            isSidebarOpen.toggle()
         case .navGoToDate:
             toggleCommandPalette(fromGoToDate: true)
         default:

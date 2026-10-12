@@ -39,7 +39,7 @@ struct BlockPartyPracticeGridView: View {
                 id: \.self
             ) { hour in
                 Text(formatHour(hour))
-                    .font(.custom("Rubik", size: 10))
+                    .font(.rubik(10))
                     .foregroundStyle(theme.textMutedColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(.trailing, 4)
@@ -53,7 +53,7 @@ struct BlockPartyPracticeGridView: View {
         ZStack(alignment: .topLeading) {
             VStack(spacing: 0) {
                 Text(dayLabels[dayIndex])
-                    .font(.custom("Rubik", size: 11, relativeTo: .caption))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
@@ -90,11 +90,11 @@ struct BlockPartyPracticeGridView: View {
         return ZStack(alignment: .topTrailing) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(block.title)
-                    .font(.custom("Rubik", size: 11))
+                    .font(.rubik(11))
                     .lineLimit(1)
                 if frame.height > 28 {
                     Text(timeRange(block))
-                        .font(.custom("Rubik", size: 9))
+                        .font(.rubik(9))
                         .opacity(0.85)
                 }
             }

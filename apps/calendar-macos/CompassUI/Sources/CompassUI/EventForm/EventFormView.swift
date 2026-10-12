@@ -44,7 +44,7 @@ public struct EventFormView: View {
                 set: { model.updateDraftFromForm(title: $0) }
             ))
             .textFieldStyle(.plain)
-            .font(.custom("Rubik", size: 16))
+            .font(.rubik(16))
             .foregroundStyle(theme.textColor)
             .focused($titleFocused)
             .pageJumpChipAnchor(id: "form-title")

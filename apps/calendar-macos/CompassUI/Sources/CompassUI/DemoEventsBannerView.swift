@@ -11,11 +11,11 @@ public struct DemoEventsBannerView: View {
     public var body: some View {
         HStack(spacing: 12) {
             Text("Sample events to help you explore. Clear them from the command palette.")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             Spacer(minLength: 8)
             Text("Okay")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textColor)
         }
         .padding(.horizontal, 16)

@@ -8,10 +8,10 @@ struct SettingsLaunchAtLoginSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Launch at login")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             Text("Open Compass automatically when you sign in to this Mac.")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             Toggle("Launch Compass at login", isOn: Binding(
                 get: { settingsStore.launchAtLoginEnabled },

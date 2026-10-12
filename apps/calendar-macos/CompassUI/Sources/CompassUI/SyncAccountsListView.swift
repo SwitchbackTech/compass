@@ -11,7 +11,7 @@ struct SyncAccountsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Accounts")
-                .font(.custom("Rubik", size: 13, relativeTo: .headline))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
             ForEach(store.connections, id: \.id) { connection in
                 accountRow(connection)
@@ -19,7 +19,7 @@ struct SyncAccountsListView: View {
             connectButtons
             if let error = store.lastError {
                 Text(error)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
         }
@@ -29,7 +29,7 @@ struct SyncAccountsListView: View {
     private func accountRow(_ connection: UserMetadataConnections) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(connection.accountEmail ?? connection.id)
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
             HStack(spacing: 8) {
                 Button("Reconnect") {
@@ -42,7 +42,7 @@ struct SyncAccountsListView: View {
                 .disabled(store.isBusy)
             }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 12))
+            .font(.rubik(12))
             .foregroundStyle(theme.accentColor)
         }
     }
@@ -69,7 +69,7 @@ struct SyncAccountsListView: View {
             }
         }
         .buttonStyle(.plain)
-        .font(.custom("Rubik", size: 12))
+        .font(.rubik(12))
         .foregroundStyle(theme.accentColor)
         .disabled(store.isBusy)
     }

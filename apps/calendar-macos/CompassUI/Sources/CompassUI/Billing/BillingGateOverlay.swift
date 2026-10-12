@@ -14,20 +14,20 @@ public struct BillingGateOverlay: View {
         if let status = billingStore.gateStatus {
             let copy = BillingGateCopy.content(for: status)
             ZStack {
-                theme.overlayBackdropColor
+                theme.panelBackdropColor
                     .ignoresSafeArea()
                 VStack(spacing: 16) {
                     Text(copy.title)
-                        .font(.custom("Rubik", size: 20, relativeTo: .title2))
+                        .font(.rubik(20))
                         .foregroundStyle(theme.textColor)
                         .multilineTextAlignment(.center)
                     Text(copy.body)
-                        .font(.custom("Rubik", size: 13))
+                        .font(.rubik(13))
                         .foregroundStyle(theme.textMutedColor)
                         .multilineTextAlignment(.center)
                     if let actionError = billingStore.actionError {
                         Text(actionError)
-                            .font(.custom("Rubik", size: 12))
+                            .font(.rubik(12))
                             .foregroundStyle(theme.warningColor)
                     }
                     Button {
@@ -38,7 +38,7 @@ public struct BillingGateOverlay: View {
                                 ProgressView().controlSize(.small)
                             } else {
                                 Text(copy.primaryLabel)
-                                    .font(.custom("Rubik", size: 14, relativeTo: .body))
+                                    .font(.rubik(14))
                             }
                         }
                         .frame(maxWidth: .infinity)

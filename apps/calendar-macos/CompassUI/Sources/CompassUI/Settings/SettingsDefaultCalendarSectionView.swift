@@ -25,7 +25,7 @@ struct SettingsDefaultCalendarSectionView: View {
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Default Calendar")
-                    .font(.custom("Rubik", size: 15))
+                    .font(.rubik(15))
                     .foregroundStyle(theme.textColor)
                 Picker(
                     "Default Calendar",

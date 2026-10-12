@@ -24,6 +24,23 @@ public enum SignInProviderKind: String, Sendable, CaseIterable {
         case .apple: .apple
         }
     }
+
+    /// Web `SIGN_IN_SHORTCUT_KEY`, lowercased.
+    public var shortcutLetter: Character {
+        switch self {
+        case .google: "g"
+        case .microsoft: "m"
+        case .apple: "a"
+        }
+    }
+
+    public var continueLabel: String {
+        switch self {
+        case .google: "Continue with Google"
+        case .microsoft: "Continue with Microsoft"
+        case .apple: "Continue with Apple"
+        }
+    }
 }
 
 @MainActor

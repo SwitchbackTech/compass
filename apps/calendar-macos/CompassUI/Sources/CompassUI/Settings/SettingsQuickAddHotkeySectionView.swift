@@ -11,10 +11,10 @@ struct SettingsQuickAddHotkeySectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Global quick add")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             Text("Opens a floating panel from any app. Uses a system hotkey, not Accessibility.")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             TextField("Shortcut", text: $draft)
                 .textFieldStyle(.roundedBorder)
@@ -22,7 +22,7 @@ struct SettingsQuickAddHotkeySectionView: View {
                 .onAppear { draft = settingsStore.quickAddHotKeyDisplay }
             if let error {
                 Text(error)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
             Button("Restore default (\(QuickAddHotKeyStorage.defaultDisplayString))") {
@@ -30,7 +30,7 @@ struct SettingsQuickAddHotkeySectionView: View {
                 persist()
             }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 12))
+            .font(.rubik(12))
             .foregroundStyle(theme.accentColor)
         }
         .accessibilityIdentifier("settings-section-quick-add-hotkey")

@@ -12,7 +12,7 @@ public struct StatusToastOverlay: View {
     public var body: some View {
         if let message = toastStore.message {
             Text(message)
-                .font(.custom("Rubik", size: 14, relativeTo: .body))
+                .font(.rubik(14))
                 .foregroundStyle(theme.textColor)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)

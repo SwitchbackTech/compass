@@ -9,7 +9,7 @@ struct ShortcutSidebarFooter: View {
         VStack(alignment: .leading, spacing: 8) {
             if let toast = levelsStore.pendingLevelUpToast {
                 Text(toast.title)
-                    .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textColor)
                     .padding(8)
                     .background(theme.surfaceColor)
@@ -24,7 +24,7 @@ struct ShortcutSidebarFooter: View {
             if !levelsStore.badgeHidden {
                 HStack(spacing: 8) {
                     Text(levelsStore.badgeLabel)
-                        .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textColor)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -36,7 +36,7 @@ struct ShortcutSidebarFooter: View {
 
                     if let tip = levelsStore.currentTip {
                         Text("Try \(tip.label)")
-                            .font(.custom("Rubik", size: 11, relativeTo: .caption))
+                            .font(.rubik(11))
                             .foregroundStyle(theme.textMutedColor)
                             .lineLimit(2)
                             .accessibilityIdentifier("compass-native-shortcut-tip")

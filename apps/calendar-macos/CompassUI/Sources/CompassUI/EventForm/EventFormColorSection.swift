@@ -11,7 +11,7 @@ struct EventFormColorSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Color")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             HStack(spacing: 6) {
                 colorSwatch(label: "Default", slot: nil)

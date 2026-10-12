@@ -12,36 +12,36 @@ struct BlockPartyHudView: View {
             HStack {
                 if game.timed {
                     Text(formatClock(game.buzzer == nil ? remainingSeconds : 0))
-                        .font(.custom("Rubik", size: 18, relativeTo: .headline))
+                        .font(.rubik(18))
                         .foregroundStyle(game.buzzer == nil ? theme.textColor : theme.errorColor)
                     if game.buzzer != nil {
                         Text("overtime")
-                            .font(.custom("Rubik", size: 11))
+                            .font(.rubik(11))
                             .foregroundStyle(theme.errorColor)
                     }
                 } else {
                     Text("Practice")
-                        .font(.custom("Rubik", size: 11))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                         .textCase(.uppercase)
                 }
                 Spacer()
                 Text("\(game.score)")
-                    .font(.custom("Rubik", size: 18, relativeTo: .headline))
+                    .font(.rubik(18))
                     .foregroundStyle(theme.textColor)
                     .accessibilityIdentifier("block-party-score")
             }
 
             if let task {
                 Text("Task \(game.taskIndex + 1)/\(game.runTasks.count)")
-                    .font(.custom("Rubik", size: 11))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.accentColor)
                     .textCase(.uppercase)
                 Text(task.title)
-                    .font(.custom("Rubik", size: 20, relativeTo: .title2))
+                    .font(.rubik(20))
                     .foregroundStyle(theme.textColor)
                 Text(task.instruction)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 HStack(spacing: 6) {
                     ForEach(BlockPartyEngine.getDisplayKeycaps(task: task, state: game), id: \.self) { cap in

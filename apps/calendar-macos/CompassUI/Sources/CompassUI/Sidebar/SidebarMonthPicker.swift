@@ -28,7 +28,7 @@ public struct SidebarMonthPicker: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(monthTitle)
-                    .font(.custom("Rubik", size: 13, relativeTo: .headline))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textColor)
                 Spacer()
                 if let trailingHeader {
@@ -42,7 +42,7 @@ public struct SidebarMonthPicker: View {
                             onSelectDate(day)
                         } label: {
                             Text(dayNumber(day))
-                                .font(.custom("Rubik", size: 12))
+                                .font(.rubik(12))
                                 .frame(maxWidth: .infinity, minHeight: 24)
                                 .foregroundStyle(theme.textColor)
                                 .background(

@@ -14,7 +14,7 @@ public struct WhichKeyPanelOverlay: View {
         if model.editSequenceMenuVisible {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Edit which field?")
-                    .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
                 LazyVGrid(
                     columns: [GridItem(.flexible()), GridItem(.flexible())],
@@ -27,14 +27,14 @@ public struct WhichKeyPanelOverlay: View {
                                 ShortcutHintChip(label: String(key).uppercased())
                             }
                             Text(row.label)
-                                .font(.custom("Rubik", size: 12, relativeTo: .caption))
+                                .font(.rubik(12))
                                 .foregroundStyle(theme.textColor)
                                 .lineLimit(1)
                         }
                     }
                 }
                 Text("Esc to cancel")
-                    .font(.custom("Rubik", size: 11, relativeTo: .caption2))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
             }
             .padding(10)
@@ -46,7 +46,7 @@ public struct WhichKeyPanelOverlay: View {
             .accessibilityIdentifier("compass-native-which-key-panel")
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.top, 120)
-            .padding(.leading, 280)
+            .padding(.leading, 40)
         }
     }
 }

@@ -34,13 +34,13 @@ final class QuickAddNativePanelViewController: NSViewController {
         queryField.isBezeled = false
         queryField.drawsBackground = true
         queryField.focusRingType = .none
-        queryField.font = NSFont.systemFont(ofSize: 13)
+        queryField.font = CompassFont.nsFont(size: 13)
         queryField.placeholderString = "Add an event, or type a time like 1130"
         queryField.setAccessibilityIdentifier("compass-native-quick-add-field")
         queryField.delegate = self
         queryField.translatesAutoresizingMaskIntoConstraints = false
 
-        hintField.font = NSFont(name: "Rubik", size: 12) ?? NSFont.systemFont(ofSize: 12)
+        hintField.font = CompassFont.nsFont(size: 12)
         hintField.textColor = NSColor(theme.textMutedColor)
         hintField.alignment = .center
         hintField.isHidden = true

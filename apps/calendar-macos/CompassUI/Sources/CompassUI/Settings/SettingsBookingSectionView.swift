@@ -92,15 +92,15 @@ public struct SettingsBookingSectionView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Meetings")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             if model.bookingStore.bookingNeedsAttention {
                 Text("Your meeting page needs attention.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.warningColor)
             } else if model.bookingStore.isLive {
                 Text("Your meeting page is live.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
             }
         }
@@ -169,7 +169,7 @@ public struct SettingsBookingSectionView: View {
             if let link = model.bookingStore.meetingLinkURL(calendars: model.calendars) {
                 HStack {
                     Text(link.absoluteString)
-                        .font(.custom("Rubik", size: 11))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                         .lineLimit(1)
                     Button("Copy link") {
@@ -212,12 +212,12 @@ public struct SettingsBookingSectionView: View {
             }
             let previewCount = model.bookingStore.previewSlotStarts().count
             Text("Slot preview (next 7 days): \(previewCount) starts")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             if let message = model.bookingStore.saveErrorMessage {
                 Text(message)
                     .foregroundStyle(theme.errorColor)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
             }
             HStack {
                 Spacer()
@@ -232,7 +232,7 @@ public struct SettingsBookingSectionView: View {
     private func labeledNumberField(_ label: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading) {
             Text(label)
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             TextField(label, text: text)
                 .textFieldStyle(.roundedBorder)
@@ -242,10 +242,10 @@ public struct SettingsBookingSectionView: View {
 
     private var discardDialog: some View {
         ZStack {
-            theme.overlayBackdropColor.ignoresSafeArea()
+            theme.panelBackdropColor.ignoresSafeArea()
             VStack(spacing: 12) {
                 Text("Discard unsaved changes?")
-                    .font(.custom("Rubik", size: 15))
+                    .font(.rubik(15))
                 HStack {
                     Button("Keep editing") {
                         model.bookingStore.isDiscardConfirmationPresented = false

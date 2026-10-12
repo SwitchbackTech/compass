@@ -37,15 +37,15 @@ struct BookingStatusHeaderView: View {
                 )
             } else if savedUrl != nil {
                 Text("Off. Guests can use this link once you turn it on.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textColor)
             } else {
                 Text("Off. Turn it on to share your link.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textColor)
                 if let addressPreview {
                     Text("It will be at \(addressPreview)")
-                        .font(.custom("Rubik", size: 12))
+                        .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                 }
             }

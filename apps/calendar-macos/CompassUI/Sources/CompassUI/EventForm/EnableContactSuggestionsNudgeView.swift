@@ -13,7 +13,7 @@ struct EnableContactSuggestionsNudgeView: View {
                 Button("Enable contact suggestions") {
                     Task { await model.syncConnectionsStore.connect(provider: .google) }
                 }
-                .font(.custom("Rubik", size: 11))
+                .font(.rubik(11))
                 .foregroundStyle(theme.accentColor)
                 Spacer()
                 Button {
@@ -21,7 +21,7 @@ struct EnableContactSuggestionsNudgeView: View {
                     isVisible = false
                 } label: {
                     Text("Dismiss")
-                        .font(.custom("Rubik", size: 11))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 .buttonStyle(.plain)

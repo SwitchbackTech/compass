@@ -15,7 +15,7 @@ final class DayCalendarColumnHeaderControl: NSControl {
         wantsLayer = true
         focusRingType = .exterior
         titleField.lineBreakMode = .byTruncatingTail
-        titleField.font = NSFont(name: "Rubik", size: 12) ?? .systemFont(ofSize: 12)
+        titleField.font = CompassFont.nsFont(size: 12)
         titleField.alignment = .center
         titleField.cell?.truncatesLastVisibleLine = true
         chipLabel.font = NSFont.monospacedSystemFont(ofSize: 10, weight: .semibold)

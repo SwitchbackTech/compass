@@ -10,7 +10,7 @@ public struct ShortcutHintChip: View {
 
     public var body: some View {
         Text(label)
-            .font(.custom("Rubik", size: 11, relativeTo: .caption))
+            .font(.rubik(11))
             .foregroundStyle(theme.textColor)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)

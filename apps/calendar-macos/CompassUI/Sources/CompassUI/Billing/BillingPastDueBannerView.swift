@@ -12,13 +12,13 @@ public struct BillingPastDueBannerView: View {
     public var body: some View {
         HStack(spacing: 12) {
             Text("Payment failed. Update your card to keep Compass after this period.")
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
             Button("Update card") {
                 billingStore.openCheckoutFromPastDueBanner()
             }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 13, relativeTo: .body))
+            .font(.rubik(13))
             .foregroundStyle(theme.warningColor)
             .underline()
         }

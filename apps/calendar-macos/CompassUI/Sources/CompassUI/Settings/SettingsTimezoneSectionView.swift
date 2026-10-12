@@ -19,7 +19,7 @@ struct SettingsTimezoneSectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Default timezone")
-                .font(.custom("Rubik", size: 15))
+                .font(.rubik(15))
                 .foregroundStyle(theme.textColor)
             Button(label) {
                 settingsStore.openTimezoneDialog(.pin)
@@ -30,7 +30,7 @@ struct SettingsTimezoneSectionView: View {
             .background(theme.surfacePanelColor)
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.borderColor))
             .foregroundStyle(theme.textColor)
-            .font(.custom("Rubik", size: 13))
+            .font(.rubik(13))
         }
         .accessibilityIdentifier("settings-section-timezone")
     }

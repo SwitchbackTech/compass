@@ -11,7 +11,7 @@ struct ModalDialogTitle: View {
 
     var body: some View {
         Text(text)
-            .font(.custom("Rubik", size: 17, relativeTo: .headline))
+            .font(.rubik(17))
             .foregroundStyle(theme.textColor)
     }
 }

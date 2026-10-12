@@ -13,7 +13,7 @@ struct BookingProviderConnectButtons: View {
                 onConnect(provider)
             }
             .buttonStyle(.plain)
-            .font(.custom("Rubik", size: 12))
+            .font(.rubik(12))
             .foregroundStyle(theme.accentColor)
             .disabled(isBusy)
         }

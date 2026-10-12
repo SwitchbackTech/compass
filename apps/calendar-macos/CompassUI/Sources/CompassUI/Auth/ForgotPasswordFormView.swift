@@ -15,12 +15,12 @@ struct ForgotPasswordFormView: View {
             if submitted {
                 VStack(spacing: 12) {
                     Text("Check your email")
-                        .font(.custom("Rubik", size: 16, relativeTo: .headline))
+                        .font(.rubik(16))
                         .foregroundStyle(theme.textColor)
                     Text(
                         "If an account exists for \(AuthFormValidation.normalizedEmail(email)), you will receive a password reset link shortly."
                     )
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                     .multilineTextAlignment(.center)
                     AuthPrimaryButton(title: "Back to sign in", disabled: false, isLoading: false) {
@@ -31,7 +31,7 @@ struct ForgotPasswordFormView: View {
                 Text(
                     "Enter your email address and we'll send you a link to reset your password."
                 )
-                .font(.custom("Rubik", size: 13))
+                .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
                 .multilineTextAlignment(.center)
 
@@ -42,7 +42,7 @@ struct ForgotPasswordFormView: View {
 
                 if let localError {
                     Text(localError)
-                        .font(.custom("Rubik", size: 13))
+                        .font(.rubik(13))
                         .foregroundStyle(theme.errorColor)
                         .multilineTextAlignment(.center)
                 }

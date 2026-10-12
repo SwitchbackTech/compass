@@ -24,7 +24,7 @@ struct FirstEventPromptView: View {
         VStack(alignment: .leading, spacing: 8) {
             if onboardingStore.isFirstEventCelebrating {
                 Text("It's on the calendar.")
-                    .font(.custom("Rubik", size: 14, relativeTo: .headline))
+                    .font(.rubik(14))
                     .foregroundStyle(theme.textColor)
                     .onAppear {
                         Task {
@@ -35,18 +35,18 @@ struct FirstEventPromptView: View {
             } else {
                 HStack {
                     Text("Add your first event")
-                        .font(.custom("Rubik", size: 14, relativeTo: .headline))
+                        .font(.rubik(14))
                         .foregroundStyle(theme.textColor)
                     Spacer()
                     Button("Dismiss") {
                         onboardingStore.dismissFirstEventPrompt()
                     }
                     .buttonStyle(.plain)
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
                 }
                 Text("Press C, type a title, then Enter.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
             }
         }

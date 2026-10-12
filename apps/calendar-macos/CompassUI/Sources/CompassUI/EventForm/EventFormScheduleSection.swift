@@ -67,7 +67,7 @@ struct EventFormScheduleSection: View {
                     "Your calendar provider keeps this event updated (for example from an email), "
                         + "so its time follows the provider. Changes to the title, notes, and location stay in Compass."
                 )
-                .font(.custom("Rubik", size: 11))
+                .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)
                 .accessibilityIdentifier("compass-event-form-schedule-locked-note")
             }

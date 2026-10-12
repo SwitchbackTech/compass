@@ -15,7 +15,7 @@ struct LogInFormView: View {
         VStack(spacing: 16) {
             if let statusMessage {
                 Text(statusMessage)
-                    .font(.custom("Rubik", size: 13))
+                    .font(.rubik(13))
                     .foregroundStyle(theme.successColor)
                     .multilineTextAlignment(.center)
             }

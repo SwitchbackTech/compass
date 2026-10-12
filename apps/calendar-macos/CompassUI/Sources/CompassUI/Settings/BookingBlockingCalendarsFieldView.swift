@@ -16,11 +16,11 @@ struct BookingBlockingCalendarsFieldView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Blocking calendars")
-                .font(.custom("Rubik", size: 12))
+                .font(.rubik(12))
                 .foregroundStyle(theme.textColor)
             if availabilityCalendars.isEmpty {
                 Text("No calendars available.")
-                    .font(.custom("Rubik", size: 12))
+                    .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
             } else {
                 groupedContent
@@ -41,7 +41,7 @@ struct BookingBlockingCalendarsFieldView: View {
             VStack(alignment: .leading, spacing: 6) {
                 if showAccountCaption {
                     Text(group.accountLabel)
-                        .font(.custom("Rubik", size: 11))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 ForEach(group.calendars, id: \.id) { calendar in
@@ -62,6 +62,6 @@ struct BookingBlockingCalendarsFieldView: View {
                 set: { onToggle(calendar.id, $0) }
             )
         )
-        .font(.custom("Rubik", size: 12))
+        .font(.rubik(12))
     }
 }
