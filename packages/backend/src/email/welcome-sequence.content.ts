@@ -1,7 +1,7 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
-  isWelcomeStepKey,
   type WelcomeStepKey,
+  welcomeStepValue,
 } from "@backend/email/welcome-sequence";
 
 export type WelcomeEmailContentEntry = {
@@ -17,8 +17,7 @@ export type WelcomeEmailContentEntry = {
 
 const appUrl = (): string => CONFIG.FRONTEND_URL.replace(/\/$/, "");
 
-const settingsHref = (page: "billing"): string =>
-  `${appUrl()}/?settings=${page}`;
+const billingSettingsHref = (): string => `${appUrl()}/?settings=billing`;
 
 // TODO(copy): replace placeholder welcome drip copy before launch.
 /**
@@ -105,7 +104,7 @@ export const WELCOME_SEQUENCE_CONTENT: Record<
     ],
     cta: {
       label: "View billing",
-      href: settingsHref("billing"),
+      href: billingSettingsHref(),
     },
   },
 };
@@ -113,7 +112,5 @@ export const WELCOME_SEQUENCE_CONTENT: Record<
 export function getWelcomeEmailContent(
   stepKey: string,
 ): WelcomeEmailContentEntry | undefined {
-  return isWelcomeStepKey(stepKey)
-    ? WELCOME_SEQUENCE_CONTENT[stepKey]
-    : undefined;
+  return welcomeStepValue(WELCOME_SEQUENCE_CONTENT, stepKey);
 }

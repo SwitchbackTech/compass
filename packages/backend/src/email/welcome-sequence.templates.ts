@@ -1,6 +1,6 @@
 import {
-  isWelcomeStepKey,
   type WelcomeStepKey,
+  welcomeStepValue,
 } from "@backend/email/welcome-sequence";
 import { getWelcomeEmailContent } from "@backend/email/welcome-sequence.content";
 
@@ -17,9 +17,7 @@ export const WELCOME_STEP_TEMPLATE_ALIAS: Record<WelcomeStepKey, string> = {
 export function getWelcomeStepTemplateAlias(
   stepKey: string,
 ): string | undefined {
-  return isWelcomeStepKey(stepKey)
-    ? WELCOME_STEP_TEMPLATE_ALIAS[stepKey]
-    : undefined;
+  return welcomeStepValue(WELCOME_STEP_TEMPLATE_ALIAS, stepKey);
 }
 
 export function buildWelcomeResendTemplateVariables(input: {
