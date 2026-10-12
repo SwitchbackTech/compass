@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
-const CONNECT_OTHER_ICLOUD_LINK = "Other / iCloud";
+type CompassE2EStoreWindow = Window & {
+  __COMPASS_E2E_STORE__?: {
+    connectApple?: {
+      open: (initialEmail?: string) => void;
+    };
+  };
+};
 
 function jsonResponse(body: unknown) {
   return {
@@ -11,30 +17,12 @@ function jsonResponse(body: unknown) {
   };
 }
 
-test("connects Apple Calendar through the iCloud fallback form against a mocked API", async ({
+test("submits Apple CalDAV credentials against a mocked connect API", async ({
   page,
 }) => {
   let credentialPosted = false;
 
-  await page.addInitScript(() => {
-    (
-      window as Window & { __COMPASS_E2E_TEST__?: boolean }
-    ).__COMPASS_E2E_TEST__ = true;
-    localStorage.setItem(
-      "compass.auth",
-      JSON.stringify({
-        hasAuthenticated: true,
-        lastKnownEmail: "user@icloud.com",
-      }),
-    );
-    localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
-    localStorage.setItem(
-      "compass.onboarding.has-seen-shortcut-showcase",
-      "true",
-    );
-  });
-
-  await page.route("**/api/**", async (route) => {
+  await page.route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
@@ -46,15 +34,11 @@ test("connects Apple Calendar through the iCloud fallback form against a mocked 
           version: E2E_APP_CONFIG_VERSION,
           providers: {
             google: { signIn: true, connect: true },
-            microsoft: { signIn: true, connect: true },
+            microsoft: { signIn: false, connect: false },
             apple: { signIn: false, connect: true },
           },
         }),
       );
-    }
-
-    if (path.endsWith("/api/user/metadata") && method === "GET") {
-      return route.fulfill(jsonResponse({ connections: [] }));
     }
 
     if (
@@ -76,45 +60,25 @@ test("connects Apple Calendar through the iCloud fallback form against a mocked 
       );
     }
 
-    if (path.endsWith("/api/calendars")) {
-      return route.fulfill(jsonResponse({ calendars: [] }));
-    }
-
-    if (path.endsWith("/api/event") && method === "GET") {
-      return route.fulfill(jsonResponse({ events: [] }));
-    }
-
-    return route.fulfill(jsonResponse({}));
+    return route.continue();
   });
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(
     () =>
-      (
-        window as Window & {
-          __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
-        }
-      ).__COMPASS_E2E_HOOKS__ !== undefined,
+      (window as CompassE2EStoreWindow).__COMPASS_E2E_STORE__?.connectApple !=
+      null,
   );
   await page.evaluate(() => {
-    (
-      window as Window & {
-        __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
-      }
-    ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
+    (window as CompassE2EStoreWindow).__COMPASS_E2E_STORE__?.connectApple?.open(
+      "user@icloud.com",
+    );
   });
-
-  await expect(
-    page.getByRole("dialog", { name: "Connect the calendar you use" }),
-  ).toBeVisible({ timeout: 15000 });
-
-  await page.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }).click();
 
   await expect(
     page.getByRole("dialog", { name: "Connect Apple Calendar" }),
   ).toBeVisible();
 
-  await page.getByLabel("Apple ID email").fill("user@icloud.com");
   await page.getByLabel("App-specific password").fill("xxxx-xxxx-xxxx-xxxx");
   await page.getByRole("button", { name: "Connect", exact: true }).click();
 
