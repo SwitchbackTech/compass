@@ -47,7 +47,7 @@ describe("EmailDispatchService", () => {
     CONFIG.EMAIL_UNSUBSCRIBE_SECRET = "unsub-secret";
     const row = baseRow({
       stepKey: "trial-ending",
-      _id: "preview-loop:abc:1:connect-calendar",
+      _id: "preview-loop:abc:1:trial-ending",
       previewLoop: true,
       recipientEmail: "founder@example.com",
       previewLoopGeneration: 1,
@@ -61,7 +61,6 @@ describe("EmailDispatchService", () => {
     spyOn(emailSendRepository, "markSent").mockResolvedValue(row);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "founder@example.com",
-      hasConnectedCalendar: true,
       billing: undefined,
     });
     spyOn(previewLoop, "isPreviewLoopOverDailyCap").mockResolvedValue(false);
@@ -92,7 +91,6 @@ describe("EmailDispatchService", () => {
     ).mockResolvedValue(row);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: true,
       billing: undefined,
     });
 
@@ -113,7 +111,6 @@ describe("EmailDispatchService", () => {
     ).mockResolvedValue(row);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
 
@@ -134,7 +131,6 @@ describe("EmailDispatchService", () => {
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
       firstName: "Ada",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
     const send = mock(async () => ({ messageId: "provider-123" }));
@@ -159,7 +155,6 @@ describe("EmailDispatchService", () => {
     spyOn(emailSendRepository, "claimDue").mockResolvedValue([row]);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
     const send = mock(async () => ({ messageId: "provider-123" }));
@@ -184,7 +179,6 @@ describe("EmailDispatchService", () => {
     spyOn(emailSendRepository, "claimDue").mockResolvedValue([row]);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
     const markSent = spyOn(emailSendRepository, "markSent").mockResolvedValue(
@@ -232,7 +226,6 @@ describe("EmailDispatchService", () => {
     ).mockResolvedValue(row);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
       emailPreferences: { unsubscribedAt: new Date() },
     });
@@ -255,7 +248,6 @@ describe("EmailDispatchService", () => {
     spyOn(emailSendRepository, "claimDue").mockResolvedValue([row]);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
     const recordFailure = spyOn(
@@ -282,7 +274,6 @@ describe("EmailDispatchService", () => {
     spyOn(emailSendRepository, "claimDue").mockResolvedValue([row]);
     spyOn(welcomeContext, "loadWelcomeSequenceUser").mockResolvedValue({
       email: "guest@example.com",
-      hasConnectedCalendar: false,
       billing: undefined,
     });
     const recordFailure = spyOn(emailSendRepository, "recordFailure");
