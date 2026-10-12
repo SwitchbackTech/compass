@@ -306,8 +306,48 @@ describe("maintainSubscription", () => {
     const resource = await seedResource(cal, {
       expiresAt: new Date("2026-07-13T00:00:00.000Z"),
     });
+    await resources.updateSubscription(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      {
+        subscriptionId: "old-channel",
+        subscriptionResourceId: "old-resource",
+        subscriptionToken: "old-token",
+        subscriptionExpiresAt: new Date("2026-07-13T00:00:00.000Z"),
+        pushLastReceivedAt: new Date("2026-07-01T00:00:00.000Z"),
+      },
+    );
     const notifications = new FakeNotifications({
       channel: { channelId: "", resourceId: "res-x", expiresAt: now() },
+    });
+
+    const fresh = (await reload(resource))!;
+    const outcome = await maintainSubscription(
+      maintenanceDeps(notifications),
+      cal,
+      fresh,
+      now,
+    );
+
+    expect(outcome).toEqual({ status: "current" });
+    expect(notifications.watched).toHaveLength(0);
+    expect(notifications.stopped).toHaveLength(0);
+    const saved = await reload(resource);
+    expect(saved?.subscriptionId).toBe("old-channel");
+  });
+
+  it("re-watches a healthy channel that never recorded push receipt", async () => {
+    const cal = calendar(objectId());
+    const resource = await seedResource(cal, {
+      expiresAt: new Date("2026-07-13T00:00:00.000Z"),
+    });
+    const notifications = new FakeNotifications({
+      channel: {
+        channelId: "",
+        resourceId: "res-heal",
+        expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+      },
     });
 
     const outcome = await maintainSubscription(
@@ -317,11 +357,38 @@ describe("maintainSubscription", () => {
       now,
     );
 
+    expect(outcome).toEqual({ status: "renewed" });
+    expect(notifications.watched).toHaveLength(1);
+    const saved = await reload(resource);
+    expect(saved?.pushLastReceivedAt).toBeNull();
+    expect(saved?.pushStampHealAttemptedAt).toEqual(now());
+  });
+
+  it("respects push-stamp heal cooldown on an unstamped healthy channel", async () => {
+    const cal = calendar(objectId());
+    const resource = await seedResource(cal, {
+      expiresAt: new Date("2026-07-13T00:00:00.000Z"),
+    });
+    await resources.markPushStampHealAttempted(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      new Date("2026-07-09T23:30:00.000Z"),
+    );
+    const notifications = new FakeNotifications({
+      channel: { channelId: "", resourceId: "res-x", expiresAt: now() },
+    });
+
+    const outcome = await maintainSubscription(
+      maintenanceDeps(notifications),
+      cal,
+      (await reload(resource))!,
+      now,
+      { pushStampHealCooldownMs: 60 * 60 * 1000 },
+    );
+
     expect(outcome).toEqual({ status: "current" });
     expect(notifications.watched).toHaveLength(0);
-    expect(notifications.stopped).toHaveLength(0);
-    const saved = await reload(resource);
-    expect(saved?.subscriptionId).toBe("old-channel");
   });
 
   it("clears the subscription and reports unsupported when the calendar cannot be watched", async () => {

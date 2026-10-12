@@ -26,6 +26,7 @@ export interface SubscriptionMaintenanceOptions {
   // channel is renewed before it lapses and pushes never gap. A subscription
   // with more than this much life left is left alone.
   renewBeforeMs?: number;
+  pushStampHealCooldownMs?: number;
 }
 
 export type SubscriptionMaintenanceOutcome =
@@ -53,6 +54,12 @@ export type SubscriptionMaintenanceOutcome =
 // this, or vice versa, changes that window — keep the two in step.
 const DEFAULT_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
 
+// Cooldown between re-watches driven only by a missing pushLastReceivedAt
+// stamp on an otherwise healthy channel. Paired with the push-stamp heal
+// sweep's limit so a fleet of legacy Google channels cannot churn in a loop
+// while waiting for the initial `sync` callback.
+export const DEFAULT_PUSH_STAMP_HEAL_COOLDOWN_MS = 60 * 60 * 1000;
+
 // Ensure a resource has a live push channel: events.watch for a calendar, or
 // calendarList.watch for the connection's calendar list. Open one if it has
 // none, or replace one that is near expiry. The new channel is persisted
@@ -77,6 +84,8 @@ export async function maintainSubscription(
   options: SubscriptionMaintenanceOptions = {},
 ): Promise<SubscriptionMaintenanceOutcome> {
   const renewBeforeMs = options.renewBeforeMs ?? DEFAULT_RENEW_BEFORE_MS;
+  const pushStampHealCooldownMs =
+    options.pushStampHealCooldownMs ?? DEFAULT_PUSH_STAMP_HEAL_COOLDOWN_MS;
 
   // Skip a healthy channel with more than the renew window left. A channel with
   // an id but no recorded expiry is treated as needing renewal (fail safe).
@@ -85,7 +94,22 @@ export async function maintainSubscription(
     resource.subscriptionExpiresAt &&
     resource.subscriptionExpiresAt.getTime() - now().getTime() > renewBeforeMs
   ) {
-    return { status: "current" };
+    if (resource.pushLastReceivedAt !== null) {
+      return { status: "current" };
+    }
+    const attemptedAt = resource.pushStampHealAttemptedAt;
+    if (
+      attemptedAt &&
+      now().getTime() - attemptedAt.getTime() < pushStampHealCooldownMs
+    ) {
+      return { status: "current" };
+    }
+    await deps.resources.markPushStampHealAttempted(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
   }
 
   if (!deps.supportsChangeNotifications) {

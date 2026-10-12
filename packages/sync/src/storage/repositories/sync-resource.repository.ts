@@ -320,6 +320,17 @@ export class SyncResourceRepository {
     await this.#patch(tenantId, principalId, id, { pushLastReceivedAt: at });
   }
 
+  async markPushStampHealAttempted(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
+    await this.#patch(tenantId, principalId, id, {
+      pushStampHealAttemptedAt: at,
+    });
+  }
+
   // Clear the change marker a pull has now served, but only if it still holds
   // `expected` — the value read when that pull started. Returns false when the
   // marker moved mid-pull, meaning a notification arrived after the pull had
@@ -732,6 +743,37 @@ export class SyncResourceRepository {
       },
       { subscriptionExpiresAt: 1 },
       limit,
+    );
+  }
+
+  // Live events push channels that have never recorded a received notification
+  // (pushLastReceivedAt). Used by the push-stamp heal sweep to re-watch legacy
+  // Google channels opened before #4442 stamped the initial `sync` handshake,
+  // without waiting for natural expiry. `healAttemptedBefore` is the cooldown
+  // cutoff: only rows with no prior heal attempt, or one older than the window,
+  // are returned. `now` defines "live" (subscriptionExpiresAt >= now), matching
+  // the push-delivery health gauge's neverNotified population.
+  async listLiveSubscriptionsMissingPushReceipt(
+    now: Date,
+    healAttemptedBefore: Date,
+    limit: number,
+    options: Pick<ListStaleEventsOptions, "provider">,
+  ): Promise<SyncResourceRecord[]> {
+    return this.#listForSweep(
+      {
+        ...ACTIVE_CALENDAR_FILTER,
+        resourceKind: "events",
+        subscriptionId: { $ne: null },
+        subscriptionExpiresAt: { $gte: now },
+        pushLastReceivedAt: null,
+        $or: [
+          { pushStampHealAttemptedAt: null },
+          { pushStampHealAttemptedAt: { $lt: healAttemptedBefore } },
+        ],
+      },
+      { pushStampHealAttemptedAt: 1, subscriptionExpiresAt: 1 },
+      limit,
+      options,
     );
   }
 
