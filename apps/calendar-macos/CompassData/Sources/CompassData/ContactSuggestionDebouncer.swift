@@ -28,11 +28,12 @@ public actor ContactSuggestionDebouncer {
         let currentGeneration = generation
         pendingTask?.cancel()
 
-        let task = Task { [debounceMilliseconds, fetch] in
+        let task = Task { [debounceMilliseconds, fetch, currentGeneration] in
             if debounceMilliseconds > 0 {
                 try? await Task.sleep(for: .milliseconds(debounceMilliseconds))
             }
             guard !Task.isCancelled else { return [] as [DraftAttendeeInput] }
+            guard await isGeneration(currentGeneration) else { return [] }
             let query = rawQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             guard query.count >= ContactSuggestionConstants.minQueryLength else { return [] }
             return await fetch(query)
@@ -41,5 +42,9 @@ public actor ContactSuggestionDebouncer {
         let result = await task.value
         guard currentGeneration == generation else { return [] }
         return result
+    }
+
+    private func isGeneration(_ value: UInt) -> Bool {
+        generation == value
     }
 }
