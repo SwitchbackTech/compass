@@ -96,6 +96,7 @@
     "source-map-js": "1.2.2",
     "proxy-addr": "2.0.8",
     "seroval": "1.6.9",
+    "prosemirror-model": "1.25.12",
     "prosemirror-view": "1.42.6"
   },
   "overrides": {
@@ -120,6 +121,7 @@
     "source-map-js": "1.2.2",
     "proxy-addr": "2.0.8",
     "seroval": "1.6.9",
+    "prosemirror-model": "1.25.12",
     "prosemirror-view": "1.42.6"
   },
   "workspaces": [
