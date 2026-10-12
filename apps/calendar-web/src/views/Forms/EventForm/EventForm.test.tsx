@@ -328,6 +328,8 @@ describe("EventForm", () => {
       actionRow.compareDocumentPosition(title) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+    expect(actionRow.parentElement?.className).toContain("sticky");
+    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(1);
     expect(
       within(actionRow).getByRole("button", { name: "Duplicate" }),
     ).toBeInTheDocument();

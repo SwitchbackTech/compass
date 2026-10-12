@@ -80,7 +80,7 @@ describe("SidebarShell", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps dismiss available on narrow layouts while an event form is open", () => {
+  it("hides the sidebar dismiss control while an event form is open on narrow layouts", () => {
     mockViewport(true);
     act(() => {
       viewActions.setSidebarOpen(false);
@@ -99,7 +99,7 @@ describe("SidebarShell", () => {
     renderShell();
 
     expect(
-      screen.getByRole("button", { name: "Dismiss sidebar" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Dismiss sidebar" }),
+    ).not.toBeInTheDocument();
   });
 });

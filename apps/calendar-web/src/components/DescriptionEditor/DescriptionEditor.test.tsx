@@ -263,6 +263,72 @@ describe("DescriptionEditor", () => {
     window.open = originalOpen;
   });
 
+  it("toggles an ordered list from the toolbar", async () => {
+    const user = userEvent.setup();
+    const onChange = mock();
+    render(
+      <DescriptionEditor
+        value=""
+        onChange={onChange}
+        editable={true}
+        resetKey="test-ordered-toggle"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    await user.click(textbox);
+    await user.click(screen.getByRole("button", { name: "Numbered list" }));
+    await user.type(textbox, "One");
+
+    const html = onChange.mock.calls.at(-1)?.[0] as string;
+    expect(html).toContain("<ol>");
+    expect(html).toContain("One");
+    expect(within(textbox).getAllByRole("listitem")).toHaveLength(1);
+  });
+
+  it("nests a list item on Tab", async () => {
+    const user = userEvent.setup();
+    const onChange = mock();
+    render(
+      <DescriptionEditor
+        value=""
+        onChange={onChange}
+        editable={true}
+        resetKey="test-list-indent"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    await user.click(textbox);
+    await user.click(screen.getByRole("button", { name: "Numbered list" }));
+    await user.keyboard("Parent{Enter}Child");
+    await user.keyboard("{Tab}");
+
+    const html = onChange.mock.calls.at(-1)?.[0] as string;
+    expect(html).toContain("Parent");
+    expect(html).toContain("Child");
+    expect(html.match(/<ol/g)?.length).toBe(2);
+    expect(within(textbox).getByText("Child")).toBeTruthy();
+  });
+
+  it("round-trips stored ordered list HTML on reload", () => {
+    const stored =
+      "<ol><li><p>One</p></li><li><p>Two</p></li><li><p>Three</p></li></ol>";
+    const onChange = mock();
+    render(
+      <DescriptionEditor
+        value={stored}
+        onChange={onChange}
+        editable={true}
+        resetKey="test-round-trip"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    expect(within(textbox).getAllByRole("listitem")).toHaveLength(3);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it("re-syncs contenteditable when editable flips on the same event", () => {
     // Regression: useEditor only recreates the editor when `resetKey`
     // changes, so `editable` must be applied via editor.setEditable in its

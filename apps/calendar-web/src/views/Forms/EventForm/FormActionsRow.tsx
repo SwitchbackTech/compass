@@ -56,9 +56,10 @@ type ActionItem = {
 };
 
 /**
- * Always-visible event-form action row above the title. Sits before the title
- * in the DOM so opening the form still lands on the title; Shift+Tab reaches
- * these actions. Each action is its own tab stop. Mod+0 jumps here.
+ * Sticky event-form action row above the scrollable fields (EventForm pins
+ * this wrapper). Sits before the title in the DOM so opening the form still
+ * lands on the title; Shift+Tab reaches these actions. Each action is its own
+ * tab stop. Mod+0 jumps here.
  */
 export const FormActionsRow = forwardRef<FormActionsRowHandle, Props>(
   function FormActionsRow(

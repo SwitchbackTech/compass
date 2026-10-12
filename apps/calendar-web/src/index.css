@@ -828,6 +828,7 @@
   & ul,
   & ol {
     @apply my-1 pl-5;
+    list-style-position: outside;
   }
 
   & ul {
@@ -838,8 +839,17 @@
     @apply list-decimal;
   }
 
+  & li {
+    @apply my-0.5 pl-0.5;
+  }
+
+  & li > ul,
+  & li > ol {
+    @apply my-0.5;
+  }
+
   & li p {
-    @apply inline;
+    @apply my-0 inline;
   }
 
   & a {
