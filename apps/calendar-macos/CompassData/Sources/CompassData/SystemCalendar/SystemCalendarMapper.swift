@@ -40,13 +40,13 @@ enum SystemCalendarMapper {
             isVisible: true,
             name: ekCalendar.title,
             provider: "apple",
-            timeZone: ekCalendar.timeZone?.identifier ?? EffectiveTimeZone.identifier)
+            timeZone: IANATimeZone(rawValue: EffectiveTimeZone.identifier))
     }
 
     static func event(from ekEvent: EKEvent, calendarId: CalendarId, now: Date) -> Event? {
         guard let start = ekEvent.startDate, let end = ekEvent.endDate else { return nil }
         let formatter = isoFormatter()
-        let createdAt = formatter.string(from: ekEvent.creationDate ?? now)
+        let createdAt = DateTime(rawValue: formatter.string(from: ekEvent.creationDate ?? now))
         let title = ekEvent.title?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let schedule: EventSchedule
         if ekEvent.isAllDay {
@@ -56,12 +56,13 @@ enum SystemCalendarMapper {
                     kind: "allDay",
                     start: allDayDateString(from: start)))
         } else {
+            let eventTimeZone = ekEvent.timeZone?.identifier ?? EffectiveTimeZone.identifier
             schedule = .timed(
                 EventSchedule_TimedPayload(
+                    end: DateTime(rawValue: formatter.string(from: end)),
                     kind: "timed",
-                    start: formatter.string(from: start),
-                    end: formatter.string(from: end),
-                    timeZone: ekEvent.timeZone?.identifier ?? EffectiveTimeZone.identifier))
+                    start: DateTime(rawValue: formatter.string(from: start)),
+                    timeZone: IANATimeZone(rawValue: eventTimeZone)))
         }
         let content: EventContent
         if title.isEmpty {
@@ -84,7 +85,7 @@ enum SystemCalendarMapper {
             providerManaged: true,
             recurrence: .single(EventRecurrence_SinglePayload(kind: "single")),
             schedule: schedule,
-            updatedAt: formatter.string(from: ekEvent.lastModifiedDate ?? now))
+            updatedAt: DateTime(rawValue: formatter.string(from: ekEvent.lastModifiedDate ?? now)))
     }
 
     private static func isoFormatter() -> ISO8601DateFormatter {

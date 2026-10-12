@@ -46,10 +46,10 @@ public struct LiveSystemCalendarAccessClient: SystemCalendarAccessClient, @unche
     }
 }
 
-public struct MockSystemCalendarAccessClient: SystemCalendarAccessClient, @unchecked Sendable {
+public final class MockSystemCalendarAccessClient: SystemCalendarAccessClient, @unchecked Sendable {
     public var status: SystemCalendarAccessResult
     public var requestResult: SystemCalendarAccessResult
-    private(set) public var requestCount = 0
+    public private(set) var requestCount = 0
 
     public init(
         status: SystemCalendarAccessResult = .denied,

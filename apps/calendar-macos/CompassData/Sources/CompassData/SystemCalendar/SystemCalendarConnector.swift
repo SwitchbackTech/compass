@@ -46,7 +46,7 @@ public struct SystemCalendarConnector: @unchecked Sendable {
     }
 }
 
-public enum SystemCalendarConnectFailure: Sendable, Equatable {
+public enum SystemCalendarConnectFailure: Error, Sendable, Equatable {
     case denied
     case restricted
 }
