@@ -77,7 +77,8 @@ public struct NativeCalendarEnvironment: Sendable {
         syncConnectionsStore = SyncConnectionsStore(
             oauthService: oauthService,
             userAPI: UserAPI(client: apiClient),
-            configStore: configStore)
+            configStore: configStore,
+            calendarRepository: calendarRepository)
         authStore = AuthStore(
             apiClient: apiClient,
             configStore: configStore,

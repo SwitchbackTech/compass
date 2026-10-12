@@ -20,6 +20,9 @@ let package = Package(
             ],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
+            ],
+            linkerSettings: [
+                .linkedFramework("EventKit"),
             ]
         ),
         .testTarget(
