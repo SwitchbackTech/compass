@@ -1,3 +1,4 @@
+import AppKit
 import CompassKit
 import EventKit
 import Foundation
