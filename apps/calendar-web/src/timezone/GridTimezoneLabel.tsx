@@ -1,19 +1,16 @@
 import { useEffect } from "react";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
-import { GRID_TIME_COLUMN_WIDTH } from "@web/grid/grid.constants";
 import {
   refreshEffectiveTimeZoneFromBrowser,
   useEffectiveTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
+import { GridTimezoneAbbrevButton } from "@web/timezone/GridTimezoneAbbrevButton";
 import { SecondaryTimezoneExitHint } from "@web/timezone/SecondaryTimezoneExitHint";
 import { useTimeTravelZone } from "@web/timezone/time-travel.store";
 import { timezoneDialogActions } from "@web/timezone/timezone-dialog.store";
 
 const BROWSER_ZONE_POLL_MS = 60_000;
-
-const timezoneAbbrevClassName =
-  "c-focus-ring min-h-6 truncate rounded-sm px-0.5 text-center text-[10px] text-text-muted leading-none hover:text-text";
 
 /**
  * Week/Day grid-corner control showing the effective timezone abbreviation.
@@ -37,12 +34,8 @@ export const GridTimezoneLabel = () => {
   }, []);
 
   const clock = now.toDate();
-  const abbreviation = formatTimeZoneAbbreviation(timeZone, clock);
   const openTimeTravel = () => timezoneDialogActions.open("time-travel");
   const isTraveling = timeTravelZone !== null;
-  const travelAbbreviation = isTraveling
-    ? formatTimeZoneAbbreviation(timeTravelZone, clock)
-    : null;
 
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: role="group" is set under the same isTraveling condition as the label
@@ -53,32 +46,22 @@ export const GridTimezoneLabel = () => {
       }
       role={isTraveling ? "group" : undefined}
     >
-      {isTraveling && travelAbbreviation !== null && timeTravelZone ? (
+      {timeTravelZone !== null ? (
         <SecondaryTimezoneExitHint key={timeTravelZone}>
-          <button
-            aria-label={`Second timezone: ${travelAbbreviation}`}
-            className={timezoneAbbrevClassName}
+          <GridTimezoneAbbrevButton
+            abbreviation={formatTimeZoneAbbreviation(timeTravelZone, clock)}
+            label="Second timezone"
             onClick={openTimeTravel}
-            style={{ width: GRID_TIME_COLUMN_WIDTH }}
-            type="button"
-          >
-            {travelAbbreviation}
-          </button>
+            shareColumn
+          />
         </SecondaryTimezoneExitHint>
       ) : null}
-      <button
-        aria-label={`Calendar timezone: ${abbreviation}`}
-        className={
-          isTraveling
-            ? timezoneAbbrevClassName
-            : `${timezoneAbbrevClassName} w-full max-w-full`
-        }
+      <GridTimezoneAbbrevButton
+        abbreviation={formatTimeZoneAbbreviation(timeZone, clock)}
+        label="Calendar timezone"
         onClick={openTimeTravel}
-        style={isTraveling ? { width: GRID_TIME_COLUMN_WIDTH } : undefined}
-        type="button"
-      >
-        {abbreviation}
-      </button>
+        shareColumn={isTraveling}
+      />
     </div>
   );
 };

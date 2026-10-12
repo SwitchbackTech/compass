@@ -1,4 +1,3 @@
-import classNames from "classnames";
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
@@ -24,13 +23,15 @@ import { useFaqDisclosure } from "./useFaqDisclosure";
 import { useWelcomeJumpShortcuts } from "./useWelcomeJumpShortcuts";
 import { WelcomeFaqList } from "./WelcomeFaqList";
 import { WelcomeLinks } from "./WelcomeLinks";
+import { WelcomeSteps } from "./WelcomeSteps";
 import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 import { shouldDelegateEnterToWelcomePrimary } from "./welcome-modal-enter.util";
-
-/** Commit (1) → learn (2) → choose how to start (3). */
-type WelcomeStep = 1 | 2 | 3;
-const WELCOME_STEPS: readonly WelcomeStep[] = [1, 2, 3];
+import {
+  nextWelcomeStep,
+  previousWelcomeStep,
+  type WelcomeStep,
+} from "./welcome-steps";
 
 const PRIMARY_CTA_CLASS =
   "c-button c-button-primary c-button-elevated inline-flex h-10 w-full items-center justify-center rounded-full data-busy:pointer-events-none data-busy:opacity-60";
@@ -38,26 +39,6 @@ const SECONDARY_CTA_CLASS =
   "c-button c-button-secondary inline-flex h-10 w-full items-center justify-center rounded-full data-busy:pointer-events-none data-busy:opacity-60";
 const COMPACT_PILL_CLASS =
   "c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs data-busy:pointer-events-none data-busy:opacity-60";
-
-function WelcomeSteps({ step }: { step: WelcomeStep }) {
-  return (
-    <div className="flex w-full items-center justify-center gap-2">
-      <span className="sr-only">
-        Step {step} of {WELCOME_STEPS.length}
-      </span>
-      {WELCOME_STEPS.map((dot) => (
-        <span
-          key={dot}
-          aria-hidden
-          className={classNames(
-            "h-1.5 w-1.5 rounded-full transition-colors",
-            dot === step ? "bg-text" : "bg-border",
-          )}
-        />
-      ))}
-    </div>
-  );
-}
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -177,7 +158,7 @@ export function WelcomeModal() {
 
   const advance = () => {
     if (closing || isAuthHandoffInFlight()) return;
-    setStep((current) => (current < 3 ? ((current + 1) as WelcomeStep) : 3));
+    setStep(nextWelcomeStep);
   };
 
   // Escape, backdrop and the Back button all step back one screen. On the
@@ -185,7 +166,7 @@ export function WelcomeModal() {
   // visitor into the practice game before they chose anything.
   const goBack = () => {
     if (closing || isAuthHandoffInFlight()) return;
-    setStep((current) => (current > 1 ? ((current - 1) as WelcomeStep) : 1));
+    setStep(previousWelcomeStep);
   };
 
   // Fade the backdrop and gently scale the panel before unmounting, so the

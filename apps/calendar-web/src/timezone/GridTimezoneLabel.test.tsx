@@ -189,6 +189,28 @@ describe("GridTimezoneLabel", () => {
     });
   });
 
+  it("anchors the exit hint on the second timezone button itself", () => {
+    act(() => {
+      setEffectiveTimeZoneForTests("America/New_York");
+      setTimeTravelZone("America/Denver");
+    });
+
+    render(<GridTimezoneLabel />);
+
+    // The tooltip trigger clones its child with the floating-ui reference
+    // props, so they have to reach the button element: a wrapper that drops
+    // them leaves the hint with nothing to hover, focus or position against.
+    const secondary = screen.getByRole("button", {
+      name: `Second timezone: ${formatTimeZoneAbbreviation("America/Denver")}`,
+    });
+    expect(secondary).toHaveAttribute("data-state", "open");
+    expect(secondary).toHaveAttribute("aria-describedby");
+
+    act(() => {
+      resetTimeTravelStoreForTests();
+    });
+  });
+
   it("shows both abbreviations without a remove control while a second zone is active", () => {
     act(() => {
       setEffectiveTimeZoneForTests("America/New_York");

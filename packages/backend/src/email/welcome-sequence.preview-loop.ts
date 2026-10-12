@@ -131,16 +131,15 @@ export async function resolvePreviewLoopUserId(
 }
 
 async function ensurePreviewLoopUserDocument(
-  email: string,
+  normalizedEmail: string,
   userId: ObjectIdType,
 ): Promise<void> {
-  const normalized = normalizeEmail(email);
-  const firstName = previewFirstNameFromEmail(normalized);
+  const firstName = previewFirstNameFromEmail(normalizedEmail);
   await mongoService.user.updateOne(
     { _id: userId },
     {
       $setOnInsert: {
-        email: normalized,
+        email: normalizedEmail,
         firstName,
         lastName: "",
         name: firstName,
@@ -153,19 +152,18 @@ async function ensurePreviewLoopUserDocument(
 }
 
 function buildPreviewLoopEnrollmentRows(
-  email: string,
+  normalizedEmail: string,
   userId: ObjectIdType,
   generation: number,
   anchorAt: Date,
   profile: ScheduleProfile,
 ) {
-  const normalized = normalizeEmail(email);
   const baseRows = buildWelcomeEnrollmentRows(userId, anchorAt, profile);
   return baseRows.map((row) => ({
     ...row,
-    _id: previewLoopRowId(normalized, generation, row.stepKey),
+    _id: previewLoopRowId(normalizedEmail, generation, row.stepKey),
     previewLoop: true as const,
-    recipientEmail: normalized,
+    recipientEmail: normalizedEmail,
     previewLoopGeneration: generation,
   }));
 }
@@ -213,9 +211,10 @@ async function findLatestPreviewGeneration(
 }
 
 interface PreviewGenerationState {
-  /** A step is still waiting to send, so the generation is mid-flight. */
-  hasQueuedRows: boolean;
-  /** Every step of the sequence reached a terminal sent / skipped state. */
+  /**
+   * Every step of the sequence reached a terminal sent / skipped state, so a
+   * queued step still waiting to send leaves this false.
+   */
   isComplete: boolean;
   lastSentAt: Date | null;
   /**
@@ -247,11 +246,9 @@ async function readPreviewGenerationState(
   const sentTimes = rows.flatMap((row) =>
     row.status === "sent" && row.sentAt ? [row.sentAt.getTime()] : [],
   );
-  const isStale = rows.some((row) => !isWelcomeStepKey(row.stepKey));
 
   return {
-    hasQueuedRows: rows.some((row) => row.status === "queued"),
-    isStale,
+    isStale: rows.some((row) => !isWelcomeStepKey(row.stepKey)),
     isComplete:
       rows.length >= WELCOME_SEQUENCE.length &&
       rows.every((row) => row.status === "sent" || row.status === "skipped"),
@@ -329,10 +326,7 @@ export async function ensurePreviewLoopForRecipient(
     await enqueuePreviewLoopGeneration(normalized, latestGeneration + 1, now);
     return;
   }
-  if (generation.hasQueuedRows || !generation.isComplete) {
-    return;
-  }
-  if (!generation.lastSentAt) {
+  if (!generation.isComplete || !generation.lastSentAt) {
     return;
   }
 
