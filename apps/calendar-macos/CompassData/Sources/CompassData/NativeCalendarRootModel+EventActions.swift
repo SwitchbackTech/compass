@@ -263,6 +263,8 @@ extension NativeCalendarRootModel {
             await replaceEvent(with: before)
         case .hidden(let eventId, let hidden):
             await applyHiddenState(eventId: eventId, hidden: !hidden)
+        case .calendarVisibility(let calendarId, let label, let isVisible):
+            setCalendarVisibility(calendarId: calendarId, label: label, visible: !isVisible)
         case .unrecorded:
             break
         }
@@ -278,6 +280,8 @@ extension NativeCalendarRootModel {
             await replaceEvent(with: after)
         case .hidden(let eventId, let hidden):
             await applyHiddenState(eventId: eventId, hidden: hidden)
+        case .calendarVisibility(let calendarId, let label, let isVisible):
+            setCalendarVisibility(calendarId: calendarId, label: label, visible: isVisible)
         case .unrecorded:
             break
         }
