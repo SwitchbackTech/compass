@@ -152,6 +152,9 @@ describe("ConnectCalendarPromptGate", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(CONNECT_CALENDAR_REASSURANCE)).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: CONNECT_OTHER_ICLOUD_LINK }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole("button", { name: CONNECT_CALENDAR_LATER_LABEL }),
     ).toBeInTheDocument();
   });
