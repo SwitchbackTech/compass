@@ -87,6 +87,13 @@ interface DescriptionEditorProps {
 const TOOLBAR_BUTTON_CLASSNAME =
   "c-focus-ring flex size-6 items-center justify-center rounded text-text-muted hover:bg-border aria-pressed:bg-border aria-pressed:text-text";
 
+/** Keep the contenteditable focused so the next keystroke applies inside it. */
+const keepEditorFocusedOnToolbarPress = (
+  event: MouseEvent<HTMLButtonElement>,
+) => {
+  event.preventDefault();
+};
+
 export const DescriptionEditor = ({
   value,
   onChange,
@@ -240,6 +247,7 @@ export const DescriptionEditor = ({
             aria-label="Bold"
             aria-pressed={activeMarks.bold}
             className={TOOLBAR_BUTTON_CLASSNAME}
+            onMouseDown={keepEditorFocusedOnToolbarPress}
             onClick={() => editor.chain().focus().toggleBold().run()}
           >
             <TextBIcon size={14} weight="bold" />
@@ -249,6 +257,7 @@ export const DescriptionEditor = ({
             aria-label="Italic"
             aria-pressed={activeMarks.italic}
             className={TOOLBAR_BUTTON_CLASSNAME}
+            onMouseDown={keepEditorFocusedOnToolbarPress}
             onClick={() => editor.chain().focus().toggleItalic().run()}
           >
             <TextItalicIcon size={14} weight="bold" />
@@ -258,6 +267,7 @@ export const DescriptionEditor = ({
             aria-label="Numbered list"
             aria-pressed={activeMarks.orderedList}
             className={TOOLBAR_BUTTON_CLASSNAME}
+            onMouseDown={keepEditorFocusedOnToolbarPress}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
             <ListNumbersIcon size={14} weight="bold" />
@@ -267,6 +277,7 @@ export const DescriptionEditor = ({
             aria-label="Bullet list"
             aria-pressed={activeMarks.bulletList}
             className={TOOLBAR_BUTTON_CLASSNAME}
+            onMouseDown={keepEditorFocusedOnToolbarPress}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
             <ListBulletsIcon size={14} weight="bold" />

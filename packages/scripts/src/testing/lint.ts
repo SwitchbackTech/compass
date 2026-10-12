@@ -22,6 +22,10 @@ const CHECKS: { id: string; cmd: string[] }[] = [
     cmd: ["bun", "packages/scripts/src/testing/check-todo-copy.ts"],
   },
   {
+    id: "prosemirror-dedupe",
+    cmd: ["bun", "packages/scripts/src/testing/check-prosemirror-dedupe.ts"],
+  },
+  {
     id: "biome",
     cmd: [
       "biome",
@@ -50,5 +54,5 @@ if (failed.length > 0) {
   process.exit(1);
 }
 console.log(
-  "\nlint passed: semantic-colors, agent-constraints, todo-copy, biome",
+  "\nlint passed: semantic-colors, agent-constraints, todo-copy, prosemirror-dedupe, biome",
 );
