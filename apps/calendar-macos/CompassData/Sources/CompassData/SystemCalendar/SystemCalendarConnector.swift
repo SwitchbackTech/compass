@@ -2,7 +2,7 @@ import CompassKit
 import EventKit
 import Foundation
 
-public struct SystemCalendarConnector: Sendable {
+public struct SystemCalendarConnector: @unchecked Sendable {
     private let accessClient: any SystemCalendarAccessClient
     private let eventStore: EKEventStore
 
