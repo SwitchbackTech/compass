@@ -10,7 +10,6 @@ describe("renderWelcomeEmail", () => {
       "cmd-k",
       {
         subject: "Hello",
-        preheader: "Preview line",
         heading: "Heading",
         paragraphs: ["One"],
         cta: { label: "Go", href: "https://app.example.com/start" },
@@ -30,7 +29,6 @@ describe("renderWelcomeEmail", () => {
   it("renders html and text parts with utm-tagged links", () => {
     const rendered = renderWelcomeEmail("cmd-k", {
       subject: "Hello",
-      preheader: "Preview line",
       heading: "Heading",
       paragraphs: ["One", "Two"],
       cta: {

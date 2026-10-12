@@ -1,4 +1,8 @@
-import { buildEmailProvider } from "@backend/email/providers/email.client";
+import {
+  buildEmailProvider,
+  EMAIL_SENDER_DISPLAY_NAME,
+  withSenderDisplayName,
+} from "@backend/email/providers/email.client";
 import { createLogEmailProvider } from "@backend/email/providers/log.provider";
 import { describe, expect, it } from "bun:test";
 
@@ -60,5 +64,22 @@ describe("log email provider", () => {
     });
 
     expect(result.messageId).toMatch(/^log-/);
+  });
+});
+
+describe("withSenderDisplayName", () => {
+  it("replaces the display name and keeps the address", () => {
+    expect(
+      withSenderDisplayName(
+        "Compass <hello@mail.compasscalendar.com>",
+        EMAIL_SENDER_DISPLAY_NAME,
+      ),
+    ).toBe("Tyler from Compass <hello@mail.compasscalendar.com>");
+    expect(
+      withSenderDisplayName(
+        "hello@mail.compasscalendar.com",
+        "Tyler from Compass",
+      ),
+    ).toBe("Tyler from Compass <hello@mail.compasscalendar.com>");
   });
 });
