@@ -70,6 +70,11 @@ public struct EventFormView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    EventFormLocationField(
+                        model: model,
+                        draft: draft,
+                        focusField: model.eventFormFocusedField
+                    )
                     EventFormScheduleSection(
                         model: model,
                         draft: draft,

@@ -23,6 +23,14 @@ describe("form.util", () => {
       expect(isComboboxInteraction(createEvent(element))).toBe(true);
     });
 
+    it("returns false for a collapsed combobox", () => {
+      const element = document.createElement("input");
+      element.setAttribute("role", "combobox");
+      element.setAttribute("aria-expanded", "false");
+
+      expect(isComboboxInteraction(createEvent(element))).toBe(false);
+    });
+
     it("returns true when inside freq-select control", () => {
       const wrapper = document.createElement("div");
       wrapper.className = "freq-select__control";

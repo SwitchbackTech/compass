@@ -164,6 +164,12 @@ export const isComboboxInteraction = (
 
   const role = target.getAttribute("role");
 
+  // A collapsed native combobox (e.g. the location field with no
+  // suggestions showing) is just a text input: Enter there saves the form.
+  if (role === "combobox" && target.getAttribute("aria-expanded") === "false") {
+    return false;
+  }
+
   if (role === "combobox" || role === "listbox" || role === "option") {
     return true;
   }

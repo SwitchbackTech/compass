@@ -933,6 +933,29 @@ describe("EventForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("submits when Enter is pressed in the location field", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={onSubmit}
+        setDraft={mock()}
+      />,
+    );
+
+    await user.click(screen.getByRole("textbox", { name: "Location" }));
+    await user.keyboard("{Enter}");
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
   it("submits when Enter is pressed on the focused Save button", async () => {
     // Companion to the description carve-out: Enter hotkey must not
     // preventDefault when deferring to buttons, or Tab→Save→Enter dies.
