@@ -27,6 +27,7 @@ export function buildWelcomeResendTemplateVariables(input: {
 }): Record<string, string> {
   const variables: Record<string, string> = {
     CTA_URL: input.ctaUrl,
+    CTA_LABEL: ctaLabelFromUrl(input.ctaUrl),
     UNSUBSCRIBE_URL: input.unsubscribeUrl,
   };
   const trimmedFirstName = input.firstName?.trim();
@@ -39,4 +40,13 @@ export function buildWelcomeResendTemplateVariables(input: {
 /** Base CTA href before UTM params. Same destinations as the preview content. */
 export function getWelcomeStepCtaBaseHref(stepKey: string): string | undefined {
   return getWelcomeEmailContent(stepKey)?.cta.href;
+}
+
+/** Visible CTA link text: the bare host (utm params stay in CTA_URL only). */
+export function ctaLabelFromUrl(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return "compasscalendar.com";
+  }
 }
