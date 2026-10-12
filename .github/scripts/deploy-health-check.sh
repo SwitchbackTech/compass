@@ -578,7 +578,7 @@ if awk '
   /^email:[[:space:]]*$/ { in_email=1; next }
   in_email && /^[^[:space:]]/ { in_email=0 }
   in_email && /^[[:space:]]+allowlist:/ { found=1 }
-  END { exit found ? 1 : 0 }
+  END { exit found ? 0 : 1 }
 ' "$config"; then
   printf 'compass.yaml email.allowlist must be unset in production\n' >&2
   exit 1
