@@ -34,7 +34,9 @@ export function SidebarShell({
   const sections = useLockedShortcutSections(shortcutSections);
   // Day/Week keep the panel mounted for event details even when the sidebar
   // preference is closed; keep dismiss available for that case too.
-  const showSidebarClose = isNarrowLayout && (isSidebarOpen || isEventFormOpen);
+  // When the event form is open, close lives in FormActionsRow (Esc / Close).
+  // A second dismiss X here stacked above those actions while scrolling.
+  const showSidebarClose = isNarrowLayout && isSidebarOpen && !isEventFormOpen;
 
   return (
     <aside

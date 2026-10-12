@@ -809,8 +809,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onPointerDown={onFormPointerDown}
           onFocusCapture={onFormFocusIn}
         >
-          {/* Scrollable body; the save footer below stays pinned. */}
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-1 pb-4 [scrollbar-gutter:stable]">
+          <div className="sticky top-0 z-10 shrink-0 border-border border-b bg-surface-panel px-4 pt-1 pb-2">
             <FormActionsRow
               ref={formActionsRef}
               bookingLinks={bookingLinks}
@@ -821,7 +820,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               onDelete={onDeleteEvent}
               onDuplicate={onDuplicateEvent}
             />
+          </div>
 
+          {/* Scrollable body; the save footer below stays pinned. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pt-1 pb-4 [scrollbar-gutter:stable]">
             {/* Focusable with withUnderline is a fragment (input +
               divider). Wrap it so those stack in a box; otherwise they
               become flex siblings of the column body and the 100%-wide
