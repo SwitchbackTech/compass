@@ -72,6 +72,7 @@ jobs:
             APPLE_SERVICES_ID=${{ vars.APPLE_SIGNIN_SERVICES_ID }}
             POSTHOG_KEY=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
             POSTHOG_HOST=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
+            GOOGLE_PLACES_API_KEY=${{ vars.GOOGLE_PLACES_API_KEY }}
             COMPASS_BUILD_REF=${{ steps.version.outputs.image_version }}
             NODE_ENV=${{ inputs.environment == 'production' && 'production' || 'staging' }}
           tags: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}

@@ -62,6 +62,7 @@ describe("compass config", () => {
     expect(config.google?.clientSecret).toBeUndefined();
     expect(config.email).toBeUndefined();
     expect(config.posthog).toBeUndefined();
+    expect(config.maps).toBeUndefined();
     expect(config.sync).toBeUndefined();
     expect(config.bookingWeb).toBeUndefined();
   });
@@ -108,12 +109,26 @@ sync:
       `${validYaml}
 email:
 posthog:
+maps:
 `,
       "compass.yaml",
     );
 
     expect(config.email).toBeNull();
     expect(config.posthog?.key).toBeUndefined();
+    expect(config.maps?.placesApiKey).toBeUndefined();
+  });
+
+  it("parses the optional maps section when provided", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+maps:
+  placesApiKey: places-key
+`,
+      "compass.yaml",
+    );
+
+    expect(config.maps?.placesApiKey).toBe("places-key");
   });
 
   it("parses google section when provided", () => {

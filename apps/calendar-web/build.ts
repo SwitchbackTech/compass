@@ -77,6 +77,7 @@ const define: Record<string, string> = {
       process.env.APPLE_SERVICES_ID || config.apple?.signIn?.servicesId || "",
     POSTHOG_KEY: config.posthog?.key || "",
     POSTHOG_HOST: config.posthog?.host || "",
+    GOOGLE_PLACES_API_KEY: config.maps?.placesApiKey || "",
     PORT: String(config.backend.port ?? 3000),
   }),
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
