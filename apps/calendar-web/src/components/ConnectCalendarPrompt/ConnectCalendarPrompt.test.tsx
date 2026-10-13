@@ -14,11 +14,7 @@ import {
   missingPermissionsActions,
   resetMissingPermissionsStoreForTests,
 } from "@web/auth/providers/missing-permissions.store";
-import {
-  CONNECT_CALENDAR_PROMPT_SUBTITLE,
-  CONNECT_CALENDAR_PROMPT_TITLE,
-  CONNECT_CALENDAR_REASSURANCE,
-} from "@web/auth/providers/provider-copy.util";
+import { CONNECT_CALENDAR_REASSURANCE } from "@web/auth/providers/provider-copy.util";
 import * as realAvailableProviders from "@web/auth/providers/useAvailableConnectProviders";
 import * as realConnectProvider from "@web/auth/providers/useConnectProvider";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
@@ -28,6 +24,8 @@ import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   CONNECT_CALENDAR_LATER_LABEL,
   CONNECT_CALENDAR_LATER_TOOLTIP,
+  CONNECT_CALENDAR_PROMPT_SUBTITLE,
+  CONNECT_CALENDAR_PROMPT_TITLE,
 } from "@web/components/ConnectCalendarPrompt/ConnectCalendarPrompt";
 import {
   CONNECT_CALENDAR_SNOOZE_MS,
@@ -253,16 +251,13 @@ describe("ConnectCalendarPromptGate", () => {
     expect(mockConnectApple).not.toHaveBeenCalled();
   });
 
-  it("shows a tooltip when the skip control is focused", async () => {
+  it("exposes skip guidance for hover and assistive tech", () => {
     renderGate();
 
     const skip = screen.getByRole("button", {
       name: CONNECT_CALENDAR_LATER_LABEL,
     });
-    skip.focus();
-
-    const tooltip = await screen.findByRole("tooltip");
-    expect(tooltip).toHaveTextContent(CONNECT_CALENDAR_LATER_TOOLTIP);
+    expect(skip).toHaveAttribute("title", CONNECT_CALENDAR_LATER_TOOLTIP);
   });
 
   it("records a snooze timestamp when the user skips for now", async () => {

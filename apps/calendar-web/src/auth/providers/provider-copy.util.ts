@@ -20,12 +20,6 @@ export const CALENDAR_PRODUCT_NAME: Record<ProviderKind, string> = {
 /** Sidebar multi-provider connect button when no calendar is linked yet. */
 export const CONNECT_THE_CALENDAR_YOU_USE = "Connect the calendar you use";
 
-/** First-connect onboarding modal heading. */
-export const CONNECT_CALENDAR_PROMPT_TITLE = "Bring your events";
-
-export const CONNECT_CALENDAR_PROMPT_SUBTITLE =
-  "Connect your calendar so your changes stay in-sync";
-
 export const CONNECT_CALENDAR_REASSURANCE =
   "Compass only touches calendar events, and you can disconnect the account anytime from Settings.";
 

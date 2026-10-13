@@ -1,20 +1,15 @@
-import { type FC, lazy, Suspense, useEffect, useRef } from "react";
+import { type FC, useEffect, useRef } from "react";
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
-import {
-  CONNECT_CALENDAR_PROMPT_SUBTITLE,
-  CONNECT_CALENDAR_PROMPT_TITLE,
-  CONNECT_CALENDAR_REASSURANCE,
-} from "@web/auth/providers/provider-copy.util";
+import { CONNECT_CALENDAR_REASSURANCE } from "@web/auth/providers/provider-copy.util";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { connectCalendarPromptActions } from "@web/components/ConnectCalendarPrompt/connect-calendar.store";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 
-const LazyTooltipWrapper = lazy(() =>
-  import("@web/components/Tooltip/TooltipWrapper").then((module) => ({
-    default: module.TooltipWrapper,
-  })),
-);
+export const CONNECT_CALENDAR_PROMPT_TITLE = "Bring your events";
+
+export const CONNECT_CALENDAR_PROMPT_SUBTITLE =
+  "Connect your calendar so your changes stay in-sync";
 
 export const CONNECT_CALENDAR_LATER_LABEL = "Skip for now";
 
@@ -54,32 +49,14 @@ export const ConnectCalendarPrompt: FC = () => {
         <p className="text-text-muted text-xs">
           {CONNECT_CALENDAR_REASSURANCE}
         </p>
-        <Suspense
-          fallback={
-            <button
-              className="c-focus-ring self-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
-              onClick={dismiss}
-              title={CONNECT_CALENDAR_LATER_TOOLTIP}
-              type="button"
-            >
-              {CONNECT_CALENDAR_LATER_LABEL}
-            </button>
-          }
+        <button
+          className="c-focus-ring self-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+          onClick={dismiss}
+          title={CONNECT_CALENDAR_LATER_TOOLTIP}
+          type="button"
         >
-          <LazyTooltipWrapper
-            asChild
-            description={CONNECT_CALENDAR_LATER_TOOLTIP}
-            placement="top"
-          >
-            <button
-              className="c-focus-ring self-center rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
-              onClick={dismiss}
-              type="button"
-            >
-              {CONNECT_CALENDAR_LATER_LABEL}
-            </button>
-          </LazyTooltipWrapper>
-        </Suspense>
+          {CONNECT_CALENDAR_LATER_LABEL}
+        </button>
       </div>
     </OverlayPanel>
   );
