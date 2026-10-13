@@ -15,7 +15,7 @@ export const Btn = forwardRef<
     {...props}
     type={type}
     className={classNames(
-      "c-focus-ring flex cursor-pointer items-center justify-center rounded-xs",
+      "c-focus-ring flex cursor-pointer items-center rounded-xs",
       className,
     )}
     ref={ref}
