@@ -9,15 +9,22 @@ import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import * as realEnvConstants from "@web/common/constants/env.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-mock.module("@web/common/constants/env.constants", () => ({
-  IS_EVENT_SIDEBAR_STAGING_UX: true,
-}));
+const envConstantsSnapshot = { ...realEnvConstants };
 
 // packet 08 step 8: read-only web mode + busy-content rendering. Sibling to
 // EventForm.test.tsx/EventForm.calendarSelect.test.tsx (not an extension of
@@ -224,12 +231,57 @@ describe("EventForm provider-managed schedule lock", () => {
   const providerManagedNote =
     "Your calendar provider keeps this event updated (for example from an email), so its time follows the provider. Changes to the title, notes, and location stay in Compass.";
 
+  const renderStagingEventForm = async (
+    draft: GridEventDraft,
+    calendars: Calendar[],
+  ) => {
+    mock.module("@web/common/constants/env.constants", () => ({
+      ...envConstantsSnapshot,
+      IS_EVENT_SIDEBAR_STAGING_UX: true,
+    }));
+    const moduleUrl = new URL(
+      `./EventForm.tsx?test=${Math.random().toString(36).slice(2)}`,
+      import.meta.url,
+    );
+    const { EventForm: StagingEventForm } = await import(moduleUrl.href);
+    const { queryClient, wrapper } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, calendars);
+
+    return render(
+      <StagingEventForm
+        draft={draft}
+        isDraft={draft.kind === "create"}
+        isExistingEvent={draft.kind === "edit"}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+      { wrapper },
+    );
+  };
+
+  beforeAll(() => {
+    mock.module("@web/common/constants/env.constants", () => ({
+      ...envConstantsSnapshot,
+      IS_EVENT_SIDEBAR_STAGING_UX: true,
+    }));
+  });
+
+  afterAll(() => {
+    mock.module(
+      "@web/common/constants/env.constants",
+      () => envConstantsSnapshot,
+    );
+  });
+
   beforeEach(() => {
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
   });
 
-  it("disables schedule and recurrence, keeps title and Save enabled, and omits the legacy note", () => {
+  it("disables schedule and recurrence, keeps title and Save enabled, and omits the legacy note", async () => {
     const writableCalendar = makeCalendar({
       access: "owner",
       capabilities: getCalendarCapabilities("owner"),
@@ -247,7 +299,9 @@ describe("EventForm provider-managed schedule lock", () => {
     const draft = editGridEventDraft(event);
     if (!draft) throw new Error("expected an edit draft");
 
-    const { container } = renderEventForm(draft, [writableCalendar]);
+    const { container } = await renderStagingEventForm(draft, [
+      writableCalendar,
+    ]);
 
     expect(screen.getByPlaceholderText("Title")).toBeEnabled();
     expect(screen.getByRole("textbox", { name: "Location" })).toBeEnabled();
@@ -262,7 +316,7 @@ describe("EventForm provider-managed schedule lock", () => {
     expect(outerFieldset).not.toBeDisabled();
   });
 
-  it("renders no provider-managed note for a normal editable event", () => {
+  it("renders no provider-managed note for a normal editable event", async () => {
     const writableCalendar = makeCalendar({
       access: "owner",
       capabilities: getCalendarCapabilities("owner"),
@@ -278,7 +332,7 @@ describe("EventForm provider-managed schedule lock", () => {
     const draft = editGridEventDraft(event);
     if (!draft) throw new Error("expected an edit draft");
 
-    renderEventForm(draft, [writableCalendar]);
+    await renderStagingEventForm(draft, [writableCalendar]);
 
     expect(screen.queryByText(providerManagedNote)).not.toBeInTheDocument();
   });

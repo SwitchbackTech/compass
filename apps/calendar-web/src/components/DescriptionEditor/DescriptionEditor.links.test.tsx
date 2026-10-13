@@ -1,26 +1,75 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const copyTextMock = mock(() => Promise.resolve(true));
-mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
-  copyText: copyTextMock,
-}));
-mock.module("@web/common/constants/env.constants", () => ({
-  IS_EVENT_SIDEBAR_STAGING_UX: true,
-}));
-
 import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import * as realEnvConstants from "@web/common/constants/env.constants";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
-  const call = toastMock.mock.calls.at(-1);
-  return call ? String(call[0]) : "";
-};
+const envConstantsSnapshot = { ...realEnvConstants };
+
+const copyTextMock = mock(() => Promise.resolve(true));
+
+mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
+  copyText: copyTextMock,
+}));
+
+async function renderDescriptionEditor(
+  props: {
+    value: string;
+    resetKey: string;
+    onChange?: ReturnType<typeof mock>;
+  },
+  options?: { withHotkeys?: boolean },
+) {
+  mock.module("@web/common/constants/env.constants", () => ({
+    ...envConstantsSnapshot,
+    IS_EVENT_SIDEBAR_STAGING_UX: true,
+  }));
+  const moduleUrl = new URL(
+    `./DescriptionEditor.tsx?test=${Math.random().toString(36).slice(2)}`,
+    import.meta.url,
+  );
+  const { DescriptionEditor } = await import(moduleUrl.href);
+  const onChange = props.onChange ?? mock();
+  const editor = (
+    <DescriptionEditor
+      value={props.value}
+      onChange={onChange}
+      editable={true}
+      resetKey={props.resetKey}
+    />
+  );
+
+  if (options?.withHotkeys) {
+    return render(<HotkeysProvider>{editor}</HotkeysProvider>);
+  }
+  return render(editor);
+}
+
+afterAll(() => {
+  mock.module(
+    "@web/common/constants/env.constants",
+    () => envConstantsSnapshot,
+  );
+});
 
 describe("DescriptionEditor link staging UX", () => {
+  beforeAll(() => {
+    mock.module("@web/common/constants/env.constants", () => ({
+      ...envConstantsSnapshot,
+      IS_EVENT_SIDEBAR_STAGING_UX: true,
+    }));
+  });
+
   beforeEach(() => {
     document.body.removeAttribute("data-app-locked");
     copyTextMock.mockClear();
@@ -31,15 +80,12 @@ describe("DescriptionEditor link staging UX", () => {
     const { port, mocks } = createTestToastPort();
     registerToastPort(port);
     const meetingUrl = "https://example.com/meet";
-    render(
-      <HotkeysProvider>
-        <DescriptionEditor
-          value={`<p><a href="${meetingUrl}">Join</a></p>`}
-          onChange={mock()}
-          editable={true}
-          resetKey="link-ux"
-        />
-      </HotkeysProvider>,
+    await renderDescriptionEditor(
+      {
+        value: `<p><a href="${meetingUrl}">Join</a></p>`,
+        resetKey: "link-ux",
+      },
+      { withHotkeys: true },
     );
 
     const link = screen.getByRole("link", { name: "Join" });
@@ -53,7 +99,7 @@ describe("DescriptionEditor link staging UX", () => {
     );
     await user.click(copyButton);
     expect(copyTextMock).toHaveBeenCalledWith(meetingUrl);
-    expect(lastToastMessage(mocks.toast)).toBe("Link copied");
+    expect(mocks.toast.mock.calls.at(-1)?.[0]).toBe("Link copied");
 
     copyTextMock.mockClear();
     mocks.toast.mockClear();
@@ -64,23 +110,19 @@ describe("DescriptionEditor link staging UX", () => {
     await waitFor(() => {
       expect(copyTextMock).toHaveBeenCalledWith(meetingUrl);
     });
-    expect(lastToastMessage(mocks.toast)).toBe("Link copied");
+    expect(mocks.toast.mock.calls.at(-1)?.[0]).toBe("Link copied");
   });
 
-  it("still opens links on Mod+click without copying on a plain click", () => {
+  it("still opens links on Mod+click without copying on a plain click", async () => {
     const openSpy = mock();
     const originalOpen = window.open;
     window.open = openSpy as typeof window.open;
 
     const meetingUrl = "https://compass.example/join";
-    render(
-      <DescriptionEditor
-        value={`<p><a href="${meetingUrl}">Join</a></p>`}
-        onChange={mock()}
-        editable={true}
-        resetKey="mod-click"
-      />,
-    );
+    await renderDescriptionEditor({
+      value: `<p><a href="${meetingUrl}">Join</a></p>`,
+      resetKey: "mod-click",
+    });
 
     const link = screen.getByRole("link", { name: "Join" });
     fireEvent.click(link);

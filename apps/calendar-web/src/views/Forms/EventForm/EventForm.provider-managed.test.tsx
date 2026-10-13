@@ -9,17 +9,23 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import * as realEnvConstants from "@web/common/constants/env.constants";
 import { focusEventFormField } from "@web/common/utils/form/form.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
-import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-mock.module("@web/common/constants/env.constants", () => ({
-  IS_EVENT_SIDEBAR_STAGING_UX: true,
-}));
+const envConstantsSnapshot = { ...realEnvConstants };
 
 const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
@@ -37,7 +43,20 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   ...overrides,
 });
 
-const renderEventForm = (draft: GridEventDraft, calendars: Calendar[]) => {
+const renderEventForm = async (
+  draft: GridEventDraft,
+  calendars: Calendar[],
+) => {
+  mock.module("@web/common/constants/env.constants", () => ({
+    ...envConstantsSnapshot,
+    IS_EVENT_SIDEBAR_STAGING_UX: true,
+  }));
+  const moduleUrl = new URL(
+    `./EventForm.tsx?test=${Math.random().toString(36).slice(2)}`,
+    import.meta.url,
+  );
+  const { EventForm } = await import(moduleUrl.href);
+
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
 
@@ -61,7 +80,21 @@ const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
   return call ? String(call[0]) : "";
 };
 
+afterAll(() => {
+  mock.module(
+    "@web/common/constants/env.constants",
+    () => envConstantsSnapshot,
+  );
+});
+
 describe("EventForm provider-managed staging UX", () => {
+  beforeAll(() => {
+    mock.module("@web/common/constants/env.constants", () => ({
+      ...envConstantsSnapshot,
+      IS_EVENT_SIDEBAR_STAGING_UX: true,
+    }));
+  });
+
   beforeEach(() => {
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
@@ -84,7 +117,7 @@ describe("EventForm provider-managed staging UX", () => {
     const draft = editGridEventDraft(event);
     if (!draft) throw new Error("expected an edit draft");
 
-    renderEventForm(draft, [writableCalendar]);
+    await renderEventForm(draft, [writableCalendar]);
 
     const scheduleGroup = screen.getByRole("group", { name: "Event schedule" });
     const shield = scheduleGroup.parentElement?.querySelector(
@@ -101,7 +134,7 @@ describe("EventForm provider-managed staging UX", () => {
     );
   });
 
-  it("blocks digit jumps to schedule with the Outlook product name", () => {
+  it("blocks digit jumps to schedule with the Outlook product name", async () => {
     const { port, mocks } = createTestToastPort();
     registerToastPort(port);
 
@@ -118,7 +151,7 @@ describe("EventForm provider-managed staging UX", () => {
     const draft = editGridEventDraft(event);
     if (!draft) throw new Error("expected an edit draft");
 
-    renderEventForm(draft, [writableCalendar]);
+    await renderEventForm(draft, [writableCalendar]);
 
     expect(focusEventFormField("start")).toBe(false);
     expect(lastToastMessage(mocks.toast)).toBe(
