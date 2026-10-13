@@ -64,4 +64,8 @@ export const KEYMAP = {
   undo: { hotkey: "Mod+Z", keycaps: ["Mod", "Z"] },
   redo: { hotkey: "Mod+Shift+Z", keycaps: ["Mod", "Shift", "Z"] },
   commandPalette: { hotkey: "Mod+K", keycaps: ["Mod", "K"] },
+  copyDescriptionLink: {
+    hotkey: "Mod+Shift+C",
+    keycaps: ["Mod", "Shift", "C"],
+  },
 } as const;

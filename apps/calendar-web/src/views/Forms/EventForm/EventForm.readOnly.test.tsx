@@ -225,7 +225,7 @@ describe("EventForm provider-managed schedule lock", () => {
     document.body.removeAttribute("data-app-locked");
   });
 
-  it("disables schedule and recurrence, keeps title and Save enabled, and shows the note", () => {
+  it("disables schedule and recurrence, keeps title and Save enabled, and omits the legacy note", () => {
     const writableCalendar = makeCalendar({
       access: "owner",
       capabilities: getCalendarCapabilities("owner"),
@@ -252,7 +252,7 @@ describe("EventForm provider-managed schedule lock", () => {
       screen.getByRole("group", { name: "Event schedule" }),
     ).toBeDisabled();
     expect(screen.getByRole("group", { name: "Recurrence" })).toBeDisabled();
-    expect(screen.getByRole("note")).toHaveTextContent(providerManagedNote);
+    expect(screen.queryByText(providerManagedNote)).not.toBeInTheDocument();
 
     const outerFieldset = container.querySelector("fieldset.contents");
     expect(outerFieldset).not.toBeDisabled();

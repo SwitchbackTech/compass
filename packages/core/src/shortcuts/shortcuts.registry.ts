@@ -365,6 +365,13 @@ export const SHORTCUTS_REGISTRY = [
     when: { isFormOpen: true },
     requiresWrite: true,
   },
+  {
+    id: "edit-copy-description-link",
+    keys: [...B.editCopyDescriptionLink.keycaps],
+    label: "Copy link in event description",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
   // Not form-gated: the same digit pick also runs in the event context
   // menu's color swatch strip, independent of whether the form is open.
   {

@@ -545,6 +545,15 @@
           "isFormOpen": true
         },
         "requiresWrite": true
+      },
+      {
+        "id": "edit-copy-description-link",
+        "keys": ["Mod", "Shift", "C"],
+        "label": "Copy link in event description",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        }
       }
     ]
   },

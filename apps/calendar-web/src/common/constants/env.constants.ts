@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { isBookingEnabled, isDev } from "@core/util/env.util";
+import { isBookingEnabled, isDev, isNonProduction } from "@core/util/env.util";
 
 export const getApiBaseUrl = (apiBaseUrl?: string, port?: string): string => {
   if (apiBaseUrl) {
@@ -63,3 +63,5 @@ export const ENV_WEB = webEnvSchema.parse({
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
 export const IS_BOOKING_ENABLED = isBookingEnabled(ENV_WEB.NODE_ENV);
+/** Staging and local runtimes; production keeps legacy event-sidebar copy. */
+export const IS_EVENT_SIDEBAR_STAGING_UX = isNonProduction(ENV_WEB.NODE_ENV);

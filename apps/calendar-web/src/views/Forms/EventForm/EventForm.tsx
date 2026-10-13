@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { CONFERENCE_KIND_LABEL } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
@@ -30,7 +31,10 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
-import { ENV_WEB } from "@web/common/constants/env.constants";
+import {
+  ENV_WEB,
+  IS_EVENT_SIDEBAR_STAGING_UX,
+} from "@web/common/constants/env.constants";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -46,6 +50,7 @@ import {
   shouldDeferEnterToTarget,
 } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
 import {
   Focusable,
@@ -94,6 +99,12 @@ import {
   FormCardIconRow,
 } from "@web/views/Forms/EventForm/FormCardIconRow";
 import { LocationField } from "@web/views/Forms/EventForm/LocationField/LocationField";
+import { ProviderManagedFieldShield } from "@web/views/Forms/EventForm/ProviderManagedFieldShield";
+import {
+  providerManagedRecurrenceToast,
+  providerManagedScheduleToast,
+} from "@web/views/Forms/EventForm/provider-managed-field.util";
+import { setEventFormProviderManagedFocusGuard } from "@web/views/Forms/EventForm/provider-managed-focus-guard";
 import { RsvpControl } from "@web/views/Forms/EventForm/RsvpControl";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import {
@@ -236,6 +247,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
     const isScheduleLocked =
       draft.kind === "edit" && draft.source.providerManaged === true;
+    const showProviderManagedStagingUx =
+      IS_EVENT_SIDEBAR_STAGING_UX && isScheduleLocked;
     const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
     // Read-only, provider-sourced fields live on the source event's content,
     // never on draft.values (EditableContentSchema doesn't carry them) - a
@@ -282,6 +295,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           ? calendarLookup.get(draft.values.calendarId)
           : defaultTargetCalendar
         : calendarLookup.get(draft.source.calendarId);
+    const scheduleManagedToast = providerManagedScheduleToast(attendeeCalendar);
+    const recurrenceManagedToast =
+      providerManagedRecurrenceToast(attendeeCalendar);
     // The host auto-sets the organizer to the creating account, so "the user
     // organizes this event" is organizer-email == calendar-account-email.
     // A missing organizer means Compass created the event on this account
@@ -430,6 +446,37 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     useEffect(() => {
       latestDraftRef.current = draft;
     }, [draft]);
+
+    useEffect(() => {
+      if (!showProviderManagedStagingUx) {
+        setEventFormProviderManagedFocusGuard(null);
+        return;
+      }
+
+      const toastForField = (field: EventFormFocusField) => {
+        if (field === "start" || field === "end") {
+          showStatusToast("provider-managed-schedule", scheduleManagedToast);
+          return false;
+        }
+        if (field === "recurrence") {
+          showStatusToast(
+            "provider-managed-recurrence",
+            recurrenceManagedToast,
+          );
+          return false;
+        }
+        return true;
+      };
+
+      setEventFormProviderManagedFocusGuard(toastForField);
+      return () => {
+        setEventFormProviderManagedFocusGuard(null);
+      };
+    }, [
+      showProviderManagedStagingUx,
+      scheduleManagedToast,
+      recurrenceManagedToast,
+    ]);
 
     /***********
      * Handlers
@@ -859,39 +906,49 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               gap-3 body. */}
             <fieldset className="contents" disabled={isReadOnly}>
               <FormCard>
-                <fieldset
-                  id={EVENT_FORM_SCHEDULE_ID}
-                  aria-label="Event schedule"
-                  aria-invalid={scheduleError ? true : undefined}
-                  aria-describedby={scheduleErrorDescribedBy}
-                  tabIndex={scheduleError ? -1 : undefined}
-                  disabled={isScheduleLocked}
-                  className={classNames(
-                    "min-w-0 rounded-xs border-0 p-0",
-                    scheduleError && "ring-1 ring-error",
-                  )}
+                <ProviderManagedFieldShield
+                  active={showProviderManagedStagingUx}
+                  message={scheduleManagedToast}
                 >
-                  <DateControlsSection
-                    dateTimeSectionProps={dateTimeSectionProps}
-                    eventCategory={category}
-                    onToggleAllDay={onToggleAllDay}
-                  />
-                </fieldset>
+                  <fieldset
+                    id={EVENT_FORM_SCHEDULE_ID}
+                    aria-label="Event schedule"
+                    aria-invalid={scheduleError ? true : undefined}
+                    aria-describedby={scheduleErrorDescribedBy}
+                    tabIndex={scheduleError ? -1 : undefined}
+                    disabled={isScheduleLocked}
+                    className={classNames(
+                      "min-w-0 rounded-xs border-0 p-0",
+                      scheduleError && "ring-1 ring-error",
+                    )}
+                  >
+                    <DateControlsSection
+                      dateTimeSectionProps={dateTimeSectionProps}
+                      eventCategory={category}
+                      onToggleAllDay={onToggleAllDay}
+                    />
+                  </fieldset>
+                </ProviderManagedFieldShield>
 
-                <fieldset
-                  id={EVENT_FORM_RECURRENCE_ID}
-                  aria-label="Recurrence"
-                  aria-invalid={recurrenceError ? true : undefined}
-                  aria-describedby={recurrenceErrorDescribedBy}
-                  tabIndex={recurrenceError ? -1 : undefined}
-                  disabled={isScheduleLocked}
-                  className={classNames(
-                    "min-w-0 rounded-xs border-0 p-0",
-                    recurrenceError && "ring-1 ring-error",
-                  )}
+                <ProviderManagedFieldShield
+                  active={showProviderManagedStagingUx}
+                  message={recurrenceManagedToast}
                 >
-                  <RecurrenceSection {...recurrenceSectionProps} />
-                </fieldset>
+                  <fieldset
+                    id={EVENT_FORM_RECURRENCE_ID}
+                    aria-label="Recurrence"
+                    aria-invalid={recurrenceError ? true : undefined}
+                    aria-describedby={recurrenceErrorDescribedBy}
+                    tabIndex={recurrenceError ? -1 : undefined}
+                    disabled={isScheduleLocked}
+                    className={classNames(
+                      "min-w-0 rounded-xs border-0 p-0",
+                      recurrenceError && "ring-1 ring-error",
+                    )}
+                  >
+                    <RecurrenceSection {...recurrenceSectionProps} />
+                  </fieldset>
+                </ProviderManagedFieldShield>
               </FormCard>
 
               <FormCard>
@@ -1030,7 +1087,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               />
             )}
 
-            {isScheduleLocked && (
+            {isScheduleLocked && !IS_EVENT_SIDEBAR_STAGING_UX && (
               <p role="note" className="text-text-muted text-xs">
                 Your calendar provider keeps this event updated (for example
                 from an email), so its time follows the provider. Changes to the

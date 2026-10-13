@@ -861,6 +861,10 @@
     @apply underline decoration-1 underline-offset-2 text-text;
   }
 
+  & a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
   & p.is-editor-empty:first-child::before {
     @apply pointer-events-none float-left h-0 text-text-muted;
     content: attr(data-placeholder);

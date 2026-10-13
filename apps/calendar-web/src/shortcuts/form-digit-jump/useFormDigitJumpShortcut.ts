@@ -1,4 +1,5 @@
 import { FORM_FIELD_DIGITS } from "@core/shortcuts/edit-sequence.fields";
+import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { focusEventFormField } from "@web/common/utils/form/form.util";
 import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 import { useModHoldHintShortcut } from "@web/shortcuts/mod-hold/useModHoldHintShortcut";
@@ -17,7 +18,15 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
  * Mounted from EventForm, so this hook is live exactly while the form is
  * open; no separate "is the form open" gate is needed.
  */
-export function useFormDigitJumpShortcut(): { areHintsVisible: boolean } {
+export type FormDigitJumpOptions = {
+  /** Return false to block the jump (after showing any UI you need). */
+  onBeforeFocus?: (field: EventFormFocusField) => boolean;
+};
+
+export function useFormDigitJumpShortcut(options: FormDigitJumpOptions = {}): {
+  areHintsVisible: boolean;
+} {
+  const { onBeforeFocus } = options;
   return useModHoldHintShortcut({
     onHintsRevealed: () =>
       shortcutHintProgressActions.demonstrate("save-draft"),
@@ -26,6 +35,10 @@ export function useFormDigitJumpShortcut(): { areHintsVisible: boolean } {
       const field =
         index !== null ? FORM_FIELD_DIGITS[index]?.field : undefined;
       if (!field) return false;
+
+      if (onBeforeFocus && !onBeforeFocus(field)) {
+        return true;
+      }
 
       focusEventFormField(field);
       recordHandledShortcutInvocation(
