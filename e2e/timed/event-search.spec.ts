@@ -6,11 +6,11 @@ import {
   getPaletteSearch,
   openCommandPaletteWithKeyboard,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 test("Mod+K finds a saved event by title and focuses it", async ({ page }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Find Me");
   await openTimedEventFormWithKeyboard(page);

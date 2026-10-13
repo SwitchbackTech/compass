@@ -8,12 +8,12 @@ import {
   fillTitleAndSaveEventForm,
   openEventForEditingWithKeyboard,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
   updateEventTitle,
 } from "../utils/event-test-utils";
 
 test("creates, edits, and deletes a timed event", async ({ page }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithKeyboard(page);

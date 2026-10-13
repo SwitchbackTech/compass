@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test";
 import {
   getPaletteSearch,
   openCommandPaletteWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 test("running a palette command with a shortcut names that key", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   await openCommandPaletteWithKeyboard(page);
   const search = getPaletteSearch(page);

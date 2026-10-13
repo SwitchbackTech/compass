@@ -4,16 +4,14 @@ import {
   expectTimedEventVisible,
   getEventFormTitleInput,
   getSavedEventsByTitle,
-  installDeterministicBrowserClock,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
   pressEscapeOnFocusedElement,
   pressModEnterOnFocusedElement,
 } from "../utils/event-test-utils";
 
 test.beforeEach(async ({ page }) => {
-  await installDeterministicBrowserClock(page);
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 });
 
 test("Mod+Enter from the start time picker commits a typed time and saves", async ({
