@@ -437,7 +437,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       (schedule) => {
         setLatestDraft((current) => {
           if (!current) return current;
-          return replaceGridDraftSchedule(current, schedule);
+          const next = replaceGridDraftSchedule(current, schedule);
+          latestDraftRef.current = next;
+          return next;
         });
       },
       [setLatestDraft],
@@ -569,11 +571,16 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
       const draftToSubmit = latestDraftRef.current;
       const isAllDay = draftToSubmit.values.schedule.kind === "allDay";
+      const submitScheduleDates = scheduleDatesFromDraft(draftToSubmit);
+      const submitFormDates = getFormDates(
+        submitScheduleDates.startDate,
+        submitScheduleDates.endDate,
+      );
       const selectedDateTimes = {
-        startDate: selectedStartDate,
-        startTime,
-        endDate: selectedEndDate,
-        endTime,
+        startDate: submitFormDates.startDate,
+        startTime: submitFormDates.startTime,
+        endDate: submitFormDates.endDate,
+        endTime: submitFormDates.endTime,
         isAllDay,
       };
 
@@ -662,6 +669,15 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       });
     };
 
+    const scheduleStart =
+      draft.values.schedule.kind === "timed"
+        ? dayjs(draft.values.schedule.start).toDate()
+        : selectedStartDate;
+    const scheduleEnd =
+      draft.values.schedule.kind === "timed"
+        ? dayjs(draft.values.schedule.end).toDate()
+        : selectedEndDate;
+
     const dateTimeSectionProps = {
       displayEndDate,
       draft,
@@ -670,6 +686,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       isEndDatePickerOpen,
       isStartDatePickerOpen,
       onScheduleChange,
+      scheduleEnd,
+      scheduleStart,
       selectedEndDate,
       selectedStartDate,
       startTime,

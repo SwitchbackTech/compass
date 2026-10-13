@@ -14,6 +14,8 @@ export interface Props {
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   onScheduleChange: OnEventFormScheduleChange;
+  scheduleEnd: Date;
+  scheduleStart: Date;
   selectedEndDate: Date;
   selectedStartDate: Date;
   setIsEndDatePickerOpen: (arg0: boolean) => void;
@@ -30,31 +32,37 @@ export const DateTimeSection: FC<Props> = ({
   selectedEndDate,
   selectedStartDate,
   onScheduleChange,
+  scheduleEnd,
+  scheduleStart,
   setIsStartDatePickerOpen,
   setIsEndDatePickerOpen,
   startTime,
   endTime,
 }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-col gap-2">
       {category === Categories_Event.ALLDAY && (
-        <DatePickers
-          displayEndDate={displayEndDate}
-          draft={draft}
-          isEndDatePickerOpen={isEndDatePickerOpen}
-          isStartDatePickerOpen={isStartDatePickerOpen}
-          selectedEndDate={selectedEndDate}
-          selectedStartDate={selectedStartDate}
-          onScheduleChange={onScheduleChange}
-          setIsEndDatePickerOpen={setIsEndDatePickerOpen}
-          setIsStartDatePickerOpen={setIsStartDatePickerOpen}
-        />
+        <div className="flex items-center gap-2">
+          <DatePickers
+            displayEndDate={displayEndDate}
+            draft={draft}
+            isEndDatePickerOpen={isEndDatePickerOpen}
+            isStartDatePickerOpen={isStartDatePickerOpen}
+            selectedEndDate={selectedEndDate}
+            selectedStartDate={selectedStartDate}
+            onScheduleChange={onScheduleChange}
+            setIsEndDatePickerOpen={setIsEndDatePickerOpen}
+            setIsStartDatePickerOpen={setIsStartDatePickerOpen}
+          />
+        </div>
       )}
 
       {category === Categories_Event.TIMED && (
         <TimePickers
           endTime={endTime}
           onScheduleChange={onScheduleChange}
+          scheduleEnd={scheduleEnd}
+          scheduleStart={scheduleStart}
           startTime={startTime}
           selectedEndDate={selectedEndDate}
           selectedStartDate={selectedStartDate}

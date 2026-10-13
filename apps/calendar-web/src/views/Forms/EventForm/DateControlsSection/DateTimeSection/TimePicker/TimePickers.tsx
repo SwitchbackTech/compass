@@ -8,6 +8,8 @@ import {
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
+import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
+import { timedScheduleFromDateChange } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 import { TimePicker } from "./TimePicker";
 
@@ -18,6 +20,8 @@ const timeOptions = getTimeOptions();
 interface Props {
   endTime: SelectOption<string>;
   onScheduleChange: OnEventFormScheduleChange;
+  scheduleEnd: Date;
+  scheduleStart: Date;
   selectedEndDate: Date;
   selectedStartDate: Date;
   startTime: SelectOption<string>;
@@ -26,22 +30,24 @@ interface Props {
 export const TimePickers: FC<Props> = ({
   endTime,
   onScheduleChange,
+  scheduleEnd,
+  scheduleStart,
   selectedEndDate,
   selectedStartDate,
   startTime,
 }) => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false);
+  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
+  const [isEndDateOpen, setIsEndDateOpen] = useState(false);
   const [timeError, setTimeError] = useState<string | null>(null);
   const timeErrorId = useId();
 
-  // shouldAdjustComplimentTime does its math on a fixed calendar-day anchor, so
-  // a correction that crosses midnight lands on an adjacent day. Formatting it
-  // back to a bare "h:mm A" drops that day, and pairing the wrapped time with an
-  // unchanged date produced an inverted schedule that made mapToBackend throw an
-  // unhandled ZodError. Return the day delta so the caller can shift the date
-  // with it. Pure: the caller commits picker state only after the schedule
-  // validates, so a leftover Zod failure cannot desync the form.
+  const spansMultipleDays = !dayjs(selectedStartDate).isSame(
+    selectedEndDate,
+    "day",
+  );
+
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string,
@@ -81,12 +87,37 @@ export const TimePickers: FC<Props> = ({
     closeMenu(changed);
   };
 
-  // One handler for both pickers: the picked side keeps its selected date and
-  // the corrected compliment reduces to (picked time ± duration), so it is
-  // anchored to the picked side's date and the midnight day-carry applies to
-  // the compliment. Same-day inverted clocks use that shift instead of an
-  // order error. Anchoring the compliment to its own selected date instead
-  // would double-count the span of a draft that already crosses midnight.
+  const commitTimedSchedule = (mapped: ReturnType<typeof tryMapToBackend>) => {
+    if (!mapped.ok) {
+      setTimeError(END_TIME_ORDER_ERROR);
+      return false;
+    }
+    setTimeError(null);
+    if (mapped.schedule.kind === "timed") {
+      onScheduleChange({
+        kind: "timed",
+        start: dayjs(mapped.schedule.start).toDate(),
+        end: dayjs(mapped.schedule.end).toDate(),
+        timeZone: mapped.schedule.timeZone,
+      });
+    }
+    return true;
+  };
+
+  const onDateSelected = (changed: "start" | "end", nextDate: Date) => {
+    (changed === "start" ? setIsStartDateOpen : setIsEndDateOpen)(false);
+    const mapped = timedScheduleFromDateChange({
+      changed,
+      nextDate,
+      selectedStartDate,
+      startTime,
+      endTime,
+      scheduleStart,
+      scheduleEnd,
+    });
+    commitTimedSchedule(mapped);
+  };
+
   const onTimeSelected = (
     changed: "start" | "end",
     option: SelectOption<string>,
@@ -120,23 +151,34 @@ export const TimePickers: FC<Props> = ({
       return;
     }
 
-    setTimeError(null);
-
-    // TS guard: isAllDay: false above always yields "timed".
-    if (mapped.schedule.kind === "timed") {
-      onScheduleChange({
-        kind: "timed",
-        start: dayjs(mapped.schedule.start).toDate(),
-        end: dayjs(mapped.schedule.end).toDate(),
-        timeZone: mapped.schedule.timeZone,
-      });
-    }
+    commitTimedSchedule(mapped);
     closeMenu(changed);
+  };
+
+  const openStartDate = () => {
+    setIsEndDateOpen(false);
+    setIsStartDateOpen(true);
+  };
+
+  const openEndDate = () => {
+    setIsStartDateOpen(false);
+    setIsEndDateOpen(true);
   };
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <div className="flex items-center">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <EventFormDateField
+          calendarClassName="timedStartDatePicker"
+          inputId="eventFormStartDate"
+          isOpen={isStartDateOpen}
+          onCalendarClose={() => setIsStartDateOpen(false)}
+          onCalendarOpen={openStartDate}
+          onCommit={(date) => onDateSelected("start", date)}
+          selected={selectedStartDate}
+          sideLabel="start"
+          title="Pick Start Date"
+        />
         <TimePicker
           aria-label="Start time"
           complementaryTime={endTime.value}
@@ -149,7 +191,20 @@ export const TimePickers: FC<Props> = ({
           setIsMenuOpen={setIsStartMenuOpen}
           value={startTime}
         />
-        -
+        <span className="text-text-muted">-</span>
+        {spansMultipleDays ? (
+          <EventFormDateField
+            calendarClassName="timedEndDatePicker"
+            inputId="eventFormEndDate"
+            isOpen={isEndDateOpen}
+            onCalendarClose={() => setIsEndDateOpen(false)}
+            onCalendarOpen={openEndDate}
+            onCommit={(date) => onDateSelected("end", date)}
+            selected={selectedEndDate}
+            sideLabel="end"
+            title="Pick End Date"
+          />
+        ) : null}
         <TimePicker
           aria-describedby={timeError ? timeErrorId : undefined}
           aria-invalid={timeError ? true : undefined}

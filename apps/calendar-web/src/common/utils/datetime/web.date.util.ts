@@ -25,9 +25,6 @@ interface SelectedDates {
   isAllDay: boolean;
 }
 
-export const dateIsValid = (date: string) =>
-  !Number.isNaN(new Date(date).getTime());
-
 /**
  * One color per hour label, accenting the label for the current hour.
  *
