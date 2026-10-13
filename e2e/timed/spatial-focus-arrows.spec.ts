@@ -6,11 +6,11 @@ import {
   getSavedEventsByTitle,
   getVisibleDayDates,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 const createTimedEvent = async (
-  page: Parameters<typeof prepareCalendarPage>[0],
+  page: Parameters<typeof prepareTimedCalendarPage>[0],
   title: string,
 ) => {
   await openTimedEventFormWithKeyboard(page);
@@ -21,7 +21,7 @@ const createTimedEvent = async (
 test("ArrowRight moves focus to the nearest event on the next non-empty day", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const firstTitle = createEventTitle("Anchor Focus");
   const movedTitle = createEventTitle("Neighbor Focus");

@@ -7,7 +7,7 @@ import {
   getVisibleDayDates,
   openAllDayEventFormWithKeyboard,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 const addDays = (date: string, days: number) => {
@@ -19,7 +19,7 @@ const addDays = (date: string, days: number) => {
 test("Shift+ArrowRight at the week edge carries the event into the next window", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Carry Across");
   await openTimedEventFormWithKeyboard(page);
@@ -68,7 +68,7 @@ test("Shift+ArrowRight at the week edge carries the event into the next window",
 test("Alt+Shift+ArrowRight carries the event a week into the next window", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Coarse Carry");
   await openTimedEventFormWithKeyboard(page);
@@ -97,7 +97,7 @@ test("Alt+Shift+ArrowRight carries the event a week into the next window", async
 });
 
 test("m opens the focused event's menu without a mouse", async ({ page }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Menu By Key");
   await openTimedEventFormWithKeyboard(page);
@@ -121,7 +121,7 @@ test("m opens the focused event's menu without a mouse", async ({ page }) => {
 test("ArrowDown opens the event-form date picker without a mouse", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
   await openAllDayEventFormWithKeyboard(page);
 
   const startDate = page.locator('input[title="Pick Start Date"]');

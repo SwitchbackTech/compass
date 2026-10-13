@@ -6,10 +6,10 @@ import {
   getSavedEventsByTitle,
   getVisibleDayDates,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
-type CalendarPage = Parameters<typeof prepareCalendarPage>[0];
+type CalendarPage = Parameters<typeof prepareTimedCalendarPage>[0];
 
 const DAY_PREFIX_KEYS: Record<string, string[]> = {
   SU: ["s", "u"],
@@ -70,7 +70,7 @@ const blurActive = (page: CalendarPage) =>
 test("tap f shows day-prefix jump keys and focuses the assigned event", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const earlyTitle = createEventTitle("Early Flash");
   const middleTitle = createEventTitle("Middle Flash");
@@ -131,7 +131,7 @@ test("tap f shows day-prefix jump keys and focuses the assigned event", async ({
 test("Shift and the day letter focuses an event without first pressing f", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Leaderless Jump");
   await createTimedEventOffsetBy(page, title, 0);
@@ -155,7 +155,7 @@ test("Shift and the day letter focuses an event without first pressing f", async
 test("Shift and a day letter then c creates on that column of another week", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
   await blurActive(page);
 
   // Next window, so today is out of view and a create that ignored the
@@ -184,7 +184,7 @@ test("Shift and a day letter then c creates on that column of another week", asy
 });
 
 test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet");
   await createTimedEventOffsetBy(page, title, 0);
@@ -198,7 +198,7 @@ test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
 });
 
 test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet J");
   await createTimedEventOffsetBy(page, title, 0);

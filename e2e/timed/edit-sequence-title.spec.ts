@@ -4,13 +4,13 @@ import {
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 test("e then t opens the focused event form on the title field", async ({
   page,
 }) => {
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Sequence Edit");
   await openTimedEventFormWithKeyboard(page);

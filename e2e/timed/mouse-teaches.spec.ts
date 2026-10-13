@@ -5,14 +5,18 @@ import {
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
   getTimedColumnClickPoint,
+  getTimedE2eClockAnchor,
+  installDeterministicBrowserClock,
   openTimedEventFormWithKeyboard,
   prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 const getFormTitleInput = (page: import("@playwright/test").Page) =>
   page.getByRole("form").getByRole("textbox", { name: "Title" });
 
 const prepareTeachingWeek = async (page: import("@playwright/test").Page) => {
+  await installDeterministicBrowserClock(page, getTimedE2eClockAnchor());
   await page.addInitScript(() => {
     localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
     localStorage.setItem(
@@ -85,6 +89,7 @@ test("day view slot click teaches typed time digits", async ({ page }) => {
     );
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
   });
+  await installDeterministicBrowserClock(page, getTimedE2eClockAnchor());
   await prepareCalendarPage(page);
   await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.waitForURL((url) => url.pathname.startsWith("/day"));
@@ -177,7 +182,7 @@ test("tips-muted suppresses pointer pills", async ({ page }) => {
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
     localStorage.setItem("compass.shortcuts.tips-muted", "true");
   });
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Muted Hint");
   await openTimedEventFormWithKeyboard(page);
@@ -209,7 +214,7 @@ test("edit-open usage retires card-click teaching", async ({ page }) => {
       }),
     );
   });
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Retired Hint");
   await openTimedEventFormWithKeyboard(page);
