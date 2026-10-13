@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { NodeEnv } from "@core/constants/core.constants";
 import { isBookingEnabled, isDev } from "@core/util/env.util";
 
 export const getApiBaseUrl = (apiBaseUrl?: string, port?: string): string => {
@@ -63,3 +64,7 @@ export const ENV_WEB = webEnvSchema.parse({
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
 export const IS_BOOKING_ENABLED = isBookingEnabled(ENV_WEB.NODE_ENV);
+/** Staging and local dev only; production and unit tests keep legacy behavior. */
+export const IS_EVENT_SIDEBAR_STAGING_UX =
+  ENV_WEB.NODE_ENV === NodeEnv.Staging ||
+  ENV_WEB.NODE_ENV === NodeEnv.Development;

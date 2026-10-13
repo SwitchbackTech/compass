@@ -546,6 +546,19 @@
       "requiresWrite": true
     },
     {
+      "id": "edit-copy-description-link",
+      "keys": [
+        "Mod",
+        "Shift",
+        "C"
+      ],
+      "label": "Copy link in event description",
+      "section": "edit",
+      "when": {
+        "isFormOpen": true
+      }
+    },
+    {
       "id": "edit-pick-by-number",
       "keys": [
         "1-9",
@@ -926,6 +939,11 @@
       "Shift",
       "E"
     ],
+    "edit-copy-description-link": [
+      "Mod",
+      "Shift",
+      "C"
+    ],
     "edit-field-leader-in-form": [
       "Mod+E"
     ],
@@ -1135,6 +1153,14 @@
       "keycaps": [
         "Mod",
         "K"
+      ]
+    },
+    "copyDescriptionLink": {
+      "hotkey": "Mod+Shift+C",
+      "keycaps": [
+        "Mod",
+        "Shift",
+        "C"
       ]
     }
   },

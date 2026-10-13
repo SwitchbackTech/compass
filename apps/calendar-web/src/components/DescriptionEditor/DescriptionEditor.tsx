@@ -13,17 +13,25 @@ import {
   type MouseEvent,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { IS_EVENT_SIDEBAR_STAGING_UX } from "@web/common/constants/env.constants";
 import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
+import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
 import {
   DESCRIPTION_HTML_ALLOWED_ATTR,
   DESCRIPTION_HTML_ALLOWED_TAGS,
 } from "@web/components/DescriptionEditor/description-html.policy";
 import {
+  findLinkElement,
+  focusAdjacentDescriptionLink,
+} from "@web/components/DescriptionEditor/description-link.util";
+import {
   looksLikeHtml,
   plainTextToDescriptionHtml,
 } from "@web/components/DescriptionEditor/plain-text-description";
+import { useDescriptionEditorCopyLinkShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorCopyLinkShortcut";
 import { Divider } from "@web/components/Divider/Divider";
 
 // The allowlist is shared with the desktop export (description-html.policy),
@@ -105,6 +113,8 @@ export const DescriptionEditor = ({
   id,
 }: DescriptionEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const editorShellRef = useRef<HTMLDivElement>(null);
+  const [editorRoot, setEditorRoot] = useState<HTMLElement | null>(null);
 
   // Sanitizing is only meaningful for the editor's initial content - TipTap
   // reads `content` once at (re)creation, gated by the same [resetKey] below.
@@ -196,6 +206,21 @@ export const DescriptionEditor = ({
     editor?.setEditable(editable, false);
   }, [editor, editable]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: editorRoot tracks DOM under the TipTap mount keyed by resetKey.
+  useEffect(() => {
+    const shell = editorShellRef.current;
+    if (!shell) return;
+    const tiptap = shell.querySelector(".tiptap");
+    setEditorRoot(tiptap instanceof HTMLElement ? tiptap : null);
+  }, [editor, resetKey]);
+
+  const linkUxEnabled = IS_EVENT_SIDEBAR_STAGING_UX;
+  useDescriptionEditorCopyLinkShortcut(
+    editor,
+    editorRoot,
+    linkUxEnabled && editable,
+  );
+
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
   // toolbar button's pressed state one click stale, since toggling a mark
@@ -215,6 +240,27 @@ export const DescriptionEditor = ({
         : { bold: false, italic: false, orderedList: false, bulletList: false },
   });
 
+  const handleDescriptionKeyDown = (event: KeyboardEvent) => {
+    onKeyDown?.(event);
+    if (!linkUxEnabled || !editorRoot || event.defaultPrevented) return;
+
+    const link = findLinkElement(editorRoot, event.target);
+    if (!link) return;
+
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      if (focusAdjacentDescriptionLink(editorRoot, link, "next")) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      if (focusAdjacentDescriptionLink(editorRoot, link, "prev")) {
+        event.preventDefault();
+      }
+    }
+  };
+
   const onDescriptionClickCapture = (event: MouseEvent<HTMLDivElement>) => {
     if (!editable) return;
     if (!(event.metaKey || event.ctrlKey) || event.button !== 0) return;
@@ -233,6 +279,7 @@ export const DescriptionEditor = ({
 
   return (
     <div
+      ref={editorShellRef}
       className="flex flex-col gap-1.5"
       onClickCapture={onDescriptionClickCapture}
     >
@@ -290,8 +337,9 @@ export const DescriptionEditor = ({
           "c-rich-text relative w-full text-sm text-text",
           !editable && "cursor-default",
         )}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleDescriptionKeyDown}
       />
+      {linkUxEnabled && <DescriptionEditorLinkChrome editorRoot={editorRoot} />}
       <Divider color={underlineColor} toggled={isFocused} />
     </div>
   );

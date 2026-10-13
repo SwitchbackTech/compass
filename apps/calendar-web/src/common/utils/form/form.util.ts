@@ -1,5 +1,6 @@
 import { FORM_FIELD_DIGITS } from "@core/shortcuts/edit-sequence.fields";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
+import { allowEventFormFieldFocus } from "@web/views/Forms/EventForm/provider-managed-focus-guard";
 import { ID_EVENT_FORM } from "../../constants/web.constants";
 
 export type { EventFormFocusField };
@@ -133,6 +134,7 @@ export const getEventFormFieldElement = (
  * live in separate trees, so sequence shortcuts hop via the DOM.
  */
 export const focusEventFormField = (field: EventFormFocusField): boolean => {
+  if (!allowEventFormFieldFocus(field)) return false;
   const element = getEventFormFieldElement(field);
   if (!element) return false;
   element.focus();

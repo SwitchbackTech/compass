@@ -10,7 +10,10 @@ const config = loadCompassConfig();
 const WEB_PORT = Number(config.web?.port) || 9080;
 const BOOKING_WEB_PORT = Number(process.env.BOOKING_WEB_PORT) || 9081;
 const BOOKING_WEB_ORIGIN = `http://localhost:${BOOKING_WEB_PORT}`;
-const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
+const OUTDIR = path.resolve(
+  import.meta.dir,
+  process.env.WEB_BUILD_OUTDIR ?? "../../build/web",
+);
 const SRCDIR = path.resolve(import.meta.dir, "src");
 
 // In development: unminified + inline sourcemaps + live-reload watcher.

@@ -79,6 +79,10 @@ export const APP_SHORTCUT_BINDINGS = {
     hotkey: "Mod+Shift+E",
     keycaps: hotkeyKeycaps("Mod+Shift+E"),
   },
+  editCopyDescriptionLink: {
+    hotkey: KEYMAP.copyDescriptionLink.hotkey,
+    keycaps: [...KEYMAP.copyDescriptionLink.keycaps],
+  },
   editFieldLeaderInForm: { hotkey: "Mod+E", keycaps: ["Mod+E"] },
   editFormActions: { hotkey: "Mod+0", keycaps: hotkeyKeycaps("Mod+0") },
   otherSidebar: { hotkey: "]", keycaps: ["]"] },
@@ -133,6 +137,8 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   "edit-cancel-meeting": APP_SHORTCUT_BINDINGS.editCancelMeeting.keycaps,
   "edit-reschedule-meeting":
     APP_SHORTCUT_BINDINGS.editRescheduleMeeting.keycaps,
+  "edit-copy-description-link":
+    APP_SHORTCUT_BINDINGS.editCopyDescriptionLink.keycaps,
   "edit-field-leader-in-form": [
     ...APP_SHORTCUT_BINDINGS.editFieldLeaderInForm.keycaps,
   ],

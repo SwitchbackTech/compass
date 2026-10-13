@@ -18,7 +18,7 @@ final class DesktopExportParityTests: XCTestCase {
             ShortcutsDocument.self,
             from: Data(contentsOf: url)
         )
-        XCTAssertEqual(document.registry.count, 81)
+        XCTAssertEqual(document.registry.count, 82)
         XCTAssertEqual(Set(document.registry.map(\.section)).count, 5)
         XCTAssertEqual(ShortcutId.allCases.count, document.registry.count)
         for row in document.registry {
