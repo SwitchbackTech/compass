@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import { type HTMLAttributes, type ReactNode } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import {
@@ -42,7 +43,10 @@ export function SidebarShell({
     <aside
       {...props}
       aria-label="Sidebar"
-      className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel pt-5 text-text"
+      className={classNames(
+        "relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel text-text",
+        !isEventFormOpen && "pt-5",
+      )}
       id={ID_SIDEBAR}
     >
       {showSidebarClose ? (

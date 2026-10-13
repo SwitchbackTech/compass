@@ -809,7 +809,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onPointerDown={onFormPointerDown}
           onFocusCapture={onFormFocusIn}
         >
-          <div className="sticky top-0 z-10 shrink-0 border-border border-b bg-surface-panel px-4 pt-1 pb-2">
+          <div className="sticky top-0 z-10 shrink-0 bg-surface-panel px-4 pt-1 pb-2">
             <FormActionsRow
               ref={formActionsRef}
               bookingLinks={bookingLinks}

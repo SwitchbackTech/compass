@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
 import {
   createGridEventDraft,
@@ -78,6 +79,27 @@ describe("SidebarShell", () => {
     expect(
       screen.queryByRole("button", { name: "Dismiss sidebar" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("drops top padding while an event form is open so the panel aligns with the sidebar top", () => {
+    act(() => {
+      draftActions.startGridDraft({
+        activity: "gridClick",
+        draft: createGridEventDraft(
+          timedGridSchedule(
+            new Date("2026-05-20T09:00:00.000Z"),
+            new Date("2026-05-20T10:00:00.000Z"),
+          ),
+        ),
+      });
+      draftActions.setFormOpen(true);
+    });
+
+    renderShell();
+
+    expect(document.getElementById(ID_SIDEBAR)?.className).not.toContain(
+      "pt-5",
+    );
   });
 
   it("hides the sidebar dismiss control while an event form is open on narrow layouts", () => {

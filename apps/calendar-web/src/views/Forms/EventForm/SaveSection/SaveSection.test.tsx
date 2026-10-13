@@ -20,6 +20,7 @@ describe("SaveSection layout", () => {
     const save = screen.getByRole("button", { name: /save/i });
     expect(save).toHaveClass("w-full", "c-button-primary", "c-button-elevated");
     expect(save).toHaveClass("h-9", "justify-between");
+    expect(save.closest("div")?.className).not.toContain("border-t");
   });
 
   it("shows the save shortcut keycaps inside the button, not in a tooltip", () => {
