@@ -38,14 +38,16 @@ const FIELD_SELECTORS: Record<EventFormFocusField, string[]> = {
     `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
   ],
   description: [`#event-form-description`],
-  // Timed events expose a start-time combobox wrapper; all-day uses the date input.
+  // Timed events jump to the date field first, then the start-time combobox.
   start: [
-    `${EVENT_FORM_SELECTOR} #startTimePicker`,
+    `${EVENT_FORM_SELECTOR} #eventFormStartDate`,
     `${EVENT_FORM_SELECTOR} input[title="Pick Start Date"]`,
+    `${EVENT_FORM_SELECTOR} #startTimePicker`,
   ],
   end: [
-    `${EVENT_FORM_SELECTOR} #endTimePicker`,
+    `${EVENT_FORM_SELECTOR} #eventFormEndDate`,
     `${EVENT_FORM_SELECTOR} input[title="Pick End Date"]`,
+    `${EVENT_FORM_SELECTOR} #endTimePicker`,
   ],
   recurrence: [
     `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Edit recurrence"]`,

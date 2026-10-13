@@ -134,3 +134,68 @@ test("ArrowDown opens the event-form date picker without a mouse", async ({
   await page.keyboard.press("Escape");
   await expect(calendar).toHaveCount(0);
 });
+
+test("typed date and arrow keys move a timed event while keeping its duration", async ({
+  page,
+}) => {
+  await prepareTimedCalendarPage(page);
+
+  const visibleDays = await getVisibleDayDates(page);
+  const typedDay = visibleDays[1] ?? visibleDays[0];
+  const [, month, day] = typedDay.split("-").map(Number);
+
+  const title = createEventTitle("Date Move");
+  await openTimedEventFormWithKeyboard(page);
+
+  const startDate = page.locator('input[title="Pick Start Date"]');
+  await startDate.click();
+  await startDate.fill(`${month}/${day}`);
+  await page.keyboard.press("Enter");
+
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return event?.startDate.slice(0, 10);
+    })
+    .toBe(typedDay);
+
+  const titleArrow = createEventTitle("Date Arrow");
+  await openTimedEventFormWithKeyboard(page);
+  const arrowDate = page.locator('input[title="Pick Start Date"]');
+  await arrowDate.focus();
+  await arrowDate.press("ArrowDown");
+  await fillTitleAndSaveEventForm(page, titleArrow);
+  await expectTimedEventVisible(page, titleArrow);
+
+  const anchorDay = visibleDays[0];
+  const expectedArrowDay = addDays(anchorDay, 1);
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, titleArrow);
+      return event?.startDate.slice(0, 10);
+    })
+    .toBe(expectedArrowDay);
+});
+
+test("all-day keyboard date entry keeps a valid end date", async ({ page }) => {
+  await prepareTimedCalendarPage(page);
+  await openAllDayEventFormWithKeyboard(page);
+
+  const startDate = page.locator('input[title="Pick Start Date"]');
+  await startDate.focus();
+  await startDate.fill("10/12");
+  await page.keyboard.press("Enter");
+
+  const endDate = page.locator('input[title="Pick End Date"]');
+  await endDate.focus();
+  await endDate.fill("10/14");
+  await page.keyboard.press("Enter");
+
+  await page.getByPlaceholder("Title").fill(createEventTitle("All-day span"));
+  await page.keyboard.press("Meta+Enter");
+
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});

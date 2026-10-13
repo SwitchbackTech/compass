@@ -91,6 +91,10 @@ function Harness({
 
   const { startDate, endDate } = scheduleDatesFromDraft(draft);
   const formDates = getFormDates(startDate, endDate);
+  const schedule = draft.values.schedule;
+  if (schedule.kind !== "timed") {
+    throw new Error("expected timed schedule");
+  }
 
   return (
     <>
@@ -101,9 +105,13 @@ function Harness({
       />
       <TimePickers
         endTime={formDates.endTime}
-        onScheduleChange={(schedule) => {
-          setDraft((current) => replaceGridDraftSchedule(current, schedule));
+        onScheduleChange={(nextSchedule) => {
+          setDraft((current) =>
+            replaceGridDraftSchedule(current, nextSchedule),
+          );
         }}
+        scheduleEnd={schedule.end}
+        scheduleStart={schedule.start}
         selectedEndDate={formDates.endDate}
         selectedStartDate={formDates.startDate}
         startTime={formDates.startTime}
@@ -146,6 +154,19 @@ describe("TimePickers", () => {
     const end = screen.getByRole("combobox", { name: "End time" });
 
     expect(start).not.toBe(end);
+  });
+
+  it("moves the timed event when the start date is typed, keeping duration", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const dateInput = screen.getByTitle("Pick Start Date");
+    await user.click(dateInput);
+    await user.clear(dateInput);
+    await user.type(dateInput, "10/25");
+    await user.keyboard("{Enter}");
+
+    expectDraft("2026-10-25T14:00:00+00:00", "2026-10-25T15:00:00+00:00");
   });
 
   // The compliment correction is computed on a fixed calendar-day anchor. When
@@ -255,6 +276,8 @@ describe("TimePickers", () => {
       />,
     );
 
+    await user.tab();
+    expect(screen.getByTitle("Pick Start Date")).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
     await user.tab();
