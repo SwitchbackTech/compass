@@ -1,0 +1,33 @@
+runtime:
+  nodeEnv: staging
+  timezone: Etc/UTC
+
+web:
+  port: 9152
+  url: http://localhost:9152
+
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
+    - http://localhost:9152
+  compassToken: test-token
+
+mongo:
+  uri: mongodb://localhost:27017/unused
+
+supertokens:
+  uri: http://localhost:3567
+  key: test-key
+
+google:
+  clientId: test-client-id
+  clientSecret: unused-e2e-build
+
+microsoft:
+  clientId: test-microsoft-client-id
+  clientSecret: unused-e2e-build
+
+posthog:
+  key: test-posthog-key
+  host: https://app.posthog.com
