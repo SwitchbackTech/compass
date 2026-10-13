@@ -67,6 +67,9 @@ export type SignupSource =
   /** Auth modal trial step (WP-02); Checkout attributes `trial_converted` with this source. */
   | "signup_trial_step";
 
+/** Where the visitor chose to stay in anonymous local mode (not a login attempt). */
+export type LocalModeSource = "anon_nudge";
+
 export type SignupFailureReason =
   | "oauth_user_cancelled"
   | "oauth_missing_state"
@@ -147,6 +150,11 @@ export async function trackSignupStartedAtClick(
 ): Promise<void> {
   const anon_events_created = await countLocalNonDemoEvents().catch(() => 0);
   trackSignupStarted(source, anon_events_created);
+}
+
+/** Anonymous visitor chose local-only mode (e.g. sidebar "This browser"). */
+export function trackLocalModeSelected(source: LocalModeSource): void {
+  track("local_mode_selected", { source });
 }
 
 /** Legacy `signup_completed` plus its funnel step. */

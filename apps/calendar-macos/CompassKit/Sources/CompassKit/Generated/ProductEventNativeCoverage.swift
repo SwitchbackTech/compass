@@ -17,6 +17,7 @@ public enum ProductEventNativeCoverage: Sendable {
         .welcomeModalDismissed,
         .welcomeStepViewed,
         .signupStarted,
+        .localModeSelected,
         .signupCompleted,
         .oauthRedirectStarted,
         .oauthReturn,

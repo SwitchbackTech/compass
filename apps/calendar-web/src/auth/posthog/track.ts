@@ -5,6 +5,7 @@ import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
  *
  * Signup funnel (`signup-funnel.ts`):
  * - `signup_started`: `source`, `anon_events_created`
+ * - `local_mode_selected`: `source` (anonymous local-only choice, not a login)
  * - `signup_completed`: `method`
  * - `signup_step_viewed`: `step_name`, optional `source`, `method` (includes
  *   `trial_step_viewed`, `trial_step_completed`, `trial_step_abandoned`)
@@ -18,6 +19,7 @@ export type ProductEvent =
   | "welcome_modal_dismissed"
   | "welcome_step_viewed"
   | "signup_started"
+  | "local_mode_selected"
   | "signup_completed"
   | "oauth_redirect_started"
   | "oauth_return"

@@ -221,6 +221,11 @@ any `$dead_click`, `$dead_swipe`, or `$rageclick` whose element chain still
 lands on the grid. Rageclicks on public booking pages are still dropped by
 the booking filter.
 
+`local_mode_selected` fires when an anonymous visitor chooses the sidebar
+**This browser** row (local IndexedDB mode). It must not be confused with
+`signup_started`, which is reserved for explicit login or trial CTAs (OAuth,
+email sign-up modal, command palette, and similar).
+
 `calendar_connected` has two sources, distinguished by a `source` property:
 `signup_google` from `GoogleAuthCallback` (a new user whose Google grant
 included the calendar scopes) and `connect_redirect` from
