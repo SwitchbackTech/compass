@@ -90,7 +90,7 @@ async function prepareSignedInZeroConnectionsPage(
     ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
   });
   await expect(
-    page.getByRole("dialog", { name: "Connect the calendar you use" }),
+    page.getByRole("dialog", { name: "Bring your events" }),
   ).toBeVisible({ timeout: 15000 });
 }
 
@@ -126,7 +126,7 @@ test("the signed-in connect-calendar prompt has no automatically detectable acce
 
   await expectNoAxeViolations(page, {
     checkpoint: "signed-in connect calendar prompt",
-    include: '[role="dialog"][aria-label="Connect the calendar you use"]',
+    include: '[role="dialog"][aria-label="Bring your events"]',
   });
 });
 

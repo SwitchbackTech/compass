@@ -24,7 +24,7 @@ const TITLE = "You're aboard!";
 const getBody = (access: AppAccess): string => {
   if (access.kind !== "server") return "Setting up your subscription...";
   if (access.status === "trialing") {
-    return "Your 7-day trial has started. Full access, nothing held back.";
+    return "Your 7-day trial has started. Full access to all Compass features.";
   }
   if (access.status === "active") return "You're a Compass Premium member.";
   return "Setting up your subscription...";
