@@ -5,6 +5,7 @@ import {
   EVENT_ALLDAY_ROW_HEIGHT,
 } from "@web/grid/grid.constants";
 import { ALL_DAY_COLUMN_TINT_PERCENT } from "@web/grid/utils/allDayColumnTint.util";
+import { compactAllDayRowHeightPx } from "@web/grid/utils/allDayRowHeight.util";
 import { AllDayGridRow } from "./AllDayGridRow";
 import { describe, expect, it } from "bun:test";
 
@@ -88,6 +89,7 @@ describe("AllDayGridRow", () => {
     );
 
     expect(screen.getByRole("region", { name: "All-day events" })).toHaveStyle({
+      height: `${compactAllDayRowHeightPx(0)}px`,
       minHeight: oneRowMinHeight,
     });
     expect(screen.getByText("No events yet")).toBeVisible();
@@ -104,6 +106,7 @@ describe("AllDayGridRow", () => {
     );
 
     expect(screen.getByRole("region", { name: "All-day events" })).toHaveStyle({
+      height: `${compactAllDayRowHeightPx(1)}px`,
       minHeight: oneRowMinHeight,
     });
   });
@@ -122,6 +125,7 @@ describe("AllDayGridRow", () => {
     );
 
     expect(screen.getByRole("region", { name: "All-day events" })).toHaveStyle({
+      height: `${compactAllDayRowHeightPx(3)}px`,
       minHeight: `${2 * EVENT_ALLDAY_GAP + 3 * EVENT_ALLDAY_ROW_HEIGHT}px`,
     });
     expect(screen.getByText("Stacked events")).toBeVisible();

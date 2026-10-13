@@ -113,7 +113,7 @@ describe("EventGrid", () => {
     );
 
     const allDayRow = screen.getByRole("region", { name: "All-day events" });
-    expect(getComputedStyle(allDayRow).height).toContain("6 *");
+    expect(getComputedStyle(allDayRow).height).toBe("97px");
     expect(getComputedStyle(allDayRow).minHeight).toBe("75px");
   });
 

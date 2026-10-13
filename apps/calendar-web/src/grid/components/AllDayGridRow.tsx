@@ -17,6 +17,11 @@ import { useGridMarginLeft } from "@web/grid/grid-margin";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
 import { allDayColumnTintStyle } from "@web/grid/utils/allDayColumnTint.util";
 import {
+  allDayRowStackHeightPx,
+  compactAllDayRowHeightPx,
+  isCompactAllDayRowHeightEnabled,
+} from "@web/grid/utils/allDayRowHeight.util";
+import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
@@ -48,6 +53,25 @@ const getAllDayRowMinHeightPx = (rowsCount: number) => {
   return 2 * EVENT_ALLDAY_GAP + rows * EVENT_ALLDAY_ROW_HEIGHT;
 };
 
+const legacyAllDayRowStyle = (
+  rowsCount: number,
+  gridOffsetTopPx: number,
+): { height: string; minHeight: string } => ({
+  height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
+  minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,
+});
+
+const compactAllDayRowStyle = (
+  rowsCount: number,
+): { height: string; minHeight: string } => {
+  const heightPx = compactAllDayRowHeightPx(rowsCount);
+  const stackPx = allDayRowStackHeightPx(rowsCount);
+  return {
+    height: `${heightPx}px`,
+    minHeight: `${stackPx}px`,
+  };
+};
+
 export const AllDayGridRow: FC<AllDayRowProps> = ({
   allDayColumnsRef,
   allDayRowRef,
@@ -61,17 +85,18 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
 }) => {
   const activeDayKeys = useEventJumpStore(selectEventJumpActiveDayKeys);
   const marginLeft = useGridMarginLeft();
+  const compactHeight = isCompactAllDayRowHeightEnabled();
+  const rowStyle = compactHeight
+    ? compactAllDayRowStyle(rowsCount)
+    : legacyAllDayRowStyle(rowsCount, gridOffsetTopPx);
 
   return (
     <section
-      className={`relative flex w-full shrink-0 items-start bg-background ${CALENDAR_GRID_PH_NO_RAGECLICK_CLASS}`}
+      className={`relative flex w-full shrink-0 items-start bg-background ${CALENDAR_GRID_PH_NO_RAGECLICK_CLASS}${compactHeight ? "transition-[height] duration-200 ease-out motion-reduce:transition-none" : ""}`}
       aria-label="All-day events"
       id={rowId}
       ref={allDayRowRef}
-      style={{
-        height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
-        minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,
-      }}
+      style={rowStyle}
     >
       <div
         className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-border before:content-['']"

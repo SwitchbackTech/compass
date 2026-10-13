@@ -4,6 +4,8 @@ import { mockModuleForFile } from "@web/__tests__/utils/mock-module.test.util";
 import * as posthogBootstrap from "@web/auth/posthog/posthog.bootstrap";
 import * as trackModule from "@web/auth/posthog/track";
 import {
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_ALLDAY_ROW,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
@@ -170,6 +172,30 @@ describe("attachPointerIntentTracker", () => {
           (props as { intent?: string }).intent === "card-click",
       ),
     ).toBe(false);
+  });
+
+  it("pulses allday-click with Shift+C on an empty all-day column", async () => {
+    const user = userEvent.setup();
+    document.body.innerHTML = `
+      <section id="${ID_GRID_ALLDAY_ROW}">
+        <div id="${ID_ALLDAY_COLUMNS}">
+          <div data-grid-date="2026-09-29" style="width: 200px; height: 40px"></div>
+        </div>
+      </section>
+    `;
+    const column = document.getElementById(ID_ALLDAY_COLUMNS)!
+      .firstElementChild as HTMLElement;
+
+    await user.pointer({ keys: "[MouseLeft>]", target: column });
+    await user.pointer({ keys: "[/MouseLeft]", target: column });
+
+    const attempt = usePointerHintStore.getState().latestAttempt;
+    expect(attempt?.shortcutKey).toEqual(["Shift", "C"]);
+    expect(attempt?.message).toMatch(/all-day event/i);
+    expect(capture).toHaveBeenCalledWith(
+      "pointer_intent_detected",
+      expect.objectContaining({ intent: "allday-click" }),
+    );
   });
 
   it("pulses slot-click with digits for the timed column y", async () => {
