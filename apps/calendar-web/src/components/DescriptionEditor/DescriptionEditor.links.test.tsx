@@ -22,6 +22,11 @@ mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
   copyText: copyTextMock,
 }));
 
+const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
+  const call = toastMock.mock.calls.at(-1);
+  return call ? String(call[0]) : "";
+};
+
 async function renderDescriptionEditor(
   props: {
     value: string;
@@ -99,7 +104,9 @@ describe("DescriptionEditor link staging UX", () => {
     );
     await user.click(copyButton);
     expect(copyTextMock).toHaveBeenCalledWith(meetingUrl);
-    expect(mocks.toast.mock.calls.at(-1)?.[0]).toBe("Link copied");
+    expect(
+      lastToastMessage(mocks.toast as { mock: { calls: unknown[][] } }),
+    ).toBe("Link copied");
 
     copyTextMock.mockClear();
     mocks.toast.mockClear();
@@ -110,7 +117,9 @@ describe("DescriptionEditor link staging UX", () => {
     await waitFor(() => {
       expect(copyTextMock).toHaveBeenCalledWith(meetingUrl);
     });
-    expect(mocks.toast.mock.calls.at(-1)?.[0]).toBe("Link copied");
+    expect(
+      lastToastMessage(mocks.toast as { mock: { calls: unknown[][] } }),
+    ).toBe("Link copied");
   });
 
   it("still opens links on Mod+click without copying on a plain click", async () => {
