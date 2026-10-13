@@ -8,6 +8,10 @@ import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { eventGridFirstImportFlags } from "@web/grid/event-grid-import-overlay";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
+import {
+  allDayLaneCountFromEvents,
+  isCompactAllDayRowHeightEnabled,
+} from "@web/grid/utils/allDayRowHeight.util";
 import { AllDayEvents } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvents";
 import { MainGridTimedEventsLayer } from "@web/views/Week/components/Grid/MainGrid/MainGridTimedEventsLayer";
 import {
@@ -42,7 +46,7 @@ export const Grid: FC<Props> = ({
     isSuccess,
     data,
     refetch,
-    rowCount: allDayRowsCount,
+    rowCount: savedAllDayRowsCount,
   } = useWeekEventViewModel({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
@@ -67,6 +71,16 @@ export const Grid: FC<Props> = ({
   });
 
   const gridDraft = useDraftStore(selectGridDraft);
+  const allDayRowsCount = useMemo(() => {
+    if (!isCompactAllDayRowHeightEnabled()) {
+      return savedAllDayRowsCount;
+    }
+    const { events } = positionAllDayDraftEvent({
+      draft: gridDraft,
+      events: allDayEvents,
+    });
+    return allDayLaneCountFromEvents(events);
+  }, [allDayEvents, gridDraft, savedAllDayRowsCount]);
   // Include the live all-day draft so create/edit chips tint columns before save.
   const allDayEventsForTint = useMemo(
     () =>

@@ -43,6 +43,7 @@ import {
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
   weekEventRegistry,
 } from "@web/grid/interaction/view-event-registry";
+import { compactAllDayRowHeightPx } from "@web/grid/utils/allDayRowHeight.util";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -420,7 +421,7 @@ describe("Week calendar accessibility", () => {
     expect(
       getComputedStyle(screen.getByRole("region", { name: "All-day events" }))
         .height,
-    ).toContain("0.09090909090909091");
+    ).toBe(`${compactAllDayRowHeightPx(2)}px`);
   });
 });
 
