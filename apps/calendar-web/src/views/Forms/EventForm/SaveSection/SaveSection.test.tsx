@@ -18,8 +18,7 @@ describe("SaveSection layout", () => {
     render(<SaveSection onSubmit={mock()} />);
 
     const save = screen.getByRole("button", { name: /save/i });
-    expect(save).toHaveClass("w-full", "c-button-primary", "c-button-elevated");
-    expect(save).toHaveClass("h-9", "justify-between");
+    expect(save).toHaveClass("c-button-save-bar");
     expect(save.closest("div")?.className).not.toContain("border-t");
   });
 

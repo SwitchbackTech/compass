@@ -36,7 +36,7 @@ export const SaveSection: React.FC<Props> = ({
       {onCancel && (
         <TooltipWrapper asChild description={cancelText} onClick={onCancel}>
           <Btn
-            className="c-button c-button-secondary h-10 w-full rounded-xs"
+            className="c-button c-button-secondary h-10 w-full justify-center rounded-xs"
             title={cancelText}
           >
             {cancelText}
@@ -47,7 +47,7 @@ export const SaveSection: React.FC<Props> = ({
       <Btn
         aria-keyshortcuts="Meta+Enter Control+Enter"
         aria-label={saveText}
-        className="c-button c-button-primary c-button-elevated h-9 w-full justify-between rounded-xs px-4"
+        className="c-button-save-bar"
         onClick={onSaveClick}
         type="button"
       >

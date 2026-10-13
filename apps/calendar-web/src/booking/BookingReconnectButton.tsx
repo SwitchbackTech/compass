@@ -17,7 +17,7 @@ export function BookingReconnectButton({
 
   return (
     <button
-      className="c-button c-button-secondary"
+      className="c-button c-button-secondary justify-center"
       disabled={isConnecting}
       onClick={() => connect()}
       type="button"
