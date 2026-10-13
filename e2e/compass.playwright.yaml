@@ -1,5 +1,5 @@
 runtime:
-  nodeEnv: test
+  nodeEnv: staging
   timezone: Etc/UTC
 
 web:

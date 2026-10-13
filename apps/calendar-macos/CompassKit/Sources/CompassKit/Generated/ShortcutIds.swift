@@ -60,6 +60,7 @@ public enum ShortcutId: String, Codable, Hashable, Sendable, CaseIterable {
     case editFormActions = "edit-form-actions"
     case editCancelMeeting = "edit-cancel-meeting"
     case editRescheduleMeeting = "edit-reschedule-meeting"
+    case editCopyDescriptionLink = "edit-copy-description-link"
     case editPickByNumber = "edit-pick-by-number"
     case editFocusPrev = "edit-focus-prev"
     case editFocusNext = "edit-focus-next"

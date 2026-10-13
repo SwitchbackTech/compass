@@ -17,6 +17,10 @@ import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+mock.module("@web/common/constants/env.constants", () => ({
+  IS_EVENT_SIDEBAR_STAGING_UX: true,
+}));
+
 const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
   name: "Shared calendar",

@@ -15,6 +15,10 @@ import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+mock.module("@web/common/constants/env.constants", () => ({
+  IS_EVENT_SIDEBAR_STAGING_UX: true,
+}));
+
 // packet 08 step 8: read-only web mode + busy-content rendering. Sibling to
 // EventForm.test.tsx/EventForm.calendarSelect.test.tsx (not an extension of
 // either) for the same reason EventForm.calendarSelect.test.tsx is its own

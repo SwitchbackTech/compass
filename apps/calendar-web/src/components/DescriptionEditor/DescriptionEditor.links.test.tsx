@@ -4,6 +4,9 @@ const copyTextMock = mock(() => Promise.resolve(true));
 mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
   copyText: copyTextMock,
 }));
+mock.module("@web/common/constants/env.constants", () => ({
+  IS_EVENT_SIDEBAR_STAGING_UX: true,
+}));
 
 import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
