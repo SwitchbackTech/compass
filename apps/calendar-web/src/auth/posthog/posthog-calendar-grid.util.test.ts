@@ -25,4 +25,28 @@ describe("isPosthogEventOnCalendarGrid", () => {
       }),
     ).toBe(false);
   });
+
+  it("matches an all-day column id in autocaptured elements", () => {
+    expect(
+      isPosthogEventOnCalendarGrid({
+        $elements: [{ attr__id: "allDayColumns" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("matches a timed grid row attribute in autocaptured elements", () => {
+    expect(
+      isPosthogEventOnCalendarGrid({
+        $elements: [{ "attr__data-calendar-timed-grid-row": "12" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("ignores autocaptured elements outside the grid", () => {
+    expect(
+      isPosthogEventOnCalendarGrid({
+        $elements: [{ attr__id: "sidebarToggle" }],
+      }),
+    ).toBe(false);
+  });
 });
