@@ -62,6 +62,14 @@ describe("track", () => {
     });
   });
 
+  it("forwards local_mode_selected to PostHog", () => {
+    track("local_mode_selected", { source: "anon_nudge" });
+
+    expect(capture).toHaveBeenCalledWith("local_mode_selected", {
+      source: "anon_nudge",
+    });
+  });
+
   it("no-ops when PostHog is not initialized", () => {
     client = undefined;
 

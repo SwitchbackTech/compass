@@ -21,6 +21,7 @@ afterAll(() => {
 });
 
 const {
+  trackLocalModeSelected,
   trackSignupCompleted,
   trackSignupFailed,
   trackSignupStarted,
@@ -84,6 +85,15 @@ describe("signup funnel", () => {
 
   // The legacy events feed existing PostHog insights. Their names and
   // properties must stay byte-identical while the new steps ride alongside.
+  it("fires local_mode_selected without signup funnel steps", () => {
+    trackLocalModeSelected("anon_nudge");
+
+    expect(capture).toHaveBeenCalledTimes(1);
+    expect(capture).toHaveBeenCalledWith("local_mode_selected", {
+      source: "anon_nudge",
+    });
+  });
+
   it("keeps signup_started unchanged and adds its step", () => {
     trackSignupStarted("welcome_modal_google", 3);
 

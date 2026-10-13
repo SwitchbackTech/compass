@@ -7,6 +7,7 @@ public enum ProductEvent: String, Codable, Hashable, Sendable, CaseIterable {
     case welcomeModalDismissed = "welcome_modal_dismissed"
     case welcomeStepViewed = "welcome_step_viewed"
     case signupStarted = "signup_started"
+    case localModeSelected = "local_mode_selected"
     case signupCompleted = "signup_completed"
     case oauthRedirectStarted = "oauth_redirect_started"
     case oauthReturn = "oauth_return"

@@ -5,7 +5,10 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
 } from "@web/auth/compass/state/auth.state.util";
-import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
+import {
+  trackLocalModeSelected,
+  trackSignupStartedAtClick,
+} from "@web/auth/posthog/signup-funnel";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -34,6 +37,10 @@ export const AnonymousCalendarRow: FC<AnonymousCalendarRowProps> = ({
     shouldShowAnonymousCalendarChangeSignUpPrompt,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
   );
+  const handleLocalModeSelected = useCallback(() => {
+    trackLocalModeSelected("anon_nudge");
+  }, []);
+
   const handleOpenSignUp = useCallback(() => {
     void trackSignupStartedAtClick("anon_nudge");
     openModal("signUp");
@@ -51,7 +58,7 @@ export const AnonymousCalendarRow: FC<AnonymousCalendarRowProps> = ({
                 ? "c-sync-text-wave"
                 : "text-text-muted hover:bg-surface-panel hover:text-text",
             )}
-            onClick={handleOpenSignUp}
+            onClick={handleLocalModeSelected}
             type="button"
           >
             <span
