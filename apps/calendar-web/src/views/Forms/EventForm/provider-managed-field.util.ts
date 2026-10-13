@@ -1,8 +1,5 @@
 import { type Calendar } from "@core/types/calendar.contracts";
-import {
-  type ProviderKind,
-  providerDisplayName,
-} from "@core/types/sync/identity.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { calendarProviderKind } from "@web/auth/providers/connection-provider.util";
 
 const CALENDAR_PRODUCT_NAME: Record<ProviderKind, string> = {
@@ -34,13 +31,4 @@ export const providerManagedRecurrenceToast = (
     return "Recurrence is managed by your calendar and can't be edited here.";
   }
   return `Recurrence is managed by ${CALENDAR_PRODUCT_NAME[kind]}.`;
-};
-
-/** For tests and copy that need the account label without the sentence wrapper. */
-export const calendarAccountProductName = (
-  calendar: Calendar | undefined,
-): string => {
-  const kind = resolveProviderKind(calendar);
-  if (!kind) return providerDisplayName("google");
-  return CALENDAR_PRODUCT_NAME[kind];
 };

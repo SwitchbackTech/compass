@@ -1,7 +1,5 @@
 import { type Editor } from "@tiptap/react";
 
-export const DESCRIPTION_LINK_FOCUS_CLASS = "c-description-editor-link-focus";
-
 export const findLinkElement = (
   _root: HTMLElement,
   target: EventTarget | null,
