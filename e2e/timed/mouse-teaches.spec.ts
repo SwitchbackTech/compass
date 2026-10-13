@@ -5,10 +5,7 @@ import {
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
   getTimedColumnClickPoint,
-  getTimedE2eClockAnchor,
-  installDeterministicBrowserClock,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
   prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -16,7 +13,6 @@ const getFormTitleInput = (page: import("@playwright/test").Page) =>
   page.getByRole("form").getByRole("textbox", { name: "Title" });
 
 const prepareTeachingWeek = async (page: import("@playwright/test").Page) => {
-  await installDeterministicBrowserClock(page, getTimedE2eClockAnchor());
   await page.addInitScript(() => {
     localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
     localStorage.setItem(
@@ -25,7 +21,7 @@ const prepareTeachingWeek = async (page: import("@playwright/test").Page) => {
     );
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
   });
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 };
 
 const pointerHint = (page: import("@playwright/test").Page) =>
@@ -89,8 +85,7 @@ test("day view slot click teaches typed time digits", async ({ page }) => {
     );
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
   });
-  await installDeterministicBrowserClock(page, getTimedE2eClockAnchor());
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
   await page.goto("/day", { waitUntil: "domcontentloaded" });
   await page.waitForURL((url) => url.pathname.startsWith("/day"));
 

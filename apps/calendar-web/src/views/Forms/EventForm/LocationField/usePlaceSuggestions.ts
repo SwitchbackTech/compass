@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useDebouncedValue } from "@web/common/hooks/useDebouncedValue";
 import { fetchPlaceSuggestions } from "@web/views/Forms/EventForm/LocationField/places.client";
 
 export const PLACE_SUGGESTION_DEBOUNCE_MS = 250;
@@ -16,15 +16,10 @@ export function usePlaceSuggestions(
   query: string,
   apiKey: string | undefined,
 ): string[] {
-  const [debouncedQuery, setDebouncedQuery] = useState(query.trim());
-
-  useEffect(() => {
-    const timer = setTimeout(
-      () => setDebouncedQuery(query.trim()),
-      PLACE_SUGGESTION_DEBOUNCE_MS,
-    );
-    return () => clearTimeout(timer);
-  }, [query]);
+  const debouncedQuery = useDebouncedValue(
+    query.trim(),
+    PLACE_SUGGESTION_DEBOUNCE_MS,
+  );
 
   const { data } = useQuery({
     queryKey: ["place-suggestions", debouncedQuery],

@@ -1,24 +1,15 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
 import {
   EVENT_TITLE_SEARCH_MIN,
   eventTitleSearchWindow,
 } from "@core/event/search-events-by-title";
+import { useDebouncedValue } from "@web/common/hooks/useDebouncedValue";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { fetchLocalEventsByTitle } from "@web/events/queries/event.query.local";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 
 const SEARCH_DEBOUNCE_MS = 250;
-
-function useDebouncedValue(value: string, delayMs: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-  return debounced;
-}
 
 export function useEventSearch(query: string) {
   const source = useEventRepositorySource();

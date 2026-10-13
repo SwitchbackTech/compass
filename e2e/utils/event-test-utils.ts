@@ -5,17 +5,9 @@ const LOCAL_DB_NAME = "compass-local";
 /** Mid-morning UTC anchor for timed specs that type ambiguous clock times. */
 export const DETERMINISTIC_E2E_CLOCK = new Date("2026-04-24T10:00:00.000Z");
 
-/** Late-evening UTC anchor for reproducing grid layout edge cases without wall-clock CI hour. */
-export const DETERMINISTIC_E2E_CLOCK_LATE_UTC = new Date(
-  "2026-04-24T23:50:00.000Z",
-);
-
 /** Pin the browser clock before navigation so draft defaults and AM/PM inference stay stable. */
-export const installDeterministicBrowserClock = async (
-  page: Page,
-  time: Date = DETERMINISTIC_E2E_CLOCK,
-) => {
-  await page.clock.install({ time });
+export const installDeterministicBrowserClock = async (page: Page) => {
+  await page.clock.install({ time: DETERMINISTIC_E2E_CLOCK });
 };
 
 // LocalEventRecord (B13) nests the event under `.event`; title lives at
@@ -273,17 +265,9 @@ export const prepareCalendarPage = async (page: Page) => {
   await page.locator("#mainGrid").focus();
 };
 
-/** Test-only override via `E2E_DETERMINISTIC_CLOCK=late` (~23:50 UTC) for reproducing CI near-midnight layout. */
-export const getTimedE2eClockAnchor = () => {
-  if (process.env.E2E_DETERMINISTIC_CLOCK === "late") {
-    return DETERMINISTIC_E2E_CLOCK_LATE_UTC;
-  }
-  return DETERMINISTIC_E2E_CLOCK;
-};
-
 /** Week prep with a pinned browser clock so event placement and hints do not depend on CI hour. */
 export const prepareTimedCalendarPage = async (page: Page) => {
-  await installDeterministicBrowserClock(page, getTimedE2eClockAnchor());
+  await installDeterministicBrowserClock(page);
   await prepareCalendarPage(page);
 };
 

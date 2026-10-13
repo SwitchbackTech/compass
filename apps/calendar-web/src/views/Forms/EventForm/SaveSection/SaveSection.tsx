@@ -16,19 +16,17 @@ interface Props {
 export const SaveSection: React.FC<Props> = ({
   saveText = "Save",
   cancelText = "Cancel",
-  onSubmit: _onSubmit,
+  onSubmit,
   onCancel,
 }) => {
-  const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
-
   const onSaveClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       if (isRealMouseClick(event)) {
         pulseClickTaughtShortcut("edit-save");
       }
-      onSave();
+      onSubmit();
     },
-    [onSave],
+    [onSubmit],
   );
 
   return (
