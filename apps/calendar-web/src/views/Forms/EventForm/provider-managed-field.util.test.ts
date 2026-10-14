@@ -34,4 +34,15 @@ describe("providerManagedScheduleToast", () => {
       "Recurrence is managed by iCloud Calendar.",
     );
   });
+
+  // The lookup returns undefined while the calendars query is still in flight;
+  // naming a provider there would attribute the lock to the wrong product.
+  it("falls back to the generic sentence when the calendar is unknown", () => {
+    expect(providerManagedScheduleToast(undefined)).toBe(
+      "This time is managed by your calendar and can't be edited here.",
+    );
+    expect(providerManagedRecurrenceToast(undefined)).toBe(
+      "Recurrence is managed by your calendar and can't be edited here.",
+    );
+  });
 });

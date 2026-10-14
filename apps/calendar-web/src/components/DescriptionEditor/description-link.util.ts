@@ -4,14 +4,22 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 export const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
 
+const LINK_SELECTOR = "a[href]";
+
+/** The nearest enclosing link, `node` itself included. */
+const closestLink = (node: Node | null): HTMLAnchorElement | null => {
+  if (!(node instanceof Element)) return null;
+  const link = node.closest(LINK_SELECTOR);
+  return link instanceof HTMLAnchorElement ? link : null;
+};
+
 export const findLinkElement = (
   root: HTMLElement,
   target: EventTarget | null,
-): HTMLAnchorElement | null => {
-  if (!(target instanceof HTMLElement) || !root.contains(target)) return null;
-  const link = target.closest("a[href]");
-  return link instanceof HTMLAnchorElement ? link : null;
-};
+): HTMLAnchorElement | null =>
+  target instanceof HTMLElement && root.contains(target)
+    ? closestLink(target)
+    : null;
 
 export const copyDescriptionLinkUrl = async (url: string): Promise<boolean> => {
   const didCopy = await copyText(url);
@@ -22,21 +30,17 @@ export const copyDescriptionLinkUrl = async (url: string): Promise<boolean> => {
 };
 
 export const listDescriptionLinks = (root: HTMLElement): HTMLAnchorElement[] =>
-  [...root.querySelectorAll<HTMLAnchorElement>("a[href]")].filter(
+  [...root.querySelectorAll<HTMLAnchorElement>(LINK_SELECTOR)].filter(
     (link) => link.href.length > 0,
   );
 
 export const linkAtCaret = (editor: Editor): HTMLAnchorElement | null => {
   const { view } = editor;
-  const { from } = view.state.selection;
-  const domAt = view.domAtPos(from);
-  let node: Node | null = domAt.node;
-  if (node.nodeType === Node.TEXT_NODE) {
-    node = node.parentElement;
-  }
-  if (!(node instanceof HTMLElement)) return null;
-  const link = node.closest("a[href]");
-  return link instanceof HTMLAnchorElement ? link : null;
+  const { node } = view.domAtPos(view.state.selection.from);
+  // domAtPos can land on a text node; only elements carry `closest`.
+  return closestLink(
+    node.nodeType === Node.TEXT_NODE ? node.parentElement : node,
+  );
 };
 
 export const resolveDescriptionLinkToCopy = (

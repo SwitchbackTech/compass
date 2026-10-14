@@ -2,25 +2,27 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { calendarProviderKind } from "@web/auth/providers/connection-provider.util";
 
-const CALENDAR_PRODUCT_NAME: Record<ProviderKind, string> = {
+// Deliberately not provider-copy's CALENDAR_PRODUCT_NAME: a lock toast names
+// the app the event came from ("Outlook", "iCloud Calendar"), where connect
+// and reconnect copy names the account ("Microsoft Calendar", "Apple
+// Calendar"). Keep the two apart rather than folding them together.
+const PROVIDER_MANAGED_PRODUCT_NAME: Record<ProviderKind, string> = {
   google: "Google Calendar",
   microsoft: "Outlook",
   apple: "iCloud Calendar",
 };
 
-const resolveProviderKind = (
-  calendar: Calendar | undefined,
-): ProviderKind | undefined =>
-  calendar ? calendarProviderKind(calendar) : "google";
-
+// An undefined kind means there is no product to name: the local calendar, or
+// a calendar the lookup has not resolved yet. Both take the generic sentence,
+// never a guessed provider.
 const providerManagedToast = (
   calendar: Calendar | undefined,
   generic: string,
   named: (product: string) => string,
 ): string => {
-  const kind = resolveProviderKind(calendar);
+  const kind = calendar ? calendarProviderKind(calendar) : undefined;
   if (!kind) return generic;
-  return named(CALENDAR_PRODUCT_NAME[kind]);
+  return named(PROVIDER_MANAGED_PRODUCT_NAME[kind]);
 };
 
 export const providerManagedScheduleToast = (
