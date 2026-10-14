@@ -6,10 +6,6 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
-type PickerSide = "start" | "end";
-
-const PICKER_SIDES: readonly PickerSide[] = ["start", "end"];
-
 interface Props {
   displayEndDate: Date;
   draft: GridEventDraft;
@@ -91,92 +87,53 @@ export const DatePickers: FC<Props> = ({
     }
   };
 
-  const pickers: Record<
-    PickerSide,
-    {
-      isOpen: boolean;
-      setIsOpen: (isOpen: boolean) => void;
-      onSelect: (date: Date) => void;
-      selected: Date;
-      title: string;
-      calendarClassName: string;
-      inputId?: string;
-    }
-  > = {
-    start: {
-      isOpen: isStartDatePickerOpen,
-      setIsOpen: setIsStartDatePickerOpen,
-      onSelect: onSelectStartDate,
-      selected: selectedStartDate,
-      title: "Pick Start Date",
-      calendarClassName: "startDatePicker",
-      inputId: "eventFormStartDate",
-    },
-    end: {
-      isOpen: isEndDatePickerOpen,
-      setIsOpen: setIsEndDatePickerOpen,
-      onSelect: onSelectEndDate,
-      selected: displayEndDate,
-      title: "Pick End Date",
-      calendarClassName: "endDatePicker",
-      inputId: "eventFormEndDate",
-    },
-  };
-
-  const openOnly = (side: PickerSide) => {
-    for (const other of PICKER_SIDES) {
-      pickers[other].setIsOpen(other === side);
-    }
-  };
-
   const closeOpenPickers = () => {
-    const open = PICKER_SIDES.filter((side) => pickers[side].isOpen);
-    for (const side of open) {
-      pickers[side].setIsOpen(false);
-    }
-    return open.length > 0;
+    const wasOpen = isStartDatePickerOpen || isEndDatePickerOpen;
+    setIsStartDatePickerOpen(false);
+    setIsEndDatePickerOpen(false);
+    return wasOpen;
   };
 
-  const onPickerKeyDown = (
-    side: PickerSide,
-    e: React.KeyboardEvent<HTMLDivElement>,
-  ) => {
-    if (
-      e.key === "ArrowDown" &&
-      !pickers[side].isOpen &&
-      !e.shiftKey &&
-      !e.metaKey &&
-      !e.ctrlKey &&
-      !e.altKey
-    ) {
-      e.preventDefault();
-      e.stopPropagation();
-      openOnly(side);
-    }
-
-    if (e.key === "Escape" && closeOpenPickers()) {
-      e.stopPropagation();
+  const onPickerEscape = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape" && closeOpenPickers()) {
+      event.stopPropagation();
     }
   };
 
   return (
     <>
-      {PICKER_SIDES.map((side) => (
-        <EventFormDateField
-          key={side}
-          arrowDownOpensCalendar
-          calendarClassName={pickers[side].calendarClassName}
-          inputId={pickers[side].inputId}
-          isOpen={pickers[side].isOpen}
-          onCalendarClose={() => pickers[side].setIsOpen(false)}
-          onCalendarOpen={() => openOnly(side)}
-          onCommit={pickers[side].onSelect}
-          onKeyDown={(event) => onPickerKeyDown(side, event)}
-          selected={pickers[side].selected}
-          sideLabel={side}
-          title={pickers[side].title}
-        />
-      ))}
+      <EventFormDateField
+        arrowDownOpensCalendar
+        calendarClassName="startDatePicker"
+        inputId="eventFormStartDate"
+        isOpen={isStartDatePickerOpen}
+        onCalendarClose={() => setIsStartDatePickerOpen(false)}
+        onCalendarOpen={() => {
+          setIsEndDatePickerOpen(false);
+          setIsStartDatePickerOpen(true);
+        }}
+        onCommit={onSelectStartDate}
+        onKeyDown={onPickerEscape}
+        selected={selectedStartDate}
+        sideLabel="start"
+        title="Pick Start Date"
+      />
+      <EventFormDateField
+        arrowDownOpensCalendar
+        calendarClassName="endDatePicker"
+        inputId="eventFormEndDate"
+        isOpen={isEndDatePickerOpen}
+        onCalendarClose={() => setIsEndDatePickerOpen(false)}
+        onCalendarOpen={() => {
+          setIsStartDatePickerOpen(false);
+          setIsEndDatePickerOpen(true);
+        }}
+        onCommit={onSelectEndDate}
+        onKeyDown={onPickerEscape}
+        selected={displayEndDate}
+        sideLabel="end"
+        title="Pick End Date"
+      />
     </>
   );
 };

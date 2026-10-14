@@ -56,4 +56,26 @@ describe("EventFormDateField", () => {
     expect(onCommit).toHaveBeenCalledTimes(1);
     expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(12);
   });
+
+  it("opens the calendar on ArrowDown when arrowDownOpensCalendar is set", async () => {
+    const user = userEvent.setup();
+    const onCalendarOpen = mock();
+    render(
+      <EventFormDateField
+        arrowDownOpensCalendar
+        isOpen={false}
+        onCalendarClose={() => undefined}
+        onCalendarOpen={onCalendarOpen}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    screen.getByTitle("Pick Start Date").focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(onCalendarOpen).toHaveBeenCalledTimes(1);
+  });
 });

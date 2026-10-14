@@ -1,15 +1,12 @@
 import { type Editor } from "@tiptap/react";
 import { useCallback } from "react";
 import { KEYMAP } from "@core/shortcuts/keymap";
-import { copyText } from "@web/common/utils/clipboard/clipboard.util";
-import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
+  copyDescriptionLinkUrl,
   findLinkElement,
   resolveDescriptionLinkToCopy,
 } from "@web/components/DescriptionEditor/description-link.util";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-
-const LINK_COPIED_TOAST_ID = "description-link-copied";
 
 export function useDescriptionEditorCopyLinkShortcut(
   editor: Editor | null,
@@ -24,11 +21,7 @@ export function useDescriptionEditorCopyLinkShortcut(
       const url = resolveDescriptionLinkToCopy(editor, editorRoot, focusedLink);
       if (!url) return;
 
-      void copyText(url).then((didCopy) => {
-        if (didCopy) {
-          showStatusToast(LINK_COPIED_TOAST_ID, "Link copied");
-        }
-      });
+      void copyDescriptionLinkUrl(url);
     },
     [editor, editorRoot],
   );

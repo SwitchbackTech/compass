@@ -38,4 +38,22 @@ describe("timedScheduleFromDateChange", () => {
     ).toBe(60);
     expect(dayjs(mapped.schedule.start).date()).toBe(25);
   });
+
+  it("keeps the start instant when only the end date changes", () => {
+    const mapped = timedScheduleFromDateChange({
+      changed: "end",
+      nextDate: dayjs(start).add(1, "day").toDate(),
+      selectedStartDate: start,
+      startTime,
+      endTime,
+      scheduleStart: start,
+      scheduleEnd: end,
+    });
+    expect(mapped.ok).toBe(true);
+    if (!mapped.ok || mapped.schedule.kind !== "timed") return;
+    expect(dayjs(mapped.schedule.start).toISOString()).toBe(
+      start.toISOString(),
+    );
+    expect(dayjs(mapped.schedule.end).date()).toBe(25);
+  });
 });

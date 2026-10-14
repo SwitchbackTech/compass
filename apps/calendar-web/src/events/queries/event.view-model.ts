@@ -181,8 +181,6 @@ const allDayEventsFrom = (events: Event[], annotations?: EventAnnotations) =>
     ...multiDayTimedAsAllDayFrom(events, annotations),
   ]).allDayEvents;
 
-const rowCountFrom = allDayLaneCountFromEvents;
-
 export type CalendarEventViewModel = {
   entities: NormalizedEventQueryData["entities"];
   events: Event[];
@@ -219,7 +217,7 @@ const computeCalendarEventViewModel = (
     events,
     timedEvents,
     allDayEvents,
-    rowCount: rowCountFrom(allDayEvents),
+    rowCount: allDayLaneCountFromEvents(allDayEvents),
     demoEventIds,
   };
 };

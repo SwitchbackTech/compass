@@ -681,7 +681,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const dateTimeSectionProps = {
       displayEndDate,
       draft,
-      category,
       endTime,
       isEndDatePickerOpen,
       isStartDatePickerOpen,

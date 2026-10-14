@@ -13,7 +13,6 @@ import {
   type MouseEvent,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { IS_EVENT_SIDEBAR_STAGING_UX } from "@web/common/constants/env.constants";
@@ -113,8 +112,6 @@ export const DescriptionEditor = ({
   id,
 }: DescriptionEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
-  const editorShellRef = useRef<HTMLDivElement>(null);
-  const [editorRoot, setEditorRoot] = useState<HTMLElement | null>(null);
 
   // Sanitizing is only meaningful for the editor's initial content - TipTap
   // reads `content` once at (re)creation, gated by the same [resetKey] below.
@@ -206,13 +203,8 @@ export const DescriptionEditor = ({
     editor?.setEditable(editable, false);
   }, [editor, editable]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: editorRoot tracks DOM under the TipTap mount keyed by resetKey.
-  useEffect(() => {
-    const shell = editorShellRef.current;
-    if (!shell) return;
-    const tiptap = shell.querySelector(".tiptap");
-    setEditorRoot(tiptap instanceof HTMLElement ? tiptap : null);
-  }, [editor, resetKey]);
+  const editorRoot =
+    editor?.view.dom instanceof HTMLElement ? editor.view.dom : null;
 
   const linkUxEnabled = IS_EVENT_SIDEBAR_STAGING_UX;
   useDescriptionEditorCopyLinkShortcut(
@@ -247,17 +239,17 @@ export const DescriptionEditor = ({
     const link = findLinkElement(editorRoot, event.target);
     if (!link) return;
 
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      if (focusAdjacentDescriptionLink(editorRoot, link, "next")) {
-        event.preventDefault();
-      }
-      return;
-    }
-
-    if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      if (focusAdjacentDescriptionLink(editorRoot, link, "prev")) {
-        event.preventDefault();
-      }
+    const direction =
+      event.key === "ArrowDown" || event.key === "ArrowRight"
+        ? "next"
+        : event.key === "ArrowUp" || event.key === "ArrowLeft"
+          ? "prev"
+          : null;
+    if (
+      direction &&
+      focusAdjacentDescriptionLink(editorRoot, link, direction)
+    ) {
+      event.preventDefault();
     }
   };
 
@@ -279,7 +271,6 @@ export const DescriptionEditor = ({
 
   return (
     <div
-      ref={editorShellRef}
       className="flex flex-col gap-1.5"
       onClickCapture={onDescriptionClickCapture}
     >

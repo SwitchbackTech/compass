@@ -13,22 +13,30 @@ const resolveProviderKind = (
 ): ProviderKind | undefined =>
   calendar ? calendarProviderKind(calendar) : "google";
 
-export const providerManagedScheduleToast = (
+const providerManagedToast = (
   calendar: Calendar | undefined,
+  generic: string,
+  named: (product: string) => string,
 ): string => {
   const kind = resolveProviderKind(calendar);
-  if (!kind) {
-    return "This time is managed by your calendar and can't be edited here.";
-  }
-  return `This time is managed by ${CALENDAR_PRODUCT_NAME[kind]}.`;
+  if (!kind) return generic;
+  return named(CALENDAR_PRODUCT_NAME[kind]);
 };
+
+export const providerManagedScheduleToast = (
+  calendar: Calendar | undefined,
+): string =>
+  providerManagedToast(
+    calendar,
+    "This time is managed by your calendar and can't be edited here.",
+    (product) => `This time is managed by ${product}.`,
+  );
 
 export const providerManagedRecurrenceToast = (
   calendar: Calendar | undefined,
-): string => {
-  const kind = resolveProviderKind(calendar);
-  if (!kind) {
-    return "Recurrence is managed by your calendar and can't be edited here.";
-  }
-  return `Recurrence is managed by ${CALENDAR_PRODUCT_NAME[kind]}.`;
-};
+): string =>
+  providerManagedToast(
+    calendar,
+    "Recurrence is managed by your calendar and can't be edited here.",
+    (product) => `Recurrence is managed by ${product}.`,
+  );
