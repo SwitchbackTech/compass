@@ -226,6 +226,23 @@ the booking filter.
 `signup_started`, which is reserved for explicit login or trial CTAs (OAuth,
 email sign-up modal, command palette, and similar).
 
+OAuth signup drop-off uses four named stages shared by Google, Microsoft, and
+Apple (`packages/core/src/analytics/oauth-signup.events.ts`):
+
+1. `oauth_redirect_started` (`provider`, `intent`) when the browser leaves for
+   the provider consent screen.
+2. `oauth_callback_received` (`provider`) when the provider redirect lands. The
+   SPA relays the query string to the backend route
+   `GET /auth/:provider/callback` with `X-Compass-OAuth-Telemetry: 1` so the
+   event is captured server-side even when JavaScript fails later. OAuth `state`
+   carries the PostHog anon distinct id when available.
+3. `oauth_failed` (`provider`, `reason`, optional `provider_error`) for consent
+   denial, invalid state, missing code, token exchange errors, and other
+   failures. Legacy `signup_failed` still fires with `reason_code` for existing
+   insights.
+4. `signup_completed` or `login_completed` (`method`) after a successful
+   SuperTokens exchange (unchanged).
+
 `calendar_connected` has two sources, distinguished by a `source` property:
 `signup_google` from `GoogleAuthCallback` (a new user whose Google grant
 included the calendar scopes) and `connect_redirect` from

@@ -20,6 +20,7 @@ import {
   microsoftSubjectId,
 } from "@backend/auth/services/microsoft/microsoft.auth.service";
 import { type MicrosoftSignInSuccess } from "@backend/auth/services/microsoft/microsoft.auth.types";
+import { providerOAuthSignupAnalytics } from "@backend/auth/services/provider-oauth-signup.analytics";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   appleFormUserJsonFromInput,
@@ -30,6 +31,7 @@ import {
   ensureExternalUserIdMapping,
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
+  oauthStateFromThirdPartySignInUpInput,
   withAppleFirstAuthorizationName,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
@@ -224,7 +226,8 @@ export async function handleThirdPartySignInUp(
   originalSignInUpPOST: ThirdPartySignInUpPostFn,
 ): Promise<Awaited<ReturnType<ThirdPartySignInUpPostFn>>> {
   const thirdPartyId = input.provider?.id ?? "google";
-  const kind = providerKindFromThirdPartyId(thirdPartyId);
+  const kind = providerKindFromThirdPartyId(thirdPartyId) ?? "google";
+  const oauthState = oauthStateFromThirdPartySignInUpInput(input);
 
   let response: Awaited<ReturnType<ThirdPartySignInUpPostFn>>;
 
@@ -235,6 +238,11 @@ export async function handleThirdPartySignInUp(
       provider: kind,
       error: err instanceof Error ? err.message : String(err),
     });
+    providerOAuthSignupAnalytics.captureFailed({
+      provider: kind,
+      state: oauthState,
+      reason: "token_exchange_error",
+    });
     throw err;
   }
 
@@ -242,6 +250,11 @@ export async function handleThirdPartySignInUp(
     logger.warn("oauth_callback_returned: sign-in status not OK", {
       provider: kind,
       status: response.status,
+    });
+    providerOAuthSignupAnalytics.captureFailed({
+      provider: kind,
+      state: oauthState,
+      reason: "token_exchange_error",
     });
   }
 
@@ -311,6 +324,11 @@ export async function handleThirdPartySignInUp(
     logger.error("oauth_callback_returned: post-exchange handling threw", {
       provider: kind,
       error: err instanceof Error ? err.message : String(err),
+    });
+    providerOAuthSignupAnalytics.captureFailed({
+      provider: kind,
+      state: oauthState,
+      reason: "other",
     });
     throw err;
   }

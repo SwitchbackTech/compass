@@ -164,6 +164,16 @@ export function withAppleFirstAuthorizationName(
   };
 }
 
+export function oauthStateFromThirdPartySignInUpInput(
+  input: ThirdPartySignInUpInput,
+): string | undefined {
+  if (!("redirectURIInfo" in input) || input.redirectURIInfo == null) {
+    return undefined;
+  }
+  const state = input.redirectURIInfo.redirectURIQueryParams?.state;
+  return typeof state === "string" && state.length > 0 ? state : undefined;
+}
+
 export function appleFormUserJsonFromInput(
   input: ThirdPartySignInUpInput,
 ): string | undefined {

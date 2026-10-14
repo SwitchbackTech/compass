@@ -11,8 +11,18 @@ import {
   useMissingPermissionsStore,
 } from "@web/auth/providers/missing-permissions.store";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { completeProviderAuthCallback } from "@web/views/ProviderAuthCallback/ProviderAuthCallback";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+
+mock.module(
+  "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry",
+  () => ({
+    relayProviderOAuthCallbackTelemetry: () => undefined,
+  }),
+);
+
+const { completeProviderAuthCallback } = await import(
+  "@web/views/ProviderAuthCallback/ProviderAuthCallback"
+);
 
 const GOOGLE_SCOPES_REQUIRED = PROVIDER_AUTH_SCOPES_REQUIRED.google;
 

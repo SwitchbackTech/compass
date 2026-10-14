@@ -1,12 +1,10 @@
-import {
-  type SignupMethod,
-  trackSignupFailed,
-} from "@web/auth/posthog/signup-funnel";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { trackOAuthSignupFailed } from "@web/auth/posthog/oauth-signup-funnel";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
 type ReportAuthCallbackCrashOptions = {
-  method: SignupMethod;
+  method: ProviderKind;
   errorMessage: string;
   replace: (path: string) => void;
 };
@@ -22,8 +20,9 @@ type ReportAuthCallbackCrashOptions = {
 export const reportAuthCallbackCrash =
   ({ method, errorMessage, replace }: ReportAuthCallbackCrashOptions) =>
   (error: unknown): void => {
-    trackSignupFailed("oauth_callback_crashed", {
-      method,
+    trackOAuthSignupFailed({
+      provider: method,
+      reason: "oauth_callback_crashed",
       error: error instanceof Error ? error.message : String(error),
     });
     showErrorToast(errorMessage);

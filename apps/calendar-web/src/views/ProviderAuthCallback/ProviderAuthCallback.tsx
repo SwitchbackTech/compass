@@ -7,9 +7,9 @@ import { shouldRelayDesktopOAuthCallback } from "@web/auth/callback/desktop-oaut
 import { reportAuthCallbackCrash } from "@web/auth/callback/report-auth-callback-crash";
 import { useOneShotAuthCallback } from "@web/auth/callback/useOneShotAuthCallback";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
+import { trackOAuthSignupFailed } from "@web/auth/posthog/oauth-signup-funnel";
 import {
   trackSignupCompleted,
-  trackSignupFailed,
   trackSignupStep,
 } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
@@ -18,6 +18,7 @@ import {
   isSignInProviderKind,
   PROVIDER_AUTHORIZATION_ERROR_MESSAGE,
 } from "@web/auth/providers/authorization/provider-authorization.constants";
+import { relayProviderOAuthCallbackTelemetry } from "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry";
 import { missingPermissionsActions } from "@web/auth/providers/missing-permissions.store";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
@@ -39,9 +40,12 @@ export async function completeProviderAuthCallback({
   navigate,
   search,
 }: CompleteProviderAuthCallbackOptions): Promise<void> {
+  relayProviderOAuthCallbackTelemetry(provider, search);
+
   // Before any branch: a user who came back from the provider is counted even
   // when the exchange below fails.
   trackSignupStep("oauth_callback_returned", { method: provider });
+  track("oauth_callback_received", { provider });
 
   const result = await completeProviderAuthorization({
     provider,
@@ -51,8 +55,11 @@ export async function completeProviderAuthCallback({
   });
 
   if (result.status === "failed") {
-    trackSignupFailed(result.reason, {
-      method: provider,
+    trackOAuthSignupFailed({
+      provider,
+      reason: result.reason,
+      providerError:
+        result.error === "access_denied" ? result.error : undefined,
       step: "oauth_callback_returned",
       error: result.error,
     });

@@ -20,6 +20,8 @@ public enum ProductEventNativeCoverage: Sendable {
         .localModeSelected,
         .signupCompleted,
         .oauthRedirectStarted,
+        .oauthCallbackReceived,
+        .oauthFailed,
         .oauthReturn,
         .signupStepViewed,
         .signupFailed,

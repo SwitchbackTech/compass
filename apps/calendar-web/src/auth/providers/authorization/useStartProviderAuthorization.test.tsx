@@ -61,7 +61,7 @@ describe("useStartProviderAuthorizationImpl", () => {
       key.includes("googleAuthorizationIntent"),
     );
     expect(intents).toHaveLength(1);
-    const state = intents[0]?.split(".").at(-1);
+    const state = intents[0]?.replace("compass.googleAuthorizationIntent.", "");
     expect(state).toBeDefined();
     expect(readProviderAuthorizationIntent("google", state!)).toEqual(
       expect.objectContaining({
@@ -95,7 +95,10 @@ describe("useStartProviderAuthorizationImpl", () => {
       key.includes("providerAuthorizationIntent.microsoft"),
     );
     expect(intents).toHaveLength(1);
-    const state = intents[0]?.split(".").at(-1);
+    const state = intents[0]?.replace(
+      "compass.providerAuthorizationIntent.microsoft.",
+      "",
+    );
     expect(readProviderAuthorizationIntent("microsoft", state!)).toEqual(
       expect.objectContaining({
         intent: "signIn",

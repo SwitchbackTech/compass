@@ -17,6 +17,7 @@ import {
   clearProviderAuthorizationIntent,
   readProviderAuthorizationIntent,
 } from "@web/auth/providers/authorization/provider-authorization.storage";
+import { relayProviderOAuthCallbackTelemetry } from "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
@@ -33,7 +34,9 @@ export async function completeAppleAuthCallback({
   navigate,
   search,
 }: CompleteAppleAuthCallbackOptions): Promise<void> {
+  relayProviderOAuthCallbackTelemetry("apple", search);
   trackSignupStep("oauth_callback_returned", { method: "apple" });
+  track("oauth_callback_received", { provider: "apple" });
 
   const params = new URLSearchParams(search);
 

@@ -7,6 +7,13 @@ import {
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
+mock.module(
+  "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry",
+  () => ({
+    relayProviderOAuthCallbackTelemetry: () => undefined,
+  }),
+);
+
 const mockLoginOrSignup = mock();
 const realLoginOrSignup = AuthApi.loginOrSignup;
 AuthApi.loginOrSignup = mockLoginOrSignup as typeof AuthApi.loginOrSignup;
@@ -17,8 +24,7 @@ afterAll(() => {
 
 const { port, mocks } = createTestToastPort();
 
-const { completeAppleAuthCallback } =
-  require("./AppleAuthCallback") as typeof import("./AppleAuthCallback");
+const { completeAppleAuthCallback } = await import("./AppleAuthCallback");
 
 const callbackSearch = (state: string) =>
   `?state=${encodeURIComponent(state)}&code=auth-code`;
