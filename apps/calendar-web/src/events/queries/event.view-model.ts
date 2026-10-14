@@ -2,6 +2,7 @@ import { Origin } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { withColor, withColorHex } from "@core/types/event-color.contracts";
+import { formatInstantInTimeZone } from "@core/util/date/civil-day";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
@@ -57,8 +58,16 @@ const eventToGridEvent = (
 ): GridEvent => {
   const { schedule } = event;
   const isAllDay = scheduleOverride?.isAllDay ?? schedule.kind === "allDay";
-  const startDate = scheduleOverride?.startDate ?? schedule.start;
-  const endDate = scheduleOverride?.endDate ?? schedule.end;
+  const startDate =
+    scheduleOverride?.startDate ??
+    (schedule.kind === "timed"
+      ? formatInstantInTimeZone(schedule.start, schedule.timeZone)
+      : schedule.start);
+  const endDate =
+    scheduleOverride?.endDate ??
+    (schedule.kind === "timed"
+      ? formatInstantInTimeZone(schedule.end, schedule.timeZone)
+      : schedule.end);
   const isBusy = event.content.kind === "busy";
   const isProviderManaged = event.providerManaged === true;
   const details = event.content.kind === "details" ? event.content : undefined;

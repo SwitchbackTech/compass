@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { civilHourSlotCount } from "@core/util/date/civil-day";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { getColorsByHour } from "@web/common/utils/datetime/web.date.util";
@@ -17,7 +18,14 @@ export function CalendarTimeColumn({ at }: { at: Date }) {
   const timeTravelZone = useTimeTravelZone();
   const marginLeft = gridMarginLeftFor(timeTravelZone !== null);
   const currentHour = useMinuteTick().tz(effectiveTimeZone).hour();
-  const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
+  const slotCount = useMemo(
+    () => civilHourSlotCount(at, effectiveTimeZone),
+    [at, effectiveTimeZone],
+  );
+  const colors = useMemo(
+    () => getColorsByHour(currentHour, slotCount),
+    [currentHour, slotCount],
+  );
   const primaryLabels = useMemo(
     () => mappedHourLabels(effectiveTimeZone, effectiveTimeZone, at),
     [at, effectiveTimeZone],

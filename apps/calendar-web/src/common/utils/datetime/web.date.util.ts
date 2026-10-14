@@ -10,6 +10,7 @@ import {
   type EventSchedule,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
+import { civilHourSlotCount, startOfCivilDay } from "@core/util/date/civil-day";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -32,8 +33,11 @@ interface SelectedDates {
  * `currentHour` matches at `currentHour - 1`. CSS variables (not hex) so the
  * colors land in inline styles that resolve against the active [data-theme].
  */
-export const getColorsByHour = (currentHour: number): string[] =>
-  Array.from({ length: 24 }, (_, index) =>
+export const getColorsByHour = (
+  currentHour: number,
+  slotCount = 24,
+): string[] =>
+  Array.from({ length: slotCount }, (_, index) =>
     currentHour - 1 === index ? "var(--accent)" : "var(--text-muted)",
   );
 
@@ -41,9 +45,14 @@ export const getDayjsByTimeValue = (timeValue: string) => {
   return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
 };
 
-export const getHourLabels = (includeMidnight = false) => {
-  const day = dayjs().startOf("day");
-  const hours = includeMidnight ? 24 : 23;
+export const getHourLabels = (
+  includeMidnight = false,
+  referenceDay: Dayjs | Date | string = dayjs(),
+  timeZone: string = getEffectiveTimeZone(),
+) => {
+  const slotCount = civilHourSlotCount(referenceDay, timeZone);
+  const hours = includeMidnight ? slotCount : Math.max(0, slotCount - 1);
+  const day = startOfCivilDay(referenceDay, timeZone);
 
   return Array.from({ length: hours }, (_, index) =>
     day.add(index + 1, "hour").format(HOURS_AM_SHORT_FORMAT),

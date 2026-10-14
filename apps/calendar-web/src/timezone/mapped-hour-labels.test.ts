@@ -25,6 +25,16 @@ describe("mappedHourLabels", () => {
     expect(labels[12]).toBe("11 AM");
   });
 
+  it("emits 24 mapped labels on a 25-hour fall-back day", () => {
+    const labels = mappedHourLabels(
+      "America/Denver",
+      "America/Denver",
+      "2026-11-01",
+    );
+    expect(labels).toHaveLength(24);
+    expect(labels[0]).toBe("1 AM");
+  });
+
   it("uses the per-instant offset when DST differs between zones", () => {
     // 2026-03-15: US already on EDT, UK still on GMT (5h vs the later 4h BST gap).
     const march = mappedHourLabels(

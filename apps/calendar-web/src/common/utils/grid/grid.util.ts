@@ -1,3 +1,7 @@
+import {
+  civilDayLengthMinutes,
+  minutesFromCivilMidnight,
+} from "@core/util/date/civil-day";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   GRID_EVENT_TITLE_LINE_HEIGHT_PX,
@@ -35,9 +39,8 @@ export const assignEventToRow = (
   return { fits, rowNum };
 };
 
-export const getCurrentMinute = () => {
-  const now = dayjs().tz(getEffectiveTimeZone());
-  return now.get("hours") * 60 + now.get("minutes");
+export const getCurrentMinute = (timeZone: string = getEffectiveTimeZone()) => {
+  return minutesFromCivilMidnight(dayjs(), timeZone);
 };
 
 // Timed grid always renders exactly TIMED_VISIBLE_HOURS worth of rows in
@@ -46,8 +49,12 @@ export const getCurrentMinute = () => {
 export const getMinuteHeight = (clientHeight: number) =>
   clientHeight / TIMED_VISIBLE_HOURS / 60;
 
-export const getCurrentPercentOfDay = () => {
-  return (getCurrentMinute() / 1440) * 100;
+export const getCurrentPercentOfDay = (
+  timeZone: string = getEffectiveTimeZone(),
+) => {
+  const now = dayjs().tz(timeZone);
+  const civilMinutes = civilDayLengthMinutes(now, timeZone);
+  return (minutesFromCivilMidnight(now, timeZone) / civilMinutes) * 100;
 };
 
 // Scrolls the current time to just below the viewport top, not flush with

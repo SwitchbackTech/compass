@@ -16,6 +16,7 @@ import {
   type CreateEventInput,
   type RecurrenceScope,
 } from "@core/types/event-command.contracts";
+import { formatInstantInTimeZone } from "@core/util/date/civil-day";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -278,6 +279,10 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   const color = draft.values.color ?? undefined;
   const colorHex = gridEventDraftColorHex(draft);
   const isAllDay = schedule.kind === "allDay";
+  const timedZone =
+    schedule.kind === "timed"
+      ? (schedule.timeZone ?? getEffectiveTimeZone())
+      : getEffectiveTimeZone();
 
   return {
     _id: getGridDraftId(draft),
@@ -288,10 +293,10 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
     isAllDay,
     startDate: isAllDay
       ? toDateOnlyString(schedule.start)
-      : dayjs(schedule.start).format(),
+      : formatInstantInTimeZone(schedule.start, timedZone),
     endDate: isAllDay
       ? toDateOnlyString(schedule.end)
-      : dayjs(schedule.end).format(),
+      : formatInstantInTimeZone(schedule.end, timedZone),
     recurrence: legacyRecurrenceFromDraft(draft),
     position: gridEventDefaultPosition,
     calendarId: draft.values.calendarId ?? undefined,

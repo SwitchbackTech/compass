@@ -1,5 +1,6 @@
 import { HOURS_AM_SHORT_FORMAT } from "@core/constants/date.constants";
-import dayjs from "@core/util/date/dayjs";
+import { civilHourSlotCount, startOfCivilDay } from "@core/util/date/civil-day";
+import type dayjs from "@core/util/date/dayjs";
 
 function formatMappedHourLabel(date: dayjs.Dayjs): string {
   return date.minute() === 0
@@ -17,8 +18,9 @@ export function mappedHourLabels(
   displayTimeZone: string,
   at: Date | string,
 ): string[] {
-  const day = dayjs(at).tz(effectiveTimeZone).startOf("day");
-  return Array.from({ length: 23 }, (_, index) =>
+  const labelCount = Math.max(0, civilHourSlotCount(at, effectiveTimeZone) - 1);
+  const day = startOfCivilDay(at, effectiveTimeZone);
+  return Array.from({ length: labelCount }, (_, index) =>
     formatMappedHourLabel(day.add(index + 1, "hour").tz(displayTimeZone)),
   );
 }
