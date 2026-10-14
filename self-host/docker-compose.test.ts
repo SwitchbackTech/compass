@@ -707,7 +707,9 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
     // The image must build with its own deploy compass.yaml. The boot-size
     // script swaps in placeholder config (fake API URL and PostHog key).
-    expect(dockerfile).toContain("RUN cd apps/calendar-web && bun run build.ts");
+    expect(dockerfile).toContain(
+      "RUN cd apps/calendar-web && bun run build.ts",
+    );
     expect(dockerfile).not.toContain("RUN .github/perf/run-boot-size-check.sh");
     expect(dockerfile).not.toContain("COMPASS_CONFIG_FILE");
   });
