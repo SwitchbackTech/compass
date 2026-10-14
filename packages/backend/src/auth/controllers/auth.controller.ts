@@ -1,3 +1,4 @@
+import type express from "express";
 import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { Logger } from "@core/logger/winston.logger";
@@ -14,6 +15,11 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { resolveAppleFormPostRedirect } from "@backend/auth/services/apple/apple.auth.callback";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import {
+  appleFormPostAnalytics,
+  handleProviderOAuthCallback,
+  parseProviderOAuthCallbackProvider,
+} from "@backend/auth/services/provider-oauth-callback.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   isAppleConnectConfigured,
@@ -202,12 +208,52 @@ class AuthController {
     req: ReqBody<Record<string, unknown>>,
     res: Res_Promise,
   ): void => {
-    const result = resolveAppleFormPostRedirect(req.body ?? {});
+    const body = req.body ?? {};
+    const state = typeof body["state"] === "string" ? body["state"].trim() : "";
+    if (state) {
+      appleFormPostAnalytics({
+        state,
+        code: typeof body["code"] === "string" ? body["code"] : undefined,
+        error: typeof body["error"] === "string" ? body["error"] : undefined,
+      });
+    }
+
+    const result = resolveAppleFormPostRedirect(body);
     if ("status" in result) {
       res.status(result.status).json({ error: result.message });
       return;
     }
     res.redirect(302, result.location);
+  };
+
+  providerOAuthCallback = (
+    req: express.Request,
+    res: express.Response,
+  ): void => {
+    const provider = parseProviderOAuthCallbackProvider(
+      String(req.params["provider"] ?? ""),
+    );
+    if (!provider) {
+      res.status(404).json({ error: "Unknown OAuth provider" });
+      return;
+    }
+
+    const telemetryOnly =
+      req.header("x-compass-oauth-telemetry") === "1" ||
+      req.query["telemetry"] === "1";
+
+    const resolution = handleProviderOAuthCallback({
+      provider,
+      query: req.query as Record<string, string | undefined>,
+      telemetryOnly,
+    });
+
+    if (resolution.mode === "telemetry") {
+      res.status(204).end();
+      return;
+    }
+
+    res.redirect(302, resolution.location);
   };
 }
 

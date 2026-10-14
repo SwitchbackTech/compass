@@ -11,6 +11,11 @@ import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
  *   `trial_step_viewed`, `trial_step_completed`, `trial_step_abandoned`)
  * - `signup_failed`: `reason_code`, optional `method`, `step`, `error`
  *
+ * OAuth signup drop-off (server + client; `packages/core/src/analytics/oauth-signup.events.ts`):
+ * - `oauth_redirect_started`: `provider`, `intent`
+ * - `oauth_callback_received`: `provider`
+ * - `oauth_failed`: `provider`, `reason`, optional `provider_error`
+ *
  * Billing:
  * - `trial_converted`: `source`, optional `feature_area`, `action_id`, `trial`
  */
@@ -22,6 +27,8 @@ export type ProductEvent =
   | "local_mode_selected"
   | "signup_completed"
   | "oauth_redirect_started"
+  | "oauth_callback_received"
+  | "oauth_failed"
   | "oauth_return"
   | "signup_step_viewed"
   | "signup_failed"

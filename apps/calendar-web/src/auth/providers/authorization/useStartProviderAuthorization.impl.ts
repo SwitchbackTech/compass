@@ -7,6 +7,7 @@ import { buildOAuthStateForClient } from "@core/desktop/desktop-oauth-state.util
 import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { readPosthogDistinctIdForOAuth } from "@web/auth/posthog/posthog-distinct-id.util";
 import { trackSignupStep } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
 import { rememberSignupTrialMethod } from "@web/billing/signup-trial.util";
@@ -52,6 +53,11 @@ type AuthorizationSession = {
   redirectUri: string;
 };
 
+type CreateOAuthState = (
+  redirectUri: string,
+  posthogDistinctId?: string,
+) => string;
+
 /**
  * Pins the OAuth `state` and callback URL for the life of the mount, so the
  * value handed to the consent screen is the one the callback later looks up.
@@ -60,11 +66,14 @@ type AuthorizationSession = {
  */
 function useAuthorizationSession(
   provider: ProviderKind,
-  createState: (redirectUri: string) => string,
+  createState: CreateOAuthState,
 ): AuthorizationSession {
   const [session] = useState<AuthorizationSession>(() => {
     const redirectUri = buildProviderAuthCallbackUrl(provider);
-    return { state: createState(redirectUri), redirectUri };
+    return {
+      state: createState(redirectUri, readPosthogDistinctIdForOAuth()),
+      redirectUri,
+    };
   });
   return session;
 }
@@ -118,7 +127,7 @@ type RedirectAuthorizationSpec = {
    */
   getClientId: () => string;
   notConfiguredMessage: string;
-  createState: (redirectUri: string) => string;
+  createState: CreateOAuthState;
   buildAuthorizationUrl: (
     args: AuthorizationSession & {
       clientId: string;
@@ -179,8 +188,10 @@ const useGoogleProviderAuthorizationStrategy: ProviderAuthorizationStrategy = ({
   prompt,
 }) => {
   const [loading, setLoading] = useState(false);
-  const { state, redirectUri } = useAuthorizationSession("google", () =>
-    buildOAuthStateForClient(false),
+  const { state, redirectUri } = useAuthorizationSession(
+    "google",
+    (_redirectUri, posthogDistinctId) =>
+      buildOAuthStateForClient(false, posthogDistinctId),
   );
 
   const loginOptions = useMemo<
@@ -223,7 +234,8 @@ const useMicrosoftProviderAuthorizationStrategy =
     provider: "microsoft",
     getClientId: () => getMicrosoftSignInClientId(),
     notConfiguredMessage: "Microsoft sign-in is not configured",
-    createState: () => buildOAuthStateForClient(false),
+    createState: (_redirectUri, posthogDistinctId) =>
+      buildOAuthStateForClient(false, posthogDistinctId),
     buildAuthorizationUrl: ({ clientId, redirectUri, state, prompt }) =>
       buildMicrosoftAuthorizationUrl({
         clientId,
@@ -241,11 +253,12 @@ const useAppleProviderAuthorizationStrategy =
     notConfiguredMessage: "Apple sign-in is not configured",
     // Apple returns to the backend form_post route, so the frontend callback it
     // should land on afterwards rides along inside the state.
-    createState: (redirectUri) =>
+    createState: (redirectUri, posthogDistinctId) =>
       btoa(
         JSON.stringify({
           frontendRedirectURI: redirectUri,
           nonce: crypto.randomUUID(),
+          ...(posthogDistinctId ? { ph: posthogDistinctId } : {}),
         }),
       ),
     buildAuthorizationUrl: ({ clientId, state }) =>

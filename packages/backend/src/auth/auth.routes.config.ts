@@ -28,6 +28,14 @@ export const appleSignInCallbackLimiter = rateLimit({
   keyGenerator: (req) => req.ip ?? "anonymous",
 });
 
+export const providerOAuthCallbackLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip ?? "anonymous",
+});
+
 /**
  * Routes with the verifyIsDev middleware are
  * only available when running the app in dev,
@@ -89,6 +97,12 @@ export class AuthRoutes extends CommonRoutesConfig {
           authController.appleSignInCallback(req, res);
         },
       );
+
+    this.app
+      .route("/auth/:provider/callback")
+      .get(providerOAuthCallbackLimiter, (req, res) => {
+        authController.providerOAuthCallback(req, res);
+      });
 
     return this.app;
   }
