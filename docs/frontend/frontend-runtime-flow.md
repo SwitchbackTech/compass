@@ -90,13 +90,13 @@ Welcome → signup → first-event contract:
 - the last screen is titled **Let's get started** with the subtitle
   **Connect a calendar or start fresh**. Its CTA order is **Continue with Google**
   (`G`, when Google is available), **Sign up with email** (`U`), then
-  **Explore without an account** (`S`), all the same full-width height.
+  **On this device only** (`S`), all the same full-width height.
   Explore is a quieter secondary pill so signup stays the stronger choice.
   Social and legal links (`6`–`0`) sit below. Google leads
   because the scopes Compass requests include the calendar, so that one round
   trip signs the user up *and* connects it, the moment the product starts
   being worth keeping
-- **Explore without an account** closes the welcome dialog and leaves the
+- **On this device only** closes the welcome dialog and leaves the
   Shortcut Showcase closed until the visitor opts in
 - **Log in** opens the auth modal and leaves the showcase flags alone, so a
   returning user is not handed the practice or the first-event prompt
@@ -222,7 +222,7 @@ lands on the grid. Rageclicks on public booking pages are still dropped by
 the booking filter.
 
 `local_mode_selected` fires when an anonymous visitor chooses the sidebar
-**This browser** row (local IndexedDB mode). It must not be confused with
+**On this device only** row (local IndexedDB mode). It must not be confused with
 `signup_started`, which is reserved for explicit login or trial CTAs (OAuth,
 email sign-up modal, command palette, and similar).
 

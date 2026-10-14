@@ -71,10 +71,10 @@ describe("AnonymousCalendarRow", () => {
     isActive: true,
   };
 
-  it("renders the row with 'This browser' label and trial sync copy", () => {
+  it("renders the row with the local device label and trial sync copy", () => {
     render(<AnonymousCalendarRow calendar={mockCalendar} />);
 
-    expect(screen.getByText("This browser")).toBeInTheDocument();
+    expect(screen.getByText("On this device only")).toBeInTheDocument();
     expect(ANONYMOUS_CALENDAR_ROW_TRIAL_MESSAGE).toBe(
       "Start your free trial to sync",
     );

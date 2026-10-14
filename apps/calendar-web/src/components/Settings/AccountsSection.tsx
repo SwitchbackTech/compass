@@ -2,7 +2,10 @@ import { type FC } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type SyncConnectionSummary } from "@core/types/user.types";
 import { ConnectProviderChooser } from "@web/auth/providers/ConnectProviderChooser";
-import { CALENDAR_HOST_EXPLAINER } from "@web/auth/providers/provider-copy.util";
+import {
+  CONNECT_CALENDAR_ACCOUNT_HELPER,
+  CONNECT_CALENDAR_ACCOUNT_LABEL,
+} from "@web/auth/providers/provider-copy.util";
 import { useDisconnectGoogleAccount } from "@web/auth/providers/useDisconnectAccount";
 import {
   accountKey,
@@ -61,7 +64,7 @@ export const AccountsSection: FC<AccountsSectionProps> = ({
 
       <OverlayPanelActions align="start">
         <ConnectProviderChooser
-          idleLabel="Add account"
+          idleLabel={CONNECT_CALENDAR_ACCOUNT_LABEL}
           newAccount
           showShortcut={showShortcuts}
           shortcut="A"
@@ -69,7 +72,9 @@ export const AccountsSection: FC<AccountsSectionProps> = ({
           variant="overlay-primary"
         />
       </OverlayPanelActions>
-      <p className="text-text-muted text-xs">{CALENDAR_HOST_EXPLAINER}</p>
+      <p className="text-text-muted text-xs">
+        {CONNECT_CALENDAR_ACCOUNT_HELPER}
+      </p>
     </div>
   );
 };

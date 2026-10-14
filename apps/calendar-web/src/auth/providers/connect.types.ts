@@ -26,7 +26,7 @@ export type UseConnectGoogleOptions = {
   connection?: SyncConnectionSummary | null;
   /**
    * Always start a new-account OAuth round-trip (`{}`), even when some other
-   * account is `RECONNECT_REQUIRED`. Settings "Add account" must never bind
+   * account is `RECONNECT_REQUIRED`. Settings "Connect a calendar account" must never bind
    * to a reconnect.
    */
   newAccount?: boolean;

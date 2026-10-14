@@ -6,7 +6,13 @@ import {
   trackSignupStep,
 } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
-import { CONNECT_CALENDAR_LABEL } from "@web/auth/providers/provider-copy.util";
+import {
+  CONNECT_CALENDAR_ACCOUNT_HELPER,
+  CONNECT_CALENDAR_ACCOUNT_LABEL,
+  CONNECT_CALENDAR_LABEL,
+  LOCAL_DEVICE_ONLY_LABEL,
+  LOCAL_DEVICE_ONLY_SUBTITLE,
+} from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
@@ -397,9 +403,20 @@ export function WelcomeModal() {
                 className={PRIMARY_CTA_CLASS}
                 {...navigationBusyProps}
               >
-                Explore without an account
+                {LOCAL_DEVICE_ONLY_LABEL}
                 <ShortcutHint className="ml-2">S</ShortcutHint>
               </button>
+              <p className="text-center text-sm text-text-muted">
+                {LOCAL_DEVICE_ONLY_SUBTITLE}
+              </p>
+              <div className="flex w-full flex-col gap-1 text-center">
+                <p className="font-semibold text-sm text-text">
+                  {CONNECT_CALENDAR_ACCOUNT_LABEL}
+                </p>
+                <p className="text-sm text-text-muted">
+                  {CONNECT_CALENDAR_ACCOUNT_HELPER}
+                </p>
+              </div>
               <p className="text-center text-sm text-text-muted">
                 Ready to keep it? Start your free 7-day trial.
               </p>

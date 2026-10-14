@@ -77,7 +77,7 @@ const goToChooseScreen = async (user: ReturnType<typeof userEvent.setup>) => {
   await user.keyboard("{Enter}");
   await user.keyboard("{Enter}");
   expect(
-    screen.getByRole("button", { name: "Explore without an account" }),
+    screen.getByRole("button", { name: "On this device only" }),
   ).toBeTruthy();
 };
 
@@ -166,7 +166,7 @@ describe("WelcomeModal", () => {
     render(<WelcomeModal />);
     await goToChooseScreen(user);
     const explore = screen.getByRole("button", {
-      name: "Explore without an account",
+      name: "On this device only",
     });
     expect(explore.getAttribute("aria-busy")).toBe("false");
 
@@ -249,7 +249,7 @@ describe("WelcomeModal", () => {
     for (const name of [
       "Sign up",
       "Continue with Google",
-      "Explore without an account",
+      "On this device only",
       "Who is Compass for?",
       "Back",
     ]) {
@@ -284,7 +284,7 @@ describe("WelcomeModal", () => {
     await user.click(screen.getByRole("button", { name: "Next" }));
 
     await user.click(
-      screen.getByRole("button", { name: "Explore without an account" }),
+      screen.getByRole("button", { name: "On this device only" }),
     );
     await waitFor(() => {
       expect(
@@ -357,7 +357,7 @@ describe("WelcomeModal", () => {
       "https://github.com/KeepSoftwareSimple/compass-calendar",
     );
     expect(
-      screen.getByRole("button", { name: "Explore without an account" }),
+      screen.getByRole("button", { name: "On this device only" }),
     ).toHaveFocus();
 
     await user.keyboard("{Escape}");
@@ -510,7 +510,7 @@ describe("WelcomeModal", () => {
       ["Sign up", "U"],
       ["Log in", "i"],
       ["Back", "Esc"],
-      ["Explore without an account", "S"],
+      ["On this device only", "S"],
     ] as const) {
       const hint = within(screen.getByRole("button", { name })).getByText(key);
       expect(hint.className).not.toMatch(/opacity-0/);
@@ -643,7 +643,7 @@ describe("WelcomeModal", () => {
     await goToChooseScreen(user);
 
     const explore = screen.getByRole("button", {
-      name: "Explore without an account",
+      name: "On this device only",
     });
     expect(explore).toHaveFocus();
 
@@ -694,7 +694,7 @@ describe("WelcomeModal", () => {
       await goToChooseScreen(user);
 
       const explore = screen.getByRole("button", {
-        name: "Explore without an account",
+        name: "On this device only",
       });
       expect(explore).toHaveClass("w-full", "h-10", "c-button-primary");
       expect(explore).toHaveClass("c-button-elevated");

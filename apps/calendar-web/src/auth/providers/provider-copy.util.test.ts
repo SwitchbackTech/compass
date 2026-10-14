@@ -1,10 +1,14 @@
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowsClockwise";
 import {
   bookingConnectPromptCopy,
+  CONNECT_CALENDAR_ACCOUNT_HELPER,
+  CONNECT_CALENDAR_ACCOUNT_LABEL,
   CONNECT_CALENDAR_LABEL,
   calendarProductName,
   connectionProvider,
   emptyCalendarsCopy,
+  LOCAL_DEVICE_ONLY_LABEL,
+  LOCAL_DEVICE_ONLY_SUBTITLE,
   openingProviderCopy,
   RECONNECT_BANNER_MESSAGE,
   RECONNECT_CALENDAR_LABEL,
@@ -111,5 +115,16 @@ describe("provider copy", () => {
       "microsoft",
     );
     expect(reconnect?.label).toBe("Reconnect Microsoft Calendar");
+  });
+
+  it("keeps Tyler-approved account-choice copy byte-identical", () => {
+    expect(LOCAL_DEVICE_ONLY_LABEL).toBe("On this device only");
+    expect(LOCAL_DEVICE_ONLY_SUBTITLE).toBe(
+      "Events stay in this browser until you connect an account.",
+    );
+    expect(CONNECT_CALENDAR_ACCOUNT_LABEL).toBe("Connect a calendar account");
+    expect(CONNECT_CALENDAR_ACCOUNT_HELPER).toBe(
+      "Pick Google, Microsoft, or Apple. Or keep using this device only from the calendar list.",
+    );
   });
 });

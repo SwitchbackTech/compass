@@ -152,7 +152,7 @@ export async function trackSignupStartedAtClick(
   trackSignupStarted(source, anon_events_created);
 }
 
-/** Anonymous visitor chose local-only mode (e.g. sidebar "This browser"). */
+/** Anonymous visitor chose local-only mode (e.g. sidebar "On this device only"). */
 export function trackLocalModeSelected(source: LocalModeSource): void {
   track("local_mode_selected", { source });
 }

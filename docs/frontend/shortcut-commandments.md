@@ -95,7 +95,7 @@ Settings is an OverlayPanel with its own letter map while it holds app-lock
 (`apps/calendar-web/src/settings/useSettingsShortcuts.ts`). Those letters are not
 page-jump digits; they activate controls already on the Settings overlay.
 Billing: `U` Update card,
-`C` Cancel subscription, `R` Resume subscription. Accounts: `A` Add account,
+`C` Cancel subscription, `R` Resume subscription. Accounts: `A` Connect a calendar account,
 `E` Export, `D` Delete account, `O` Log out. `B` (trial badge / Start
 Premium) is registered by `UpgradeConfirmationProvider` and keeps working
 while Settings is open. Meeting settings reveal only sidebar digits

@@ -210,9 +210,9 @@ describe("CalendarList", () => {
     expect(screen.queryByText("ahab@pequod.com")).not.toBeInTheDocument();
   });
 
-  it("shows a single row labeled 'This browser' for anonymous users, without repeating a heading", () => {
+  it("shows a single row labeled 'On this device only' for anonymous users, without repeating a heading", () => {
     // Anonymous users get the local calendar rendered as AnonymousCalendarRow,
-    // which combines the account label ("This browser") and sign-up affordance
+    // which combines the account label ("On this device only") and sign-up affordance
     // into a single row, without a separate heading. No visibility toggle.
     const local = makeCalendar({
       name: "Compass",
@@ -223,11 +223,11 @@ describe("CalendarList", () => {
     mockUserEmail = undefined;
     renderCalendarList([local], { authenticated: false });
 
-    expect(screen.getByText("This browser")).toBeInTheDocument();
+    expect(screen.getByText("On this device only")).toBeInTheDocument();
     expect(screen.queryByText("primary")).not.toBeInTheDocument();
     expect(screen.queryByText("Compass")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: "This browser" }),
+      screen.queryByRole("heading", { name: "On this device only" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", {

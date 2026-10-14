@@ -155,9 +155,13 @@ describe("ConnectProviderChooser", () => {
     const user = userEvent.setup();
     available = ["google", "microsoft", "apple"];
 
-    renderChooser(<ConnectProviderChooser idleLabel="Add account" />);
+    renderChooser(
+      <ConnectProviderChooser idleLabel="Connect a calendar account" />,
+    );
 
-    await user.click(screen.getByRole("button", { name: /Add account/ }));
+    await user.click(
+      screen.getByRole("button", { name: /Connect a calendar account/ }),
+    );
 
     for (const name of ["Google", "Microsoft"] as const) {
       const item = screen.getByRole("menuitem", { name });
