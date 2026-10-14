@@ -118,14 +118,6 @@ jobs:
         run: |
           bun cli desktop:export --check
 
-      # build.ts enforces the boot-size budget. run-boot-size-check.sh matches
-      # .github/docker/Dockerfile.web (staging-cloud deploy) so PRs fail here
-      # instead of on Release → staging-cloud (#3814-#3816, #4200-#4201).
-      - name: Build web bundle (boot-size budget)
-        if: needs.changes.outputs.static_web == 'true'
-        run: |
-          .github/perf/run-boot-size-check.sh
-
       # Workflow files auto-merge under the same size rails as other paths,
       # so they are linted here. Pinned; the image bundles shellcheck for
       # run: steps.
