@@ -63,7 +63,9 @@ RUN if [ -n "$GOOGLE_PLACES_API_KEY" ]; then \
     >> compass.yaml; \
   fi
 
-RUN cd apps/calendar-web && bun run build.ts
+# Measure boot gzip for logs; deploy must not fail on absolute bundle size.
+ENV COMPASS_BOOT_SIZE_ENFORCE=0
+RUN .github/perf/run-boot-size-check.sh
 
 FROM oven/bun:1.3.14-slim AS runtime
 

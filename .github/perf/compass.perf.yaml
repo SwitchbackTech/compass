@@ -1,6 +1,6 @@
 # Build-time config for the Lighthouse performance budget (perf-budget.yml).
-# The required boot-size check in test-unit.yml uses compass.boot-size.yaml
-# and .github/perf/run-boot-size-check.sh so it matches
+# Boot gzip CI and Dockerfile.web use compass.boot-size.yaml and
+# .github/perf/run-boot-size-check.sh so they match
 # .github/docker/Dockerfile.web for cloud deploy.
 # Only the values baked into the web bundle matter (nodeEnv, apiUrl,
 # PostHog placeholders sized like production deploy); the rest

@@ -111,8 +111,8 @@ pr_has_automerge() {
 # closed: an unreadable result counts as red.
 #
 # release-on-main.yml counts too: green tests do not mean a shippable image
-# (#3814-#3816). perf-budget.yml is left out because the boot-size budget it
-# exercises is already a required PR check in test-unit.yml.
+# (#3814-#3816). perf-budget.yml is left out because boot gzip is gated in
+# boot-bundle.yml (+5 KB delta vs main).
 main_is_red() {
   local workflow conclusion
   for workflow in test-unit.yml test-e2e.yml release-on-main.yml; do

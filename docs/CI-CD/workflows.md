@@ -103,10 +103,10 @@ Local `bun test:web` still runs every shard sequentially.
 the second half.
 
 On pull requests, `detect-code-changes.sh` also emits per-package outputs
-(`core`, `web`, `backend`, `sync`, `scripts`), plus `static_web` (web
-boot-size budget) and `contracts` (generated Swift contract drift check).
-A backend-only PR still runs `static` and the backend leg, and skips the
-web runners, boot-size, and contracts check. Changes under
+(`core`, `web`, `backend`, `sync`, `scripts`), plus `static_web` (boot gzip delta vs `main`) and `contracts` (generated
+Swift contract drift check). A backend-only PR still runs `static` and the
+backend leg, and skips the web runners, boot bundle check, and contracts
+check. Changes under
 `packages/core`, or to root `package.json`, `bun.lock`, or
 `tsconfig*.json`, turn every leg on. PRs limited to `apps/calendar-macos/**`
 set every output false so Unit and E2E roll up as skipped Success while

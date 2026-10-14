@@ -696,15 +696,17 @@ describe("staging deploy workflow", () => {
   });
 
   it("runs the boot-size check with the same deploy-shaped config as Dockerfile.web", () => {
-    const unit = readRepoFile(".github/workflows/test-unit.yml");
+    const bootBundle = readRepoFile(".github/workflows/boot-bundle.yml");
     const bootConfig = readRepoFile(".github/perf/compass.boot-size.yaml");
     const dockerfile = readRepoFile(".github/docker/Dockerfile.web");
 
-    expect(unit).toContain(".github/perf/run-boot-size-check.sh");
+    expect(bootBundle).toContain(".github/perf/run-boot-size-check.sh");
     expect(bootConfig).toContain("nodeEnv: staging");
     expect(bootConfig).toContain("posthog:");
     expect(dockerfile).toContain("nodeEnv: ${NODE_ENV}");
     expect(dockerfile).toContain("'posthog:'");
+    expect(dockerfile).toContain(".github/perf/run-boot-size-check.sh");
+    expect(dockerfile).toContain("COMPASS_BOOT_SIZE_ENFORCE=0");
   });
 
   it("builds cloud deploy web images from a GitHub-only Dockerfile with PostHog config", () => {
