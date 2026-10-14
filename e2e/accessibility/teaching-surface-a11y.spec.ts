@@ -40,7 +40,7 @@ test("exploring without an account returns focus to the week view without trappi
     .click();
   await welcomeDialog.getByRole("button", { name: "Next" }).click();
   await welcomeDialog
-    .getByRole("button", { name: "Explore without an account" })
+    .getByRole("button", { name: "On this device only" })
     .click();
   await expect(welcomeDialog).toBeHidden();
 

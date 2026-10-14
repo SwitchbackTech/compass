@@ -9,6 +9,10 @@ import {
   trackLocalModeSelected,
   trackSignupStartedAtClick,
 } from "@web/auth/posthog/signup-funnel";
+import {
+  LOCAL_DEVICE_ONLY_LABEL,
+  LOCAL_DEVICE_ONLY_SUBTITLE,
+} from "@web/auth/providers/provider-copy.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -69,10 +73,13 @@ export const AnonymousCalendarRow: FC<AnonymousCalendarRowProps> = ({
                 borderColor: calendar.backgroundColor,
               }}
             />
-            <span className="min-w-0 flex-1 truncate">This browser</span>
+            <span className="min-w-0 flex-1 truncate">
+              {LOCAL_DEVICE_ONLY_LABEL}
+            </span>
           </button>
         </TooltipTrigger>
         <TooltipContent className="flex max-w-55 flex-col gap-1.5">
+          <span>{LOCAL_DEVICE_ONLY_SUBTITLE}</span>
           <span>{ANONYMOUS_CALENDAR_ROW_TRIAL_MESSAGE}</span>
           <button
             className={TOOLTIP_ACTION_BUTTON_CLASSNAME}

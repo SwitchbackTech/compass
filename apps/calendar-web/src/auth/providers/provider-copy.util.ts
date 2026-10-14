@@ -27,6 +27,18 @@ export const CONNECT_CALENDAR_REASSURANCE =
 export const CALENDAR_HOST_EXPLAINER =
   "If you view your calendar in Apple Calendar, it may still be hosted by Google or Microsoft.";
 
+/** Anonymous local-only calendar row and onboarding device-only path. */
+export const LOCAL_DEVICE_ONLY_LABEL = "On this device only";
+
+export const LOCAL_DEVICE_ONLY_SUBTITLE =
+  "Events stay in this browser until you connect an account.";
+
+/** Settings and sign-in add-account chooser trigger. */
+export const CONNECT_CALENDAR_ACCOUNT_LABEL = "Connect a calendar account";
+
+export const CONNECT_CALENDAR_ACCOUNT_HELPER =
+  "Pick Google, Microsoft, or Apple. Or keep using this device only from the calendar list.";
+
 /** Admin-consent required (Microsoft Graph `consentRequired`). */
 export const CONSENT_REQUIRED_COPY =
   "Your organization's admin has to approve Compass before this account can connect.";

@@ -34,7 +34,7 @@ export const authErrorCopy = {
   refreshTokenMissing: (provider?: ProviderKind) =>
     `${calendarHostLabel(provider)} did not grant a fresh authorization. Please try again.`,
   signInWhileAuthenticated: (provider?: ProviderKind) =>
-    `You're already signed in. Use Settings → Add account to connect this ${calendarHostLabel(provider)} account.`,
+    `You're already signed in. Use Settings → Connect a calendar account to connect this ${calendarHostLabel(provider)} account.`,
 };
 
 export const AuthError: AuthErrors = {

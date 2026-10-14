@@ -52,6 +52,12 @@ struct SettingsAccountsSectionView: View {
 
     private var connectButtons: some View {
         VStack(alignment: .leading, spacing: 6) {
+            Text(AccountChoiceCopy.connectCalendarAccountLabel)
+                .font(.rubik(13, weight: .semibold))
+                .foregroundStyle(theme.textColor)
+            Text(AccountChoiceCopy.connectCalendarAccountHelper)
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
             Button("Connect Google") {
                 Task { await syncStore.connect(provider: .google) }
             }

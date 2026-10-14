@@ -20,7 +20,7 @@ import { useAccountHeaderStatus } from "./useAccountHeaderStatus";
  * and five accounts render the same shape, so the two can't drift apart the
  * way a separate single-account header did.
  *
- * Adding/disconnecting accounts lives in the command palette's "Add account" /
+ * Adding/disconnecting accounts lives in the command palette's "Connect a calendar account" /
  * "Show accounts" items - not a permanent row or icon here, which stayed noisy
  * for accounts with many subcalendars.
  */

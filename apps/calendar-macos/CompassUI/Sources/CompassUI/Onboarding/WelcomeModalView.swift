@@ -106,7 +106,21 @@ struct WelcomeModalView: View {
                     .foregroundStyle(theme.textMutedColor)
             }
             VStack(spacing: 12) {
-                primaryButton(title: "Explore without an account", hint: "S") { model.welcomeExplore() }
+                primaryButton(title: AccountChoiceCopy.localDeviceOnlyLabel, hint: "S") {
+                    model.welcomeExplore()
+                }
+                Text(AccountChoiceCopy.localDeviceOnlySubtitle)
+                    .font(.rubik(14))
+                    .foregroundStyle(theme.textMutedColor)
+                VStack(spacing: 4) {
+                    Text(AccountChoiceCopy.connectCalendarAccountLabel)
+                        .font(.rubik(14, weight: .semibold))
+                        .foregroundStyle(theme.textColor)
+                    Text(AccountChoiceCopy.connectCalendarAccountHelper)
+                        .font(.rubik(14))
+                        .foregroundStyle(theme.textMutedColor)
+                }
+                .frame(maxWidth: .infinity)
                 Text("Ready to keep it? Start your free 7-day trial.")
                     .font(.rubik(14))
                     .foregroundStyle(theme.textMutedColor)

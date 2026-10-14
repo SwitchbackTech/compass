@@ -140,7 +140,7 @@ test("the add-account chooser with Google, Microsoft, and Other / iCloud has no 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await settingsDialog.getByRole("button", { name: "Accounts" }).click();
   const addAccount = settingsDialog.getByRole("button", {
-    name: "Add account",
+    name: "Connect a calendar account",
   });
   await expect(addAccount).toBeVisible();
   await addAccount.click();

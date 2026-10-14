@@ -117,7 +117,7 @@ test("Add account starts Microsoft OAuth from the chooser", async ({
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await settingsDialog.getByRole("button", { name: "Accounts" }).click();
   const addAccount = settingsDialog.getByRole("button", {
-    name: "Add account",
+    name: "Connect a calendar account",
   });
   await expect(addAccount).toBeVisible();
   await addAccount.click();
@@ -151,7 +151,9 @@ test("Add account menu shows a logo for Google and Microsoft plus Other / iCloud
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await settingsDialog.getByRole("button", { name: "Accounts" }).click();
-  await settingsDialog.getByRole("button", { name: "Add account" }).click();
+  await settingsDialog
+    .getByRole("button", { name: "Connect a calendar account" })
+    .click();
 
   const menu = settingsDialog.getByRole("menu");
   await expect(menu).toBeVisible();

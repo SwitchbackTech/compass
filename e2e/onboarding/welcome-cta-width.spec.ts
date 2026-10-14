@@ -40,7 +40,7 @@ test("keeps Google, email signup, and explore buttons the same width", async ({
     name: "Sign up with email",
   });
   const explore = welcomeDialog.getByRole("button", {
-    name: "Explore without an account",
+    name: "On this device only",
   });
   await expect(google).toBeVisible();
   await expect(email).toBeVisible();
