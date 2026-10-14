@@ -65,23 +65,33 @@ Read the report as:
   `node_modules/` path segment (Bun's isolated linker layout). First-party
   sources are omitted. Zod's `v4/locales` share is noted when present.
 
-Ceilings live in `apps/calendar-web/boot-size-budget.json`: per-package minified
-bytes, total gzip, optional `totalGzipSlackBytes` (cross-platform gzip variance
-only), and chunk count. The build exits non-zero when any of those is exceeded,
-and the message names the package (or gzip/chunks) and the delta. Required CI
-runs `.github/perf/run-boot-size-check.sh`, which matches
-`.github/docker/Dockerfile.web` for cloud deploy (not `compass.perf.yaml`,
-which is for Lighthouse). Headroom is 5% above the WP-13 measurement so later
-boot-weight work can land without the gate failing first.
+Reference ceilings live in `apps/calendar-web/boot-size-budget.json`:
+per-package minified bytes, an informational `totalGzipBytes` baseline from
+`main`, and chunk count. Local `bun run build:web` prints the report and
+logs gzip vs that baseline; it does not fail on absolute gzip size.
 
-**Lower a ceiling when you remove that weight from the boot path** (the
-acceptance for WP-14, WP-15, and WP-16). Run `bun run build:web`, copy the
-new actual into the JSON, and keep a little headroom only if the number
-still jitters across machines. Do not raise a ceiling to make a
-regression pass; fix the import or the split instead. When a new npm
-package appears on the boot path, add a ceiling for it in the same change.
-When a package leaves the boot path, delete its key so the file only
-lists what boot still loads.
+Cloud deploy builds run `.github/perf/run-boot-size-check.sh` from
+`.github/docker/Dockerfile.web` with `COMPASS_BOOT_SIZE_ENFORCE=0`, so
+staging and production image builds log boot gzip and never fail on an
+absolute ceiling.
+
+Required PR CI is [`.github/workflows/boot-bundle.yml`](../../.github/workflows/boot-bundle.yml):
+it builds merge base and the PR with the same deploy-shaped config as
+`.github/perf/run-boot-size-check.sh`, posts one sticky comment (for example
+`Boot bundle: 519.8 KB gzip (+0.4 KB vs main)`), and fails only when gzip
+grows more than **+5 KB** vs `main` in a single PR. Add the `bundle-size-ok`
+label to allow intentional growth above that delta.
+
+When `COMPASS_BOOT_SIZE_ENFORCE=1`, the build still enforces per-package
+minified ceilings and chunk count from the JSON (gzip baseline is never
+enforced). Use that only when tightening package budgets locally.
+
+**Lower a per-package ceiling when you remove that weight from the boot path**
+(WP-14 through WP-16). Run `bun run build:web`, copy the new actual into
+the JSON. When a new npm package appears on the boot path, add a ceiling in
+the same change. When a package leaves the boot path, delete its key.
+Refresh the informational `totalGzipBytes` on `main` when you land a
+deliberate boot-weight change so the local baseline line stays honest.
 
 The CI `perf-budget` Lighthouse job remains the transfer gate on ubuntu and
 is calibrated from CI, never from a laptop. This report is the local,

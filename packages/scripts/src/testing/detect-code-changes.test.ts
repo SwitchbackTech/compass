@@ -88,10 +88,11 @@ function flags(values: Partial<Record<(typeof OUTPUT_KEYS)[number], boolean>>) {
 }
 
 describe("detect-code-changes", () => {
-  it("is the single detector used by both required-check workflows", () => {
+  it("is the single detector used by required-check workflows", () => {
     for (const workflowPath of [
       ".github/workflows/test-unit.yml",
       ".github/workflows/test-e2e.yml",
+      ".github/workflows/boot-bundle.yml",
     ]) {
       const workflow = readFileSync(workflowPath, "utf8");
 
@@ -199,14 +200,18 @@ describe("detect-code-changes", () => {
     );
   });
 
-  it("gates boot-size and contracts checks on static_web and contracts outputs", () => {
+  it("gates boot bundle delta and contracts checks on static_web and contracts outputs", () => {
+    const bootBundle = readFileSync(
+      ".github/workflows/boot-bundle.yml",
+      "utf8",
+    );
     const unit = readFileSync(".github/workflows/test-unit.yml", "utf8");
 
-    expect(unit).toContain(
+    expect(bootBundle).toContain(
       "static_web: ${{ steps.filter.outputs.static_web }}",
     );
+    expect(bootBundle).toContain("needs.changes.outputs.static_web == 'true'");
     expect(unit).toContain("contracts: ${{ steps.filter.outputs.contracts }}");
-    expect(unit).toContain("if: needs.changes.outputs.static_web == 'true'");
     expect(unit).toContain("if: needs.changes.outputs.contracts == 'true'");
   });
 

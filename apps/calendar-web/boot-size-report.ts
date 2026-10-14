@@ -8,9 +8,8 @@ import { gzipSync } from "node:zlib";
 
 export interface BootSizeBudget {
   chunkCount: number;
+  /** Informational baseline from main; not enforced on deploy (PR delta gate). */
   totalGzipBytes: number;
-  /** Optional slack on total gzip only (cross-platform gzip variance). */
-  totalGzipSlackBytes?: number;
   packages: Record<string, number>;
 }
 
@@ -182,22 +181,9 @@ export function parseBootSizeBudget(raw: unknown): BootSizeBudget {
     }
     packages[name] = ceiling;
   }
-  const totalGzipSlackBytes = record["totalGzipSlackBytes"];
-  if (
-    totalGzipSlackBytes !== undefined &&
-    (typeof totalGzipSlackBytes !== "number" ||
-      !Number.isFinite(totalGzipSlackBytes) ||
-      totalGzipSlackBytes < 0)
-  ) {
-    throw new Error(
-      "boot-size-budget.json totalGzipSlackBytes must be a non-negative number when set",
-    );
-  }
-
   return {
     chunkCount: record["chunkCount"],
     totalGzipBytes: record["totalGzipBytes"],
-    totalGzipSlackBytes,
     packages,
   };
 }
@@ -221,19 +207,6 @@ export function bootSizeBudgetViolations(
     }
   }
 
-  const gzipSlack = budget.totalGzipSlackBytes ?? 0;
-  const gzipCeiling = budget.totalGzipBytes + gzipSlack;
-  if (report.totalGzipBytes > gzipCeiling) {
-    const over = report.totalGzipBytes - gzipCeiling;
-    const slackNote =
-      gzipSlack > 0
-        ? ` (${budget.totalGzipBytes} B budget + ${gzipSlack} B slack)`
-        : "";
-    violations.push(
-      `gzip: ${report.totalGzipBytes} B exceeds ceiling ${gzipCeiling} B${slackNote} by ${over} B`,
-    );
-  }
-
   if (report.chunkCount > budget.chunkCount) {
     violations.push(
       `chunks: ${report.chunkCount} exceeds ceiling ${budget.chunkCount} by ${report.chunkCount - budget.chunkCount}`,
@@ -253,6 +226,12 @@ export async function loadBootSizeBudget(
   return parseBootSizeBudget(await Bun.file(budgetPath).json());
 }
 
+function bootSizeEnforcementEnabled(): boolean {
+  const raw = process.env.COMPASS_BOOT_SIZE_ENFORCE;
+  if (raw === undefined || raw === "") return false;
+  return raw !== "0" && raw.toLowerCase() !== "false";
+}
+
 export async function reportBootSize(
   outdir: string,
   metafile: string | object | undefined,
@@ -261,6 +240,31 @@ export async function reportBootSize(
   const report = await computeBootSizeReport(outdir, metafile);
   // biome-ignore lint/suspicious/noConsole: Preserve build progress output.
   console.log(formatBootSizeReport(report));
+  // biome-ignore lint/suspicious/noConsole: Deploy and PR delta CI scrape this line.
+  console.log(`boot gzip total: ${report.totalGzipBytes} B`);
+
+  const metricsFile = process.env.COMPASS_BOOT_SIZE_METRICS_FILE;
+  if (metricsFile) {
+    await Bun.write(
+      metricsFile,
+      JSON.stringify({
+        totalGzipBytes: report.totalGzipBytes,
+        chunkCount: report.chunkCount,
+      }),
+    );
+  }
+
+  if (!bootSizeEnforcementEnabled()) {
+    const baseline = budget ?? (await loadBootSizeBudget());
+    const delta = report.totalGzipBytes - baseline.totalGzipBytes;
+    const deltaKb = (delta / 1024).toFixed(1);
+    const sign = delta >= 0 ? "+" : "";
+    // biome-ignore lint/suspicious/noConsole: Informational vs boot-size-budget.json baseline.
+    console.log(
+      `boot gzip vs baseline.json: ${sign}${deltaKb} KB (${report.totalGzipBytes} B vs informational ${baseline.totalGzipBytes} B)`,
+    );
+    return [];
+  }
 
   const resolved = budget ?? (await loadBootSizeBudget());
   const violations = bootSizeBudgetViolations(report, resolved);

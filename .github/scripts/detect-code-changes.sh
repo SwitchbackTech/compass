@@ -16,7 +16,7 @@ pull_request_number=${3:-}
 #
 # code: TS/CI-relevant changes (excludes docs and apps/calendar-macos/**).
 # e2e:  Playwright-reachable changes (excludes backend, sync, scripts, macos, booking-web).
-# static_web: web boot-size budget and other web-blast-radius static work.
+# static_web: boot gzip delta check and other web-blast-radius static work.
 # contracts: bun cli contracts:swift --check (core schemas or swift-contracts emitter).
 # core/web/backend/sync/scripts: unit-leg filters. packages/core, root package.json,
 #       bun.lock, or root tsconfig* turn every leg on. merge_group and push always run
@@ -99,7 +99,7 @@ backend_files=$(printf '%s\n' "$ts_code_files" | grep -E '^packages/backend(/|$)
 sync_files=$(printf '%s\n' "$ts_code_files" | grep -E '^packages/sync(/|$)' || true)
 scripts_files=$(printf '%s\n' "$ts_code_files" | grep -E '^packages/scripts(/|$)' || true)
 static_web_files=$(printf '%s\n' "$ts_code_files" |
-  grep -E '^(apps/calendar-web(/|$)|\.github/perf/)' || true)
+  grep -E '^(apps/calendar-web(/|$)|\.github/perf/|\.github/workflows/boot-bundle\.yml)' || true)
 swift_contract_files=$(printf '%s\n' "$ts_code_files" |
   grep -E '^packages/scripts/src/swift-contracts/' || true)
 

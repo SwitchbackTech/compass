@@ -1,4 +1,4 @@
-# Build-time config for the required boot-size check (test-unit.yml).
+# Build-time config for boot gzip measurement (boot-bundle.yml, Dockerfile.web).
 # Mirrors .github/docker/Dockerfile.web for staging-cloud deploy: same fields
 # baked into compass.yaml and the same placeholder lengths for values that
 # end up in the bundle (OAuth client IDs, PostHog, BUILD_VERSION via
