@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import * as Track from "@web/auth/posthog/track";
-import { brighten, darken, isDark } from "@web/common/styles/color.utils";
+import { brighten } from "@web/common/styles/color.utils";
 import { getEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { GRID_EVENT_SIDEBAR_EDITING_BOX_SHADOW } from "@web/grid/components/calendar-accent.util";
+import { pastEventFill } from "@web/grid/components/grid-event-card-shell";
 import {
   COMPACT_EVENT_MAX_HEIGHT,
   GRID_EVENT_TITLE_COMPACT_FONT_SIZE,
@@ -331,10 +332,8 @@ describe("EventCard", () => {
     const card = screen.getByRole("button", {
       name: "Timed event: Planning block, 9 - 10 AM, Work calendar, also on ahab@gmail.com",
     });
-    const dim = (hex: string) =>
-      isDark(hex) ? brighten(hex, 14) : darken(hex, 5);
     expect(card.style.getPropertyValue("--event-bg-image")).toBe(
-      `linear-gradient(135deg, ${dim("#3b82f6")}, ${dim("#ef4444")})`,
+      `linear-gradient(135deg, ${pastEventFill("#3b82f6")}, ${pastEventFill("#ef4444")})`,
     );
     // Past cards stay dimmed on hover instead of snapping to full brightness.
     expect(card.style.getPropertyValue("--event-hover-bg-image")).toBe(

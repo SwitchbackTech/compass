@@ -2,7 +2,12 @@ import cn from "classnames";
 import { type CSSProperties } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { brighten, darken, isDark } from "@web/common/styles/color.utils";
+import {
+  darken,
+  desaturate,
+  isDark,
+  mix,
+} from "@web/common/styles/color.utils";
 import { type GridGuestResponseState } from "@web/events/attendee-rsvp";
 import {
   calendarAccentAccessibleSuffix,
@@ -12,16 +17,28 @@ import {
 import { gridEventCardOpacity } from "@web/grid/grid-event-card-chrome";
 import { type EventPosition } from "@web/grid/types/grid.types";
 
+/** Ink-like fills: blend toward black, then pull chroma down slightly. */
+export const PAST_EVENT_INK_MIX_PERCENT = 14;
+export const PAST_EVENT_INK_DESATURATE = 10;
+/** Paper-side pastels already sit on the dark-text side. */
+export const PAST_EVENT_DARKEN_LIGHT_FILL = 5;
+
 /**
- * Past events recede in the direction of the theme's grid: the dark theme's
- * light steel fill dims slightly, the light theme's ink fill fades toward the
- * paper (brighten 14 keeps light text >= 4.5:1 and stays clearly apart from
- * the brighten-10 hover fill). Only the fill moves - a `brightness()` filter
- * would drag the title text along with it and let past events fall below the
- * 4.5:1 contrast minimum.
+ * Past events read as already happened: slightly lower chroma and lightness
+ * than upcoming fills on the same grid. Only the fill moves, a `brightness()`
+ * filter would drag the title text along with it and let past events fall
+ * below the 4.5:1 contrast minimum.
  */
-export const pastEventFill = (fill: string): string =>
-  isDark(fill) ? brighten(fill, 14) : darken(fill, 5);
+export const pastEventFill = (fill: string): string => {
+  if (isDark(fill)) {
+    return desaturate(
+      mix(fill, "#000000", PAST_EVENT_INK_MIX_PERCENT),
+      PAST_EVENT_INK_DESATURATE,
+    );
+  }
+  // Desaturating paper-side pastels pushes mid-tones into a contrast dead zone.
+  return darken(fill, PAST_EVENT_DARKEN_LIGHT_FILL);
+};
 
 /**
  * Position, fill vars, and focus chrome for a grid event card. Shared by
