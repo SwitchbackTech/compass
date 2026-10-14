@@ -1,6 +1,7 @@
 import cn from "classnames";
 import { type FC, type ReactNode, type RefCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { civilHourSlotCount } from "@core/util/date/civil-day";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { CALENDAR_GRID_PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import {
@@ -32,6 +33,7 @@ import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { useEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 interface TimedGridProps {
   columnsId?: string;
@@ -59,10 +61,13 @@ export const TimedGrid: FC<TimedGridProps> = ({
   const todayColumnIndexes = visibleDates.flatMap(({ date }, index) =>
     date.isSame(today, "day") ? [index] : [],
   );
+  const effectiveTimeZone = useEffectiveTimeZone();
   const labelDay =
     visibleDates.find(({ date }) => date.isSame(today, "day"))?.date ??
     visibleDates[0]?.date ??
     today;
+  const civilHourSlots = civilHourSlotCount(labelDay, effectiveTimeZone);
+  const hourRowLabels = getHourLabels(true, labelDay, effectiveTimeZone);
 
   return (
     <ScrollableRegion
@@ -76,7 +81,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
     >
       <CalendarTimeColumn at={labelDay.toDate()} />
       <div
-        className="absolute top-0 left-(--calendar-grid-margin-left) grid h-[calc(24*100%/var(--calendar-visible-hours))] w-[calc(100%-var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
+        className="absolute top-0 left-(--calendar-grid-margin-left) grid h-[calc(var(--calendar-day-hour-slots)*100%/var(--calendar-visible-hours))] w-[calc(100%-var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
         id={columnsId}
         ref={timedColumnsRef}
         style={
@@ -84,6 +89,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
             "--calendar-column-count": visibleDates.length,
             "--calendar-column-min-width": `${EVENT_WIDTH_MINIMUM}px`,
             "--calendar-grid-margin-left": `${marginLeft}px`,
+            "--calendar-day-hour-slots": civilHourSlots,
             "--calendar-visible-hours": TIMED_VISIBLE_HOURS,
           } as CSSVariables
         }
@@ -92,6 +98,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
           <CalendarNowLine
             columnCount={visibleDates.length}
             columnIndex={columnIndex}
+            effectiveTimeZone={effectiveTimeZone}
             key={visibleDates[columnIndex]?.key}
           />
         ))}
@@ -135,11 +142,12 @@ export const TimedGrid: FC<TimedGridProps> = ({
         style={
           {
             "--calendar-grid-margin-left": `${marginLeft}px`,
+            "--calendar-day-hour-slots": civilHourSlots,
             "--calendar-visible-hours": TIMED_VISIBLE_HOURS,
           } as CSSVariables
         }
       >
-        {getHourLabels(true).map((dayTime) => (
+        {hourRowLabels.map((dayTime) => (
           <div
             className={`relative flex ${TIMED_HOUR_SLOT_HEIGHT_CLASS} w-full items-start border-border border-b`}
             key={dayTime}
@@ -156,12 +164,14 @@ export const TimedGrid: FC<TimedGridProps> = ({
 const CalendarNowLine = ({
   columnCount,
   columnIndex,
+  effectiveTimeZone,
 }: {
   columnCount: number;
   columnIndex: number;
+  effectiveTimeZone: string;
 }) => {
   useMinuteTick();
-  const percentOfDay = getCurrentPercentOfDay();
+  const percentOfDay = getCurrentPercentOfDay(effectiveTimeZone);
   const pulseNowLine = useNowCueStore(selectNowCueActive);
 
   return (

@@ -6,7 +6,7 @@ import {
 } from "@core/types/calendar.contracts";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import dayjs from "@core/util/date/dayjs";
+import { formatInstantInTimeZone } from "@core/util/date/civil-day";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   resetEffectiveTimeZoneStoreForTests,
@@ -227,8 +227,16 @@ test("projects a grid draft into a grid event without a CompassEvent bridge", ()
   const timedGrid = gridEventDraftToGridEvent(timed);
 
   expect(timedGrid.isAllDay).toBe(false);
-  expect(timedGrid.startDate).toBe(dayjs(timed.values.schedule.start).format());
-  expect(timedGrid.endDate).toBe(dayjs(timed.values.schedule.end).format());
+  if (timed.values.schedule.kind !== "timed") {
+    throw new Error("Expected timed schedule");
+  }
+  const zone = timed.values.schedule.timeZone ?? "America/Denver";
+  expect(timedGrid.startDate).toBe(
+    formatInstantInTimeZone(timed.values.schedule.start, zone),
+  );
+  expect(timedGrid.endDate).toBe(
+    formatInstantInTimeZone(timed.values.schedule.end, zone),
+  );
   expect(timedGrid.color).toBe("coral");
   expect(timedGrid.isBusy).toBe(false);
 });

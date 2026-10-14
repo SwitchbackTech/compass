@@ -1,4 +1,8 @@
 import { type MutableRefObject } from "react";
+import {
+  civilDayLengthMinutes,
+  startOfCivilDay,
+} from "@core/util/date/civil-day";
 import dayjs from "@core/util/date/dayjs";
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
@@ -7,6 +11,7 @@ import {
   type GridMeasurements,
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 
 export const useGridCoordinates = (
   measurements: GridMeasurements,
@@ -48,8 +53,12 @@ export const useGridCoordinates = (
 
   const getDateByXY = (x: number, y: number) => {
     const visibleDate = visibleDates[getVisibleDateIndexByX(x)]?.date;
+    const timeZone = getEffectiveTimeZone();
+    const dayStart = startOfCivilDay(visibleDate ?? dayjs(), timeZone);
+    const civilMinutes = civilDayLengthMinutes(dayStart, timeZone);
+    const minute = Math.min(getMinuteByY(y), civilMinutes);
 
-    return (visibleDate ?? dayjs()).add(getMinuteByY(y), "minutes");
+    return dayStart.add(minute, "minute");
   };
 
   const getDateStrByXY = (x: number, y: number, format?: string) => {
@@ -62,8 +71,10 @@ export const useGridCoordinates = (
   };
 
   const getYByDate = (date: string) => {
-    const day = dayjs(date);
-    return measurements.hourHeight * (day.hour() + day.minute() / 60);
+    const timeZone = getEffectiveTimeZone();
+    const zoned = dayjs(date).tz(timeZone);
+    const minutes = zoned.diff(startOfCivilDay(zoned, timeZone), "minute");
+    return measurements.hourHeight * (minutes / 60);
   };
 
   return {

@@ -1,4 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { civilDayLengthMinutes } from "@core/util/date/civil-day";
 import dayjs from "@core/util/date/dayjs";
 import {
   DATA_TIMED_GRID_ROW,
@@ -75,9 +76,11 @@ export const timedIntentAt = (
   if (!grid) return null;
   const rect = grid.getBoundingClientRect();
   const relative = grid.scrollTop + clientY - rect.top;
-  const rawMinute = (relative / grid.scrollHeight) * 1440;
+  const timeZone = getEffectiveTimeZone();
+  const civilMinutes = civilDayLengthMinutes(date, timeZone);
+  const rawMinute = (relative / grid.scrollHeight) * civilMinutes;
   const minute = Math.min(
-    24 * 60 - GRID_TIME_STEP,
+    civilMinutes - GRID_TIME_STEP,
     Math.max(0, Math.round(rawMinute / GRID_TIME_STEP) * GRID_TIME_STEP),
   );
   const hour = Math.floor(minute / 60);
@@ -89,9 +92,7 @@ export const timedIntentAt = (
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(2000, 0, 1, hour, minutes));
-  const start = dayjs
-    .tz(`${date}T${hh}:${mm}`, getEffectiveTimeZone())
-    .format();
+  const start = dayjs.tz(`${date}T${hh}:${mm}`, timeZone).format();
   return { date, kind: "timed", start, timeKey, timeLabel };
 };
 
