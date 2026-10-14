@@ -8,16 +8,14 @@ import {
 import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
 import { useEffect, useState } from "react";
 import { KEYMAP } from "@core/shortcuts/keymap";
-import { copyText } from "@web/common/utils/clipboard/clipboard.util";
-import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
+  copyDescriptionLinkUrl,
   findLinkElement,
   listDescriptionLinks,
 } from "@web/components/DescriptionEditor/description-link.util";
 import IconButton from "@web/components/IconButton/IconButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
-const LINK_COPIED_TOAST_ID = "description-link-copied";
 const COPY_ICON_SIZE = 14;
 
 interface DescriptionEditorLinkChromeProps {
@@ -50,16 +48,13 @@ export const DescriptionEditorLinkChrome = ({
       setActiveLink(findLinkElement(editorRoot, event.target));
     };
 
+    const linkAfterLeave = (relatedTarget: EventTarget | null) =>
+      relatedTarget instanceof Node && editorRoot.contains(relatedTarget)
+        ? findLinkElement(editorRoot, relatedTarget)
+        : null;
+
     const onFocusOut = (event: FocusEvent) => {
-      const next = event.relatedTarget;
-      if (next instanceof Node && editorRoot.contains(next)) {
-        const link = findLinkElement(editorRoot, next);
-        if (link) {
-          setActiveLink(link);
-          return;
-        }
-      }
-      setActiveLink(null);
+      setActiveLink(linkAfterLeave(event.relatedTarget));
     };
 
     const onPointerOver = (event: PointerEvent) => {
@@ -67,15 +62,7 @@ export const DescriptionEditorLinkChrome = ({
     };
 
     const onPointerOut = (event: PointerEvent) => {
-      const related = event.relatedTarget;
-      if (related instanceof Node && editorRoot.contains(related)) {
-        const link = findLinkElement(editorRoot, related);
-        if (link) {
-          setHoveredLink(link);
-          return;
-        }
-      }
-      setHoveredLink(null);
+      setHoveredLink(linkAfterLeave(event.relatedTarget));
     };
 
     editorRoot.addEventListener("focusin", onFocusIn);
@@ -115,12 +102,7 @@ export const DescriptionEditorLinkChrome = ({
 
   if (!chromeLink) return null;
 
-  const copyUrl = async () => {
-    const didCopy = await copyText(chromeLink.href);
-    if (didCopy) {
-      showStatusToast(LINK_COPIED_TOAST_ID, "Link copied");
-    }
-  };
+  const copyUrl = () => copyDescriptionLinkUrl(chromeLink.href);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: keeps the editor focused when pressing the copy control beside a link mark.

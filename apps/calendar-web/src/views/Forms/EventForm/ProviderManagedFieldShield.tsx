@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode } from "react";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 const PROVIDER_MANAGED_TOAST_ID = "provider-managed-field";
@@ -21,9 +21,9 @@ export const ProviderManagedFieldShield = ({
   className,
   children,
 }: ProviderManagedFieldShieldProps) => {
-  const notify = useCallback(() => {
+  const notify = () => {
     showStatusToast(PROVIDER_MANAGED_TOAST_ID, message);
-  }, [message]);
+  };
 
   if (!active) {
     return <>{children}</>;

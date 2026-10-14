@@ -16,8 +16,6 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
 };
 
-const formatSelectedDate = (date: Date) => formatEventFormDateLabel(date);
-
 export interface EventFormDateFieldProps {
   /** When true, bare ArrowDown opens the calendar instead of nudging +1 day. */
   arrowDownOpensCalendar?: boolean;
@@ -50,15 +48,14 @@ export const EventFormDateField = ({
 }: EventFormDateFieldProps) => {
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) return;
-    const input = document.querySelector<HTMLInputElement>(
-      `[title="${CSS.escape(title)}"]`,
-    );
+    const input = containerRef.current?.querySelector("input");
     if (!input) return;
-    input.value = formatSelectedDate(selected);
-  }, [isOpen, selected, title]);
+    input.value = formatEventFormDateLabel(selected);
+  }, [isOpen, selected]);
 
   const commitTypedDate = (value: string) => {
     const parsed = parseUserDate(value, dayjs());
@@ -68,7 +65,7 @@ export const EventFormDateField = ({
   };
 
   const revertInput = (target: HTMLInputElement) => {
-    target.value = formatSelectedDate(selectedRef.current);
+    target.value = formatEventFormDateLabel(selectedRef.current);
   };
 
   const nudgeDays = (deltaDays: number) => {
@@ -97,6 +94,11 @@ export const EventFormDateField = ({
           break;
         }
         if (arrowDownOpensCalendar && !event.metaKey && !event.ctrlKey) {
+          if (!event.altKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            onCalendarOpen();
+          }
           break;
         }
         event.preventDefault();
@@ -108,9 +110,6 @@ export const EventFormDateField = ({
         event.preventDefault();
         event.stopPropagation();
         nudgeDays(event.shiftKey ? -7 : -1);
-        break;
-      }
-      case event.key === "ArrowDown" && isOpen: {
         break;
       }
       case event.key === "Enter" && (event.metaKey || event.ctrlKey): {
@@ -141,9 +140,6 @@ export const EventFormDateField = ({
         onCalendarClose();
         break;
       }
-      default: {
-        break;
-      }
     }
   };
 
@@ -157,6 +153,7 @@ export const EventFormDateField = ({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: stops date picker mouse events from bubbling to the form.
     <div
+      ref={containerRef}
       className={DATE_FIELD_CLASSNAME}
       id={jumpId}
       onMouseDown={stopPropagation}

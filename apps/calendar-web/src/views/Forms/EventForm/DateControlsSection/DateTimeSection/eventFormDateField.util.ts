@@ -1,6 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
 import { type SelectOption } from "@web/common/types/component.types";
 import {
+  getDayjsByTimeValue,
   type MapToBackendResult,
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
@@ -23,12 +24,14 @@ export const shiftTimedScheduleByDays = (
 export const mergeCalendarDayWithTime = (
   day: Date,
   time: SelectOption<string>,
-) =>
-  dayjs(day)
-    .hour(dayjs(`2000-01-01 ${time.value}`).hour())
-    .minute(dayjs(`2000-01-01 ${time.value}`).minute())
+) => {
+  const clock = getDayjsByTimeValue(time.value);
+  return dayjs(day)
+    .hour(clock.hour())
+    .minute(clock.minute())
     .second(0)
     .millisecond(0);
+};
 
 export const timedScheduleFromDateChange = ({
   changed,

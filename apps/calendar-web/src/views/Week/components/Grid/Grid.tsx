@@ -71,16 +71,6 @@ export const Grid: FC<Props> = ({
   });
 
   const gridDraft = useDraftStore(selectGridDraft);
-  const allDayRowsCount = useMemo(() => {
-    if (!isCompactAllDayRowHeightEnabled()) {
-      return savedAllDayRowsCount;
-    }
-    const { events } = positionAllDayDraftEvent({
-      draft: gridDraft,
-      events: allDayEvents,
-    });
-    return allDayLaneCountFromEvents(events);
-  }, [allDayEvents, gridDraft, savedAllDayRowsCount]);
   // Include the live all-day draft so create/edit chips tint columns before save.
   const allDayEventsForTint = useMemo(
     () =>
@@ -88,6 +78,12 @@ export const Grid: FC<Props> = ({
         .events,
     [allDayEvents, gridDraft],
   );
+  const allDayRowsCount = useMemo(() => {
+    if (!isCompactAllDayRowHeightEnabled()) {
+      return savedAllDayRowsCount;
+    }
+    return allDayLaneCountFromEvents(allDayEventsForTint);
+  }, [allDayEventsForTint, savedAllDayRowsCount]);
 
   const weekDays = weekProps.component.weekDays;
   const visibleDates = useWeekVisibleDates(weekDays);

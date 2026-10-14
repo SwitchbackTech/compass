@@ -1,12 +1,24 @@
 import { type Editor } from "@tiptap/react";
+import { copyText } from "@web/common/utils/clipboard/clipboard.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+
+export const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
 
 export const findLinkElement = (
-  _root: HTMLElement,
+  root: HTMLElement,
   target: EventTarget | null,
 ): HTMLAnchorElement | null => {
-  if (!(target instanceof HTMLElement)) return null;
+  if (!(target instanceof HTMLElement) || !root.contains(target)) return null;
   const link = target.closest("a[href]");
   return link instanceof HTMLAnchorElement ? link : null;
+};
+
+export const copyDescriptionLinkUrl = async (url: string): Promise<boolean> => {
+  const didCopy = await copyText(url);
+  if (didCopy) {
+    showStatusToast(DESCRIPTION_LINK_COPIED_TOAST_ID, "Link copied");
+  }
+  return didCopy;
 };
 
 export const listDescriptionLinks = (root: HTMLElement): HTMLAnchorElement[] =>
