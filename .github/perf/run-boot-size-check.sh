@@ -23,5 +23,10 @@ if [[ ! -x "$no_git_bin/git" ]]; then
 fi
 export PATH="$no_git_bin:$PATH"
 
+# build.ts runs from apps/calendar-web; keep metrics paths anchored to repo root.
+if [[ -n "${COMPASS_BOOT_SIZE_METRICS_FILE:-}" && "${COMPASS_BOOT_SIZE_METRICS_FILE}" != /* ]]; then
+  export COMPASS_BOOT_SIZE_METRICS_FILE="$repo_root/$COMPASS_BOOT_SIZE_METRICS_FILE"
+fi
+
 cd apps/calendar-web
 exec bun run build.ts
