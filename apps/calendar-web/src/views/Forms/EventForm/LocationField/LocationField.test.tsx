@@ -6,6 +6,7 @@ import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { LocationField } from "@web/views/Forms/EventForm/LocationField/LocationField";
 import { PLACES_AUTOCOMPLETE_URL } from "@web/views/Forms/EventForm/LocationField/places.client";
+import { PLACE_SUGGESTION_DEBOUNCE_MS } from "@web/views/Forms/EventForm/LocationField/usePlaceSuggestions";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const SUGGESTIONS = [
@@ -14,6 +15,17 @@ const SUGGESTIONS = [
 ];
 
 let requests: { input: string; apiKey: string | null }[] = [];
+
+// Negative assertions ("no Places call was made") have to outlast the
+// suggestion debounce, so derive the wait from it rather than hard-coding a
+// number that would quietly stop waiting long enough if the debounce grows.
+const settleDebounce = () =>
+  act(
+    () =>
+      new Promise((resolve) =>
+        setTimeout(resolve, PLACE_SUGGESTION_DEBOUNCE_MS + 150),
+      ),
+  );
 
 const usePlacesResponse = (respond: () => Response) => {
   server.use(
@@ -138,7 +150,7 @@ describe("LocationField", () => {
     renderWithStore(<Harness />);
 
     await user.type(screen.getByRole("combobox", { name: "Location" }), "16");
-    await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
+    await settleDebounce();
 
     expect(requests).toHaveLength(0);
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
@@ -152,7 +164,7 @@ describe("LocationField", () => {
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     const input = screen.getByRole("textbox", { name: "Location" });
     await user.type(input, "1600 amph");
-    await act(() => new Promise((resolve) => setTimeout(resolve, 400)));
+    await settleDebounce();
 
     expect(input).toHaveValue("1600 amph");
     expect(requests).toHaveLength(0);
