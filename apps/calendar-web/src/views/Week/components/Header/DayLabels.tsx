@@ -114,7 +114,6 @@ export const DayLabels: FC<Props> = ({
               className={cn(
                 "flex items-end justify-center gap-1 rounded-sm px-1 transition-colors duration-150 motion-reduce:transition-none",
                 isJumpDay && "bg-accent/15 text-accent",
-                isToday && pulseTodayLabel && "c-now-cue-pulse",
               )}
               data-jump-day={isJumpDay ? "true" : undefined}
               key={getWeekDayLabel(day)}
@@ -125,6 +124,9 @@ export const DayLabels: FC<Props> = ({
                 className={cn(
                   "relative text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none",
                   isToday && "c-text-gradient",
+                  isToday &&
+                    pulseTodayLabel &&
+                    "c-now-cue-label-gradient-pulse motion-reduce:transition-none",
                 )}
               >
                 {dayNumber}
@@ -136,7 +138,14 @@ export const DayLabels: FC<Props> = ({
                   {isEventJumpActive ? prefix : `⇧${prefix}`}
                 </ShortcutHint>
               ) : (
-                <span className="relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
+                <span
+                  className={cn(
+                    "relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none",
+                    isToday &&
+                      pulseTodayLabel &&
+                      "c-now-cue-label-pulse motion-reduce:transition-none",
+                  )}
+                >
                   {day.format("ddd")}
                 </span>
               )}

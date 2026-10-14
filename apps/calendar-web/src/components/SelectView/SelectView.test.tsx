@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import * as trackModule from "@web/auth/posthog/track";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { nowCueActions } from "@web/grid/now-cue/now-cue.store";
 import {
   initialPointerHintState,
   usePointerHintStore,
@@ -82,6 +83,7 @@ describe("SelectView", () => {
   afterEach(() => {
     resetPointerIntentSessionForTests();
     usePointerHintStore.setState(initialPointerHintState, true);
+    nowCueActions.resetForTests();
   });
 
   const renderWithRouter = async (
@@ -125,6 +127,26 @@ describe("SelectView", () => {
       expect(button).toBeInTheDocument();
       expect(button.textContent).toBe("July 2026");
       expect(button).toHaveAttribute("aria-expanded", "false");
+    });
+
+    it("pulses the day heading text when the now cue is active", async () => {
+      nowCueActions.pulse();
+      const router = createTestRouter(
+        <SelectView
+          emphasizeDayLabel
+          label="Monday, July 20"
+          onToday={onToday}
+        />,
+        { initialEntries: [ROOT_ROUTES.DAY] },
+      );
+      render(<RouterProvider router={router} />);
+      await waitFor(() => {
+        expect(router.state.status).toBe("idle");
+      });
+
+      expect(screen.getByText("Monday, July 20")).toHaveClass(
+        "c-now-cue-label-pulse",
+      );
     });
 
     it("renders the label as the page heading", async () => {
