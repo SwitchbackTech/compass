@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { nowCueActions, useNowCueStore } from "@web/grid/now-cue/now-cue.store";
 import { pageJumpHintActions } from "@web/shortcuts/page-jump/page-jump.store";
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
@@ -30,6 +31,21 @@ describe("DayLabels", () => {
     cleanup();
     eventJumpActions.reset();
     pageJumpHintActions.reset();
+    nowCueActions.resetForTests();
+  });
+
+  it("pulses today label text when the now cue is active", () => {
+    nowCueActions.pulse();
+    renderLabels();
+
+    expect(useNowCueStore.getState().active).toBe(true);
+    expect(screen.getByText("17")).toHaveClass(
+      "c-now-cue-label-gradient-pulse",
+    );
+    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-pulse");
+    expect(
+      screen.getByText("17").closest("[class*='c-now-cue-pulse']"),
+    ).toBeNull();
   });
 
   it("shows the effective timezone in the grid corner", () => {

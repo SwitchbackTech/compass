@@ -188,7 +188,7 @@ export const SelectView = ({
           <span
             className={classNames(
               pulseDayLabel &&
-                "c-now-cue-pulse rounded-sm motion-reduce:transition-none",
+                "c-now-cue-label-pulse motion-reduce:transition-none",
             )}
           >
             {label}
