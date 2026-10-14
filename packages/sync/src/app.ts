@@ -42,6 +42,10 @@ import {
   requeueFailedJobs,
 } from "@sync/domain/failed-job-requeue.service";
 import {
+  enqueuePushStampHeal,
+  PUSH_STAMP_HEAL_SWEEP_LIMIT,
+} from "@sync/domain/push-stamp-heal";
+import {
   buildReconcileSweepRows,
   listStaleEventsForRow,
 } from "@sync/domain/reconcile-sweep-rows";
@@ -357,8 +361,6 @@ const STALE_COMMAND_RETRY_AFTER_MS = 5 * 60_000;
 // maintainSubscription's default renew guard so the sweep and the operation
 // agree on what "near expiry" means.
 const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
-// Re-watch at most this many unstamped Google channels per heal sweep tick.
-const PUSH_STAMP_HEAL_SWEEP_LIMIT = 10;
 // How often to look for soft-disconnected connections past the 30-day cache
 // window. Daily is enough for the retention SLA; hourly keeps catch-up snappy.
 const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
@@ -694,30 +696,22 @@ function buildSchedulers(
         ),
     },
     {
-      // Self-heal for live Google channels that predate pushLastReceivedAt
-      // stamping on the initial `sync` handshake (#4442). Re-watch so Google
-      // sends a fresh handshake and the notification route can stamp receipt,
-      // without waiting up to ~24h for natural renewal. Cooldown + limit keep
-      // this from churning quiet calendars while the callback is in flight.
+      // Self-heal for live Google channels that never recorded push receipt.
+      // Cooldown + limit live with the sweep in push-stamp-heal.ts, which the
+      // db test drives directly instead of re-wiring this row.
       name: "pushStampHeal",
       windowMs: -DEFAULT_PUSH_STAMP_HEAL_COOLDOWN_MS,
-      run: (healAttemptedBefore) => {
-        const at = new Date();
-        return enqueueForResources(
-          { jobs, onEnqueueError: onEnqueueError("push-stamp heal") },
-          (_before, l) =>
-            resources.listLiveSubscriptionsMissingPushReceipt(
-              at,
-              healAttemptedBefore,
-              l,
-              { provider: "google" },
-            ),
-          (r, n) => resourceJob(r, "subscriptionMaintain", n()),
+      run: (healAttemptedBefore) =>
+        enqueuePushStampHeal(
+          {
+            jobs,
+            resources,
+            onEnqueueError: onEnqueueError("push-stamp heal"),
+          },
           healAttemptedBefore,
           () => new Date(),
           PUSH_STAMP_HEAL_SWEEP_LIMIT,
-        );
-      },
+        ),
     },
     {
       // Bootstrap-recovery looks BACK, like reconcile: enqueue a

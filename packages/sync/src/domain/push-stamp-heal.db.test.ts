@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { seedOauthCredential } from "@sync/__tests__/helpers/credential-encryption";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { enqueuePushStampHeal } from "@sync/domain/push-stamp-heal";
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { DEFAULT_PUSH_STAMP_HEAL_COOLDOWN_MS } from "@sync/domain/subscription-maintenance.service";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -13,34 +14,7 @@ import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource
 const objectId = () => faker.database.mongodbObjectId();
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
-const healUnstampedGoogleSubscriptions = (
-  deps: {
-    resources: SyncResourceRepository;
-    jobs: JobRepository;
-    onEnqueueError?: (error: unknown, resourceId: string) => void;
-  },
-  healAttemptedBefore: Date,
-  nowFn: () => Date,
-  limit?: number,
-) => {
-  const at = nowFn();
-  return enqueueForResources(
-    deps,
-    (_before, l) =>
-      deps.resources.listLiveSubscriptionsMissingPushReceipt(
-        at,
-        healAttemptedBefore,
-        l,
-        { provider: "google" },
-      ),
-    (r, n) => resourceJob(r, "subscriptionMaintain", n()),
-    healAttemptedBefore,
-    nowFn,
-    limit,
-  );
-};
-
-describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMissingPushReceipt)", () => {
+describe("push-stamp heal sweep (enqueuePushStampHeal)", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
   let jobs: JobRepository;
@@ -107,11 +81,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       expiresAt: new Date("2026-07-13T00:00:00.000Z"),
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now);
 
     expect(enqueued).toBe(1);
     const job = await jobByKey(`subscriptionMaintain:${unstamped._id}`);
@@ -124,11 +94,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       pushLastReceivedAt: new Date("2026-07-01T00:00:00.000Z"),
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now);
 
     expect(enqueued).toBe(0);
   });
@@ -139,11 +105,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       pushStampHealAttemptedAt: new Date("2026-07-09T23:00:00.000Z"),
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now);
 
     expect(enqueued).toBe(0);
   });
@@ -178,12 +140,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       expiresAt: new Date("2026-07-14T00:00:00.000Z"),
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-      1,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now, 1);
 
     expect(enqueued).toBe(1);
     expect(
@@ -197,11 +154,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       provider: "microsoft",
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now);
 
     expect(enqueued).toBe(0);
   });
@@ -211,11 +164,7 @@ describe("push-stamp heal sweep (enqueueForResources + listLiveSubscriptionsMiss
       expiresAt: new Date("2026-07-09T00:00:00.000Z"),
     });
 
-    const enqueued = await healUnstampedGoogleSubscriptions(
-      deps(),
-      healBefore(),
-      now,
-    );
+    const enqueued = await enqueuePushStampHeal(deps(), healBefore(), now);
 
     expect(enqueued).toBe(0);
   });
