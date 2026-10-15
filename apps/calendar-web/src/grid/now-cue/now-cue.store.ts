@@ -7,9 +7,14 @@ export const NOW_CUE_PULSE_MS = 700;
 type NowCueState = {
   /** True for {@link NOW_CUE_PULSE_MS} after an already-at-now teach pulse. */
   active: boolean;
+  /** Increments on every pulse so CSS animations can restart on repeated presses. */
+  pulseGeneration: number;
 };
 
-export const initialNowCueState: NowCueState = { active: false };
+export const initialNowCueState: NowCueState = {
+  active: false,
+  pulseGeneration: 0,
+};
 
 let pulseTimer: ReturnType<typeof globalThis.setTimeout> | undefined;
 
@@ -26,14 +31,21 @@ const clearPulseTimer = () => {
   pulseTimer = undefined;
 };
 
+const schedulePulseEnd = () => {
+  pulseTimer = globalThis.setTimeout(() => {
+    pulseTimer = undefined;
+    useNowCueStore.setState({ active: false }, false, { type: "pulse-end" });
+  }, NOW_CUE_PULSE_MS);
+};
+
 export const nowCueActions = {
   pulse: () => {
     clearPulseTimer();
-    useNowCueStore.setState({ active: true }, false, { type: "pulse" });
-    pulseTimer = globalThis.setTimeout(() => {
-      pulseTimer = undefined;
-      useNowCueStore.setState({ active: false }, false, { type: "pulse-end" });
-    }, NOW_CUE_PULSE_MS);
+    const pulseGeneration = useNowCueStore.getState().pulseGeneration + 1;
+    useNowCueStore.setState({ active: true, pulseGeneration }, false, {
+      type: "pulse",
+    });
+    schedulePulseEnd();
   },
   resetForTests: () => {
     clearPulseTimer();
@@ -42,3 +54,5 @@ export const nowCueActions = {
 };
 
 export const selectNowCueActive = (state: NowCueState) => state.active;
+export const selectNowCuePulseGeneration = (state: NowCueState) =>
+  state.pulseGeneration;

@@ -12,6 +12,7 @@ import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
 import {
   selectNowCueActive,
+  selectNowCuePulseGeneration,
   useNowCueStore,
 } from "@web/grid/now-cue/now-cue.store";
 import {
@@ -55,6 +56,7 @@ export const DayLabels: FC<Props> = ({
     !isEventFormOpen && (pageJumpHintsVisible || isEventJumpActive);
   const marginLeft = useGridMarginLeft();
   const pulseTodayLabel = useNowCueStore(selectNowCueActive);
+  const pulseGeneration = useNowCueStore(selectNowCuePulseGeneration);
   const dayJumpHowTo = isEventJumpActive
     ? "Type the day key to focus that column."
     : "Hold Shift and press the day key to focus that column.";
@@ -128,6 +130,7 @@ export const DayLabels: FC<Props> = ({
                     pulseTodayLabel &&
                     "c-now-cue-label-gradient-pulse motion-reduce:transition-none",
                 )}
+                key={isToday ? `day-num-${pulseGeneration}` : undefined}
               >
                 {dayNumber}
               </span>
@@ -145,6 +148,7 @@ export const DayLabels: FC<Props> = ({
                       pulseTodayLabel &&
                       "c-now-cue-label-pulse motion-reduce:transition-none",
                   )}
+                  key={isToday ? `day-name-${pulseGeneration}` : undefined}
                 >
                   {day.format("ddd")}
                 </span>

@@ -1,4 +1,9 @@
-import { scrollTimedGridToNow } from "@web/common/utils/grid/grid.util";
+import {
+  isNowLineInTimedGridViewport,
+  isTimedGridNearScrollToNow,
+  isTimedGridScrolledToNow,
+  scrollTimedGridToNow,
+} from "@web/common/utils/grid/grid.util";
 import { nowCueActions } from "@web/grid/now-cue/now-cue.store";
 
 export const scrollToNowOrPulse = (
@@ -7,7 +12,19 @@ export const scrollToNowOrPulse = (
 ) => {
   if (!timedGrid) return;
 
-  if (!scrollTimedGridToNow(timedGrid, behavior)) {
+  const strictAtNow = isTimedGridScrolledToNow(timedGrid);
+  const teachPulse =
+    strictAtNow ||
+    (isNowLineInTimedGridViewport(timedGrid) &&
+      isTimedGridNearScrollToNow(timedGrid));
+
+  if (teachPulse) {
+    if (!strictAtNow) {
+      scrollTimedGridToNow(timedGrid, behavior);
+    }
     nowCueActions.pulse();
+    return;
   }
+
+  scrollTimedGridToNow(timedGrid, behavior);
 };

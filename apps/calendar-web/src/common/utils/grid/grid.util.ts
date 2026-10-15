@@ -63,14 +63,37 @@ export const SCROLL_TO_NOW_BUFFER_PX = 150;
 
 const SCROLL_TO_NOW_TOLERANCE_PX = 2;
 
+/** When the now line is visible and scroll is within this window, "t" pulses. */
+export const SCROLL_TO_NOW_PULSE_NEAR_MINUTES = 5;
+
 export const getScrollToNowTop = (clientHeight: number) =>
-  getCurrentMinute() * getMinuteHeight(clientHeight) - SCROLL_TO_NOW_BUFFER_PX;
+  Math.max(
+    0,
+    getCurrentMinute() * getMinuteHeight(clientHeight) -
+      SCROLL_TO_NOW_BUFFER_PX,
+  );
+
+export const getScrollToNowDelta = (timedGrid: HTMLElement) => {
+  const targetTop = getScrollToNowTop(timedGrid.clientHeight);
+  return Math.abs(timedGrid.scrollTop - targetTop);
+};
 
 export const isTimedGridScrolledToNow = (timedGrid: HTMLElement) => {
-  const targetTop = getScrollToNowTop(timedGrid.clientHeight);
-  return (
-    Math.abs(timedGrid.scrollTop - targetTop) <= SCROLL_TO_NOW_TOLERANCE_PX
-  );
+  return getScrollToNowDelta(timedGrid) <= SCROLL_TO_NOW_TOLERANCE_PX;
+};
+
+export const isTimedGridNearScrollToNow = (timedGrid: HTMLElement) => {
+  const nearPx =
+    getMinuteHeight(timedGrid.clientHeight) * SCROLL_TO_NOW_PULSE_NEAR_MINUTES;
+  return getScrollToNowDelta(timedGrid) <= nearPx;
+};
+
+/** Whether the live now line sits inside the timed grid's visible scroll area. */
+export const isNowLineInTimedGridViewport = (timedGrid: HTMLElement) => {
+  const nowLineY = getCurrentMinute() * getMinuteHeight(timedGrid.clientHeight);
+  const viewTop = timedGrid.scrollTop;
+  const viewBottom = viewTop + timedGrid.clientHeight;
+  return nowLineY >= viewTop && nowLineY <= viewBottom;
 };
 
 /** Returns true when the grid scroll position changed. */

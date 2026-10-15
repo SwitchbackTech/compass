@@ -25,6 +25,7 @@ import {
 import { useGridMarginLeft } from "@web/grid/grid-margin";
 import {
   selectNowCueActive,
+  selectNowCuePulseGeneration,
   useNowCueStore,
 } from "@web/grid/now-cue/now-cue.store";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
@@ -173,19 +174,18 @@ const CalendarNowLine = ({
   useMinuteTick();
   const percentOfDay = getCurrentPercentOfDay(effectiveTimeZone);
   const pulseNowLine = useNowCueStore(selectNowCueActive);
+  const pulseGeneration = useNowCueStore(selectNowCuePulseGeneration);
 
   return (
     <div
       aria-hidden="true"
       className={cn(
-        "absolute h-px motion-reduce:transition-none",
+        "c-now-line-rim absolute h-px motion-reduce:transition-none",
         pulseNowLine && "c-now-cue-pulse",
       )}
+      key={pulseGeneration}
       style={{
         background: accentGradient,
-        // Paper-colored rim: invisible on the grid, keeps the line readable
-        // where it crosses an event card filled with the accent color.
-        boxShadow: "0 0 0 1px var(--background)",
         top: `${percentOfDay}%`,
         left: `calc(${columnIndex} * 100% / ${columnCount})`,
         width: `calc(100% / ${columnCount})`,
