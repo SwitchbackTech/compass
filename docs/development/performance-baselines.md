@@ -70,10 +70,10 @@ per-package minified bytes, an informational `totalGzipBytes` baseline from
 `main`, and chunk count. Local `bun run build:web` prints the report and
 logs gzip vs that baseline; it does not fail on absolute gzip size.
 
-Cloud deploy builds run `.github/perf/run-boot-size-check.sh` from
-`.github/docker/Dockerfile.web` with `COMPASS_BOOT_SIZE_ENFORCE=0`, so
-staging and production image builds log boot gzip and never fail on an
-absolute ceiling.
+Cloud deploy images run `bun run build.ts` from
+`.github/docker/Dockerfile.web` with the real `compass.yaml` (API URL,
+PostHog, OAuth). They do not swap in `compass.boot-size.yaml`. Boot gzip
+is gated per PR, not at deploy.
 
 Required PR CI is [`.github/workflows/boot-bundle.yml`](../../.github/workflows/boot-bundle.yml):
 it builds merge base and the PR with the same deploy-shaped config as

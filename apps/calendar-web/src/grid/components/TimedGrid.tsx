@@ -78,21 +78,21 @@ export const TimedGrid: FC<TimedGridProps> = ({
       className={`peer c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline-none ${CALENDAR_GRID_PH_NO_RAGECLICK_CLASS}`}
       id={timedGridId}
       ref={timedGridRef}
+      style={
+        {
+          "--calendar-column-count": visibleDates.length,
+          "--calendar-column-min-width": `${EVENT_WIDTH_MINIMUM}px`,
+          "--calendar-grid-margin-left": `${marginLeft}px`,
+          "--calendar-day-hour-slots": civilHourSlots,
+          "--calendar-visible-hours": TIMED_VISIBLE_HOURS,
+        } as CSSVariables
+      }
     >
       <CalendarTimeColumn at={labelDay.toDate()} />
       <div
         className="absolute top-0 left-(--calendar-grid-margin-left) grid h-[calc(var(--calendar-day-hour-slots)*100%/var(--calendar-visible-hours))] w-[calc(100%-var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
         id={columnsId}
         ref={timedColumnsRef}
-        style={
-          {
-            "--calendar-column-count": visibleDates.length,
-            "--calendar-column-min-width": `${EVENT_WIDTH_MINIMUM}px`,
-            "--calendar-grid-margin-left": `${marginLeft}px`,
-            "--calendar-day-hour-slots": civilHourSlots,
-            "--calendar-visible-hours": TIMED_VISIBLE_HOURS,
-          } as CSSVariables
-        }
       >
         {todayColumnIndexes.map((columnIndex) => (
           <CalendarNowLine
@@ -137,16 +137,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
         </table>
       </div>
 
-      <div
-        className="absolute left-(--calendar-grid-margin-left) h-full w-[calc(100%-var(--calendar-grid-margin-left))]"
-        style={
-          {
-            "--calendar-grid-margin-left": `${marginLeft}px`,
-            "--calendar-day-hour-slots": civilHourSlots,
-            "--calendar-visible-hours": TIMED_VISIBLE_HOURS,
-          } as CSSVariables
-        }
-      >
+      <div className="absolute left-(--calendar-grid-margin-left) h-full w-[calc(100%-var(--calendar-grid-margin-left))]">
         {hourRowLabels.map((dayTime) => (
           <div
             className={`relative flex ${TIMED_HOUR_SLOT_HEIGHT_CLASS} w-full items-start border-border border-b`}

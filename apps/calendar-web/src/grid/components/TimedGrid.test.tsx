@@ -2,7 +2,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
 import { DATA_TIMED_GRID_ROW } from "@web/common/constants/web.constants";
-import { TIMED_HOUR_SLOT_HEIGHT_CLASS } from "@web/grid/grid.constants";
+import {
+  TIMED_HOUR_SLOT_HEIGHT_CLASS,
+  TIMED_VISIBLE_HOURS,
+} from "@web/grid/grid.constants";
 import { ALL_DAY_COLUMN_TINT_PERCENT } from "@web/grid/utils/allDayColumnTint.util";
 import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
@@ -112,5 +115,24 @@ describe("TimedGrid", () => {
 
     expect(labelSlot).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
     expect(hourRow).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
+  });
+
+  it("sets grid geometry CSS variables once on the scroll region", () => {
+    render(
+      <TimedGrid
+        eventsLayer={null}
+        timedColumnsRef={() => {}}
+        timedGridRef={() => {}}
+        today={today}
+        visibleDates={[{ date: today, key: "today" }]}
+      />,
+    );
+
+    const grid = screen.getByRole("region", { name: "Timed events grid" });
+    expect(grid.style.getPropertyValue("--calendar-column-count")).toBe("1");
+    expect(grid.style.getPropertyValue("--calendar-visible-hours")).toBe(
+      String(TIMED_VISIBLE_HOURS),
+    );
+    expect(grid.style.getPropertyValue("--calendar-day-hour-slots")).toBe("24");
   });
 });

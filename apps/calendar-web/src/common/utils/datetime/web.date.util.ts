@@ -10,7 +10,7 @@ import {
   type EventSchedule,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
-import { civilHourSlotCount, startOfCivilDay } from "@core/util/date/civil-day";
+import { civilHourLineInstants } from "@core/util/date/civil-day";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -49,15 +49,10 @@ export const getHourLabels = (
   includeMidnight = false,
   referenceDay: Dayjs | Date | string = dayjs(),
   timeZone: string = getEffectiveTimeZone(),
-) => {
-  const slotCount = civilHourSlotCount(referenceDay, timeZone);
-  const hours = includeMidnight ? slotCount : Math.max(0, slotCount - 1);
-  const day = startOfCivilDay(referenceDay, timeZone);
-
-  return Array.from({ length: hours }, (_, index) =>
-    day.add(index + 1, "hour").format(HOURS_AM_SHORT_FORMAT),
+) =>
+  civilHourLineInstants(referenceDay, timeZone, includeMidnight).map(
+    (instant) => instant.format(HOURS_AM_SHORT_FORMAT),
   );
-};
 
 const getTimeLabel = (value: string) => value.replace(":00", "");
 

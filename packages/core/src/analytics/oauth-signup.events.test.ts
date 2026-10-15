@@ -1,17 +1,7 @@
-import {
-  oauthFailedReasonFromCallbackQuery,
-  oauthFailedReasonFromProviderError,
-} from "@core/analytics/oauth-signup.events";
+import { oauthFailedReasonFromCallbackQuery } from "@core/analytics/oauth-signup.events";
 import { describe, expect, it } from "bun:test";
 
 describe("oauth-signup.events", () => {
-  it("maps provider errors", () => {
-    expect(oauthFailedReasonFromProviderError("access_denied")).toBe(
-      "access_denied",
-    );
-    expect(oauthFailedReasonFromProviderError("server_error")).toBe("other");
-  });
-
   it("derives callback failure reasons from query params", () => {
     expect(
       oauthFailedReasonFromCallbackQuery({
@@ -27,5 +17,19 @@ describe("oauth-signup.events", () => {
         providerError: null,
       }),
     ).toBe("invalid_state");
+    expect(
+      oauthFailedReasonFromCallbackQuery({
+        state: "x",
+        code: "abc",
+        providerError: "access_denied",
+      }),
+    ).toBe("access_denied");
+    expect(
+      oauthFailedReasonFromCallbackQuery({
+        state: "x",
+        code: "abc",
+        providerError: "server_error",
+      }),
+    ).toBe("other");
   });
 });

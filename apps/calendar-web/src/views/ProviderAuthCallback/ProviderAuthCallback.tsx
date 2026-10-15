@@ -18,7 +18,7 @@ import {
   isSignInProviderKind,
   PROVIDER_AUTHORIZATION_ERROR_MESSAGE,
 } from "@web/auth/providers/authorization/provider-authorization.constants";
-import { relayProviderOAuthCallbackTelemetry } from "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry";
+import { recordOAuthSignInCallbackLanding } from "@web/auth/providers/authorization/record-oauth-signin-callback-landing";
 import { missingPermissionsActions } from "@web/auth/providers/missing-permissions.store";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
@@ -40,12 +40,9 @@ export async function completeProviderAuthCallback({
   navigate,
   search,
 }: CompleteProviderAuthCallbackOptions): Promise<void> {
-  relayProviderOAuthCallbackTelemetry(provider, search);
-
   // Before any branch: a user who came back from the provider is counted even
   // when the exchange below fails.
-  trackSignupStep("oauth_callback_returned", { method: provider });
-  track("oauth_callback_received", { provider });
+  recordOAuthSignInCallbackLanding(provider, search);
 
   const result = await completeProviderAuthorization({
     provider,

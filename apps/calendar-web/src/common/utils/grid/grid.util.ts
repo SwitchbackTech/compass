@@ -52,9 +52,12 @@ export const getMinuteHeight = (clientHeight: number) =>
 export const getCurrentPercentOfDay = (
   timeZone: string = getEffectiveTimeZone(),
 ) => {
-  const now = dayjs().tz(timeZone);
-  const civilMinutes = civilDayLengthMinutes(now, timeZone);
-  return (minutesFromCivilMidnight(now, timeZone) / civilMinutes) * 100;
+  const now = dayjs();
+  return (
+    (minutesFromCivilMidnight(now, timeZone) /
+      civilDayLengthMinutes(now, timeZone)) *
+    100
+  );
 };
 
 // Scrolls the current time to just below the viewport top, not flush with

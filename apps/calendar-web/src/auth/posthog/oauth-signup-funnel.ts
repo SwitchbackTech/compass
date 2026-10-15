@@ -1,4 +1,7 @@
-import { type OAuthFailedReason } from "@core/analytics/oauth-signup.events";
+import {
+  OAUTH_FAILED_EVENT,
+  type OAuthFailedReason,
+} from "@core/analytics/oauth-signup.events";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import {
   type SignupFailureReason,
@@ -32,7 +35,7 @@ export function trackOAuthSignupFailed(input: {
   step?: SignupStep;
   error?: string;
 }): void {
-  track("oauth_failed", {
+  track(OAUTH_FAILED_EVENT, {
     provider: input.provider,
     reason: oauthFailedReasonFromSignupFailure(input.reason),
     ...(input.providerError ? { provider_error: input.providerError } : {}),
