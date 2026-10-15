@@ -30,6 +30,10 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
     private var agendaSync: NativeAgendaSync?
     private var sidebandTimer: Timer?
     private var settingsBridge: NativeAppSettingsBridge?
+    #if DEBUG
+    /// `compass://debug/...` commands received before `model.start()` finished.
+    private var pendingDebugCommands: [DesktopDebugCommand]? = []
+    #endif
 
     init(webTheme: NativeWebTheme = .lightBeach, model: NativeCalendarRootModel, catalogController: ShortcutsCatalogWindowController? = nil) {
         self.webTheme = webTheme
@@ -82,6 +86,13 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         Task {
             await model.start()
             deepLinkRouter.markConsumerReady()
+            #if DEBUG
+            let queued = pendingDebugCommands ?? []
+            pendingDebugCommands = nil
+            for command in queued {
+                await model.runDebugCommand(command)
+            }
+            #endif
         }
     }
 
@@ -157,6 +168,18 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
     }
 
     func receiveDeepLink(urlString: String) {
+        #if DEBUG
+        // Shell-driven test commands: run in place without activating the app,
+        // so `open -g "compass://debug/..."` never takes the user's focus.
+        if let command = DesktopDebugCommand.parse(urlString) {
+            if pendingDebugCommands != nil {
+                pendingDebugCommands?.append(command)
+            } else {
+                Task { await model.runDebugCommand(command) }
+            }
+            return
+        }
+        #endif
         guard DesktopDeepLinkParser.recognizedURLString(urlString) != nil else { return }
         NSApp.activate(ignoringOtherApps: true)
         view.window?.makeKeyAndOrderFront(nil)
