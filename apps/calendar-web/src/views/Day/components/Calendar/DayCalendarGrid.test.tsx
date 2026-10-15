@@ -758,10 +758,17 @@ describe("DayCalendarGrid", () => {
   });
 
   it("scrolls the Day timed grid to now when the Day view requests it", () => {
+    setSystemTime(new Date("2026-02-05T12:00:00.000Z"));
     const scroll = mock();
 
     HTMLElement.prototype.scroll = scroll;
     renderDayCalendarGrid();
+    const mainGrid = document.getElementById("mainGrid");
+    if (!(mainGrid instanceof HTMLElement)) {
+      throw new Error("expected main grid");
+    }
+    Object.defineProperty(mainGrid, "clientHeight", { value: 1440 });
+    mainGrid.scrollTop = 0;
     scroll.mockClear();
 
     emitViewCommand("SCROLL_TO_NOW_LINE");

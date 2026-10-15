@@ -20,6 +20,7 @@ import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   selectNowCueActive,
+  selectNowCuePulseGeneration,
   useNowCueStore,
 } from "@web/grid/now-cue/now-cue.store";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
@@ -52,6 +53,7 @@ export const SelectView = ({
   const listRef = useRef<Array<HTMLElement | null>>([]);
   useFloatingLayer("viewSelect", isOpen);
   const pulseDayLabel = useNowCueStore(selectNowCueActive) && emphasizeDayLabel;
+  const pulseGeneration = useNowCueStore(selectNowCuePulseGeneration);
 
   const getCurrentView = (): "Day" | "Week" | "Life" => {
     const pathname = location.pathname;
@@ -190,6 +192,7 @@ export const SelectView = ({
               pulseDayLabel &&
                 "c-now-cue-label-pulse motion-reduce:transition-none",
             )}
+            key={emphasizeDayLabel ? pulseGeneration : undefined}
           >
             {label}
           </span>

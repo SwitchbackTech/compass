@@ -267,7 +267,7 @@
   @keyframes nowCuePulse {
     0%,
     100% {
-      box-shadow: none;
+      box-shadow: 0 0 0 1px var(--color-background);
       opacity: 1;
     }
     45% {
@@ -281,12 +281,12 @@
   @keyframes nowCueLabelPulse {
     0%,
     100% {
-      color: inherit;
+      color: var(--color-accent);
       filter: brightness(1);
     }
     45% {
-      color: var(--color-accent);
-      filter: brightness(1.2);
+      color: var(--color-accent-hover);
+      filter: brightness(1.35);
     }
   }
 
@@ -297,7 +297,7 @@
       filter: brightness(1);
     }
     45% {
-      filter: brightness(1.35);
+      filter: brightness(1.45);
     }
   }
 
@@ -787,6 +787,10 @@
 @utility c-level-pulse {
   animation: var(--animate-level-pulse);
   @apply motion-reduce:animate-none;
+}
+
+@utility c-now-line-rim {
+  box-shadow: 0 0 0 1px var(--color-background);
 }
 
 @utility c-now-cue-pulse {
