@@ -67,7 +67,7 @@ export const SCROLL_TO_NOW_BUFFER_PX = 150;
 const SCROLL_TO_NOW_TOLERANCE_PX = 2;
 
 /** When the now line is visible and scroll is within this window, "t" pulses. */
-export const SCROLL_TO_NOW_PULSE_NEAR_MINUTES = 5;
+const SCROLL_TO_NOW_PULSE_NEAR_MINUTES = 5;
 
 export const getScrollToNowTop = (clientHeight: number) =>
   Math.max(
@@ -76,7 +76,7 @@ export const getScrollToNowTop = (clientHeight: number) =>
       SCROLL_TO_NOW_BUFFER_PX,
   );
 
-export const getScrollToNowDelta = (timedGrid: HTMLElement) => {
+const getScrollToNowDelta = (timedGrid: HTMLElement) => {
   const targetTop = getScrollToNowTop(timedGrid.clientHeight);
   return Math.abs(timedGrid.scrollTop - targetTop);
 };
