@@ -51,10 +51,14 @@ export function assembleEventInstances(
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     };
+    const seriesMaster =
+      event.recurrence.kind === "exception"
+        ? eventsById.get(event.recurrence.seriesId)
+        : undefined;
     const correlation = {
       ...toIcalUid(event),
       ...toProviderManaged(event),
-      ...toPopupReminderMinutes(event),
+      ...toPopupReminderMinutes(event, seriesMaster),
     };
 
     if (event.recurrence.kind === "single") {
@@ -154,9 +158,21 @@ const toProviderManaged = (event: EventRecord): { providerManaged?: true } => {
 
 const toPopupReminderMinutes = (
   event: EventRecord,
+  seriesMaster?: EventRecord,
 ): { popupReminderMinutes?: readonly number[] } => {
-  const minutes = reminderMinutesFromProviderMetadata(event.providerMetadata);
-  return minutes !== undefined ? { popupReminderMinutes: minutes } : {};
+  const own = reminderMinutesFromProviderMetadata(event.providerMetadata);
+  if (own !== undefined) {
+    return { popupReminderMinutes: own };
+  }
+  if (seriesMaster) {
+    const inherited = reminderMinutesFromProviderMetadata(
+      seriesMaster.providerMetadata,
+    );
+    if (inherited !== undefined) {
+      return { popupReminderMinutes: inherited };
+    }
+  }
+  return {};
 };
 
 const toInstanceContent = (event: EventRecord) => {

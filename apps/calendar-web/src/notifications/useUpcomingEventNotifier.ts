@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useTodayTimedEvents } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { getNotificationPort } from "@web/notifications/notification.port";
-import { useNotificationsEffectivelyOn } from "@web/notifications/notification.state";
+import {
+  isNotificationsPrefEnabled,
+  useNotificationsEffectivelyOn,
+} from "@web/notifications/notification.state";
+import { trackNotificationPermissionState } from "@web/notifications/notification-diagnostics";
 import {
   announceUpcomingEvents,
   toNotifiableEvents,
@@ -21,9 +25,21 @@ export function useUpcomingEventNotifier(): void {
   const { now, allTimedEvents } = useTodayTimedEvents();
   const firedKeysRef = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!effectivelyOn) return;
+  const lastPermissionReportRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    if (!effectivelyOn) {
+      if (isNotificationsPrefEnabled()) {
+        const signature = getNotificationPort().getPermission();
+        if (lastPermissionReportRef.current !== signature) {
+          lastPermissionReportRef.current = signature;
+          trackNotificationPermissionState("runtime");
+        }
+      }
+      return;
+    }
+
+    lastPermissionReportRef.current = null;
     firedKeysRef.current = announceUpcomingEvents(
       getNotificationPort(),
       now,

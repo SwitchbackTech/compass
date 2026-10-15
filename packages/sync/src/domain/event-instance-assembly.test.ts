@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { encodePopupReminderMinutes } from "@core/notifications/google-popup-reminders.util";
 import {
   type CalendarId,
   type DateTime,
@@ -430,6 +431,35 @@ describe("assembleEventInstances", () => {
     const orphan = makeOccurrence({ eventId: objectId() as EventId });
 
     expect(assembleEventInstances([orphan], byId())).toEqual([]);
+  });
+
+  it("inherits popup reminder minutes from the series master onto exceptions", () => {
+    const master = makeEvent({
+      recurrence: {
+        kind: "seriesMaster",
+        rules: ["RRULE:FREQ=WEEKLY;INTERVAL=2"],
+      },
+      providerMetadata: {
+        popupReminders: encodePopupReminderMinutes([10]),
+      },
+    });
+    const exception = makeEvent({
+      recurrence: {
+        kind: "exception",
+        seriesId: master._id,
+        recurrenceId: "2026-10-15T15:00:00.000Z" as DateTime,
+        cancelled: false,
+      },
+      providerMetadata: null,
+    });
+    const occurrence = makeOccurrence({ eventId: exception._id });
+
+    const [instance] = assembleEventInstances(
+      [occurrence],
+      byId(exception, master),
+    );
+
+    expect(instance?.popupReminderMinutes).toEqual([10]);
   });
 
   it("de-duplicates the master row across many instances of one series", () => {

@@ -9,6 +9,7 @@ import {
   getNotificationPort,
   type NotificationPort,
 } from "@web/notifications/notification.port";
+import { trackNotificationPermissionState } from "@web/notifications/notification-diagnostics";
 
 /** Where a toggle came from for analytics. */
 export type NotificationToggleSource = "palette";
@@ -143,6 +144,7 @@ export const notificationActions = {
           : NOTIFICATIONS_ENABLED_NO_SAMPLE_TOAST,
       );
       track("notifications_enabled", { source, sampleShown });
+      trackNotificationPermissionState(source);
       return;
     }
 
@@ -154,6 +156,7 @@ export const notificationActions = {
         "Notifications are blocked for this site. Allow them in your browser's site settings, then try again.",
       );
       track("notifications_enable_denied", { source });
+      trackNotificationPermissionState(source);
     }
     // "default" means the prompt was dismissed without a choice: stay quiet,
     // the user can ask again.

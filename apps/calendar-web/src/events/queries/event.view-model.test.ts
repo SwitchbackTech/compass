@@ -32,6 +32,23 @@ describe("Event query view models", () => {
     expect(day.timedEvents).toEqual(week.timedEvents);
   });
 
+  test("inherits popup reminder minutes from the series master onto occurrences", () => {
+    const base = createMockEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;INTERVAL=2"] },
+      popupReminderMinutes: [10],
+    });
+    const occurrence = createMockEvent({
+      recurrence: { kind: "occurrence", seriesId: base.id },
+    });
+    const data = normalized(base, occurrence);
+
+    const card = deriveCalendarEventViewModel(data).timedEvents.find(
+      ({ _id }) => _id === occurrence.id,
+    );
+
+    expect(card?.popupReminderMinutes).toEqual([10]);
+  });
+
   test("excludes a series base from grid cards but keeps its occurrence", () => {
     const base = createMockEvent({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },

@@ -22,6 +22,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { NotificationPermissionBannerGate } from "@web/notifications/NotificationPermissionBannerGate";
 import { PageJumpHints } from "@web/shortcuts/page-jump/PageJumpHints";
 import { getShortcutMenuSections } from "@web/shortcuts/shortcuts.registry";
 import { TimezoneMismatchBannerGate } from "@web/timezone/TimezoneMismatchBannerGate";
@@ -153,6 +154,7 @@ export const WeekView = () => {
         >
           <Header scrollUtil={scrollUtil} weekProps={weekProps} />
           <CalendarConnectionBannerGate />
+          <NotificationPermissionBannerGate />
           <TimezoneMismatchBannerGate />
           <DemoEventsBannerGate range={demoEventsRange} />
 

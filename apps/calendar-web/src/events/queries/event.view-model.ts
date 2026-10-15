@@ -110,6 +110,19 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
+/** Occurrence rows sometimes arrive without reminder metadata; inherit the series master. */
+const enrichPopupRemindersFromSeriesMaster = (
+  events: Event[],
+  entities: NormalizedEventQueryData["entities"],
+): Event[] =>
+  events.map((event) => {
+    if (event.popupReminderMinutes !== undefined) return event;
+    if (event.recurrence.kind !== "occurrence") return event;
+    const master = entities[event.recurrence.seriesId];
+    if (master?.popupReminderMinutes === undefined) return event;
+    return { ...event, popupReminderMinutes: master.popupReminderMinutes };
+  });
+
 // A cache entry with a missing/malformed `schedule` is a bug upstream
 // (normalizeEventList/query seeding), not a case to silently swallow — but
 // it must not crash this shared derivation, since every grid consumer
@@ -213,7 +226,11 @@ export const deriveCalendarEventViewModel = (
 const computeCalendarEventViewModel = (
   data?: NormalizedEventQueryData,
 ): CalendarEventViewModel => {
-  const events = eventsFrom(data);
+  const entities = data?.entities ?? {};
+  const events = enrichPopupRemindersFromSeriesMaster(
+    eventsFrom(data),
+    entities,
+  );
   const demoEventIds = data?.demoEventIds;
   const annotations: EventAnnotations = {
     demoEventIds,
@@ -222,7 +239,7 @@ const computeCalendarEventViewModel = (
   const timedEvents = timedEventsFrom(events, annotations);
   const allDayEvents = allDayEventsFrom(events, annotations);
   return {
-    entities: data?.entities ?? {},
+    entities,
     events,
     timedEvents,
     allDayEvents,
