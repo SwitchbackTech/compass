@@ -87,6 +87,15 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        // AppKit hands launch focus to the first key view, the header Previous
+        // button, which then draws a ring and swallows Space and typing. The
+        // grid owns the keyboard through the router, so start with no control
+        // focused. Tab still reaches the buttons. A form already open (UI test
+        // launches) keeps its field.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, !self.model.isEventFormVisible else { return }
+            self.view.window?.makeFirstResponder(nil)
+        }
         if let window = view.window {
             GridFocusAccessibilityProbe.attach(to: window)
             GridFocusAccessibilityProbe.publish(label: model.gridFocusAccessibilityLabel)

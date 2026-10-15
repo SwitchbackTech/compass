@@ -56,7 +56,7 @@ public struct CommandPaletteOverlay: View {
                 )
                 .accessibilityIdentifier("compass-native-command-palette")
             }
-            .onAppear { searchFocused = true }
+            .focusOnAppear($searchFocused)
             .onChange(of: paletteStore.query) { _, _ in
                 model.schedulePaletteEventSearch()
             }

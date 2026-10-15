@@ -49,6 +49,11 @@ final class MainMenuModelTests: XCTestCase {
             compass?.rows.first { $0.title == "Restart to update" }?.action, .restartToUpdate)
     }
 
+    func testWindowMenuCanReopenTheMainWindow() {
+        let window = MainMenuModel.sections(showDebugMenu: false).first { $0.title == "Window" }
+        XCTAssertEqual(window?.rows.first { $0.title == "Compass" }?.action, .showMainWindow)
+    }
+
     func testDebugSectionIsOptional() {
         XCTAssertFalse(
             MainMenuModel.sections(showDebugMenu: false).contains { $0.title == "Debug" })

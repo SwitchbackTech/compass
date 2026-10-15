@@ -40,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menuController.onReloadAppHost = { [weak self] in
             self?.reloadNativeRoot()
         }
+        menuController.onShowMainWindow = { [weak self] in
+            self?.window?.makeKeyAndOrderFront(nil)
+        }
         mainMenuController = menuController
         menuController.quickAddCoordinator = quickAddCoordinator
         NSApp.mainMenu = MainMenu.make(controller: menuController)
@@ -91,6 +94,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.toolbarStyle = .unified
         window.minSize = NSSize(width: 720, height: 480)
         window.isReleasedWhenClosed = false
+        // Window > Compass reopens it, so AppKit's own window list would repeat it.
+        window.isExcludedFromWindowsMenu = true
         window.setContentSize(NSSize(width: 1280, height: 820))
         window.center()
         window.makeKeyAndOrderFront(nil)

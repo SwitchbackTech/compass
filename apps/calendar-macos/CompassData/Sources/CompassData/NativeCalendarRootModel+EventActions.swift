@@ -117,12 +117,14 @@ extension NativeCalendarRootModel {
             message: "Use \(keys) to \(label.lowercased())")
     }
 
-    func commitDuplicate(from source: Event, recordUndo: Bool) async {
+    /// Returns the created copy, which has a new id.
+    @discardableResult
+    func commitDuplicate(from source: Event, recordUndo: Bool) async -> Event? {
         guard let input = EventDuplicateCommit.duplicateInput(
             from: source,
             calendars: calendars,
             defaultCalendarId: defaultTargetCalendarId()
-        ), let optimistic = EventDuplicateCommit.optimisticEvent(from: input) else { return }
+        ), let optimistic = EventDuplicateCommit.optimisticEvent(from: input) else { return nil }
 
         do {
             try await eventsStore.createOptimistic(input: input, optimisticEvent: optimistic)
@@ -132,7 +134,10 @@ extension NativeCalendarRootModel {
             }
             rebuildPresentation()
             focusEvent(eventId: optimistic.id.rawValue)
-        } catch {}
+            return optimistic
+        } catch {
+            return nil
+        }
     }
 
     /// Re-reads the store after a write so the grid reflects what persisted,
@@ -217,7 +222,10 @@ extension NativeCalendarRootModel {
             revertCreatedEvent(event)
         }
         recordShortcut(.otherUndo)
-        Task { await eventsStore.settleStagedDelete(id: event.id, scope: .this) }
+        Task {
+            await eventsStore.settleStagedDelete(id: event.id, scope: .this)
+            await refreshSideband()
+        }
     }
 
     public func undoLastChangeAndWait() async {
@@ -235,6 +243,9 @@ extension NativeCalendarRootModel {
             await self.replayUndoEntry(entry)
         }
         recordShortcut(.otherUndo)
+        // Up next and the menu bar agenda re-read the store once the change
+        // has settled, so an undone create never lingers there.
+        await refreshSideband()
     }
 
     public func redoLastChange() {
@@ -247,6 +258,7 @@ extension NativeCalendarRootModel {
             await undoStore.runHistoryRestoreAsync {
                 await self.replayRedoEntry(entry)
             }
+            await refreshSideband()
         }
         recordShortcut(.otherRedo)
     }
@@ -258,7 +270,9 @@ extension NativeCalendarRootModel {
             revertCreatedEvent(event)
             await eventsStore.settleStagedDelete(id: event.id, scope: .this)
         case .delete(let event):
-            await commitDuplicate(from: event, recordUndo: false)
+            if let restored = await commitDuplicate(from: event, recordUndo: false) {
+                undoStore.replaceLastFuture(with: .delete(event: restored))
+            }
         case .edit(_, let before, _):
             await replaceEvent(with: before)
         case .hidden(let eventId, let hidden):
@@ -273,7 +287,9 @@ extension NativeCalendarRootModel {
     private func replayRedoEntry(_ entry: UndoHistoryEntry) async {
         switch entry {
         case .create(let event):
-            await commitDuplicate(from: event, recordUndo: false)
+            if let recreated = await commitDuplicate(from: event, recordUndo: false) {
+                undoStore.replaceLastPast(with: .create(event: recreated))
+            }
         case .delete(let event):
             await deleteEvent(event, scope: .this)
         case .edit(_, _, let after):
