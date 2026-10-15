@@ -54,6 +54,7 @@ public enum CalendarEventViewModel {
             }
             return GridLayoutTimedEventInput(
                 calendarId: event.calendarId.rawValue,
+                colorHex: EventColorSlotHex.eventColorHex(for: event),
                 endDate: payload.end.rawValue,
                 eventId: event.id.rawValue,
                 startDate: payload.start.rawValue,
@@ -103,8 +104,10 @@ public enum CalendarEventViewModel {
 
         let assigned = AssignEventsToRow.assign(allDayEvents: rowInputs)
         return assigned.allDayEvents.map { row in
-            GridLayoutAllDayEventInput(
-                calendarId: events.first(where: { $0.id.rawValue == row.id })?.calendarId.rawValue,
+            let event = events.first(where: { $0.id.rawValue == row.id })
+            return GridLayoutAllDayEventInput(
+                calendarId: event?.calendarId.rawValue,
+                colorHex: event.flatMap(EventColorSlotHex.eventColorHex(for:)),
                 endDate: row.endDate,
                 eventId: row.id,
                 row: row.row,

@@ -898,13 +898,10 @@ public final class NativeCalendarRootModel {
         }
         focusStore.setPageJumpTargets(nativePageJumpTargets())
         if demoPresentation != nil, !loadedEvents.isEmpty, !didApplyDemoFixtureScroll {
-            let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
-                allDayRowHeight: snapshot.metrics.allDayRowHeight
-            )
             if let standup = snapshot.cards.first(where: {
                 $0.eventId == "demo-morning-standup" && $0.kind == .timed
             }) {
-                pendingScroll = .revealDocumentY(max(0, standup.frame.top + allDayOffset - 40))
+                pendingScroll = .revealDocumentY(max(0, standup.frame.top - 40))
             } else {
                 pendingScroll = .revealDocumentY(0)
             }
