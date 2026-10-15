@@ -82,6 +82,9 @@ export const STORAGE_KEYS = {
   // written "true" right after the browser grants permission, so a stale flag
   // can never outlive a revoked grant (the permission is re-read on load).
   NOTIFICATIONS_ENABLED: "compass.notifications.enabled",
+  // One-time dismiss for the blocked-permission banner on this browser.
+  NOTIFICATIONS_BLOCKED_BANNER_DISMISSED:
+    "compass.notifications.blocked-banner-dismissed",
   // The X on the keyboard hint turns tips off for this browser.
   POINTER_HINT_DISMISSED_PERMANENTLY:
     "compass.pointer-hint.dismissed-permanently",

@@ -474,6 +474,21 @@ describe("normalizeGoogleEvent", () => {
     expect(read).not.toHaveProperty("providerManaged");
   });
 
+  it("resolves useDefault reminders on a recurring master when calendar defaults are empty", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({
+          recurrence: ["RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=TH"],
+          reminders: { useDefault: true },
+        }),
+        undefined,
+        [],
+      ),
+    );
+
+    expect(read.popupReminderMinutes).toEqual([10]);
+  });
+
   it("resolves popup reminder minutes from overrides and calendar defaults", () => {
     const fromDefaults = asProviderEvent(
       normalizeGoogleEvent(
