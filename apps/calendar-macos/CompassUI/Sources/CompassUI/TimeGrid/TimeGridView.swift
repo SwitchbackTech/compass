@@ -504,14 +504,24 @@ public final class TimeGridView: NSView {
                 )
                 highlight.wantsLayer = true
                 highlight.layer?.backgroundColor = themeAccentColor.withAlphaComponent(0.08).cgColor
-                allDayRowView.addSubview(highlight)
+                addGridBackground(highlight, to: allDayRowView)
             }
             let divider = NSView(
                 frame: NSRect(x: column.left, y: 0, width: 1, height: allDayHeight + headerHeight)
             )
             divider.wantsLayer = true
             divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.5).cgColor
-            allDayRowView.addSubview(divider)
+            addGridBackground(divider, to: allDayRowView)
+        }
+    }
+
+    /// Grid chrome is rebuilt every layout while cards are pooled, so new
+    /// chrome goes below the first card instead of on top of every card.
+    private func addGridBackground(_ view: NSView, to parent: NSView) {
+        if let firstCard = parent.subviews.first(where: { $0 is EventCardView }) {
+            parent.addSubview(view, positioned: .below, relativeTo: firstCard)
+        } else {
+            parent.addSubview(view)
         }
     }
 
@@ -523,12 +533,15 @@ public final class TimeGridView: NSView {
 
         for column in snapshot.columns {
             // Web `TimedGrid`: past day columns sit on the surface tone so today
-            // and the days ahead read brighter.
-            if state.layoutMode == .week, column.key < todayKey {
-                let past = NSView(frame: NSRect(x: column.left, y: 0, width: column.width, height: gridHeight))
-                past.wantsLayer = true
-                past.layer?.backgroundColor = palette.surface.cgColor
-                timedContentView.addSubview(past)
+            // and the days ahead read brighter; today carries the focused-day
+            // tint web shows before any keyboard navigation.
+            if state.layoutMode == .week, column.key <= todayKey {
+                let tint = NSView(frame: NSRect(x: column.left, y: 0, width: column.width, height: gridHeight))
+                tint.wantsLayer = true
+                tint.layer?.backgroundColor = column.key == todayKey
+                    ? themeAccentColor.withAlphaComponent(0.1).cgColor
+                    : palette.surface.cgColor
+                addGridBackground(tint, to: timedContentView)
             }
             if state.layoutMode == .day,
                 state.focusedDayColumnCalendarId == column.key
@@ -538,12 +551,12 @@ public final class TimeGridView: NSView {
                 )
                 highlight.wantsLayer = true
                 highlight.layer?.backgroundColor = themeAccentColor.withAlphaComponent(0.08).cgColor
-                timedContentView.addSubview(highlight)
+                addGridBackground(highlight, to: timedContentView)
             }
             let divider = NSView(frame: NSRect(x: column.left, y: 0, width: 1, height: gridHeight))
             divider.wantsLayer = true
             divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.35).cgColor
-            timedContentView.addSubview(divider)
+            addGridBackground(divider, to: timedContentView)
         }
 
         for hour in 1 ..< GridTimeConstants.timedDayHours {
@@ -557,17 +570,14 @@ public final class TimeGridView: NSView {
             )
             line.wantsLayer = true
             line.layer?.backgroundColor = palette.border.withAlphaComponent(0.25).cgColor
-            timedContentView.addSubview(line)
+            addGridBackground(line, to: timedContentView)
         }
     }
 
     private func renderCards(snapshot: GridLayoutSnapshot) {
         var seen: Set<String> = []
-        let surface = themePalette.surfaceRaised
 
-        // Card frames are relative to their row (all-day row or timed grid),
-        // which already sit at their own offsets.
-        for card in snapshot.cards {
+        for card in snapshot.cards.map({ displayCard($0, snapshot: snapshot) }) {
             seen.insert(card.eventId)
             let view = cardPool[card.eventId] ?? EventCardView(frame: .zero)
             cardPool[card.eventId] = view
@@ -577,7 +587,6 @@ public final class TimeGridView: NSView {
             view.apply(
                 card: card,
                 theme: theme,
-                surfaceColor: surface,
                 isFocused: isFocused,
                 isSidebarEditing: isSidebarEditing
             )
@@ -604,9 +613,20 @@ public final class TimeGridView: NSView {
         syncFocusedEventAccessibilityProxy(snapshot: snapshot)
     }
 
+    /// Card frames are relative to their row, which already sits at its own
+    /// offset. All-day lefts start at the first day column (web positions the
+    /// all-day grid after the time gutter), so they shift by the gutter width.
+    private func displayCard(_ card: GridLayoutCardSnapshot, snapshot: GridLayoutSnapshot) -> GridLayoutCardSnapshot {
+        guard card.kind == .allDay else { return card }
+        var shifted = card
+        shifted.frame.left += snapshot.metrics.marginLeft
+        return shifted
+    }
+
     private func syncFocusedEventAccessibilityProxy(snapshot: GridLayoutSnapshot) {
         guard let focusedId = state.focusedEventId,
             let card = snapshot.cards.first(where: { $0.eventId == focusedId })
+                .map({ displayCard($0, snapshot: snapshot) })
         else {
             focusedEventAccessibilityProxy.isHidden = true
             focusedEventAccessibilityProxy.removeFromSuperview()

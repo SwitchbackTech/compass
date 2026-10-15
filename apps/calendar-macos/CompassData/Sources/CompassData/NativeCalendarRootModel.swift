@@ -98,7 +98,11 @@ public final class NativeCalendarRootModel {
     private var cachedDemoEventIds: Set<String> = []
     private let analyticsIdentity: AnalyticsIdentityCoordinator
     private var eventStream: ServerEventStream?
-    var loadedEvents: [Event] = []
+    /// Every reload (saves, drafts, deletes, undo) also refreshes Up next, so a
+    /// new event shows there at once instead of on the next sideband tick.
+    var loadedEvents: [Event] = [] {
+        didSet { syncSidebandWithLoadedEvents() }
+    }
     private var refreshTask: Task<Void, Never>?
     private var focusLayoutCards: [FocusLayoutCard] = []
     private var eventJumpHintLabels: [EventJumpChipHint] = []
