@@ -3,7 +3,7 @@ import XCTest
 final class NativeImageSnapshotTests: XCTestCase {
     @MainActor
     func testDemoWeekGridSnapshot() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -13,7 +13,7 @@ final class NativeImageSnapshotTests: XCTestCase {
 
     @MainActor
     func testLifeViewSnapshot() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 

@@ -86,7 +86,7 @@ public final class ShortcutDispatcher: @unchecked Sendable {
         }()
         if isTextInputFocused,
             !leaderActive,
-            !TextInputShortcutGating.shouldDispatch(event, leaderKey: registry.editSequenceLeader)
+            !TextInputShortcutGating.shouldDispatch(event)
         {
             return nil
         }

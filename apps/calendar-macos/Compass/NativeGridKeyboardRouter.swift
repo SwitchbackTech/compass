@@ -304,8 +304,15 @@ final class NativeGridKeyboardRouter {
     }
 
     /// XCUITest typing often misses the SwiftUI title field; mirror keystrokes into the draft.
+    /// Probes mirror via `EventFormAccessibilityProbeView` when `-COMPASS_UI_TEST` is set.
+    private func shouldMirrorEventFormTitleTyping() -> Bool {
+        if UITestLaunchPolicy.openFocusedEventFormAfterInitialGridFocus { return true }
+        if UITestLaunchPolicy.attachesAccessibilityProbes { return false }
+        return model.eventFormFocusedField == .title
+    }
+
     private func handleUITestEventFormTyping(_ keyEvent: KeyEvent) -> Bool {
-        guard UITestLaunchPolicy.openFocusedEventFormAfterInitialGridFocus else { return false }
+        guard shouldMirrorEventFormTitleTyping() else { return false }
         if keyEvent.modifiers == [.command],
             case .character(let char) = keyEvent.key,
             char.lowercased() == "v",
@@ -323,9 +330,18 @@ final class NativeGridKeyboardRouter {
             EventFormAccessibilityProbe.syncTitle("")
             return true
         }
-        if keyEvent.modifiers.isEmpty, case .character(let char) = keyEvent.key {
-            let piece = String(char)
-            guard !piece.isEmpty else { return false }
+        if keyEvent.modifiers.isEmpty {
+            let piece: String? = {
+                switch keyEvent.key {
+                case .character(let char):
+                    return String(char)
+                case .punctuation(let punct):
+                    return punct
+                default:
+                    return nil
+                }
+            }()
+            guard let piece, !piece.isEmpty else { return false }
             let current = model.draftStore.gridDraft?.title ?? ""
             let next = current + piece
             model.updateDraftFromForm(title: next)

@@ -378,8 +378,11 @@ xcodebuild test -project Compass.xcodeproj -scheme Compass \
 ```
 
 `CompassUITests` launch with `-COMPASS_FIXTURE demo` for anonymous smoke (no
-backend). CI runs pure packages in the `swift-packages` job and the app in
-the `build` job; see
+backend) and `-COMPASS_UI_TEST` (via `XCUIApplication.compassUITest()`), which
+attaches the AppKit accessibility probes the tests read. Launches without it
+attach no probes, so they cannot steal keyboard focus in shipped builds. CI
+runs pure packages in the `swift-packages` job and the app in the `build` job;
+see
 [test-macos.yml](../../.github/workflows/test-macos.yml).
 
 ## Common Failure Modes

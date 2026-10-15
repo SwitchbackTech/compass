@@ -45,6 +45,7 @@ public struct EventFormView: View {
             .font(.rubik(16))
             .foregroundStyle(theme.textColor)
             .focused($titleFocused)
+            .accessibilityIdentifier("compass-event-form-title")
             .pageJumpChipAnchor(id: "form-title")
 
             DescriptionEditorView(
