@@ -1,6 +1,6 @@
-import CompassData
 import CompassKit
 import XCTest
+@testable import CompassData
 
 @MainActor
 final class NativeCalendarRootModelUpNextTests: XCTestCase {
@@ -37,5 +37,41 @@ final class NativeCalendarRootModelUpNextTests: XCTestCase {
         await model.refreshSideband()
 
         XCTAssertEqual(model.upNextState.snapshot.upNext?.title, "Coffee")
+    }
+
+    /// Regression: a just-created event stayed out of Up next ("All clear")
+    /// until the 60 s sideband timer, because saves only reloaded the grid.
+    func testReloadingLoadedEventsUpdatesUpNextImmediately() async throws {
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment)
+        await model.refreshSideband()
+        XCTAssertNil(model.upNextState.snapshot.upNext)
+
+        model.loadedEvents = [try Self.timedEvent(title: "Just created", startingIn: 10 * 60)]
+
+        XCTAssertEqual(model.upNextState.snapshot.upNext?.title, "Just created")
+    }
+
+    private static func timedEvent(title: String, startingIn interval: TimeInterval) throws -> Event {
+        let formatter = ISO8601DateFormatter()
+        formatter.timeZone = EffectiveTimeZone.timeZone
+        let start = Date().addingTimeInterval(interval)
+        let json = """
+        {
+          "id": "just-created",
+          "calendarId": "507f1f77bcf86cd799439011",
+          "content": { "kind": "details", "title": "\(title)", "description": "" },
+          "createdAt": "2026-06-10T15:00:00.000Z",
+          "updatedAt": null,
+          "recurrence": { "kind": "single" },
+          "schedule": {
+            "kind": "timed",
+            "start": "\(formatter.string(from: start))",
+            "end": "\(formatter.string(from: start.addingTimeInterval(30 * 60)))",
+            "timeZone": "\(EffectiveTimeZone.identifier)"
+          }
+        }
+        """
+        return try JSONDecoder().decode(Event.self, from: Data(json.utf8))
     }
 }

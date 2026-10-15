@@ -100,7 +100,11 @@ public final class NativeCalendarRootModel {
     private var cachedDemoEventIds: Set<String> = []
     private let analyticsIdentity: AnalyticsIdentityCoordinator
     private var eventStream: ServerEventStream?
-    var loadedEvents: [Event] = []
+    /// Every reload (saves, drafts, deletes, undo) also refreshes Up next, so a
+    /// new event shows there at once instead of on the next sideband tick.
+    var loadedEvents: [Event] = [] {
+        didSet { syncSidebandWithLoadedEvents() }
+    }
     private var refreshTask: Task<Void, Never>?
     private var focusLayoutCards: [FocusLayoutCard] = []
     private var eventJumpHintLabels: [EventJumpChipHint] = []
@@ -900,13 +904,10 @@ public final class NativeCalendarRootModel {
         }
         focusStore.setPageJumpTargets(nativePageJumpTargets())
         if demoPresentation != nil, !loadedEvents.isEmpty, !didApplyDemoFixtureScroll {
-            let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
-                allDayRowHeight: snapshot.metrics.allDayRowHeight
-            )
             if let standup = snapshot.cards.first(where: {
                 $0.eventId == "demo-morning-standup" && $0.kind == .timed
             }) {
-                pendingScroll = .revealDocumentY(max(0, standup.frame.top + allDayOffset - 40))
+                pendingScroll = .revealDocumentY(max(0, standup.frame.top - 40))
             } else {
                 pendingScroll = .revealDocumentY(0)
             }

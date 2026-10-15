@@ -23,11 +23,14 @@ public final class TimeGridView: NSView {
 
     private let scrollView = GridScrollView()
     private let documentView = FlippedView()
+    /// Holds the weekday header and all-day row outside the scroll view so
+    /// they stay pinned while the timed grid scrolls (web sticky header).
+    private let pinnedHeaderView = FlippedView()
     private let allDayRowView = FlippedView()
     private let timedContentView = CardRoutingFlippedView()
     private let hourGutterView = FlippedView()
     private let headerRowView = FlippedView()
-    private let nowLineLayer = CALayer()
+    private let nowLineView = NSView()
 
     private var cardPool: [String: EventCardView] = [:]
     private let focusedEventAccessibilityProxy = FocusedGridEventAccessibilityProxy(frame: .zero)
@@ -35,6 +38,8 @@ public final class TimeGridView: NSView {
     private var state: TimeGridState
     private var theme: NativeWebTheme
     private var snapshot: GridLayoutSnapshot?
+
+    public override var isFlipped: Bool { true }
 
     public init(state: TimeGridState, theme: NativeWebTheme) {
         self.state = state
@@ -65,7 +70,6 @@ public final class TimeGridView: NSView {
 
     public override func layout() {
         super.layout()
-        scrollView.frame = bounds
         relayout()
     }
 
@@ -113,22 +117,6 @@ public final class TimeGridView: NSView {
         return smallestHit?.view
     }
 
-    public override func accessibilityChildren() -> [Any]? {
-        var children = super.accessibilityChildren() ?? []
-        if timedContentView.superview != nil {
-            children.append(timedContentView)
-        }
-        if allDayRowView.superview != nil {
-            children.append(allDayRowView)
-        }
-        if !focusedEventAccessibilityProxy.isHidden,
-            focusedEventAccessibilityProxy.superview === self
-        {
-            children.append(focusedEventAccessibilityProxy)
-        }
-        return children
-    }
-
     public func applyScroll(_ request: TimeGridScrollRequest) {
         guard let snapshot else { return }
         let hourHeight = snapshot.metrics.hourHeight
@@ -164,13 +152,11 @@ public final class TimeGridView: NSView {
 
     private func scrollToNowOrPulse() {
         guard let snapshot, snapshot.nowLine != nil else { return }
-        let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
-            allDayRowHeight: snapshot.metrics.allDayRowHeight
-        )
+        // The scroll document is the timed grid alone; the header is pinned above it.
         let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
             referenceNow: state.referenceNow,
             hourHeight: snapshot.metrics.hourHeight,
-            allDayOffset: allDayOffset
+            allDayOffset: 0
         ))
         let currentY = scrollView.contentView.bounds.origin.y
         if GridScrollMath.isAtScrollTarget(currentY: currentY, targetY: targetY) {
@@ -185,7 +171,7 @@ public final class TimeGridView: NSView {
 
     private func pulseNowCue() {
         let accent = themeAccentColor
-        nowLineLayer.add(
+        nowLineView.layer?.add(
             nowCuePulseAnimation(keyPath: "opacity", from: 1, to: 0.35),
             forKey: "nowCuePulse"
         )
@@ -241,12 +227,25 @@ public final class TimeGridView: NSView {
         scrollView.documentView = documentView
         addSubview(scrollView)
 
-        documentView.addSubview(headerRowView)
-        documentView.addSubview(allDayRowView)
-        documentView.addSubview(hourGutterView)
-        documentView.addSubview(timedContentView)
+        pinnedHeaderView.wantsLayer = true
+        pinnedHeaderView.layer?.masksToBounds = true
+        pinnedHeaderView.addSubview(headerRowView)
+        pinnedHeaderView.addSubview(allDayRowView)
+        addSubview(pinnedHeaderView)
 
-        timedContentView.layer?.addSublayer(nowLineLayer)
+        // The gutter sits above the opaque timed layer so its hour labels show.
+        documentView.addSubview(timedContentView)
+        documentView.addSubview(hourGutterView)
+        hourGutterView.wantsLayer = true
+
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(clipViewBoundsDidChange(_:)),
+            name: NSView.boundsDidChangeNotification,
+            object: scrollView.contentView
+        )
+
         timedContentView.wantsLayer = true
         timedContentView.setAccessibilityElement(true)
         timedContentView.setAccessibilityRole(.group)
@@ -257,8 +256,17 @@ public final class TimeGridView: NSView {
     }
 
     private func configureNowLine() {
-        nowLineLayer.backgroundColor = themeAccentColor.cgColor
-        nowLineLayer.zPosition = 1000
+        nowLineView.wantsLayer = true
+        nowLineView.setAccessibilityElement(false)
+    }
+
+    /// Day view scrolls horizontally; the pinned header follows the clip view's x.
+    @objc private func clipViewBoundsDidChange(_ notification: Notification) {
+        syncPinnedHeaderScrollX()
+    }
+
+    private func syncPinnedHeaderScrollX() {
+        pinnedHeaderView.setBoundsOrigin(NSPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
     }
 
     private func startMinuteTimer() {
@@ -280,25 +288,28 @@ public final class TimeGridView: NSView {
         let gridHeight = hourHeight * Double(GridTimeConstants.timedDayHours)
         let allDayHeight = snapshot.metrics.allDayRowHeight
         let headerHeight = GridTimeConstants.dayHeaderRowHeight
-        let totalHeight = headerHeight + allDayHeight + gridHeight + GridTimeConstants.gridPaddingBottom
+        let pinnedHeight = GridTimeConstants.timedContentDocumentYOffset(allDayRowHeight: allDayHeight)
 
         let contentWidth = max(bounds.width, state.documentContentWidth())
         scrollView.hasHorizontalScroller = state.layoutMode == .day && contentWidth > bounds.width + 1
-        documentView.frame = NSRect(x: 0, y: 0, width: contentWidth, height: totalHeight)
+        pinnedHeaderView.frame = NSRect(x: 0, y: 0, width: bounds.width, height: pinnedHeight)
+        scrollView.frame = NSRect(
+            x: 0,
+            y: pinnedHeight,
+            width: bounds.width,
+            height: max(0, bounds.height - pinnedHeight)
+        )
+        documentView.frame = NSRect(
+            x: 0,
+            y: 0,
+            width: contentWidth,
+            height: gridHeight + GridTimeConstants.gridPaddingBottom
+        )
         headerRowView.frame = NSRect(x: 0, y: 0, width: contentWidth, height: headerHeight)
         allDayRowView.frame = NSRect(x: 0, y: headerHeight, width: contentWidth, height: allDayHeight)
-        hourGutterView.frame = NSRect(
-            x: 0,
-            y: headerHeight + allDayHeight,
-            width: marginLeft,
-            height: gridHeight
-        )
-        timedContentView.frame = NSRect(
-            x: 0,
-            y: headerHeight + allDayHeight,
-            width: contentWidth,
-            height: gridHeight
-        )
+        hourGutterView.frame = NSRect(x: 0, y: 0, width: marginLeft, height: gridHeight)
+        timedContentView.frame = NSRect(x: 0, y: 0, width: contentWidth, height: gridHeight)
+        syncPinnedHeaderScrollX()
 
         renderHourGutter(snapshot: snapshot, hourHeight: hourHeight, gridHeight: gridHeight)
         renderHeaders(snapshot: snapshot, headerHeight: headerHeight)
@@ -493,14 +504,24 @@ public final class TimeGridView: NSView {
                 )
                 highlight.wantsLayer = true
                 highlight.layer?.backgroundColor = themeAccentColor.withAlphaComponent(0.08).cgColor
-                allDayRowView.addSubview(highlight)
+                addGridBackground(highlight, to: allDayRowView)
             }
             let divider = NSView(
                 frame: NSRect(x: column.left, y: 0, width: 1, height: allDayHeight + headerHeight)
             )
             divider.wantsLayer = true
             divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.5).cgColor
-            allDayRowView.addSubview(divider)
+            addGridBackground(divider, to: allDayRowView)
+        }
+    }
+
+    /// Grid chrome is rebuilt every layout while cards are pooled, so new
+    /// chrome goes below the first card instead of on top of every card.
+    private func addGridBackground(_ view: NSView, to parent: NSView) {
+        if let firstCard = parent.subviews.first(where: { $0 is EventCardView }) {
+            parent.addSubview(view, positioned: .below, relativeTo: firstCard)
+        } else {
+            parent.addSubview(view)
         }
     }
 
@@ -508,8 +529,20 @@ public final class TimeGridView: NSView {
         timedContentView.subviews.filter { !($0 is EventCardView) }.forEach { $0.removeFromSuperview() }
         let palette = themePalette
         timedContentView.layer?.backgroundColor = palette.background.cgColor
+        let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
 
         for column in snapshot.columns {
+            // Web `TimedGrid`: past day columns sit on the surface tone so today
+            // and the days ahead read brighter; today carries the focused-day
+            // tint web shows before any keyboard navigation.
+            if state.layoutMode == .week, column.key <= todayKey {
+                let tint = NSView(frame: NSRect(x: column.left, y: 0, width: column.width, height: gridHeight))
+                tint.wantsLayer = true
+                tint.layer?.backgroundColor = column.key == todayKey
+                    ? themeAccentColor.withAlphaComponent(0.1).cgColor
+                    : palette.surface.cgColor
+                addGridBackground(tint, to: timedContentView)
+            }
             if state.layoutMode == .day,
                 state.focusedDayColumnCalendarId == column.key
             {
@@ -518,12 +551,12 @@ public final class TimeGridView: NSView {
                 )
                 highlight.wantsLayer = true
                 highlight.layer?.backgroundColor = themeAccentColor.withAlphaComponent(0.08).cgColor
-                timedContentView.addSubview(highlight)
+                addGridBackground(highlight, to: timedContentView)
             }
             let divider = NSView(frame: NSRect(x: column.left, y: 0, width: 1, height: gridHeight))
             divider.wantsLayer = true
             divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.35).cgColor
-            timedContentView.addSubview(divider)
+            addGridBackground(divider, to: timedContentView)
         }
 
         for hour in 1 ..< GridTimeConstants.timedDayHours {
@@ -537,37 +570,23 @@ public final class TimeGridView: NSView {
             )
             line.wantsLayer = true
             line.layer?.backgroundColor = palette.border.withAlphaComponent(0.25).cgColor
-            timedContentView.addSubview(line)
+            addGridBackground(line, to: timedContentView)
         }
     }
 
     private func renderCards(snapshot: GridLayoutSnapshot) {
         var seen: Set<String> = []
-        let surface = themePalette.surfaceRaised
-        let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
-            allDayRowHeight: snapshot.metrics.allDayRowHeight
-        )
 
-        for card in snapshot.cards {
+        for card in snapshot.cards.map({ displayCard($0, snapshot: snapshot) }) {
             seen.insert(card.eventId)
             let view = cardPool[card.eventId] ?? EventCardView(frame: .zero)
             cardPool[card.eventId] = view
 
-            var frame = card.frame
-            if card.kind == .allDay {
-                frame.top += GridTimeConstants.dayHeaderRowHeight
-            } else {
-                frame.top += allDayOffset
-            }
-
-            var adjusted = card
-            adjusted.frame = frame
             let isFocused = state.focusedEventId == card.eventId
             let isSidebarEditing = state.sidebarEditingEventId == card.eventId
             view.apply(
-                card: adjusted,
+                card: card,
                 theme: theme,
-                surfaceColor: surface,
                 isFocused: isFocused,
                 isSidebarEditing: isSidebarEditing
             )
@@ -591,31 +610,31 @@ public final class TimeGridView: NSView {
             cardPool.removeValue(forKey: eventId)
         }
 
-        syncFocusedEventAccessibilityProxy(snapshot: snapshot, allDayOffset: allDayOffset)
+        syncFocusedEventAccessibilityProxy(snapshot: snapshot)
     }
 
-    private func syncFocusedEventAccessibilityProxy(
-        snapshot: GridLayoutSnapshot,
-        allDayOffset: Double
-    ) {
+    /// Card frames are relative to their row, which already sits at its own
+    /// offset. All-day lefts start at the first day column (web positions the
+    /// all-day grid after the time gutter), so they shift by the gutter width.
+    private func displayCard(_ card: GridLayoutCardSnapshot, snapshot: GridLayoutSnapshot) -> GridLayoutCardSnapshot {
+        guard card.kind == .allDay else { return card }
+        var shifted = card
+        shifted.frame.left += snapshot.metrics.marginLeft
+        return shifted
+    }
+
+    private func syncFocusedEventAccessibilityProxy(snapshot: GridLayoutSnapshot) {
         guard let focusedId = state.focusedEventId,
             let card = snapshot.cards.first(where: { $0.eventId == focusedId })
+                .map({ displayCard($0, snapshot: snapshot) })
         else {
             focusedEventAccessibilityProxy.isHidden = true
             focusedEventAccessibilityProxy.removeFromSuperview()
             return
         }
 
-        var frame = card.frame
-        let cardParent: NSView
-        if card.kind == .allDay {
-            frame.top += GridTimeConstants.dayHeaderRowHeight
-            cardParent = allDayRowView
-        } else {
-            frame.top += allDayOffset
-            cardParent = timedContentView
-        }
-
+        let frame = card.frame
+        let cardParent: NSView = card.kind == .allDay ? allDayRowView : timedContentView
         let frameInGrid = cardParent.convert(
             NSRect(x: frame.left, y: frame.top, width: frame.width, height: frame.height),
             to: self
@@ -635,28 +654,19 @@ public final class TimeGridView: NSView {
     }
 
     private func updateNowLine() {
-        guard let snapshot, let nowLine = snapshot.nowLine else {
-            nowLineLayer.isHidden = true
-            return
-        }
-        guard let column = snapshot.columns.indices.contains(nowLine.columnIndex)
-            ? snapshot.columns[nowLine.columnIndex]
-            : nil
+        guard let snapshot, let nowLine = snapshot.nowLine,
+            snapshot.columns.indices.contains(nowLine.columnIndex)
         else {
-            nowLineLayer.isHidden = true
+            nowLineView.isHidden = true
             return
         }
-
-        let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
-            allDayRowHeight: snapshot.metrics.allDayRowHeight
-        )
-        nowLineLayer.isHidden = false
-        nowLineLayer.frame = CGRect(
-            x: column.left,
-            y: nowLine.top + allDayOffset,
-            width: column.width,
-            height: 2
-        )
+        let column = snapshot.columns[nowLine.columnIndex]
+        // Re-added each pass so it stays above cards and grid lines.
+        nowLineView.removeFromSuperview()
+        timedContentView.addSubview(nowLineView)
+        nowLineView.layer?.backgroundColor = themeAccentColor.cgColor
+        nowLineView.isHidden = false
+        nowLineView.frame = NSRect(x: column.left, y: nowLine.top, width: column.width, height: 2)
     }
 
     private func renderTimezoneHeader(

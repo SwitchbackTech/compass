@@ -61,7 +61,6 @@ final class EventCardView: NSView {
     func apply(
         card: GridLayoutCardSnapshot,
         theme: NativeWebTheme,
-        surfaceColor: NSColor,
         isFocused: Bool,
         isSidebarEditing: Bool = false
     ) {
@@ -80,14 +79,14 @@ final class EventCardView: NSView {
         titleField.placeholderString = card.showsInlineTitleEditor ? "Untitled event" : nil
         titleField.isEditable = card.showsInlineTitleEditor
         titleField.isSelectable = card.showsInlineTitleEditor
-        titleField.textColor = textColor(for: theme)
         setAccessibilityLabel(card.label)
         setAccessibilityIdentifier(card.accessibilityIdentifier)
         setAccessibilityValue(card.isHiddenStrip ? "hidden" : "visible")
         syncFocusAccessibilityAnchor(isFocused: isFocused, label: card.label)
 
-        let fill = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? surfaceColor
+        let fill = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? defaultEventFill(for: theme)
         layer?.backgroundColor = fill.withAlphaComponent(card.isHiddenStrip ? 0.6 : 0.92).cgColor
+        titleField.textColor = contrastText(on: fill, theme: theme)
         accentLayer.backgroundColor = (
             EventCardColorParser.nsColor(hex: card.fillColorHex) ?? accentColor(for: theme)
         ).cgColor
@@ -116,7 +115,11 @@ final class EventCardView: NSView {
 
     override func layout() {
         super.layout()
-        titleField.frame = bounds.insetBy(dx: 6, dy: 4)
+        // Short cards (all-day rows are 20pt) trim the vertical inset so the
+        // title line is not clipped.
+        let titleLineHeight = 16.0
+        let verticalInset = max(0, min(4, (bounds.height - titleLineHeight) / 2))
+        titleField.frame = bounds.insetBy(dx: 6, dy: verticalInset)
         accentLayer.frame = CGRect(x: 0, y: 0, width: 3, height: bounds.height)
         focusRingLayer.frame = bounds.insetBy(dx: -2, dy: -2)
         focusAccessibilityAnchor.frame = bounds
@@ -270,13 +273,41 @@ private final class FocusedEventAccessibilityAnchorView: NSView {
     }
 }
 
-private func textColor(for theme: NativeWebTheme) -> NSColor {
+/// Web `EVENT_BASE_COLOR`: the fill for events with no color of their own.
+private func defaultEventFill(for theme: NativeWebTheme) -> NSColor {
     switch theme {
     case .lightBeach:
-        ThemeTokens.lightBeach.text.nsColor
+        EventCardColorParser.nsColor(hex: "#454442") ?? .darkGray
     case .darkAbyss:
-        ThemeTokens.darkAbyss.text.nsColor
+        EventCardColorParser.nsColor(hex: "#82A0B2") ?? .gray
     }
+}
+
+/// Web `theme.getContrastText`: whichever of the theme's text and on-accent
+/// tokens reads better on the fill.
+private func contrastText(on fill: NSColor, theme: NativeWebTheme) -> NSColor {
+    let candidates: [NSColor] = switch theme {
+    case .lightBeach:
+        [ThemeTokens.lightBeach.text.nsColor, ThemeTokens.lightBeach.onAccent.nsColor]
+    case .darkAbyss:
+        [ThemeTokens.darkAbyss.onAccent.nsColor, ThemeTokens.darkAbyss.text.nsColor]
+    }
+    let fillLuminance = relativeLuminance(fill)
+    func contrast(_ text: NSColor) -> CGFloat {
+        let textLuminance = relativeLuminance(text)
+        return (max(textLuminance, fillLuminance) + 0.05) / (min(textLuminance, fillLuminance) + 0.05)
+    }
+    return contrast(candidates[0]) >= contrast(candidates[1]) ? candidates[0] : candidates[1]
+}
+
+private func relativeLuminance(_ color: NSColor) -> CGFloat {
+    guard let rgb = color.usingColorSpace(.sRGB) else { return 0 }
+    func linear(_ channel: CGFloat) -> CGFloat {
+        channel <= 0.03928 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+    }
+    return 0.2126 * linear(rgb.redComponent)
+        + 0.7152 * linear(rgb.greenComponent)
+        + 0.0722 * linear(rgb.blueComponent)
 }
 
 extension EventCardView: NSTextFieldDelegate {

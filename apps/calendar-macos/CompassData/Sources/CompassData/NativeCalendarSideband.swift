@@ -38,6 +38,18 @@ extension NativeCalendarRootModel {
         UpNextProjection.timedCandidates(from: sidebandEvents, demoEventIds: demoEventIds)
     }
 
+    func syncSidebandWithLoadedEvents() {
+        guard isSignedIn || eventsStore.source == .local else { return }
+        let range = CalendarWindowMath.notifiableEventQueryRange(now: referenceNow)
+        sidebandEvents = loadedEvents.filter {
+            EventScheduleBounds.intersectsQueryRange(
+                event: $0,
+                start: range.startDate,
+                end: range.endDate)
+        }
+        onSidebandDidChange?()
+    }
+
     public func refreshSideband() async {
         guard isSignedIn || eventsStore.source == .local else {
             sidebandEvents = []
