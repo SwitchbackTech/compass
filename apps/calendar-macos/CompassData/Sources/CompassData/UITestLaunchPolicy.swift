@@ -42,6 +42,19 @@ public enum UITestLaunchPolicy {
         ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM")
     }
 
+    /// Whether the keyboard router rebuilds the event form title from key events
+    /// instead of letting them reach the SwiftUI field. XCUITest keystrokes often
+    /// miss that field, so only the open-focused-form tests opt in. A normal launch
+    /// must never mirror: key events are lowercased, and the mirror treats Cmd+A as
+    /// clear and Cmd+V as replace.
+    public static var mirrorsEventFormTitleTyping: Bool {
+        mirrorsEventFormTitleTyping(arguments: ProcessInfo.processInfo.arguments)
+    }
+
+    public static func mirrorsEventFormTitleTyping(arguments: [String]) -> Bool {
+        arguments.contains("-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM")
+    }
+
     /// Full week column count so demo fixture events stay in the focus layout during XCUITest.
     public static var pinnedWeekGridTrackWidth: CGFloat? {
         if initialGridFocusEventId != nil
