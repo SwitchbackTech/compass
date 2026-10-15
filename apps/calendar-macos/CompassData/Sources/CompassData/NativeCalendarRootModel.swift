@@ -1,10 +1,12 @@
 import CompassKit
 import Foundation
 import Observation
+import os
 
 @MainActor
 @Observable
 public final class NativeCalendarRootModel {
+    static let log = Logger(subsystem: "com.compass.calendar", category: "NativeCalendarRootModel")
     public let viewStore: ViewStore
     public let configStore: ConfigStore
     public let authStore: AuthStore
@@ -1062,7 +1064,9 @@ public final class NativeCalendarRootModel {
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
             await refreshSideband()
-        } catch {}
+        } catch {
+            Self.log.error("refresh visible range failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private func queryRange() -> (startDate: String, endDate: String) {
@@ -1090,7 +1094,9 @@ public final class NativeCalendarRootModel {
             try calendarRepository.upsert(calendars: merged)
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()
-        } catch {}
+        } catch {
+            Self.log.error("reload calendars failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private func bootstrapAnonymousCalendarsIfNeeded() async {
@@ -1106,7 +1112,9 @@ public final class NativeCalendarRootModel {
             }
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()
-        } catch {}
+        } catch {
+            Self.log.error("bootstrap local calendars failed: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private func configureAnalyticsFromConfig() async {

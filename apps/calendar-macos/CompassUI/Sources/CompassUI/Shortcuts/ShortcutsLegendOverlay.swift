@@ -69,7 +69,7 @@ public struct ShortcutsLegendOverlay: View {
                 .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
             Spacer()
-            Text(row.keycaps.joined(separator: " "))
+            Text(KeycapGlyphs.display(row.keycaps))
                 .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
         }

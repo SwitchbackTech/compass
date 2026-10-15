@@ -120,7 +120,9 @@ extension NativeCalendarRootModel {
             )
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
-        } catch {}
+        } catch {
+            reportSaveFailure(error, action: "update")
+        }
     }
 
     func normalizedDraftForSave(_ draft: GridEventDraft) -> GridEventDraft {

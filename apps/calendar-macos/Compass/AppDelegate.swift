@@ -4,6 +4,7 @@ import CompassUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private static let windowFrameName = "CompassMainWindow"
     private var window: NSWindow?
     private var nativeRootController: NativeRootController?
     private var shortcutsCatalogController: ShortcutsCatalogWindowController?
@@ -51,6 +52,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = makeMainWindow()
         self.window = window
         installRootContent(on: window)
+        // Installing the content controller resizes the window, so restore the saved frame afterwards.
+        window.setFrameUsingName(Self.windowFrameName)
+        window.setFrameAutosaveName(Self.windowFrameName)
 
         if let launchDeepLink = UserDefaults.standard.string(forKey: "COMPASS_LAUNCH_DEEP_LINK") {
             nativeRootController?.receiveDeepLink(urlString: launchDeepLink)
@@ -89,7 +93,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.isReleasedWhenClosed = false
         window.setContentSize(NSSize(width: 1280, height: 820))
         window.center()
-        window.setFrameAutosaveName("CompassMainWindow")
         window.makeKeyAndOrderFront(nil)
         return window
     }

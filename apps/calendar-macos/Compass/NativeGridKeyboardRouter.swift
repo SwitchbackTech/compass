@@ -166,6 +166,15 @@ final class NativeGridKeyboardRouter {
             return false
         }
 
+        if model.settingsStore.isPresented,
+            model.settingsStore.timezoneDialogPurpose == nil,
+            keyEvent.key == .named(.escape),
+            keyEvent.modifiers.isEmpty
+        {
+            model.closeSettingsIfAllowed()
+            return true
+        }
+
         if model.pendingDiscardDraftConfirmation {
             if keyEvent.key == .named(.escape) {
                 model.cancelDiscardDraftConfirmation()
