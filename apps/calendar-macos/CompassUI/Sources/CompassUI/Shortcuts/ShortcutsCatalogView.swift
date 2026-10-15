@@ -29,7 +29,7 @@ public struct ShortcutsCatalogView: View {
                                 Text(row.label)
                                     .font(.rubik(14))
                                 Spacer()
-                                Text(row.keycaps.joined(separator: " "))
+                                Text(KeycapGlyphs.display(row.keycaps))
                                     .font(.rubik(13))
                                     .foregroundStyle(theme.textMutedColor)
                             }

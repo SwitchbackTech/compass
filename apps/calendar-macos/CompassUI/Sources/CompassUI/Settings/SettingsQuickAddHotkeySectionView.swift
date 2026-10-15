@@ -20,12 +20,15 @@ struct SettingsQuickAddHotkeySectionView: View {
                 .textFieldStyle(.roundedBorder)
                 .onSubmit { persist() }
                 .onAppear { draft = settingsStore.quickAddHotKeyDisplay }
+            Text("Current: \(KeycapGlyphs.displayHotKey(settingsStore.quickAddHotKeyDisplay))")
+                .font(.rubik(12))
+                .foregroundStyle(theme.textMutedColor)
             if let error {
                 Text(error)
                     .font(.rubik(12))
                     .foregroundStyle(theme.errorColor)
             }
-            Button("Restore default (\(QuickAddHotKeyStorage.defaultDisplayString))") {
+            Button("Restore default (\(KeycapGlyphs.displayHotKey(QuickAddHotKeyStorage.defaultDisplayString)))") {
                 draft = QuickAddHotKeyStorage.defaultDisplayString
                 persist()
             }

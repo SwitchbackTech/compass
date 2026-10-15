@@ -1,5 +1,6 @@
 import CompassKit
 import Foundation
+import os
 
 extension NativeCalendarRootModel {
     func draftTargetDay() -> Date {
@@ -167,7 +168,9 @@ extension NativeCalendarRootModel {
         do {
             try eventsStore.stageOptimisticCreate(optimistic)
             loadedEvents = try eventsStore.fetchAllEvents()
-        } catch {}
+        } catch {
+            reportSaveFailure(error, action: "create")
+        }
         rebuildPresentation()
         focusEvent(eventId: savedId)
         keyboardCreateSettleGeneration += 1
@@ -187,7 +190,19 @@ extension NativeCalendarRootModel {
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
             focusEvent(eventId: savedId)
-        } catch {}
+        } catch {
+            reportSaveFailure(error, action: "save")
+        }
+    }
+
+    /// Web parity: `showErrorToast`. The form is already closed, so the toast is the only signal.
+    func reportSaveFailure(_ error: Error, action: String) {
+        Self.log.error("event \(action, privacy: .public) failed: \(String(describing: error), privacy: .public)")
+        statusToastStore.show(id: "event-save-error", message: "Could not \(action) event. Try again.")
+        if let events = try? eventsStore.fetchAllEvents() {
+            loadedEvents = events
+            rebuildPresentation()
+        }
     }
 
     public func saveDraft() async {

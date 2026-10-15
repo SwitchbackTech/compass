@@ -50,6 +50,8 @@ public enum MainMenuActionKind: Equatable, Sendable {
     case nativeThemeDarkAbyss
     case openQuickAddPanel
     case standardEdit(String)
+    case undo
+    case redo
 }
 
 public struct MainMenuRow: Equatable, Sendable {
@@ -139,11 +141,11 @@ public enum MainMenuModel {
             rows: [
                 MainMenuRow(
                     title: "Undo",
-                    action: .standardEdit("undo:"),
+                    action: .undo,
                     keyEquivalent: MacKeyEquivalent(key: "z", command: true)),
                 MainMenuRow(
                     title: "Redo",
-                    action: .standardEdit("redo:"),
+                    action: .redo,
                     keyEquivalent: MacKeyEquivalent(key: "z", command: true, shift: true)),
                 MainMenuRow(title: "", action: .separator),
                 MainMenuRow(title: "Cut", action: .standardEdit("cut:"), keyEquivalent: MacKeyEquivalent(key: "x", command: true)),
@@ -184,6 +186,7 @@ public enum MainMenuModel {
             title: "Window",
             rows: [
                 MainMenuRow(title: "Minimize", action: .standardEdit("performMiniaturize:"), keyEquivalent: MacKeyEquivalent(key: "m", command: true)),
+                MainMenuRow(title: "Zoom", action: .standardEdit("performZoom:")),
                 MainMenuRow(title: "Close", action: .standardEdit("performClose:"), keyEquivalent: MacKeyEquivalent(key: "w", command: true)),
             ])
     }

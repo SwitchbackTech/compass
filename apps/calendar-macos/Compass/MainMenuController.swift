@@ -111,6 +111,10 @@ final class MainMenuController: NSObject {
             return #selector(openQuickAddPanel(_:))
         case let .standardEdit(selectorName):
             return Selector(selectorName)
+        case .undo:
+            return #selector(undoChange(_:))
+        case .redo:
+            return #selector(redoChange(_:))
         }
     }
 
@@ -185,6 +189,27 @@ final class MainMenuController: NSObject {
         onSelectNativeTheme?(.darkAbyss)
     }
 
+    /// Text fields keep their own undo; otherwise Edit > Undo drives the app's event undo stack.
+    private var focusedTextUndoManager: UndoManager? {
+        (NSApp.keyWindow?.firstResponder as? NSText)?.undoManager
+    }
+
+    @objc private func undoChange(_ sender: Any?) {
+        if let textUndo = focusedTextUndoManager {
+            textUndo.undo()
+            return
+        }
+        nativeRootController?.model.undoLastChange()
+    }
+
+    @objc private func redoChange(_ sender: Any?) {
+        if let textUndo = focusedTextUndoManager {
+            textUndo.redo()
+            return
+        }
+        nativeRootController?.model.redoLastChange()
+    }
+
     @objc private func openQuickAddPanel(_ sender: Any?) {
         quickAddCoordinator?.presentQuickAddPanel()
     }
@@ -204,6 +229,12 @@ extension MainMenuController: NSMenuItemValidation {
         case #selector(useNativeThemeDarkAbyss(_:)):
             item.state = nativeUIState.theme == .darkAbyss ? .on : .off
             return true
+        case #selector(undoChange(_:)):
+            if let textUndo = focusedTextUndoManager { return textUndo.canUndo }
+            return nativeRootController?.model.undoStore.canUndo ?? false
+        case #selector(redoChange(_:)):
+            if let textUndo = focusedTextUndoManager { return textUndo.canRedo }
+            return nativeRootController?.model.undoStore.canRedo ?? false
         default:
             return true
         }
