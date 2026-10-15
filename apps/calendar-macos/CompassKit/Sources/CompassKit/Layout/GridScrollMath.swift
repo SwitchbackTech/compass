@@ -21,6 +21,11 @@ public enum GridScrollMath {
         return max(0, nowLineY - scrollToNowBufferPx)
     }
 
+    /// Keeps a scroll offset inside the document so the viewport never shows past its end.
+    public static func clampedScrollY(_ y: Double, documentHeight: Double, viewportHeight: Double) -> Double {
+        min(max(0, y), max(0, documentHeight - viewportHeight))
+    }
+
     public static func isAtScrollTarget(currentY: Double, targetY: Double) -> Bool {
         abs(currentY - targetY) <= scrollTolerancePx
     }

@@ -39,7 +39,7 @@ extension NativeCalendarRootModel {
     }
 
     public func refreshSideband() async {
-        guard isSignedIn else {
+        guard isSignedIn || eventsStore.source == .local else {
             sidebandEvents = []
             return
         }
