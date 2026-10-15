@@ -38,9 +38,23 @@ export function minutesFromCivilMidnight(
 }
 
 /**
- * RFC3339 offset string for an absolute instant in `timeZone`, with the
- * offset that applies on that civil date (handles stale offsets in `iso`).
+ * Hour-line instants after civil midnight (1 AM through 11 PM, plus the next
+ * midnight when `includeMidnight` is true). Slot count follows DST.
  */
+export function civilHourLineInstants(
+  day: Dayjs | Date | string,
+  timeZone: string,
+  includeMidnight = false,
+): Dayjs[] {
+  const slotCount = civilHourSlotCount(day, timeZone);
+  const hours = includeMidnight ? slotCount : Math.max(0, slotCount - 1);
+  const start = startOfCivilDay(day, timeZone);
+  return Array.from({ length: hours }, (_, index) =>
+    start.add(index + 1, "hour"),
+  );
+}
+
+/** RFC3339 string for an instant in `timeZone` (dayjs default format). */
 export function formatInstantInTimeZone(
   iso: string | Date,
   timeZone: string,

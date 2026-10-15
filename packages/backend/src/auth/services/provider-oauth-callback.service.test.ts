@@ -1,5 +1,6 @@
 import { buildSignInOAuthState } from "@core/auth/signin-oauth-state.util";
 import {
+  appleFormPostAnalytics,
   handleProviderOAuthCallback,
   parseProviderOAuthCallbackProvider,
 } from "@backend/auth/services/provider-oauth-callback.service";
@@ -72,5 +73,36 @@ describe("provider-oauth-callback.service", () => {
 
     expect(result).toEqual({ mode: "telemetry" });
     received.mockRestore();
+  });
+
+  it("captures Apple form-post callback and failure on the same analytics path", () => {
+    const received = spyOn(
+      analytics.providerOAuthSignupAnalytics,
+      "captureCallbackReceived",
+    ).mockImplementation(() => undefined);
+    const failed = spyOn(
+      analytics.providerOAuthSignupAnalytics,
+      "captureFailed",
+    ).mockImplementation(() => undefined);
+
+    appleFormPostAnalytics({
+      state: "apple-state",
+      error: "access_denied",
+    });
+
+    expect(received).toHaveBeenCalledWith({
+      provider: "apple",
+      state: "apple-state",
+    });
+    expect(failed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "apple",
+        reason: "access_denied",
+        providerError: "access_denied",
+      }),
+    );
+
+    received.mockRestore();
+    failed.mockRestore();
   });
 });

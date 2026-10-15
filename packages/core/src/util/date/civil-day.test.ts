@@ -1,5 +1,6 @@
 import {
   civilDayLengthMinutes,
+  civilHourLineInstants,
   civilHourSlotCount,
   formatInstantInTimeZone,
   minutesFromCivilMidnight,
@@ -47,6 +48,26 @@ describe("minutesFromCivilMidnight", () => {
     expect(minutesFromCivilMidnight("2026-11-01T01:30:00-07:00", denver)).toBe(
       150,
     );
+  });
+});
+
+describe("civilHourLineInstants", () => {
+  it("walks 1 AM through 11 PM on a non-transition day", () => {
+    const lines = civilHourLineInstants("2026-08-20", denver);
+    expect(lines).toHaveLength(23);
+    expect(lines[0]?.format("YYYY-MM-DD HH:mm")).toBe("2026-08-20 01:00");
+    expect(lines.at(-1)?.format("YYYY-MM-DD HH:mm")).toBe("2026-08-20 23:00");
+  });
+
+  it("adds the next midnight when includeMidnight is true", () => {
+    const lines = civilHourLineInstants("2026-08-20", denver, true);
+    expect(lines).toHaveLength(24);
+    expect(lines.at(-1)?.format("YYYY-MM-DD HH:mm")).toBe("2026-08-21 00:00");
+  });
+
+  it("follows DST slot counts", () => {
+    expect(civilHourLineInstants("2026-11-01", denver, true)).toHaveLength(25);
+    expect(civilHourLineInstants("2027-03-14", denver, true)).toHaveLength(23);
   });
 });
 

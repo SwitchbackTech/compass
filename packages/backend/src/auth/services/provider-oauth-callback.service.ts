@@ -30,6 +30,30 @@ function queryField(
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function captureOAuthCallbackQueryAnalytics(
+  provider: ProviderKind,
+  query: { state?: string; code?: string; providerError?: string },
+): void {
+  providerOAuthSignupAnalytics.captureCallbackReceived({
+    provider,
+    state: query.state,
+  });
+
+  const failureReason = oauthFailedReasonFromCallbackQuery({
+    state: query.state,
+    code: query.code,
+    providerError: query.providerError,
+  });
+  if (failureReason) {
+    providerOAuthSignupAnalytics.captureFailed({
+      provider,
+      state: query.state,
+      reason: failureReason,
+      providerError: query.providerError,
+    });
+  }
+}
+
 function spaCallbackUrl(
   provider: ProviderKind,
   query: ProviderOAuthCallbackQuery,
@@ -62,24 +86,11 @@ export function handleProviderOAuthCallback(input: {
   const code = queryField(input.query, "code");
   const providerError = queryField(input.query, "error");
 
-  providerOAuthSignupAnalytics.captureCallbackReceived({
-    provider: input.provider,
-    state,
-  });
-
-  const failureReason = oauthFailedReasonFromCallbackQuery({
+  captureOAuthCallbackQueryAnalytics(input.provider, {
     state,
     code,
     providerError,
   });
-  if (failureReason) {
-    providerOAuthSignupAnalytics.captureFailed({
-      provider: input.provider,
-      state,
-      reason: failureReason,
-      providerError,
-    });
-  }
 
   if (input.telemetryOnly) {
     return { mode: "telemetry" };
@@ -96,21 +107,9 @@ export function appleFormPostAnalytics(input: {
   code?: string;
   error?: string;
 }): void {
-  providerOAuthSignupAnalytics.captureCallbackReceived({
-    provider: "apple",
-    state: input.state,
-  });
-  const failureReason = oauthFailedReasonFromCallbackQuery({
+  captureOAuthCallbackQueryAnalytics("apple", {
     state: input.state,
     code: input.code,
     providerError: input.error,
   });
-  if (failureReason) {
-    providerOAuthSignupAnalytics.captureFailed({
-      provider: "apple",
-      state: input.state,
-      reason: failureReason,
-      providerError: input.error,
-    });
-  }
 }

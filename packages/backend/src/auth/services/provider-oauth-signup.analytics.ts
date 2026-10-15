@@ -15,19 +15,33 @@ function distinctIdFromOAuthState(state: string | null | undefined): string {
   return posthogDistinctIdFromSignInOAuthState(state) ?? FALLBACK_DISTINCT_ID;
 }
 
+function captureOAuthSignupEvent(
+  event: typeof OAUTH_CALLBACK_RECEIVED_EVENT | typeof OAUTH_FAILED_EVENT,
+  input: {
+    provider: ProviderKind;
+    state: string | null | undefined;
+    reason?: OAuthFailedReason;
+    providerError?: string;
+  },
+): void {
+  void captureSafely(getBackendPostHogClient(), {
+    event,
+    distinctId: distinctIdFromOAuthState(input.state),
+    properties: {
+      environment: CONFIG.NODE_ENV,
+      provider: input.provider,
+      ...(input.reason ? { reason: input.reason } : {}),
+      ...(input.providerError ? { provider_error: input.providerError } : {}),
+    },
+  });
+}
+
 export const providerOAuthSignupAnalytics = {
   captureCallbackReceived(input: {
     provider: ProviderKind;
     state: string | null | undefined;
   }): void {
-    void captureSafely(getBackendPostHogClient(), {
-      event: OAUTH_CALLBACK_RECEIVED_EVENT,
-      distinctId: distinctIdFromOAuthState(input.state),
-      properties: {
-        environment: CONFIG.NODE_ENV,
-        provider: input.provider,
-      },
-    });
+    captureOAuthSignupEvent(OAUTH_CALLBACK_RECEIVED_EVENT, input);
   },
 
   captureFailed(input: {
@@ -36,15 +50,6 @@ export const providerOAuthSignupAnalytics = {
     reason: OAuthFailedReason;
     providerError?: string;
   }): void {
-    void captureSafely(getBackendPostHogClient(), {
-      event: OAUTH_FAILED_EVENT,
-      distinctId: distinctIdFromOAuthState(input.state),
-      properties: {
-        environment: CONFIG.NODE_ENV,
-        provider: input.provider,
-        reason: input.reason,
-        ...(input.providerError ? { provider_error: input.providerError } : {}),
-      },
-    });
+    captureOAuthSignupEvent(OAUTH_FAILED_EVENT, input);
   },
 };

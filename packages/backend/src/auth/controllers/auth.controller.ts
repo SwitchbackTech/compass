@@ -238,9 +238,7 @@ class AuthController {
       return;
     }
 
-    const telemetryOnly =
-      req.header("x-compass-oauth-telemetry") === "1" ||
-      req.query["telemetry"] === "1";
+    const telemetryOnly = req.header("x-compass-oauth-telemetry") === "1";
 
     const resolution = handleProviderOAuthCallback({
       provider,
