@@ -109,25 +109,21 @@ export function parseSignInOAuthState(
   };
 }
 
+/**
+ * Apple relays `state` back as its own base64 JSON blob rather than the
+ * version-prefixed payload above. base64UrlDecode reads both alphabets (it
+ * only rewrites `-`/`_` and re-pads), so one pass covers plain base64 too.
+ */
 function posthogDistinctIdFromAppleOAuthState(
   state: string,
 ): string | undefined {
   try {
-    const decoded = base64UrlDecode(state);
-    const parsed = JSON.parse(decoded) as { ph?: unknown };
+    const parsed = JSON.parse(base64UrlDecode(state)) as { ph?: unknown };
     return typeof parsed.ph === "string" && parsed.ph.length > 0
       ? parsed.ph
       : undefined;
   } catch {
-    try {
-      const decoded = atob(state);
-      const parsed = JSON.parse(decoded) as { ph?: unknown };
-      return typeof parsed.ph === "string" && parsed.ph.length > 0
-        ? parsed.ph
-        : undefined;
-    } catch {
-      return undefined;
-    }
+    return undefined;
   }
 }
 

@@ -1,4 +1,3 @@
-import { buildSignInOAuthState } from "@core/auth/signin-oauth-state.util";
 import {
   type ProviderKind,
   ProviderKindSchema,
@@ -29,13 +28,6 @@ const DESKTOP_EVENT_LINK_PREFIX = `${DESKTOP_DEEP_LINK_SCHEME}event/`;
 
 const DESKTOP_DAY_LINK_PATTERN =
   /^compass:\/\/day\/(?<date>\d{4}-\d{2}-\d{2})\/?$/;
-
-export function buildOAuthStateForClient(
-  isDesktopClient: boolean,
-  posthogDistinctId?: string,
-): string {
-  return buildSignInOAuthState({ isDesktopClient, posthogDistinctId });
-}
 
 export function hasDesktopOAuthStateMarker(state: string): boolean {
   return state.startsWith(DESKTOP_OAUTH_STATE_PREFIX);
