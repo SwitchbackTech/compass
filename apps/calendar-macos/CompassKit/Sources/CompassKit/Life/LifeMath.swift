@@ -52,10 +52,10 @@ public enum LifeMath {
         components.month = month
         components.day = day
         components.hour = 12
-        guard let date = Calendar(identifier: .gregorian).date(from: components) else {
+        let resolved = EffectiveTimeZone.calendar
+        guard let date = resolved.date(from: components) else {
             return nil
         }
-        let resolved = Calendar(identifier: .gregorian)
         guard resolved.component(.year, from: date) == year,
               resolved.component(.month, from: date) == month,
               resolved.component(.day, from: date) == day
@@ -77,7 +77,7 @@ public enum LifeMath {
 
     public static func ageInYears(birthDateValue: String, today: Date = Date()) -> Int? {
         guard let birthDate = parseLifeDate(birthDateValue) else { return nil }
-        let calendar = Calendar(identifier: .gregorian)
+        let calendar = EffectiveTimeZone.calendar
         var age = calendar.component(.year, from: today) - calendar.component(.year, from: birthDate)
         let birthdayPassed = calendar.component(.month, from: today) > calendar.component(.month, from: birthDate)
             || (calendar.component(.month, from: today) == calendar.component(.month, from: birthDate)
@@ -108,13 +108,14 @@ public enum LifeMath {
         let currentWeek = min(weeksLived + 1, totalDots)
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US")
+        formatter.timeZone = EffectiveTimeZone.timeZone
         formatter.dateFormat = "EEEE, MMMM d, yyyy"
         let dateLabel = formatter.string(from: today)
         return "\(dateLabel) | week \(currentWeek) / \(totalDots)"
     }
 
     public static func formatDateInputValue(_ date: Date) -> String {
-        let calendar = Calendar(identifier: .gregorian)
+        let calendar = EffectiveTimeZone.calendar
         let year = calendar.component(.year, from: date)
         let month = calendar.component(.month, from: date)
         let day = calendar.component(.day, from: date)
