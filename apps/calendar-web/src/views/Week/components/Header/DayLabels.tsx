@@ -10,11 +10,7 @@ import {
 } from "@web/events/stores/draft.store";
 import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
-import {
-  selectNowCueActive,
-  selectNowCuePulseGeneration,
-  useNowCueStore,
-} from "@web/grid/now-cue/now-cue.store";
+import { useNowCuePulse } from "@web/grid/now-cue/useNowCuePulse";
 import {
   selectPageJumpHintsVisible,
   usePageJumpHintStore,
@@ -55,8 +51,7 @@ export const DayLabels: FC<Props> = ({
   const showDayJumpPrefixes =
     !isEventFormOpen && (pageJumpHintsVisible || isEventJumpActive);
   const marginLeft = useGridMarginLeft();
-  const pulseTodayLabel = useNowCueStore(selectNowCueActive);
-  const pulseGeneration = useNowCueStore(selectNowCuePulseGeneration);
+  const { pulsing: pulseTodayLabel, pulseKey } = useNowCuePulse();
   const dayJumpHowTo = isEventJumpActive
     ? "Type the day key to focus that column."
     : "Hold Shift and press the day key to focus that column.";
@@ -128,9 +123,9 @@ export const DayLabels: FC<Props> = ({
                   isToday && "c-text-gradient",
                   isToday &&
                     pulseTodayLabel &&
-                    "c-now-cue-label-gradient-pulse motion-reduce:transition-none",
+                    "c-now-cue-label-gradient-pulse",
                 )}
-                key={isToday ? `day-num-${pulseGeneration}` : undefined}
+                key={pulseKey("day-num", isToday)}
               >
                 {dayNumber}
               </span>
@@ -144,11 +139,9 @@ export const DayLabels: FC<Props> = ({
                 <span
                   className={cn(
                     "relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none",
-                    isToday &&
-                      pulseTodayLabel &&
-                      "c-now-cue-label-pulse motion-reduce:transition-none",
+                    isToday && pulseTodayLabel && "c-now-cue-label-pulse",
                   )}
-                  key={isToday ? `day-name-${pulseGeneration}` : undefined}
+                  key={pulseKey("day-name", isToday)}
                 >
                   {day.format("ddd")}
                 </span>

@@ -7,24 +7,19 @@ import {
 import { nowCueActions } from "@web/grid/now-cue/now-cue.store";
 
 export const scrollToNowOrPulse = (
-  timedGrid: HTMLElement | null | undefined,
+  timedGrid: HTMLElement | null,
   behavior: ScrollBehavior = "smooth",
 ) => {
   if (!timedGrid) return;
 
-  const strictAtNow = isTimedGridScrolledToNow(timedGrid);
-  const teachPulse =
-    strictAtNow ||
-    (isNowLineInTimedGridViewport(timedGrid) &&
-      isTimedGridNearScrollToNow(timedGrid));
+  // Read both before scrolling: afterwards every grid looks like "at now".
+  const atNow = isTimedGridScrolledToNow(timedGrid);
+  const nearNow =
+    isNowLineInTimedGridViewport(timedGrid) &&
+    isTimedGridNearScrollToNow(timedGrid);
 
-  if (teachPulse) {
-    if (!strictAtNow) {
-      scrollTimedGridToNow(timedGrid, behavior);
-    }
-    nowCueActions.pulse();
-    return;
-  }
+  if (!atNow) scrollTimedGridToNow(timedGrid, behavior);
 
-  scrollTimedGridToNow(timedGrid, behavior);
+  // Already looking at now, so there is nothing to scroll to: teach instead.
+  if (atNow || nearNow) nowCueActions.pulse();
 };
