@@ -156,6 +156,22 @@ jobs:
             -clonedSourcePackagesDirPath build/SourcePackages \
             -resultBundlePath build/Compass.xcresult
 
+      # Window snapshots from NativeImageSnapshotTests and the screen
+      # recordings of failing UI tests, named by test, so a PR's UI can be
+      # reviewed from the artifact without Xcode or a local Mac.
+      - name: Export UI test screenshots
+        if: ${{ !cancelled() }}
+        run: bash ../../.github/scripts/export-macos-screenshots.sh build/Compass.xcresult build/screenshots
+
+      - name: Upload UI test screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: compass-macos-screenshots
+          path: apps/calendar-macos/build/screenshots
+          if-no-files-found: ignore
+          retention-days: 14
+
       # Unsigned, ad hoc signed Debug build for manual checks: unzip, then
       # right-click Compass.app → Open. Signed releases are release-macos.yml.
       - name: Zip the app
