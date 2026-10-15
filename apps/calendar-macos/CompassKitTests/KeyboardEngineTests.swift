@@ -118,23 +118,23 @@ final class KeyboardEngineTests: XCTestCase {
     }
 
     func testTextInputGatingTable() {
-        let leader: Character = "e"
-        XCTAssertFalse(
-            TextInputShortcutGating.shouldDispatch(KeyEvent(character: "c"), leaderKey: leader))
-        XCTAssertTrue(
-            TextInputShortcutGating.shouldDispatch(
-                KeyEvent(character: "z", modifiers: .command),
-                leaderKey: leader))
-        XCTAssertTrue(
-            TextInputShortcutGating.shouldDispatch(
-                KeyEvent(named: .escape),
-                leaderKey: leader))
-        XCTAssertTrue(
-            TextInputShortcutGating.shouldDispatch(
-                KeyEvent(named: .enter),
-                leaderKey: leader))
-        XCTAssertTrue(
-            TextInputShortcutGating.shouldDispatch(KeyEvent(character: "e"), leaderKey: leader))
+        XCTAssertFalse(TextInputShortcutGating.shouldDispatch(KeyEvent(character: "c")))
+        XCTAssertTrue(TextInputShortcutGating.shouldDispatch(KeyEvent(character: "z", modifiers: .command)))
+        XCTAssertTrue(TextInputShortcutGating.shouldDispatch(KeyEvent(named: .escape)))
+        XCTAssertTrue(TextInputShortcutGating.shouldDispatch(KeyEvent(named: .enter)))
+        XCTAssertFalse(TextInputShortcutGating.shouldDispatch(KeyEvent(character: "e")))
+    }
+
+    /// Typing "Quarterly" in the form title must not arm `e` and jump to recurrence on `r`.
+    func testTypingLeaderLetterInTextInputDoesNotResolveAField() {
+        let leader = LeaderSequenceEngine(leaderKey: "e", fieldRows: registry.editSequenceFields)
+        let dispatcher = ShortcutDispatcher(registry: registry, handlers: [], leaderEngine: leader)
+        dispatcher.isTextInputFocused = true
+        for character in "Quarterly review" where character != " " {
+            _ = dispatcher.dispatch(KeyEvent(character: character))
+            XCTAssertNil(dispatcher.lastResolvedLeaderField, "\(character) resolved a field jump")
+        }
+        XCTAssertEqual(leader.phase, .idle)
     }
 
     func testLeaderSequenceTimeoutAndResolve() {

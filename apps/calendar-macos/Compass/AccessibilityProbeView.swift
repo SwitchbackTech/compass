@@ -1,4 +1,5 @@
 import AppKit
+import CompassData
 
 /// Base for the AppKit mirrors XCUITest reads. SwiftUI overlays, toasts, and
 /// text fields are not reliably exposed in CI, so each probe is a clear,
@@ -57,11 +58,13 @@ class AccessibilityProbeView: NSView {
 
     /// Reuses the existing probe when it is already on `hostView`; otherwise
     /// replaces it. Overlay, form, and grid-focus probes share this attach.
+    /// Returns nil outside UI-test launches, so every probe stays detached.
     static func attach<T: AccessibilityProbeView>(
         existing: T?,
         to hostView: NSView,
         create: () -> T
-    ) -> T {
+    ) -> T? {
+        guard UITestLaunchPolicy.attachesAccessibilityProbes else { return nil }
         if let existing, existing.superview === hostView {
             return existing
         }

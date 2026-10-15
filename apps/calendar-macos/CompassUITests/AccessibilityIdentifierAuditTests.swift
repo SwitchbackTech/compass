@@ -4,7 +4,7 @@ import XCTest
 final class AccessibilityIdentifierAuditTests: XCTestCase {
     @MainActor
     func testDemoWeekGridBaselineIdentifiersExist() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -21,7 +21,7 @@ final class AccessibilityIdentifierAuditTests: XCTestCase {
 
     @MainActor
     func testWelcomeModalIdentifierExistsOnFreshLaunch() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launch()
 
         let window = app.windows["Compass"]

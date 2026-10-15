@@ -35,14 +35,14 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunchShowsTheMainWindow() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launch()
         XCTAssertTrue(app.windows["Compass"].waitForExistence(timeout: 15))
     }
 
     @MainActor
     func testFreshLaunchShowsWelcomeModal() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launch()
 
         let window = app.windows["Compass"]
@@ -53,7 +53,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testNativeLaunchShowsHeaderAndSidebar() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         // Demo fixture skips the welcome modal; its modal trait hides header/sidebar from XCUITest.
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
@@ -68,7 +68,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testLifeViewSwitchAndBack() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -93,7 +93,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testFixtureLaunchShowsDemoWeekEvents() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -106,7 +106,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testArrowMovesFocusBetweenTwoFixtureEvents() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
@@ -124,7 +124,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunchDeepLinkNavigatesToDayView() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_LAUNCH_DEEP_LINK", "compass://day/2026-10-15",
@@ -144,7 +144,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testKeyboardCreatesTimedDraftOnGrid() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -164,7 +164,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testCommandPaletteGoToToday() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -187,7 +187,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testHideAndUnhideFixtureEvent() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_NATIVE_UI", "YES",
             "-COMPASS_FIXTURE", "demo",
@@ -213,7 +213,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testEventFormEditsTitleAndSaves() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
@@ -237,9 +237,32 @@ final class NativeLaunchTests: XCTestCase {
             "Expected grid card title to update after saving the form")
     }
 
+    /// Production launches attach no accessibility probes, so typing reaches the
+    /// SwiftUI title field instead of an invisible probe that took first responder.
+    @MainActor
+    func testProductionLaunchTypesFullTitleIntoEventForm() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
+        app.launch()
+
+        let window = app.windows["Compass"]
+        XCTAssertTrue(window.waitForExistence(timeout: 15))
+        XCTAssertTrue(window.buttons["Morning standup"].waitForExistence(timeout: 10))
+
+        window.typeKey("c", modifierFlags: [])
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-event-form"].waitForExistence(timeout: 8))
+        window.typeText("Quarterly planning review")
+
+        window.typeKey(.enter, modifierFlags: [.command])
+        XCTAssertTrue(
+            window.buttons["Quarterly planning review"].waitForExistence(timeout: 10),
+            "Expected the full typed title on the saved grid card")
+    }
+
     @MainActor
     func testUndoCreateRemovesKeyboardPlacedEvent() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_NATIVE_UI", "YES", "-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -259,7 +282,7 @@ final class NativeLaunchTests: XCTestCase {
     @MainActor
     /// Opens the native quick-add panel from the Debug menu and saves a fixture event.
     func testQuickAddPanelCreatesFixtureEvent() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_STICKY_QUICK_ADD_PANEL",
@@ -300,7 +323,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testKeyboardDeletesFocusedFixtureEvent() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
@@ -321,7 +344,7 @@ final class NativeLaunchTests: XCTestCase {
     @MainActor
     /// Saves a recurring demo fixture edit after confirming scope via keyboard.
     func testRecurrenceScopePromptEditOnFixtureSeries() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-weekly-sync|2026-06-12T14:00:00.000Z",
@@ -346,7 +369,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testRecurringDeleteShowsScopePromptAndAcceptsFollowing() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_APPEND_DEMO_OCCURRENCE",
@@ -372,7 +395,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testQuestionMarkTogglesShortcutsLegend() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -389,7 +412,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testCommandPaletteStartsBlockPartyPractice() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 
@@ -414,7 +437,7 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testEventClickShowsPointerHintWithoutOpening() {
-        let app = XCUIApplication()
+        let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
         app.launch()
 

@@ -2,6 +2,21 @@ import Foundation
 
 /// Launch arguments read by native UI for XCUITest only. Production launches omit these.
 public enum UITestLaunchPolicy {
+    /// Launch argument every CompassUITests launch passes. Without it the app
+    /// attaches no XCUITest accessibility probes.
+    public static let uiTestLaunchArgument = "-COMPASS_UI_TEST"
+
+    /// Whether to attach the AppKit accessibility probes XCUITest reads. A probe
+    /// takes first responder when the event form opens, so production builds
+    /// must never attach one: it swallows typing meant for the SwiftUI field.
+    public static var attachesAccessibilityProbes: Bool {
+        attachesAccessibilityProbes(arguments: ProcessInfo.processInfo.arguments)
+    }
+
+    public static func attachesAccessibilityProbes(arguments: [String]) -> Bool {
+        arguments.contains(uiTestLaunchArgument)
+    }
+
     /// When set, focuses this grid event once the demo fixture layout is ready (no pointer hint).
     public static var initialGridFocusEventId: String? {
         let args = ProcessInfo.processInfo.arguments
