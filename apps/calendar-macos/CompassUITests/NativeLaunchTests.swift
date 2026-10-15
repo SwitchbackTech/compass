@@ -237,8 +237,9 @@ final class NativeLaunchTests: XCTestCase {
             "Expected grid card title to update after saving the form")
     }
 
-    /// Production launches attach no accessibility probes, so typing reaches the
-    /// SwiftUI title field instead of an invisible probe that took first responder.
+    /// Production launches attach no AppKit title probe; the SwiftUI field carries
+    /// `compass-event-form-title` and must receive typing directly (window-level
+    /// typeText is unreliable without the probe first responder).
     @MainActor
     func testProductionLaunchTypesFullTitleIntoEventForm() {
         let app = XCUIApplication()
@@ -252,7 +253,11 @@ final class NativeLaunchTests: XCTestCase {
         window.typeKey("c", modifierFlags: [])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-event-form"].waitForExistence(timeout: 8))
-        window.typeText("Quarterly planning review")
+
+        let titleField = window.descendants(matching: .any)["compass-event-form-title"]
+        XCTAssertTrue(titleField.waitForExistence(timeout: 8))
+        titleField.click()
+        titleField.typeText("Quarterly planning review")
 
         window.typeKey(.enter, modifierFlags: [.command])
         XCTAssertTrue(
