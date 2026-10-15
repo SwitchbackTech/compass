@@ -136,11 +136,11 @@ public final class TimeGridView: NSView {
         var origin = scrollView.contentView.bounds.origin
         switch request {
         case .revealDocumentY(let documentY):
-            origin.y = max(0, documentY)
+            origin.y = documentY
         case .pageUp:
-            origin.y = max(0, origin.y - pageDelta)
+            origin.y -= pageDelta
         case .hourUp:
-            origin.y = max(0, origin.y - hourHeight)
+            origin.y -= hourHeight
         case .pageDown:
             origin.y += pageDelta
         case .hourDown:
@@ -149,8 +149,17 @@ public final class TimeGridView: NSView {
             scrollToNowOrPulse()
             return
         }
+        origin.y = clampedScrollY(origin.y)
         scrollView.contentView.scroll(to: origin)
         scrollView.reflectScrolledClipView(scrollView.contentView)
+    }
+
+    private func clampedScrollY(_ y: Double) -> Double {
+        GridScrollMath.clampedScrollY(
+            y,
+            documentHeight: documentView.frame.height,
+            viewportHeight: scrollView.contentView.bounds.height
+        )
     }
 
     private func scrollToNowOrPulse() {
@@ -158,11 +167,11 @@ public final class TimeGridView: NSView {
         let allDayOffset = GridTimeConstants.timedContentDocumentYOffset(
             allDayRowHeight: snapshot.metrics.allDayRowHeight
         )
-        let targetY = GridScrollMath.scrollToNowDocumentY(
+        let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
             referenceNow: state.referenceNow,
             hourHeight: snapshot.metrics.hourHeight,
             allDayOffset: allDayOffset
-        )
+        ))
         let currentY = scrollView.contentView.bounds.origin.y
         if GridScrollMath.isAtScrollTarget(currentY: currentY, targetY: targetY) {
             pulseNowCue()
@@ -268,7 +277,7 @@ public final class TimeGridView: NSView {
 
         let marginLeft = snapshot.metrics.marginLeft
         let hourHeight = snapshot.metrics.hourHeight
-        let gridHeight = snapshot.metrics.timedGridHeight
+        let gridHeight = hourHeight * Double(GridTimeConstants.timedDayHours)
         let allDayHeight = snapshot.metrics.allDayRowHeight
         let headerHeight = GridTimeConstants.dayHeaderRowHeight
         let totalHeight = headerHeight + allDayHeight + gridHeight + GridTimeConstants.gridPaddingBottom
@@ -347,7 +356,7 @@ public final class TimeGridView: NSView {
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
         marginWidth: Double
     ) {
-        for hour in 0 ..< GridTimeConstants.timedVisibleHours {
+        for hour in 0 ..< GridTimeConstants.timedDayHours {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
             label.font = CompassFont.nsFont(size: 11)
@@ -517,7 +526,7 @@ public final class TimeGridView: NSView {
             timedContentView.addSubview(divider)
         }
 
-        for hour in 1 ..< GridTimeConstants.timedVisibleHours {
+        for hour in 1 ..< GridTimeConstants.timedDayHours {
             let line = NSView(
                 frame: NSRect(
                     x: snapshot.metrics.marginLeft,

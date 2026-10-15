@@ -23,4 +23,11 @@ final class GridScrollMathTests: XCTestCase {
         XCTAssertTrue(GridScrollMath.isAtScrollTarget(currentY: 100, targetY: 101))
         XCTAssertFalse(GridScrollMath.isAtScrollTarget(currentY: 100, targetY: 110))
     }
+
+    func testClampedScrollYStaysInsideTheDocument() {
+        XCTAssertEqual(GridScrollMath.clampedScrollY(1100, documentHeight: 1500, viewportHeight: 800), 700)
+        XCTAssertEqual(GridScrollMath.clampedScrollY(300, documentHeight: 1500, viewportHeight: 800), 300)
+        XCTAssertEqual(GridScrollMath.clampedScrollY(-40, documentHeight: 1500, viewportHeight: 800), 0)
+        XCTAssertEqual(GridScrollMath.clampedScrollY(200, documentHeight: 600, viewportHeight: 800), 0)
+    }
 }

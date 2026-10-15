@@ -35,6 +35,91 @@ public struct DemoSeedFixture: Sendable {
         )
     }
 
+    /// Moves every row so the fixture's reference day lands on `now`'s day in
+    /// `timeZone`, keeping wall-clock times. Mirrors web `generateDemoData`,
+    /// which seeds relative to today in the browser zone.
+    public func rebased(to now: Date, timeZone: TimeZone) -> DemoSeedFixture {
+        var source = Calendar(identifier: .gregorian)
+        source.timeZone = TimeZone(identifier: self.timeZone) ?? .gmt
+        var target = Calendar(identifier: .gregorian)
+        target.timeZone = timeZone
+        let sourceDay = source.startOfDay(for: referenceNow)
+        let targetDay = target.startOfDay(for: now)
+
+        func move(_ date: Date) -> Date {
+            let offset = source.dateComponents([.day], from: sourceDay, to: source.startOfDay(for: date)).day ?? 0
+            let time = source.dateComponents([.hour, .minute, .second], from: date)
+            let day = target.date(byAdding: .day, value: offset, to: targetDay) ?? targetDay
+            return target.date(
+                bySettingHour: time.hour ?? 0, minute: time.minute ?? 0, second: time.second ?? 0, of: day
+            ) ?? day
+        }
+
+        let timed = ISO8601DateFormatter()
+        timed.formatOptions = [.withInternetDateTime]
+        timed.timeZone = timeZone
+        let parse = ISO8601DateFormatter()
+        let occurrenceStamp = ISO8601DateFormatter()
+        occurrenceStamp.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        func dayFormatter(_ calendar: Calendar) -> DateFormatter {
+            let formatter = DateFormatter()
+            formatter.calendar = calendar
+            formatter.timeZone = calendar.timeZone
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter
+        }
+        let sourceDayFormatter = dayFormatter(source)
+        let targetDayFormatter = dayFormatter(target)
+
+        let rows = events.map { row -> Row in
+            let event = row.event
+            var id = row.id
+            let schedule: EventSchedule
+            switch event.schedule {
+            case .timed(let payload):
+                guard let start = parse.date(from: payload.start.rawValue),
+                    let end = parse.date(from: payload.end.rawValue)
+                else { return row }
+                let movedStart = move(start)
+                schedule = .timed(
+                    EventSchedule_TimedPayload(
+                        end: DateTime(rawValue: timed.string(from: move(end))),
+                        kind: payload.kind,
+                        start: DateTime(rawValue: timed.string(from: movedStart)),
+                        timeZone: IANATimeZone(rawValue: timeZone.identifier)))
+                if case .occurrence(let occurrence) = event.recurrence {
+                    id = "\(occurrence.seriesId.rawValue)|\(occurrenceStamp.string(from: movedStart))"
+                }
+            case .allDay(let payload):
+                guard let start = sourceDayFormatter.date(from: payload.start),
+                    let end = sourceDayFormatter.date(from: payload.end)
+                else {
+                    return row
+                }
+                schedule = .allDay(
+                    EventSchedule_AllDayPayload(
+                        end: targetDayFormatter.string(from: move(end)),
+                        kind: payload.kind,
+                        start: targetDayFormatter.string(from: move(start))))
+            }
+            let moved = Event(
+                calendarId: event.calendarId,
+                content: event.content,
+                createdAt: event.createdAt,
+                icalUid: event.icalUid,
+                id: EventId(rawValue: id),
+                popupReminderMinutes: event.popupReminderMinutes,
+                providerManaged: event.providerManaged,
+                recurrence: event.recurrence,
+                schedule: schedule,
+                updatedAt: event.updatedAt)
+            return Row(id: id, event: moved, isDemo: row.isDemo)
+        }
+        return DemoSeedFixture(
+            referenceNow: now, timeZone: timeZone.identifier, calendarId: calendarId, events: rows)
+    }
+
     public var demoEventIds: Set<String> {
         Set(events.filter(\.isDemo).map(\.id))
     }

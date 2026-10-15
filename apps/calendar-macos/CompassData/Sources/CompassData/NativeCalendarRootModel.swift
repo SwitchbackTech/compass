@@ -141,9 +141,8 @@ public final class NativeCalendarRootModel {
         self.environment = environment
         self.demoPresentation = demoPresentation
         self.overlayStores = overlayStores
-        if let demoPresentation {
-            EffectiveTimeZone.identifier = demoPresentation.timeZone
-        }
+        let pinnedTimeZone = demoPresentation?.timeZone ?? CompassDevicePreferences.readPinnedTimeZone()
+        EffectiveTimeZone.identifier = pinnedTimeZone ?? TimeZone.current.identifier
         eventsStore = environment.eventsStore
         hiddenEventsStore = environment.hiddenEventsStore
         calendarVisibilityStore = CalendarVisibilityStore()
@@ -157,17 +156,14 @@ public final class NativeCalendarRootModel {
         analyticsIdentity = environment.analyticsIdentity
 
         let anchor: Date = {
-            guard let demoPresentation else { return Date() }
-            let calendar = EffectiveTimeZone.calendar
-            return calendar.dateInterval(of: .weekOfYear, for: demoPresentation.referenceNow)?.start
-                ?? demoPresentation.referenceNow
+            let today = demoPresentation?.referenceNow ?? Date()
+            return EffectiveTimeZone.calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
         }()
         viewStore = ViewStore(
             view: .week,
             anchorDate: anchor,
             visibleDayCount: CalendarWindowMath.weekDayCount,
-            pinnedTimeZone: demoPresentation?.timeZone
-                ?? CompassDevicePreferences.readPinnedTimeZone()
+            pinnedTimeZone: pinnedTimeZone
         )
         if demoPresentation == nil {
             viewStore.setTimeTravelTimeZone(CompassDevicePreferences.readTimeTravelTimeZone())
@@ -337,7 +333,6 @@ public final class NativeCalendarRootModel {
             metadata: environment.userMetadataRepository,
             fixture: demoPresentation)
         cachedDemoEventIds = (try? environment.localEventRepository.demoEventIds()) ?? []
-        applyDemoPresentationTimingIfNeeded()
         try? await hiddenEventsStore.load()
         await reloadCalendars()
         await refreshVisibleRange()
@@ -1112,17 +1107,6 @@ public final class NativeCalendarRootModel {
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()
         } catch {}
-    }
-
-    private func applyDemoPresentationTimingIfNeeded() {
-        guard demoPresentation != nil || eventsStore.source == .local else { return }
-        guard let fixture = demoPresentation ?? (try? DemoSeedFixture.load()) else { return }
-        EffectiveTimeZone.identifier = fixture.timeZone
-        let calendar = EffectiveTimeZone.calendar
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: fixture.referenceNow)?.start
-            ?? fixture.referenceNow
-        viewStore.setAnchorDate(weekStart)
-        monthPickerMonth = weekStart
     }
 
     private func configureAnalyticsFromConfig() async {

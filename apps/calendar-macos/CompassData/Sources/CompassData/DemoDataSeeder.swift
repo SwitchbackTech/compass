@@ -2,13 +2,17 @@ import CompassKit
 import Foundation
 
 /// Seeds `demo-seed.json` into `local_event` on first launch (idempotent).
+/// Without a `-COMPASS_FIXTURE` presentation the rows move to today in the
+/// system zone, like web's demo seed.
 public enum DemoDataSeeder {
     public static let migrationKey = "compass.migration.demo-data-seed-v2"
 
     public static func seedIfNeeded(
         localEvents: LocalEventRepository,
         metadata: UserMetadataRepository,
-        fixture: DemoSeedFixture? = nil
+        fixture: DemoSeedFixture? = nil,
+        now: Date = Date(),
+        timeZone: TimeZone = .current
     ) throws {
         let existing = try localEvents.fetchAll()
         if !existing.isEmpty {
@@ -18,7 +22,7 @@ public enum DemoDataSeeder {
             return
         }
 
-        let seed = try fixture ?? DemoSeedFixture.load()
+        let seed = try fixture ?? DemoSeedFixture.load().rebased(to: now, timeZone: timeZone)
         var records = seed.events.map { row in
             LocalEventRecord(id: EventId(rawValue: row.id), event: row.event, isDemo: row.isDemo)
         }
