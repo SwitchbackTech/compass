@@ -3,7 +3,7 @@ import {
   useGoogleLogin as useGoogleLoginBase,
 } from "@react-oauth/google";
 import { useCallback, useMemo, useState } from "react";
-import { buildOAuthStateForClient } from "@core/desktop/desktop-oauth-state.util";
+import { buildSignInOAuthState } from "@core/auth/signin-oauth-state.util";
 import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
@@ -191,7 +191,7 @@ const useGoogleProviderAuthorizationStrategy: ProviderAuthorizationStrategy = ({
   const { state, redirectUri } = useAuthorizationSession(
     "google",
     (_redirectUri, posthogDistinctId) =>
-      buildOAuthStateForClient(false, posthogDistinctId),
+      buildSignInOAuthState({ isDesktopClient: false, posthogDistinctId }),
   );
 
   const loginOptions = useMemo<
@@ -235,7 +235,7 @@ const useMicrosoftProviderAuthorizationStrategy =
     getClientId: () => getMicrosoftSignInClientId(),
     notConfiguredMessage: "Microsoft sign-in is not configured",
     createState: (_redirectUri, posthogDistinctId) =>
-      buildOAuthStateForClient(false, posthogDistinctId),
+      buildSignInOAuthState({ isDesktopClient: false, posthogDistinctId }),
     buildAuthorizationUrl: ({ clientId, redirectUri, state, prompt }) =>
       buildMicrosoftAuthorizationUrl({
         clientId,

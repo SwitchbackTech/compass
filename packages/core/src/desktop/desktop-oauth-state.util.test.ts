@@ -1,7 +1,6 @@
 import {
   buildDesktopConnectRelayUrl,
   buildDesktopOAuthRelayUrl,
-  buildOAuthStateForClient,
   DESKTOP_OAUTH_STATE_PREFIX,
   hasDesktopOAuthStateMarker,
   parseDesktopAuthDeepLink,
@@ -12,16 +11,16 @@ import {
 import { describe, expect, it } from "bun:test";
 
 describe("desktop oauth state", () => {
-  it("prefixes state when the client is desktop", () => {
-    const state = buildOAuthStateForClient(true);
-    expect(state.startsWith(DESKTOP_OAUTH_STATE_PREFIX)).toBe(true);
-    expect(hasDesktopOAuthStateMarker(state)).toBe(true);
+  // buildSignInOAuthState owns which states carry the marker, and its own
+  // test covers that; this is the marker reader on its own.
+  it("recognizes the desktop marker", () => {
+    expect(
+      hasDesktopOAuthStateMarker(`${DESKTOP_OAUTH_STATE_PREFIX}v1.payload`),
+    ).toBe(true);
   });
 
-  it("leaves browser state unprefixed", () => {
-    const state = buildOAuthStateForClient(false);
-    expect(state.startsWith(DESKTOP_OAUTH_STATE_PREFIX)).toBe(false);
-    expect(hasDesktopOAuthStateMarker(state)).toBe(false);
+  it("leaves browser state unmarked", () => {
+    expect(hasDesktopOAuthStateMarker("v1.payload")).toBe(false);
   });
 });
 

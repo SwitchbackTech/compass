@@ -49,19 +49,13 @@ export const DatePickers: FC<Props> = ({
         end: selectedEndDate,
       });
 
-    if (shouldAdjustEnd) {
-      onScheduleChange({
-        kind: "allDay",
-        start: toAllDayDate(start),
-        end: toAllDayDate(compliment),
-      });
-    } else {
-      onScheduleChange({
-        kind: "allDay",
-        start: toAllDayDate(start),
-        end: currentAllDayBounds().end,
-      });
-    }
+    onScheduleChange({
+      kind: "allDay",
+      start: toAllDayDate(start),
+      end: shouldAdjustEnd
+        ? toAllDayDate(compliment)
+        : currentAllDayBounds().end,
+    });
   };
 
   const onSelectEndDate = (end: Date) => {
