@@ -9,6 +9,16 @@ final class UITestLaunchPolicyTests: XCTestCase {
                 arguments: ["Compass", "-COMPASS_FIXTURE", "demo", "-COMPASS_UI_TEST_PIN_WEEK_GRID_TRACK"]))
     }
 
+    func testProductionLaunchNeverMirrorsEventFormTitleTyping() {
+        XCTAssertFalse(UITestLaunchPolicy.mirrorsEventFormTitleTyping(arguments: ["/Applications/Compass.app"]))
+        XCTAssertFalse(
+            UITestLaunchPolicy.mirrorsEventFormTitleTyping(
+                arguments: ["Compass", "-COMPASS_UI_TEST", "-COMPASS_FIXTURE", "demo"]))
+        XCTAssertTrue(
+            UITestLaunchPolicy.mirrorsEventFormTitleTyping(
+                arguments: ["Compass", "-COMPASS_UI_TEST", "-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM"]))
+    }
+
     func testUITestLaunchAttachesAccessibilityProbes() {
         XCTAssertTrue(
             UITestLaunchPolicy.attachesAccessibilityProbes(arguments: ["Compass", "-COMPASS_UI_TEST"]))

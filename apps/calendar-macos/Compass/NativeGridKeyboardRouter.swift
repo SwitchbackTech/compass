@@ -305,14 +305,8 @@ final class NativeGridKeyboardRouter {
 
     /// XCUITest typing often misses the SwiftUI title field; mirror keystrokes into the draft.
     /// Probes mirror via `EventFormAccessibilityProbeView` when `-COMPASS_UI_TEST` is set.
-    private func shouldMirrorEventFormTitleTyping() -> Bool {
-        if UITestLaunchPolicy.openFocusedEventFormAfterInitialGridFocus { return true }
-        if UITestLaunchPolicy.attachesAccessibilityProbes { return false }
-        return model.eventFormFocusedField == .title
-    }
-
     private func handleUITestEventFormTyping(_ keyEvent: KeyEvent) -> Bool {
-        guard shouldMirrorEventFormTitleTyping() else { return false }
+        guard UITestLaunchPolicy.mirrorsEventFormTitleTyping else { return false }
         if keyEvent.modifiers == [.command],
             case .character(let char) = keyEvent.key,
             char.lowercased() == "v",
