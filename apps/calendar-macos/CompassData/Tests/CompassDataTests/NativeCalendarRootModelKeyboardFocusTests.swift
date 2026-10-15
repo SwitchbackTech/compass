@@ -37,6 +37,22 @@ final class NativeCalendarRootModelKeyboardFocusTests: XCTestCase {
         XCTAssertTrue(calendar.isDate(model.viewStore.anchorDate, inSameDayAs: expected))
     }
 
+    /// Regression: the sidebar month stayed on June while the grid paged into July.
+    func testPagingTheGridIntoAnotherMonthMovesTheMonthPicker() async throws {
+        let model = try await makeModel()
+        let calendar = EffectiveTimeZone.calendar
+        let startMonth = calendar.component(.month, from: model.monthPickerMonth)
+
+        for _ in 0 ..< 5 {
+            model.handleShortcut(.navNext)
+        }
+
+        XCTAssertEqual(
+            calendar.component(.month, from: model.monthPickerMonth),
+            calendar.component(.month, from: model.viewStore.anchorDate))
+        XCTAssertNotEqual(calendar.component(.month, from: model.monthPickerMonth), startMonth)
+    }
+
     func testFocusNoticeCyclesVisibleBannersAndEnterRunsTheButton() async throws {
         let model = try await makeModel()
         model.desktopUpdateReadyVersion = "2.0.0"

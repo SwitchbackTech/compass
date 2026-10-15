@@ -26,14 +26,15 @@ final class EventCardView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.masksToBounds = true
         layer?.cornerRadius = 4
 
         accentLayer.frame = CGRect(x: 0, y: 0, width: 3, height: 1)
+        accentLayer.cornerRadius = 4
+        accentLayer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
         layer?.addSublayer(accentLayer)
 
         focusRingLayer.borderWidth = 2
-        focusRingLayer.cornerRadius = 4
+        focusRingLayer.cornerRadius = 6
         focusRingLayer.backgroundColor = NSColor.clear.cgColor
         focusRingLayer.isHidden = true
         layer?.addSublayer(focusRingLayer)
@@ -91,13 +92,18 @@ final class EventCardView: NSView {
             EventCardColorParser.nsColor(hex: card.fillColorHex) ?? accentColor(for: theme)
         ).cgColor
 
-        let ringColor = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? accentColor(for: theme)
         if isSidebarEditing {
             focusRingLayer.borderColor = theme.textColor.cgColor
         } else {
-            focusRingLayer.borderColor = ringColor.cgColor
+            focusRingLayer.borderColor = focusRingColor(fill: fill, theme: theme).cgColor
         }
         focusRingLayer.isHidden = !(isFocused || isSidebarEditing)
+        // The ring sits outside the card, like the web's 2px outline with a
+        // 2px offset, so the card must not clip. AppKit turns clipping back on
+        // after init, so this runs on every apply. The accent strip rounds its
+        // own corners.
+        clipsToBounds = false
+        layer?.masksToBounds = false
         needsLayout = true
         layoutSubtreeIfNeeded()
         syncAccessibilityFrame()
@@ -121,7 +127,7 @@ final class EventCardView: NSView {
         let verticalInset = max(0, min(4, (bounds.height - titleLineHeight) / 2))
         titleField.frame = bounds.insetBy(dx: 6, dy: verticalInset)
         accentLayer.frame = CGRect(x: 0, y: 0, width: 3, height: bounds.height)
-        focusRingLayer.frame = bounds.insetBy(dx: -2, dy: -2)
+        focusRingLayer.frame = bounds.insetBy(dx: -4, dy: -4)
         focusAccessibilityAnchor.frame = bounds
         syncAccessibilityFrame()
     }
@@ -298,6 +304,19 @@ private func contrastText(on fill: NSColor, theme: NativeWebTheme) -> NSColor {
         return (max(textLuminance, fillLuminance) + 0.05) / (min(textLuminance, fillLuminance) + 0.05)
     }
     return contrast(candidates[0]) >= contrast(candidates[1]) ? candidates[0] : candidates[1]
+}
+
+/// Web `eventFocusColor`: the card's color, or the theme text color when that
+/// color is too light to read against the page paper.
+private func focusRingColor(fill: NSColor, theme: NativeWebTheme) -> NSColor {
+    let text: NSColor = switch theme {
+    case .lightBeach: ThemeTokens.lightBeach.text.nsColor
+    case .darkAbyss: ThemeTokens.darkAbyss.text.nsColor
+    }
+    let fillLuminance = relativeLuminance(fill)
+    let paperLuminance = relativeLuminance(ThemeTokens.lightBeach.background.nsColor)
+    let contrast = (max(fillLuminance, paperLuminance) + 0.05) / (min(fillLuminance, paperLuminance) + 0.05)
+    return contrast < 3 ? text : fill
 }
 
 private func relativeLuminance(_ color: NSColor) -> CGFloat {

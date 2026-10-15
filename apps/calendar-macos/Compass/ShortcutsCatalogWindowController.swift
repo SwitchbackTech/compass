@@ -15,6 +15,8 @@ final class ShortcutsCatalogWindowController: NSWindowController, ShortcutsCatal
             backing: .buffered,
             defer: false)
         window.title = "Compass keyboard shortcuts"
+        // Its content is set only when Help opens it; a restored copy would be blank.
+        window.isRestorable = false
         window.setContentSize(NSSize(width: 720, height: 820))
         window.center()
         super.init(window: window)

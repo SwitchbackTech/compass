@@ -49,6 +49,7 @@ public enum MainMenuActionKind: Equatable, Sendable {
     case nativeThemeLightBeach
     case nativeThemeDarkAbyss
     case openQuickAddPanel
+    case showMainWindow
     case standardEdit(String)
     case undo
     case redo
@@ -188,6 +189,10 @@ public enum MainMenuModel {
                 MainMenuRow(title: "Minimize", action: .standardEdit("performMiniaturize:"), keyEquivalent: MacKeyEquivalent(key: "m", command: true)),
                 MainMenuRow(title: "Zoom", action: .standardEdit("performZoom:")),
                 MainMenuRow(title: "Close", action: .standardEdit("performClose:"), keyEquivalent: MacKeyEquivalent(key: "w", command: true)),
+                MainMenuRow(title: "", action: .separator),
+                // Reopens the main window after Close, like Calendar's Window > Calendar.
+                // No Cmd+0: Cmd+digit is the calendar page jump.
+                MainMenuRow(title: "Compass", action: .showMainWindow),
             ])
     }
 

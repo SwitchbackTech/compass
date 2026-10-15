@@ -99,6 +99,19 @@ public final class UndoStore {
         }
     }
 
+    /// Redoing a create and undoing a delete re-create the event under a new
+    /// id. Point the entry that just moved at that row so the next undo or
+    /// redo acts on the event that exists.
+    public func replaceLastPast(with entry: UndoHistoryEntry) {
+        guard !past.isEmpty else { return }
+        past[past.count - 1] = entry
+    }
+
+    public func replaceLastFuture(with entry: UndoHistoryEntry) {
+        guard !future.isEmpty else { return }
+        future[future.count - 1] = entry
+    }
+
     public func clear() {
         past = []
         future = []

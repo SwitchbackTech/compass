@@ -38,8 +38,17 @@ public struct SidebarMonthPicker: View {
                 if let trailingHeader {
                     trailingHeader
                 }
+                monthArrow(systemName: "chevron.left", label: "Previous month", months: -1)
+                monthArrow(systemName: "chevron.right", label: "Next month", months: 1)
             }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
+                ForEach(Array(weekdayLetters.enumerated()), id: \.offset) { _, letter in
+                    Text(letter)
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                        .frame(maxWidth: .infinity)
+                        .accessibilityHidden(true)
+                }
                 ForEach(dayCells, id: \.self) { day in
                     if let day {
                         Button {
@@ -71,6 +80,33 @@ public struct SidebarMonthPicker: View {
             }
         }
         .accessibilityIdentifier("compass-native-month-picker")
+    }
+
+    /// Web `react-datepicker` header: step the shown month without moving the grid.
+    private func monthArrow(systemName: String, label: String, months: Int) -> some View {
+        Button {
+            if let next = EffectiveTimeZone.calendar.date(byAdding: .month, value: months, to: displayedMonth) {
+                displayedMonth = next
+            }
+        } label: {
+            Image(systemName: systemName)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(theme.textMutedColor)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    /// One letter per column, starting on the calendar's first weekday.
+    private var weekdayLetters: [String] {
+        let calendar = EffectiveTimeZone.calendar
+        var formatterCalendar = calendar
+        formatterCalendar.locale = Locale(identifier: "en_US_POSIX")
+        let symbols = formatterCalendar.veryShortStandaloneWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
     }
 
     private var monthTitle: String {
