@@ -19,10 +19,10 @@ public struct LocalDataExport: Encodable, Sendable {
         return try encoder.encode(self)
     }
 
-    public var filename: String {
+    public func filename(in timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.timeZone = timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return "compass-export-\(formatter.string(from: exportedAt)).json"
     }

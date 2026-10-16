@@ -11,7 +11,7 @@ extension NativeCalendarRootModel {
             let snapshot = try await Task.detached {
                 LocalDataExport(records: try repository.fetchAll(), exportedAt: now)
             }.value
-            if try await onExportLocalData(snapshot.encoded(), snapshot.filename) {
+            if try await onExportLocalData(snapshot.encoded(), snapshot.filename()) {
                 statusToastStore.show(id: "data-export", message: "Data exported")
             }
         } catch {

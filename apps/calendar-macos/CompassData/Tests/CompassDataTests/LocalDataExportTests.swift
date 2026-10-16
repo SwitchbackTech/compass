@@ -16,7 +16,8 @@ final class LocalDataExportTests: XCTestCase {
         let encodedRecord = try JSONSerialization.data(withJSONObject: XCTUnwrap(events.first))
         XCTAssertEqual(try JSONDecoder().decode(LocalEventRecord.self, from: encodedRecord), record)
         XCTAssertEqual(json["exportedAt"] as? String, "1970-01-01T00:00:00Z")
-        XCTAssertEqual(snapshot.filename, "compass-export-1970-01-01.json")
+        XCTAssertEqual(snapshot.filename(in: TimeZone(secondsFromGMT: 0)!), "compass-export-1970-01-01.json")
+        XCTAssertEqual(snapshot.filename(in: TimeZone(identifier: "America/Denver")!), "compass-export-1969-12-31.json")
     }
 
     @MainActor
