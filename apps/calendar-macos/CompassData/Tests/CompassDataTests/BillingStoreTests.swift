@@ -94,3 +94,33 @@ final class BillingStoreTests: XCTestCase {
         XCTAssertNil(store.gateStatus)
     }
 }
+
+extension BillingStoreTests {
+    func testSigningOutDiscardsAStatusResponseAlreadyInFlight() async throws {
+        let (store, config) = try makeStore()
+        StubURLProtocol.Handler.requestHandler = { _ in
+            StubURLProtocol.Response(statusCode: 200, body: BillingStoreTestFixtures.enforcedConfigJSON)
+        }
+        await config.load()
+        let started = XCTestExpectation(description: "billing status requested")
+        let release = DispatchSemaphore(value: 0)
+        defer { release.signal() }
+        StubURLProtocol.Handler.requestHandler = { _ in
+            started.fulfill()
+            _ = release.wait(timeout: .now() + 5)
+            return StubURLProtocol.Response(statusCode: 200, body: Data("""
+                {"subscriptionStatus":"awaiting_checkout","trialEndsAt":null,"isReadOnly":true,"cancelAtPeriodEnd":false}
+                """.utf8))
+        }
+        store.setAuthenticated(true)
+        let request = Task { await store.refreshStatus() }
+        let result = await XCTWaiter.fulfillment(of: [started], timeout: 5)
+        XCTAssertEqual(result, .completed)
+        store.setAuthenticated(false)
+        release.signal()
+        await request.value
+        XCTAssertNil(store.status)
+        XCTAssertFalse(store.isLoadingStatus)
+        XCTAssertFalse(store.statusLoadFailed)
+    }
+}

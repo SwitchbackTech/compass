@@ -55,7 +55,7 @@ final class LocalDataExportTests: XCTestCase {
         XCTAssertTrue(model.isSignedIn)
     }
     @MainActor
-    func testConfirmedLogoutEndsTheSession() async throws {
+    func testLogoutWithoutRememberedAccountReturnsToLocalMode() async throws {
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
         let model = NativeCalendarRootModel(environment: environment)
         await model.authStore.bootstrap(forceDemoSignedIn: true)
@@ -114,6 +114,29 @@ final class LocalDataExportTests: XCTestCase {
         await model.confirmLogout()
         XCTAssertNil(model.draftStore.gridDraft)
         XCTAssertFalse(model.undoStore.canUndo)
+    }
+
+    @MainActor
+    func testRememberedAccountLogoutClearsCachedEventsAndCalendars() async throws {
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
+        try AuthRememberedState.markUserHasAuthenticated(repository: environment.userMetadataRepository)
+        let model = NativeCalendarRootModel(environment: environment)
+        await model.authStore.bootstrap(forceDemoSignedIn: true)
+        let event = try StoreSampleEvents.timedEvent(id: "account-event", title: "Private account event")
+        let calendar = LocalCalendarSentinel.synthesizeCalendar(id: event.calendarId)
+        let repository = EventRepository(database: environment.database)
+        try repository.upsert(events: [event], isLocal: false)
+        try environment.calendarRepository.upsert(calendars: [calendar])
+        model.loadedEvents = [event]
+        XCTAssertEqual(try environment.calendarRepository.fetchAll().map(\.id), [calendar.id])
+        model.requestLogout()
+        await model.confirmLogout()
+        XCTAssertFalse(model.isSignedIn)
+        XCTAssertEqual(environment.eventsStore.source, .remote)
+        XCTAssertTrue(model.loadedEvents.isEmpty)
+        XCTAssertTrue(model.calendars.isEmpty)
+        XCTAssertTrue(try repository.fetchAll().isEmpty)
+        XCTAssertTrue(try environment.calendarRepository.fetchAll().isEmpty)
     }
 
 }

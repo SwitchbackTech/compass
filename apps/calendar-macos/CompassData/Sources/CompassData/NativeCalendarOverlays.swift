@@ -170,6 +170,7 @@ extension NativeCalendarRootModel {
             return
         }
         paletteSearchTask?.cancel()
+        let revision = sessionRevision
         paletteSearchTask = Task { [weak self] in
             guard let self else { return }
             let local = paletteEventHits(query: query)
@@ -186,6 +187,7 @@ extension NativeCalendarRootModel {
                 q: query)
             do {
                 let remoteEvents = try await environment.apiClient.events.list(listQuery)
+                guard revision == sessionRevision, isSignedIn, !Task.isCancelled else { return }
                 let remoteHits = EventTitleSearch.search(
                     events: remoteEvents,
                     query: query,

@@ -34,13 +34,15 @@ extension NativeCalendarRootModel {
 
     public func confirmLogout() async {
         guard pendingLogoutConfirmation, !isLoggingOut else { return }
+        guard eventsStore.inFlightMutations == 0 else {
+            logoutError = "Wait for your event changes to finish, then try again."
+            return
+        }
         logoutError = nil
         isLoggingOut = true
         defer { isLoggingOut = false }
         do {
             try await signOut()
-            discardDraftConfirmed()
-            undoStore.clear()
             pendingLogoutConfirmation = false
         } catch {
             logoutError = "Could not log out. Try again."

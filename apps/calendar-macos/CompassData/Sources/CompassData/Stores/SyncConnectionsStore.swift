@@ -8,6 +8,8 @@ public final class SyncConnectionsStore {
     public private(set) var lastError: String?
     public private(set) var connections: [UserMetadataConnections] = []
 
+    private var sessionRevision = 0
+
     private let oauthService: OAuthAuthorizationService
     private let userAPI: UserAPI
     private let configStore: ConfigStore
@@ -28,11 +30,20 @@ public final class SyncConnectionsStore {
         self.calendarRepository = calendarRepository
     }
 
+    public func resetSession() {
+        sessionRevision += 1
+        connections = []
+        lastError = nil
+    }
+
     public func reloadFromMetadata() async {
+        let revision = sessionRevision
         do {
             let metadata = try await userAPI.metadata()
+            guard revision == sessionRevision else { return }
             connections = metadata.connections ?? []
         } catch {
+            guard revision == sessionRevision else { return }
             connections = []
         }
     }

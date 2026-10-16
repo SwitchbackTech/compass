@@ -22,6 +22,7 @@ public final class BookingStore {
     private let bookingAPI: BookingAPI
     private let analytics: ProductAnalyticsClient
     private var authenticated = false
+    private var sessionRevision = 0
     private var seededPage: AdminBookingPage?
     private var didTrackSettingsOpened = false
 
@@ -58,8 +59,20 @@ public final class BookingStore {
     }
 
     public func setAuthenticated(_ value: Bool) {
+        sessionRevision += 1
         authenticated = value
         if !value {
+            let defaults = BookingSettingsFormLogic.buildDefaultInput(timeZone: EffectiveTimeZone.identifier)
+            form.apply(defaults)
+            minNoticeText = String(defaults.minNoticeHours)
+            horizonText = String(defaults.maxHorizonDays)
+            baselineInput = nil
+            optedOutBlockingCalendarIds = []
+            saveErrorMessage = nil
+            isDiscardConfirmationPresented = false
+            isLoadingPage = false
+            isLoadingStatus = false
+            isSaving = false
             serverPage = nil
             status = nil
             setupStep = nil
@@ -75,24 +88,31 @@ public final class BookingStore {
 
     public func refreshPage() async {
         guard authenticated else { return }
+        let revision = sessionRevision
         isLoadingPage = true
         pageLoadFailed = false
-        defer { isLoadingPage = false }
+        defer { if revision == sessionRevision { isLoadingPage = false } }
         do {
-            serverPage = try await bookingAPI.getPage()
+            let result = try await bookingAPI.getPage()
+            guard revision == sessionRevision else { return }
+            serverPage = result
             if isLive {
                 await refreshStatus()
             }
         } catch {
+            guard revision == sessionRevision else { return }
             pageLoadFailed = true
         }
     }
 
     public func refreshStatus() async {
         guard authenticated, isLive else { return }
+        let revision = sessionRevision
         isLoadingStatus = true
-        defer { isLoadingStatus = false }
-        status = try? await bookingAPI.getPageStatus()
+        defer { if revision == sessionRevision { isLoadingStatus = false } }
+        let result = try? await bookingAPI.getPageStatus()
+        guard revision == sessionRevision else { return }
+        status = result
     }
 
     public func seedGuestPreviewIfNeeded() {
@@ -293,11 +313,13 @@ public final class BookingStore {
             return false
         }
 
+        let revision = sessionRevision
         isSaving = true
         saveErrorMessage = nil
-        defer { isSaving = false }
+        defer { if revision == sessionRevision { isSaving = false } }
         do {
             let result = try await bookingAPI.putPage(payload)
+            guard revision == sessionRevision else { return false }
             serverPage = result
             seededPage = result
             form.apply(payload)
@@ -314,9 +336,11 @@ public final class BookingStore {
             if AdminBookingPageLogic.isLivePage(result) {
                 await refreshStatus()
             }
+            guard revision == sessionRevision else { return false }
             clearGuestMeetingSetupAfterSave()
             return true
         } catch {
+            guard revision == sessionRevision else { return false }
             saveErrorMessage = "Could not save meeting settings. Try again."
             analytics.track(.bookingSetupSaveFailed, properties: [:])
             return false
