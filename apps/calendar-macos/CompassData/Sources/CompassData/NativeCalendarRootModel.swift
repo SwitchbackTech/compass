@@ -417,6 +417,9 @@ public final class NativeCalendarRootModel {
         sidebandEvents = []
         calendars = []
         rebuildPresentation()
+        await reloadCalendars()
+        await refreshVisibleRange()
+        await refreshSideband()
     }
 
     public func updateContentTrackWidth(_ width: CGFloat) {
@@ -1111,16 +1114,20 @@ public final class NativeCalendarRootModel {
 
     private func bootstrapAnonymousCalendarsIfNeeded() async {
         do {
+            let calendar: CompassCalendar
             if let demoPresentation {
-                let calendar = demoPresentation.calendarListItem()
-                try calendarRepository.upsert(calendars: [calendar])
+                calendar = demoPresentation.calendarListItem()
             } else {
                 let sentinel = try LocalCalendarSentinel.calendarId(
                     repository: environment.userMetadataRepository)
-                let calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
-                try calendarRepository.upsert(calendars: [calendar])
+                calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
             }
-            calendars = try calendarRepository.fetchAll()
+            try calendarRepository.upsert(calendars: [calendar])
+            // Local records prove which cached calendars belong to this device.
+            // Other cached calendars require the signed-in session that loaded them.
+            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            localIds.insert(calendar.id)
+            calendars = try calendarRepository.fetchAll().filter { localIds.contains($0.id) }
             rebuildPresentation()
         } catch {
             Self.log.error("bootstrap local calendars failed: \(String(describing: error), privacy: .public)")

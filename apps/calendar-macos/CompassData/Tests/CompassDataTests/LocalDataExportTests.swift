@@ -64,6 +64,10 @@ final class LocalDataExportTests: XCTestCase {
         XCTAssertFalse(model.pendingLogoutConfirmation)
         XCTAssertFalse(model.isLoggingOut)
         XCTAssertNil(model.logoutError)
+        XCTAssertFalse(model.calendars.isEmpty)
+        model.authStore.closeModal()
+        model.createTimedDraft(activity: .keyboardPlace)
+        XCTAssertNotNil(model.draftStore.gridDraft)
     }
 
     @MainActor
@@ -77,6 +81,21 @@ final class LocalDataExportTests: XCTestCase {
         model.onExportLocalData = { _, _ in true }
         await model.exportLocalData()
         XCTAssertEqual(model.statusToastStore.message, "Data exported")
+    }
+
+    @MainActor
+    func testAnonymousBootstrapDoesNotExposeUnownedCachedCalendars() async throws {
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
+        let unrelated = LocalCalendarSentinel.synthesizeCalendar(id: CalendarId(rawValue: "remote-cached"))
+        let localEvent = try StoreSampleEvents.timedEvent(id: "local", title: "Keep local calendar")
+        let owned = LocalCalendarSentinel.synthesizeCalendar(id: localEvent.calendarId)
+        try environment.calendarRepository.upsert(calendars: [unrelated, owned])
+        try environment.localEventRepository.put(LocalEventRecord(id: localEvent.id, event: localEvent, isDemo: false))
+        let model = NativeCalendarRootModel(environment: environment)
+        await model.start()
+        XCTAssertFalse(model.calendars.contains { $0.id == unrelated.id })
+        XCTAssertTrue(model.calendars.contains { $0.id == owned.id })
+        XCTAssertFalse(model.calendars.isEmpty)
     }
 
 }
