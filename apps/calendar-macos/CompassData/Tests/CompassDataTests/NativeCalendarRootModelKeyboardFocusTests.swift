@@ -26,6 +26,7 @@ final class NativeCalendarRootModelKeyboardFocusTests: XCTestCase {
         let model = try await makeModel()
         let calendar = EffectiveTimeZone.calendar
         let anchor = model.viewStore.anchorDate
+        model.viewStore.setVisibleDayCount(1)
         model.handleShortcut(.focusSidebar)
 
         model.moveMonthPickerFocus(byDays: 7)
@@ -35,6 +36,40 @@ final class NativeCalendarRootModelKeyboardFocusTests: XCTestCase {
         let expected = try XCTUnwrap(calendar.date(byAdding: .day, value: 8, to: anchor))
         XCTAssertNil(model.monthPickerFocusDate)
         XCTAssertTrue(calendar.isDate(model.viewStore.anchorDate, inSameDayAs: expected))
+    }
+
+    func testWeekPickerMovesWholeRowsWithHorizontalAndVerticalArrows() async throws {
+        let model = try await makeModel()
+        let calendar = EffectiveTimeZone.calendar
+        let anchor = model.viewStore.anchorDate
+        model.focusSidebar()
+        model.moveMonthPickerFocus(byDays: 1)
+        model.moveMonthPickerFocus(byDays: 7)
+        let expected = try XCTUnwrap(calendar.date(byAdding: .day, value: 14, to: anchor))
+        XCTAssertEqual(model.monthPickerFocusDate, expected)
+        XCTAssertEqual(model.viewStore.anchorDate, anchor)
+    }
+
+    func testMonthJumpMovesFocusedCursorWithoutNavigatingMainWindow() async throws {
+        let model = try await makeModel()
+        let anchor = model.viewStore.anchorDate
+        let calendar = EffectiveTimeZone.calendar
+        model.focusSidebar()
+        model.handleShortcut(.navMonthNext)
+        let cursor = try XCTUnwrap(model.monthPickerFocusDate)
+        XCTAssertTrue(calendar.isDate(cursor, equalTo: model.monthPickerMonth, toGranularity: .month))
+        XCTAssertEqual(calendar.component(.weekday, from: cursor), calendar.component(.weekday, from: anchor))
+        XCTAssertEqual(model.viewStore.anchorDate, anchor)
+    }
+
+    func testFocusingBrowsedMonthDoesNotResetDisplayedMonth() async throws {
+        let model = try await makeModel()
+        model.handleShortcut(.navMonthNext)
+        let month = model.monthPickerMonth
+        model.focusSidebar()
+        XCTAssertEqual(model.monthPickerMonth, month)
+        XCTAssertTrue(EffectiveTimeZone.calendar.isDate(
+            try XCTUnwrap(model.monthPickerFocusDate), equalTo: month, toGranularity: .month))
     }
 
     /// Regression: the sidebar month stayed on June while the grid paged into July.

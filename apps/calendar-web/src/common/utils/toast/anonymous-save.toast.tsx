@@ -55,7 +55,7 @@ function markAnonymousSaveToastSeen(): void {
   );
 }
 
-function incrementAnonymousCalendarWriteCount(): number {
+export function incrementAnonymousCalendarWriteCount(): number {
   if (!persistentBrowserStore.isAvailable()) return 0;
   const raw = persistentBrowserStore.get(
     STORAGE_KEYS.ANONYMOUS_CALENDAR_WRITE_COUNT,

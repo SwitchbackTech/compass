@@ -1,4 +1,5 @@
 import AppKit
+import CompassKit
 import XCTest
 
 final class NativeLaunchTests: XCTestCase {
@@ -43,6 +44,7 @@ final class NativeLaunchTests: XCTestCase {
     @MainActor
     func testFreshLaunchShowsWelcomeModal() {
         let app = XCUIApplication.compassUITest()
+        app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false"]
         app.launch()
 
         let window = app.windows["Compass"]

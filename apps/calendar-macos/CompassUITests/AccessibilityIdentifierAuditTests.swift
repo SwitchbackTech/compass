@@ -22,6 +22,7 @@ final class AccessibilityIdentifierAuditTests: XCTestCase {
     @MainActor
     func testWelcomeModalIdentifierExistsOnFreshLaunch() {
         let app = XCUIApplication.compassUITest()
+        app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false"]
         app.launch()
 
         let window = app.windows["Compass"]

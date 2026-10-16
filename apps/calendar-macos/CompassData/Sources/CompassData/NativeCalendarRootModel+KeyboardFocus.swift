@@ -19,13 +19,27 @@ extension NativeCalendarRootModel {
     public func focusSidebar() {
         focusedNotice = nil
         isSidebarOpen = true
-        monthPickerFocusDate = viewStore.anchorDate
-        monthPickerMonth = viewStore.anchorDate
+        monthPickerFocusDate = pickerCursor(in: monthPickerMonth, from: viewStore.anchorDate)
+    }
+
+    private func pickerCursor(in month: Date, from cursor: Date) -> Date {
+        let calendar = EffectiveTimeZone.calendar
+        return MonthPickerCursor.jump(
+            from: cursor, to: month, isWeek: viewStore.visibleDayCount > 1,
+            weekStart: calendar.component(.weekday, from: viewStore.anchorDate), calendar: calendar)
+    }
+
+    public func browseMonth(_ month: Date) {
+        monthPickerMonth = month
+        if let cursor = monthPickerFocusDate {
+            monthPickerFocusDate = pickerCursor(in: month, from: cursor)
+        }
     }
 
     public func moveMonthPickerFocus(byDays days: Int) {
+        let step = viewStore.visibleDayCount > 1 ? (days < 0 ? -7 : 7) : days
         guard let date = monthPickerFocusDate,
-              let next = EffectiveTimeZone.calendar.date(byAdding: .day, value: days, to: date)
+              let next = EffectiveTimeZone.calendar.date(byAdding: .day, value: step, to: date)
         else { return }
         monthPickerFocusDate = next
         monthPickerMonth = next

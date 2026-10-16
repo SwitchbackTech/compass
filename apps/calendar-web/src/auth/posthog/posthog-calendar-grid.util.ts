@@ -28,6 +28,7 @@ const GRID_CHAIN_MARKERS = [...GRID_ELEMENT_IDS, ...GRID_ELEMENT_ATTRS];
 export const CALENDAR_GRID_DEAD_CLICK_IGNORE_SELECTORS = [
   ...GRID_ELEMENT_IDS.map((id) => `#${id}`),
   ...GRID_ELEMENT_ATTRS.map((attr) => `[${attr}]`),
+  "[data-local-mode-connect-prompt]",
 ];
 
 /** True when autocapture element metadata points at the timed or all-day grid. */

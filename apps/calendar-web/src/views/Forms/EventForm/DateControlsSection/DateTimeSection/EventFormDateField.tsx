@@ -20,6 +20,8 @@ export interface EventFormDateFieldProps {
   /** When true, bare ArrowDown opens the calendar instead of nudging +1 day. */
   arrowDownOpensCalendar?: boolean;
   calendarClassName?: string;
+  /** When true, the date input is skipped by Tab (Mod+digit jump still works). */
+  excludeFromTabOrder?: boolean;
   id?: string;
   inputId?: string;
   isOpen: boolean;
@@ -35,6 +37,7 @@ export interface EventFormDateFieldProps {
 export const EventFormDateField = ({
   arrowDownOpensCalendar = false,
   calendarClassName,
+  excludeFromTabOrder = false,
   id,
   inputId,
   isOpen,
@@ -158,11 +161,13 @@ export const EventFormDateField = ({
       id={jumpId}
       onMouseDown={stopPropagation}
       onMouseUp={stopPropagation}
+      tabIndex={-1}
     >
       <DatePicker
         calendarClassName={calendarClassName}
         captionPicker
         dateFormat={EVENT_FORM_DATE_INPUT_FORMAT}
+        {...(excludeFromTabOrder ? { tabIndex: -1 } : {})}
         {...(resolvedInputId ? { inputId: resolvedInputId } : {})}
         isOpen={isOpen}
         monthTextClassName="text-medium"
