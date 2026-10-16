@@ -14,6 +14,9 @@ final class DescriptionEditorContainerView: NSView {
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .noBorder
         scrollView.documentView = textView
+        toolbar.setAccessibilityElement(true)
+        toolbar.setAccessibilityRole(.toolbar)
+        toolbar.setAccessibilityLabel("Description formatting")
         toolbar.orientation = .horizontal
         toolbar.spacing = 4
         for (label, symbol, action) in [

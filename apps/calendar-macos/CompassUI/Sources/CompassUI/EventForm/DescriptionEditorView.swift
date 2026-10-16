@@ -179,16 +179,45 @@ final class DescriptionTextView: NSTextView {
         onFormattingChange?()
     }
 
-    func toggleList(ordered: Bool) {
+    override func insertNewline(_ sender: Any?) {
         guard isEditable, let storage = textStorage else { return }
+        let range = paragraphRange(containing: NSRange(location: selectedRange().location, length: 0))
+        guard range.length > 0,
+              let kind = storage.attribute(HTMLFragmentAppKit.listKindKey, at: range.location, effectiveRange: nil) as? String
+        else { super.insertNewline(sender); return }
+        let line = (string as NSString).substring(with: range)
+        let prefixLength = HTMLFragmentAppKit.listPrefixLength(line, kind: kind)
+        if (line as NSString).substring(from: prefixLength).trimmingCharacters(in: .whitespaces).isEmpty {
+            guard shouldChangeText(in: range, replacementString: "") else { return }
+            storage.replaceCharacters(in: range, with: "")
+            typingAttributes.removeValue(forKey: HTMLFragmentAppKit.listKindKey)
+            setSelectedRange(NSRange(location: range.location, length: 0))
+            didChangeText()
+            onFormattingChange?()
+            return
+        }
+        let attributes = typingAttributes
+        super.insertNewline(sender)
+        typingAttributes = attributes
+        typingAttributes[HTMLFragmentAppKit.listKindKey] = kind
+        let number = Int(line.components(separatedBy: ".").first ?? "") ?? 0
+        insertText(kind == "unordered" ? "• " : "\(number + 1). ", replacementRange: selectedRange())
+    }
+
+    private func paragraphRange(containing selection: NSRange) -> NSRange {
         let text = string as NSString
-        let selection = selectedRange()
         let before = text.range(of: "\n", options: .backwards, range: NSRange(location: 0, length: selection.location))
         let start = before.location == NSNotFound ? 0 : NSMaxRange(before)
         let lastSelected = max(selection.location, NSMaxRange(selection) - 1)
         let after = text.range(of: "\n", range: NSRange(location: lastSelected, length: text.length - lastSelected))
-        let end = after.location == NSNotFound ? text.length : after.location
-        let range = NSRange(location: start, length: end - start)
+        return NSRange(location: start, length: (after.location == NSNotFound ? text.length : after.location) - start)
+    }
+
+    func toggleList(ordered: Bool) {
+        guard isEditable, let storage = textStorage else { return }
+        let selection = selectedRange()
+        let range = paragraphRange(containing: selection)
+        let start = range.location
         guard shouldChangeText(in: range, replacementString: nil) else { return }
         let source = storage.attributedSubstring(from: range)
         let kind = ordered ? "ordered" : "unordered"

@@ -63,6 +63,21 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertEqual(editor.selectedRange(), NSRange(location: 0, length: 0))
     }
 
+    func testEnterContinuesListAndEmptyItemExitsIt() {
+        let editor = DescriptionTextView()
+        editor.textStorage?.setAttributedString(NSAttributedString(string: "First"))
+        editor.setSelectedRange(NSRange(location: 5, length: 0))
+        editor.toggleList(ordered: true)
+        editor.insertNewline(nil)
+        XCTAssertEqual(editor.string, "1. First\n2. ")
+        editor.insertText("Second", replacementRange: editor.selectedRange())
+        editor.insertNewline(nil)
+        XCTAssertEqual(editor.string, "1. First\n2. Second\n3. ")
+        editor.insertNewline(nil)
+        XCTAssertEqual(editor.string, "1. First\n2. Second\n")
+        XCTAssertNil(editor.typingAttributes[HTMLFragmentAppKit.listKindKey])
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))
