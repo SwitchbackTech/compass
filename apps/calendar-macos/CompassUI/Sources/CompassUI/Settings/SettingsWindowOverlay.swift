@@ -12,17 +12,22 @@ public struct SettingsWindowOverlay: View {
 
     public var body: some View {
         if model.settingsStore.isPresented {
-            ZStack {
-                theme.panelBackdropColor
-                    .ignoresSafeArea()
-                    .onTapGesture { model.closeSettingsIfAllowed() }
-                HStack(alignment: .top, spacing: 0) {
-                    nav
-                    Divider().overlay(theme.borderColor)
-                    content
+            GeometryReader { geometry in
+                ZStack {
+                    theme.panelBackdropColor
+                        .ignoresSafeArea()
+                        .onTapGesture { model.closeSettingsIfAllowed() }
+                    HStack(alignment: .top, spacing: 0) {
+                        nav
+                        Divider().overlay(theme.borderColor)
+                        content
+                    }
+                    .frame(
+                            width: min(640, max(0, geometry.size.width - 32)),
+                            height: min(620, max(0, geometry.size.height - 32))
+                        )
+                    .overlayPanelChrome()
                 }
-                .frame(width: 640, height: 620)
-                .overlayPanelChrome()
             }
             .accessibilityIdentifier("compass-native-settings")
         }
