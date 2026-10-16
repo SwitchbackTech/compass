@@ -183,7 +183,7 @@ final class NativeGridKeyboardRouter {
                 } else if model.settingsStore.isPresented {
                     model.closeSettingsIfAllowed()
                 } else {
-                    return false
+                    model.authStore.closeModal()
                 }
                 return true
             }
