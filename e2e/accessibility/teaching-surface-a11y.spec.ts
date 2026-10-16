@@ -4,7 +4,7 @@ import {
   createEventTitle,
   fillTitleAndSaveEventForm,
   openTimedEventFormWithKeyboard,
-  prepareCalendarPage,
+  prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
 
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -87,7 +87,7 @@ test("a pointer-sourced teaching pill exposes status semantics without axe viola
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
   });
 
-  await prepareCalendarPage(page);
+  await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Pointer A11y");
   await openTimedEventFormWithKeyboard(page);
@@ -96,10 +96,14 @@ test("a pointer-sourced teaching pill exposes status semantics without axe viola
   const eventButton = page
     .locator("#mainGrid")
     .getByRole("button", { name: title });
+  await eventButton.scrollIntoViewIfNeeded();
   await eventButton.click({ force: true });
 
   const pill = page.locator("[data-pointer-hint]");
   await expect(pill).toBeVisible();
+  await expect(pill).toHaveAttribute("role", "status");
+  await expect(pill).toHaveAttribute("aria-live", "polite");
+  await expect(pill).not.toHaveAttribute("data-pointer-hint-grid-slot", "");
   await expect(pill).toContainText("Press");
 
   await expectNoAxeViolations(page, {
