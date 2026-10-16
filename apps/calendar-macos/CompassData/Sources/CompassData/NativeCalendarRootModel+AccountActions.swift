@@ -39,6 +39,8 @@ extension NativeCalendarRootModel {
         defer { isLoggingOut = false }
         do {
             try await signOut()
+            discardDraftConfirmed()
+            undoStore.clear()
             pendingLogoutConfirmation = false
         } catch {
             logoutError = "Could not log out. Try again."

@@ -98,4 +98,21 @@ final class LocalDataExportTests: XCTestCase {
         XCTAssertFalse(model.calendars.isEmpty)
     }
 
+    @MainActor
+    func testCancelledLogoutPreservesDraftAndConfirmedLogoutClosesIt() async throws {
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: try DemoSeedFixture.load())
+        model.viewStore.view = .week
+        model.createTimedDraft(activity: .keyboardPlace)
+        XCTAssertNotNil(model.draftStore.gridDraft)
+        await model.authStore.bootstrap(forceDemoSignedIn: true)
+        model.requestLogout()
+        model.cancelLogout()
+        XCTAssertNotNil(model.draftStore.gridDraft)
+        model.requestLogout()
+        await model.confirmLogout()
+        XCTAssertNil(model.draftStore.gridDraft)
+        XCTAssertFalse(model.undoStore.canUndo)
+    }
+
 }

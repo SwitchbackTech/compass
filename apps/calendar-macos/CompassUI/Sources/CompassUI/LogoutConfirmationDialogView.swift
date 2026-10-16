@@ -12,6 +12,11 @@ struct LogoutConfirmationDialogView: View {
                 Text("Your synced events will be hidden until you log back in.")
                     .font(.rubik(14))
                     .foregroundStyle(theme.textColor)
+                if model.draftStore.gridDraft != nil {
+                    Text("Unsaved event changes will be discarded.")
+                        .font(.rubik(14))
+                        .foregroundStyle(theme.textColor)
+                }
                 if let error = model.logoutError {
                     Text(error)
                         .font(.rubik(14))
