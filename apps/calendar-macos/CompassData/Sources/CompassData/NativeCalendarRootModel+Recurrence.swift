@@ -119,6 +119,14 @@ extension NativeCalendarRootModel {
                 ),
                 let optimistic = GridEventDraftMapping.optimisticEvent(from: draft, baseline: baseline)
             else { return }
+            if let baseline, !undoStore.isRestoringHistory() {
+                if scope == .this, UndoStore.isUndoableRecurrence(baseline),
+                   UndoStore.isUndoableRecurrence(optimistic) {
+                    undoStore.record(.edit(id: eventId, before: baseline, after: optimistic))
+                } else {
+                    undoStore.record(.unrecorded)
+                }
+            }
             await persistDraftOptimistic(savedId: eventId.rawValue) {
                 try await eventsStore.replaceOptimistic(
                     id: eventId,
