@@ -234,7 +234,7 @@ final class DescriptionTextView: NSTextView {
 
     private func promptAndApplyLink() {
         let selected = selectedRange()
-        guard selected.length > 0 else { return }
+        guard isEditable, selected.length > 0 else { return }
         let alert = NSAlert()
         alert.messageText = "Add Link"
         alert.informativeText = "Enter a URL for the selected text."
