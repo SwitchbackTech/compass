@@ -252,6 +252,7 @@ public struct RootView: View {
                 selectedDate: model.viewStore.anchorDate,
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
+                visibleDayCount: model.viewStore.visibleDayCount,
                 trailingHeader: {
                     TrialBadgeView(billingStore: model.billingStore)
                 }

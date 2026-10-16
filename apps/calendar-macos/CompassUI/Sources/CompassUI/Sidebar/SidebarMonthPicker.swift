@@ -5,6 +5,7 @@ public struct SidebarMonthPicker: View {
     @Environment(\.nativeWebTheme) private var theme
     @Binding public var displayedMonth: Date
     public let selectedDate: Date
+    public let visibleDayCount: Int
     public let onSelectDate: (Date) -> Void
     /// Day holding keyboard focus (`i`), drawn with a ring.
     public let focusedDate: Date?
@@ -15,11 +16,13 @@ public struct SidebarMonthPicker: View {
         selectedDate: Date,
         onSelectDate: @escaping (Date) -> Void,
         focusedDate: Date? = nil,
+        visibleDayCount: Int = 1,
         trailingHeader: (() -> some View)? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
         self.onSelectDate = onSelectDate
+        self.visibleDayCount = visibleDayCount
         self.focusedDate = focusedDate
         if let trailingHeader {
             self.trailingHeader = AnyView(trailingHeader())
@@ -30,47 +33,102 @@ public struct SidebarMonthPicker: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(monthTitle)
-                    .font(.rubik(13))
-                    .foregroundStyle(theme.textColor)
-                Spacer()
-                if let trailingHeader {
-                    trailingHeader
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    monthHeader
+                    if let trailingHeader { trailingHeader.fixedSize() }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    monthHeader
+                    if let trailingHeader { trailingHeader }
                 }
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
-                ForEach(dayCells, id: \.self) { day in
-                    if let day {
-                        Button {
-                            onSelectDate(day)
-                        } label: {
-                            Text(dayNumber(day))
-                                .font(.rubik(12))
-                                .frame(maxWidth: .infinity, minHeight: 24)
-                                .foregroundStyle(theme.textColor)
-                                .background(
-                                    isSameDay(day, selectedDate)
-                                        ? theme.textMutedColor.opacity(0.35)
-                                        : Color.clear
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                                .overlay {
-                                    if let focusedDate, isSameDay(day, focusedDate) {
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .stroke(theme.accentColor, lineWidth: 2)
-                                    }
-                                }
+            VStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    ForEach(0 ..< 7, id: \.self) { index in
+                        Text(weekdayLabel(index))
+                            .font(.rubik(11))
+                            .foregroundStyle(theme.textMutedColor)
+                            .frame(maxWidth: .infinity, minHeight: 20)
+                            .accessibilityHidden(true)
+                    }
+                }
+                ForEach(0 ..< dayCells.count / 7, id: \.self) { row in
+                    let days = Array(dayCells[(row * 7) ..< (row * 7 + 7)])
+                    HStack(spacing: 4) {
+                        ForEach(days, id: \.self) { day in
+                            dayButton(day)
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(dayAccessibilityLabel(day))
-                    } else {
-                        Color.clear.frame(minHeight: 24)
+                    }
+                    .background {
+                        if days.contains(where: { isInRange($0, from: selectedDate) })
+                            || (visibleDayCount > 1 && days.contains(where: { isInRange($0, from: focusedDate ?? selectedDate) }))
+                        {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(theme.textMutedColor.opacity(0.15))
+                        }
+                    }
+                    .overlay {
+                        if visibleDayCount > 1, let focusedDate, days.contains(where: { isInRange($0, from: focusedDate) }) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(theme.accentColor, lineWidth: 2)
+                                .allowsHitTesting(false)
+                        }
                     }
                 }
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Date navigation")
         .accessibilityIdentifier("compass-native-month-picker")
+    }
+
+    private var monthHeader: some View {
+        HStack(spacing: 8) {
+            Text(monthTitle)
+                .font(.rubik(13))
+                .foregroundStyle(theme.textColor)
+                .fixedSize()
+            HStack(spacing: 4) {
+                monthButton("Previous month", symbol: "chevron.left") { shiftMonth(-1) }
+                monthButton("Next month", symbol: "chevron.right") { shiftMonth(1) }
+                monthButton("Current month", symbol: "arrow.uturn.backward") {
+                    displayedMonth = Date()
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func dayButton(_ day: Date) -> some View {
+        let calendar = EffectiveTimeZone.calendar
+        let selected = isInRange(day, from: focusedDate ?? selectedDate)
+        let ink = visibleDayCount == 1 ? selected : selected && calendar.isDateInToday(day)
+        return Button {
+            onSelectDate(day)
+        } label: {
+            Text(dayNumber(day))
+                .font(.rubik(12, weight: selected ? .semibold : .regular))
+                .foregroundStyle(ink ? theme.backgroundColor : isDisplayedMonth(day) ? theme.textColor : theme.textMutedColor)
+                .frame(width: 24, height: 24)
+                .background {
+                    if ink {
+                        Circle().fill(theme.textColor)
+                    } else if calendar.isDateInToday(day) {
+                        Circle().fill(theme.textMutedColor.opacity(0.2))
+                    }
+                }
+                .overlay {
+                    if visibleDayCount == 1, let focusedDate, calendar.isDate(day, inSameDayAs: focusedDate) {
+                        Circle().stroke(theme.accentColor, lineWidth: 2)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(dayAccessibilityLabel(day))
+        .accessibilityAddTraits(isInRange(day, from: selectedDate) ? .isSelected : [])
     }
 
     private var monthTitle: String {
@@ -81,34 +139,52 @@ public struct SidebarMonthPicker: View {
         return formatter.string(from: displayedMonth)
     }
 
-    private var dayCells: [Date?] {
+    private var weekStart: Int {
+        visibleDayCount == 1 ? 1 : EffectiveTimeZone.calendar.component(.weekday, from: selectedDate)
+    }
+
+    private var dayCells: [Date] {
+        SidebarMonthLayout.days(in: displayedMonth, weekStart: weekStart, calendar: EffectiveTimeZone.calendar)
+    }
+
+    private func weekdayLabel(_ index: Int) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.veryShortWeekdaySymbols[(weekStart - 1 + index) % 7]
+    }
+
+    private func isDisplayedMonth(_ date: Date) -> Bool {
+        EffectiveTimeZone.calendar.isDate(date, equalTo: displayedMonth, toGranularity: .month)
+    }
+
+    private func isInRange(_ date: Date, from start: Date) -> Bool {
         let calendar = EffectiveTimeZone.calendar
-        guard let monthInterval = calendar.dateInterval(of: .month, for: displayedMonth),
-              let firstWeek = calendar.dateInterval(of: .weekOfYear, for: monthInterval.start)
-        else {
-            return []
+        let start = calendar.startOfDay(for: start)
+        guard let end = calendar.date(byAdding: .day, value: max(1, visibleDayCount), to: start) else { return false }
+        return date >= start && date < end
+    }
+
+    private func shiftMonth(_ offset: Int) {
+        if let next = EffectiveTimeZone.calendar.date(byAdding: .month, value: offset, to: displayedMonth) {
+            displayedMonth = next
         }
-        var days: [Date?] = []
-        var cursor = firstWeek.start
-        while cursor < monthInterval.end || days.count % 7 != 0 {
-            if cursor >= monthInterval.start, cursor < monthInterval.end {
-                days.append(cursor)
-            } else if days.count < 42 {
-                days.append(nil)
-            }
-            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
-            if days.count >= 42 { break }
+    }
+
+    private func monthButton(_ label: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 10))
+                .foregroundStyle(theme.textMutedColor)
+                .frame(width: 18, height: 24)
+                .contentShape(Rectangle())
         }
-        return days
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .help(label)
     }
 
     private func dayNumber(_ date: Date) -> String {
         String(EffectiveTimeZone.calendar.component(.day, from: date))
-    }
-
-    private func isSameDay(_ lhs: Date, _ rhs: Date) -> Bool {
-        EffectiveTimeZone.calendar.isDate(lhs, inSameDayAs: rhs)
     }
 
     private func dayAccessibilityLabel(_ date: Date) -> String {
