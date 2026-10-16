@@ -366,6 +366,12 @@ public final class NativeCalendarRootModel {
         await syncConnectionsStore.reloadFromMetadata()
     }
 
+    public var onExportLocalData: ((Data, String) async throws -> Bool)?
+    public internal(set) var isExportingLocalData = false
+    public internal(set) var pendingLogoutConfirmation = false
+    public internal(set) var isLoggingOut = false
+    public internal(set) var logoutError: String?
+
     public func signOut() async throws {
         try await authStore.signOut()
     }

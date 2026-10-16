@@ -104,6 +104,7 @@ public struct SettingsWindowOverlay: View {
             SettingsThemeSectionView(settingsStore: model.settingsStore)
             SettingsLaunchAtLoginSectionView(settingsStore: model.settingsStore)
             SettingsQuickAddHotkeySectionView(settingsStore: model.settingsStore)
+            SettingsDataActionsSectionView(model: model)
             if model.isSignedIn {
                 SettingsAccountsSectionView(syncStore: model.syncConnectionsStore)
             }

@@ -95,6 +95,10 @@ extension NativeCalendarRootModel {
             authStore.openModal(.signUp)
         case "log-in":
             authStore.openModal(.login)
+        case "export-data":
+            Task { await exportLocalData() }
+        case "log-out":
+            requestLogout()
         case "subscribe":
             handleShortcut(.otherSubscribe)
         default:

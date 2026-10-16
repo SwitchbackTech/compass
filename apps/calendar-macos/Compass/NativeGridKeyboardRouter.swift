@@ -118,6 +118,11 @@ final class NativeGridKeyboardRouter {
 
     func handleFlagsChanged(_ event: NSEvent) {
         let commandDown = event.modifierFlags.contains(.command)
+        if model.settingsStore.isPresented || model.authStore.isModalPresented || model.pendingLogoutConfirmation {
+            model.setPageJumpHintsVisible(false)
+            model.formFieldDigitHintsVisible = false
+            return
+        }
         if model.blockPartyKeyboardCaptureActive {
             model.handleBlockPartyFlagsChanged(commandDown: commandDown)
             return
@@ -134,7 +139,56 @@ final class NativeGridKeyboardRouter {
     }
 
     func handleKeyDown(_ event: NSEvent) -> Bool {
-        if handleUndoRedoKeyDown(event) {
+        if model.pendingLogoutConfirmation {
+            guard let key = KeyEvent(nsEvent: event) else { return false }
+            if key.key == .named(.escape), key.modifiers.isEmpty {
+                model.cancelLogout()
+                return true
+            }
+            if key.key == .named(.enter), key.modifiers.isEmpty {
+                Task { await model.confirmLogout() }
+                return true
+            }
+            return false
+        }
+        // Native controls own editing shortcuts, including undo and redo.
+        let editingText = (NSApp.keyWindow?.firstResponder as? NSTextView)?.isEditable == true
+        let modalOwnsKeyboard = model.settingsStore.isPresented || model.authStore.isModalPresented
+        if modalOwnsKeyboard && !model.overlayKeyboardCaptureActive {
+            guard let key = KeyEvent(nsEvent: event) else { return false }
+            if key.matches(KeyChord(modifiers: [.command], token: .character("k"))) {
+                model.toggleCommandPalette()
+                return true
+            }
+            if model.settingsStore.isPresented, model.settingsStore.page == .accounts,
+                model.settingsStore.timezoneDialogPurpose == nil, !editingText,
+                key.modifiers.isEmpty, case .character(let letter) = key.key {
+                if letter == "e" {
+                    Task { await model.exportLocalData() }
+                    return true
+                }
+                if letter == "o", model.isSignedIn {
+                    model.requestLogout()
+                    return true
+                }
+            }
+            if key.key == .named(.escape), key.modifiers.isEmpty {
+                if model.settingsStore.timezoneDialogPurpose != nil {
+                    model.settingsStore.dismissTimezoneDialog()
+                } else if model.settingsStore.isPresented {
+                    model.closeSettingsIfAllowed()
+                } else {
+                    return false
+                }
+                return true
+            }
+            return false
+        }
+        if editingText, event.modifierFlags.contains(.command),
+            event.charactersIgnoringModifiers?.lowercased() == "z" {
+            return false
+        }
+        if !model.overlayKeyboardCaptureActive, handleUndoRedoKeyDown(event) {
             return true
         }
         if handleRecurrenceDeletePromotionKeyDown(event) {
@@ -164,15 +218,6 @@ final class NativeGridKeyboardRouter {
                 return true
             }
             return false
-        }
-
-        if model.settingsStore.isPresented,
-            model.settingsStore.timezoneDialogPurpose == nil,
-            keyEvent.key == .named(.escape),
-            keyEvent.modifiers.isEmpty
-        {
-            model.closeSettingsIfAllowed()
-            return true
         }
 
         if model.pendingDiscardDraftConfirmation {
@@ -241,9 +286,7 @@ final class NativeGridKeyboardRouter {
         dispatcher.isTextInputFocused =
             model.overlayKeyboardCaptureActive || model.isEventFormVisible
         if model.overlayKeyboardCaptureActive {
-            if handleOverlayKeyDown(keyEvent) {
-                return true
-            }
+            return handleOverlayKeyDown(keyEvent)
         }
 
         if model.isEventFormVisible {
@@ -253,6 +296,7 @@ final class NativeGridKeyboardRouter {
             if handleEventFormKeys(keyEvent) {
                 return true
             }
+            return false
         }
 
         // Sidebar and banner focus own their keys before the grid's draft keys,
@@ -382,6 +426,14 @@ final class NativeGridKeyboardRouter {
                 model.formFieldDigitHintsVisible = false
                 return true
             }
+        }
+
+        if let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
+            // Return saves single-line fields; descriptions retain native newlines.
+            let isSingleLineReturn = textView.isFieldEditor
+                && keyEvent.key == .named(.enter) && keyEvent.modifiers.isEmpty
+            let isPalette = keyEvent.matches(KeyChord(modifiers: [.command], token: .character("k")))
+            guard isSingleLineReturn || isPalette else { return false }
         }
 
         dispatcher.shortcutContext = model.shortcutContext
