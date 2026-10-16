@@ -311,7 +311,7 @@ public final class TimeGridView: NSView {
         timedContentView.frame = NSRect(x: 0, y: 0, width: contentWidth, height: gridHeight)
         syncPinnedHeaderScrollX()
 
-        renderHourGutter(snapshot: snapshot, hourHeight: hourHeight, gridHeight: gridHeight)
+        renderHourGutter(snapshot: snapshot, hourHeight: hourHeight)
         renderHeaders(snapshot: snapshot, headerHeight: headerHeight)
         renderAllDayColumns(snapshot: snapshot, allDayHeight: allDayHeight, headerHeight: headerHeight)
         renderTimedGrid(snapshot: snapshot, hourHeight: hourHeight, gridHeight: gridHeight)
@@ -321,8 +321,7 @@ public final class TimeGridView: NSView {
 
     private func renderHourGutter(
         snapshot: GridLayoutSnapshot,
-        hourHeight: Double,
-        gridHeight: Double
+        hourHeight: Double
     ) {
         hourGutterView.subviews.forEach { $0.removeFromSuperview() }
         let palette = themePalette
@@ -356,7 +355,6 @@ public final class TimeGridView: NSView {
             hourHeight: hourHeight,
             palette: palette,
             marginWidth: margin)
-        _ = gridHeight
     }
 
     private func renderHourColumn(

@@ -9,7 +9,6 @@ import {
   getNotificationPort,
   type NotificationPort,
 } from "@web/notifications/notification.port";
-import { trackNotificationPermissionState } from "@web/notifications/notification-diagnostics";
 
 /** Where a toggle came from for analytics. */
 export type NotificationToggleSource = "palette";
@@ -82,6 +81,10 @@ const startExternalSubscriptions = (): (() => void) => {
     STORAGE_KEYS.NOTIFICATIONS_ENABLED,
     emit,
   );
+  const unblocked = subscribeToStorageKey(
+    STORAGE_KEYS.NOTIFICATIONS_BLOCKED_BANNER_DISMISSED,
+    emit,
+  );
   const onVisibilityChange = () => {
     if (document.visibilityState === "visible") emit();
   };
@@ -91,12 +94,15 @@ const startExternalSubscriptions = (): (() => void) => {
   return () => {
     unobserve();
     unstorage();
+    unblocked();
     document.removeEventListener("visibilitychange", onVisibilityChange);
     window.removeEventListener("focus", emit);
   };
 };
 
-const subscribe = (onChange: () => void): (() => void) => {
+export const subscribeToNotificationState = (
+  onChange: () => void,
+): (() => void) => {
   listeners.add(onChange);
   if (subscriberCount === 0) {
     stopExternal = startExternalSubscriptions();
@@ -113,9 +119,22 @@ const subscribe = (onChange: () => void): (() => void) => {
   };
 };
 
+export function trackNotificationPermissionState(
+  source: NotificationToggleSource | "runtime",
+): void {
+  const port = getNotificationPort();
+  track("notifications_permission", {
+    source,
+    pref_enabled: isNotificationsPrefEnabled(),
+    permission: port.getPermission(),
+    supported: port.isSupported(),
+    effectively_on: areNotificationsEffectivelyOn(),
+  });
+}
+
 export function useNotificationsEffectivelyOn(): boolean {
   return useSyncExternalStore(
-    subscribe,
+    subscribeToNotificationState,
     areNotificationsEffectivelyOn,
     () => false,
   );

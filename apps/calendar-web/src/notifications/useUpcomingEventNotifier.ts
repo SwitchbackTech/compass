@@ -4,9 +4,9 @@ import { useTodayTimedEvents } from "@web/components/Sidebar/UpNextCard/useUpNex
 import { getNotificationPort } from "@web/notifications/notification.port";
 import {
   isNotificationsPrefEnabled,
+  trackNotificationPermissionState,
   useNotificationsEffectivelyOn,
 } from "@web/notifications/notification.state";
-import { trackNotificationPermissionState } from "@web/notifications/notification-diagnostics";
 import {
   announceUpcomingEvents,
   toNotifiableEvents,
