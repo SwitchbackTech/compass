@@ -1,10 +1,11 @@
 import { notificationActions } from "@web/notifications/notification.state";
+import { type NotificationBlockedBannerKind } from "@web/notifications/notification-blocked-banner.util";
 
 export function NotificationPermissionBanner({
   kind,
   onDismiss,
 }: {
-  kind: "permission" | "show_blocked";
+  kind: NotificationBlockedBannerKind;
   onDismiss: () => void;
 }) {
   const message =
