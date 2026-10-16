@@ -12,8 +12,6 @@ import { type NotificationPort } from "@web/notifications/notification.port";
 import {
   recordNotificationShowFailure,
   resetNotificationShowFailureCount,
-  trackNotificationScheduled,
-  trackNotificationSkipped,
 } from "@web/notifications/notification-diagnostics";
 import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { dayEventQueryRange } from "@web/views/Day/util/day-window.util";
@@ -145,7 +143,7 @@ export function announceUpcomingEvents(
   const announced = pruneFiredKeys(firedKeys, now);
   for (const { event, reminderMinutes } of due) {
     const key = notificationKey(event, reminderMinutes);
-    trackNotificationScheduled(reminderMinutes);
+    track("notifications_scheduled", { reminder_minutes: reminderMinutes });
     const shown = showUpcomingEventNotification(
       port,
       event,
@@ -161,7 +159,7 @@ export function announceUpcomingEvents(
     }
     // A silent browser drop must not burn the key: the next tick retries.
     recordNotificationShowFailure();
-    trackNotificationSkipped("show_failed");
+    track("notifications_skipped", { reason: "show_failed" });
     track("notifications_show_failed");
   }
   return announced;

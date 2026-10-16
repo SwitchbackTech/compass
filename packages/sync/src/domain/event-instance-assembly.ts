@@ -160,19 +160,10 @@ const toPopupReminderMinutes = (
   event: EventRecord,
   seriesMaster?: EventRecord,
 ): { popupReminderMinutes?: readonly number[] } => {
-  const own = reminderMinutesFromProviderMetadata(event.providerMetadata);
-  if (own !== undefined) {
-    return { popupReminderMinutes: own };
-  }
-  if (seriesMaster) {
-    const inherited = reminderMinutesFromProviderMetadata(
-      seriesMaster.providerMetadata,
-    );
-    if (inherited !== undefined) {
-      return { popupReminderMinutes: inherited };
-    }
-  }
-  return {};
+  const minutes =
+    reminderMinutesFromProviderMetadata(event.providerMetadata) ??
+    reminderMinutesFromProviderMetadata(seriesMaster?.providerMetadata);
+  return minutes !== undefined ? { popupReminderMinutes: minutes } : {};
 };
 
 const toInstanceContent = (event: EventRecord) => {

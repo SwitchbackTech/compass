@@ -22,7 +22,6 @@ describe("pickNotificationBlockedBannerKind", () => {
       STORAGE_KEYS.NOTIFICATIONS_BLOCKED_BANNER_DISMISSED,
     );
     resetNotificationShowFailureCount();
-    if (typeof sessionStorage !== "undefined") sessionStorage.clear();
     resetNotificationPort();
   });
 
