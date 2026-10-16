@@ -23,3 +23,4 @@ public enum UITestDescriptionFormattingAccessibility {
         public static let bulletListOn = "bulletListOn"
     }
 }
+
