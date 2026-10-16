@@ -21,7 +21,7 @@ extension NativeCalendarRootModel {
         guard pendingInvitationDraft != nil else { return }
         invitationPrompt = nil
         pendingInvitationDraft = nil
-        pendingSaveInvitation = .none
+        pendingSaveInvitation = InvitationEnum.none
         Task { await requestSaveDraft() }
     }
 
