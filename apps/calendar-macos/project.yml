@@ -61,6 +61,7 @@ targets:
         MACOSX_DEPLOYMENT_TARGET: "14.0"
     sources:
       - CompassKitTests
+      - CompassNativeTests
       - Compass/NSEvent+KeyEvent.swift
     resources:
       - path: CompassKitTests/Fixtures
