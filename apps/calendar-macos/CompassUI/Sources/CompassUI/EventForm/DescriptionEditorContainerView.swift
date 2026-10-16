@@ -57,10 +57,12 @@ final class DescriptionEditorContainerView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit {
-        if let formattingActionObserver {
+    override func willMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil, let formattingActionObserver {
             NotificationCenter.default.removeObserver(formattingActionObserver)
+            self.formattingActionObserver = nil
         }
+        super.willMove(toWindow: newWindow)
     }
 
     override func layout() {
@@ -101,10 +103,8 @@ final class DescriptionEditorContainerView: NSView {
         )
     }
 
-    private func performFormattingAction(_ notification: Notification) {
-        guard let raw = notification.userInfo?[UITestDescriptionFormattingAccessibility.Key.action] as? String,
-              let action = UITestDescriptionFormattingAccessibility.Action(rawValue: raw)
-        else { return }
+    private func performFormattingAction(_ raw: String) {
+        guard let action = UITestDescriptionFormattingAccessibility.Action(rawValue: raw) else { return }
         switch action {
         case .bold: textView.toggleBold(nil)
         case .italic: textView.toggleItalic(nil)
