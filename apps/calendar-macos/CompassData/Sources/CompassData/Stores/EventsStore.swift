@@ -84,7 +84,18 @@ public final class EventsStore {
             start: key.start,
             end: key.end
         )
-        let events = try await eventsAPI.list(query)
+        let events: [Event]
+        do {
+            events = try await eventsAPI.list(query)
+        } catch let error as URLError {
+            guard !Task.isCancelled, case .stale = coverage,
+                  try rangeCache.coverage(for: key) == coverage,
+                  [.notConnectedToInternet, .networkConnectionLost, .timedOut,
+                   .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed].contains(error.code)
+            else { throw error }
+            // Keep the old coverage timestamp so the next load still retries.
+            return try eventsInRange(key: key)
+        }
         let systemEvents = try systemCalendarEvents(for: key)
         let merged = events + systemEvents
         try repository.upsert(events: merged, isLocal: false)
