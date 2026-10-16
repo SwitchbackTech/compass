@@ -10,7 +10,7 @@ struct EventFormSectionChrome: ViewModifier {
             .controlSize(.small)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
-            .background(theme.surfacePanelColor)
+            .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: 4))
             .overlay(
                 RoundedRectangle(cornerRadius: 4)

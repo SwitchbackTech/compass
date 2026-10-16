@@ -11,6 +11,7 @@ private protocol NativeThemePalette {
     var background: ThemeTokenColor { get }
     var surface: ThemeTokenColor { get }
     var surfacePanel: ThemeTokenColor { get }
+    var surfaceOverlay: ThemeTokenColor { get }
     var text: ThemeTokenColor { get }
     var textMuted: ThemeTokenColor { get }
     var border: ThemeTokenColor { get }
@@ -59,6 +60,7 @@ public enum NativeWebTheme: String, Sendable, CaseIterable {
     public var backgroundColor: Color { palette.background.swiftUIColor }
     public var surfaceColor: Color { palette.surface.swiftUIColor }
     public var surfacePanelColor: Color { palette.surfacePanel.swiftUIColor }
+    public var surfaceOverlayColor: Color { palette.surfaceOverlay.swiftUIColor }
     public var textColor: Color { palette.text.swiftUIColor }
     public var textMutedColor: Color { palette.textMuted.swiftUIColor }
     public var borderColor: Color { palette.border.swiftUIColor }

@@ -92,7 +92,7 @@ public struct EventFormView: View {
                         )
                         .frame(minHeight: 72, maxHeight: 140)
                         .padding(8)
-                        .background(theme.surfacePanelColor)
+                        .background(theme.surfaceOverlayColor)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
