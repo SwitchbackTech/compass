@@ -27,6 +27,7 @@ public final class NativeCalendarRootModel {
     /// Title of the focused grid event for native UI tests and accessibility probes.
     public private(set) var gridFocusAccessibilityLabel: String?
     public private(set) var calendars: [CompassCalendar] = []
+    var localCalendarId: String?
     public var isSignedIn: Bool { authStore.authenticated }
     public var shortcutRegistry: ShortcutRegistry { environment.shortcutRegistry }
     public private(set) var contentTrackWidth: CGFloat = 1010
@@ -1108,11 +1109,13 @@ public final class NativeCalendarRootModel {
             if let demoPresentation {
                 let calendar = demoPresentation.calendarListItem()
                 try calendarRepository.upsert(calendars: [calendar])
+                localCalendarId = calendar.id
             } else {
                 let sentinel = try LocalCalendarSentinel.calendarId(
                     repository: environment.userMetadataRepository)
                 let calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
                 try calendarRepository.upsert(calendars: [calendar])
+                localCalendarId = calendar.id
             }
             calendars = try calendarRepository.fetchAll()
             rebuildPresentation()

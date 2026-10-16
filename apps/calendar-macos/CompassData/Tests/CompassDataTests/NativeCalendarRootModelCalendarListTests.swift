@@ -8,7 +8,7 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
 
     override func setUp() async throws {
         let fixture = try DemoSeedFixture.load()
-        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
         model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
         await model.start()
     }
@@ -27,7 +27,8 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
         try XCTUnwrap(model.calendarListGroups.first?.calendars.first)
     }
 
-    func testNumberKeyTogglesRowInFocusedList() throws {
+    func testNumberKeyTogglesRowInFocusedList() async throws {
+        await model.authStore.bootstrap(forceDemoSignedIn: true)
         let calendar = try firstCalendar()
         XCTAssertFalse(model.pickCalendar(key: "1"), "No list has focus yet")
 
@@ -39,7 +40,8 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
         XCTAssertFalse(model.pickCalendar(key: "="), "Key past the last row does nothing")
     }
 
-    func testCollapsedListIgnoresNumberKeys() throws {
+    func testCollapsedListIgnoresNumberKeys() async throws {
+        await model.authStore.bootstrap(forceDemoSignedIn: true)
         let calendar = try firstCalendar()
         let key = model.calendarListGroups[0].id
         model.toggleAccountCollapsed(key)
@@ -53,7 +55,32 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
         XCTAssertTrue(model.calendarVisibilityStore.isVisible(calendar.id))
     }
 
+    func testAnonymousCalendarHasNoVisibilityDigitPick() throws {
+        let calendar = try XCTUnwrap(model.anonymousCalendar)
+        XCTAssertTrue(model.calendarListGroups.isEmpty)
+        model.focusCalendarList()
+        XCTAssertFalse(model.pickCalendar(key: "1"))
+        XCTAssertTrue(model.calendarVisibilityStore.isVisible(calendar.id))
+    }
+
+    func testAdditionalCalendarsRemainToggleableInLocalMode() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
+        let extra = LocalCalendarSentinel.synthesizeCalendar(id: CalendarId(rawValue: "507f1f77bcf86cd799439022"))
+        try environment.calendarRepository.upsert(calendars: [extra])
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+
+        XCTAssertNotNil(model.anonymousCalendar)
+        XCTAssertEqual(model.calendarListGroups.flatMap(\.calendars).map(\.id), [extra.id])
+        model.focusCalendarList()
+        XCTAssertTrue(model.pickCalendar(key: "1"))
+        XCTAssertFalse(model.calendarVisibilityStore.isVisible(extra.id))
+        XCTAssertTrue(model.calendarVisibilityStore.isVisible(try XCTUnwrap(model.anonymousCalendar).id))
+    }
+
     func testUndoRestoresCalendarVisibility() async throws {
+        await model.authStore.bootstrap(forceDemoSignedIn: true)
         let calendar = try firstCalendar()
         model.toggleCalendarVisibility(calendar)
         XCTAssertFalse(model.calendarVisibilityStore.isVisible(calendar.id))
