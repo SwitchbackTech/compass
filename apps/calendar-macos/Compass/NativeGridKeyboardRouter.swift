@@ -119,6 +119,8 @@ final class NativeGridKeyboardRouter {
     func handleFlagsChanged(_ event: NSEvent) {
         let commandDown = event.modifierFlags.contains(.command)
         if model.settingsStore.isPresented || model.authStore.isModalPresented || model.pendingLogoutConfirmation {
+            modHold.handleFlagsChanged(modifierDown: false)
+            formModHold.handleFlagsChanged(modifierDown: false)
             model.setPageJumpHintsVisible(false)
             model.formFieldDigitHintsVisible = false
             return
