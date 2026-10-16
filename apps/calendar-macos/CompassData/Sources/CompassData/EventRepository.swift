@@ -36,6 +36,16 @@ public struct EventRepository: Sendable {
         }
     }
 
+    public func clearRemote() throws {
+        try db.write { db in
+            let records = try EventRecord.filter(Column("isLocal") == false).fetchAll(db)
+            for record in records {
+                try EventRecord.deleteOne(db, key: record.id)
+                try EventFTS.delete(db: db, eventId: record.id)
+            }
+        }
+    }
+
     public func fetch(id: EventId) throws -> Event? {
         try db.read { db in
             guard let record = try EventRecord.fetchOne(db, key: id.rawValue) else {
