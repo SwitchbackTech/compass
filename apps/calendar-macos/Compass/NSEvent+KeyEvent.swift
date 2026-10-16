@@ -25,7 +25,7 @@ extension KeyToken {
     init?(nsEvent: NSEvent) {
         switch nsEvent.keyCode {
         case 53: self = .named(.escape)
-        case 36: self = .named(.enter)
+        case 36, 76: self = .named(.enter)
         case 48: self = .named(.tab)
         case 126: self = .named(.arrowUp)
         case 125: self = .named(.arrowDown)
@@ -38,7 +38,9 @@ extension KeyToken {
             guard let chars = nsEvent.charactersIgnoringModifiers?.lowercased(), let first = chars.first else {
                 return nil
             }
-            if first.isLetter || first.isNumber {
+            if first == "\r" || first == "\n" || first == "\u{3}" {
+                self = .named(.enter)
+            } else if first.isLetter || first.isNumber {
                 self = .character(first)
             } else {
                 self = .punctuation(String(first))

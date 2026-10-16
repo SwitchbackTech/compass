@@ -48,70 +48,84 @@ public struct EventFormView: View {
             .accessibilityIdentifier("compass-event-form-title")
             .pageJumpChipAnchor(id: "form-title")
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    EventFormScheduleSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormRecurrenceSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormCalendarSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormColorSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormLocationField(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    DescriptionEditorView(
-                        html: Binding(
-                            get: { draft.description },
-                            set: { model.updateDraftFromForm(description: $0) }
-                        ),
-                        resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
-                        isFocused: model.eventFormFocusedField == .description,
-                        isEditable: !model.isEventFormReadOnly(for: draft)
-                    )
-                    .frame(minHeight: 72, maxHeight: 140)
-                    .padding(8)
-                    .background(theme.surfacePanelColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(
-                                model.eventFormFocusedField == .description ? theme.accentColor : theme.borderColor,
-                                lineWidth: 1
-                            )
-                    )
-                    .pageJumpChipAnchor(id: "form-description")
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        EventFormScheduleSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.start) .id(EventFormField.end)
+                        EventFormRecurrenceSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.recurrence)
+                        EventFormCalendarSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.calendar)
+                        EventFormColorSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.color)
+                        EventFormLocationField(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.location)
+                        DescriptionEditorView(
+                            html: Binding(
+                                get: { draft.description },
+                                set: { model.updateDraftFromForm(description: $0) }
+                            ),
+                            resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
+                            isFocused: model.eventFormFocusedField == .description,
+                            isEditable: !model.isEventFormReadOnly(for: draft)
+                        )
+                        .frame(minHeight: 72, maxHeight: 140)
+                        .padding(8)
+                        .background(theme.surfacePanelColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    model.eventFormFocusedField == .description ? theme.accentColor : theme.borderColor,
+                                    lineWidth: 1
+                                )
+                        )
+                        .pageJumpChipAnchor(id: "form-description")
+                        .id(EventFormField.description)
 
-                    EventFormConferenceSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormAttendeesSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
-                    EventFormRsvpSection(
-                        model: model,
-                        draft: draft,
-                        focusField: model.eventFormFocusedField
-                    )
+                        EventFormConferenceSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.conference)
+                        EventFormAttendeesSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.attendees)
+                        EventFormRsvpSection(
+                            model: model,
+                            draft: draft,
+                            focusField: model.eventFormFocusedField
+                        )
+                        .id(EventFormField.rsvp)
+                    }
+                }
+                .onChange(of: model.eventFormFocusedField) { _, field in
+                    proxy.scrollTo(field, anchor: .center)
                 }
             }
             if !model.isEventFormReadOnly(for: draft) {
