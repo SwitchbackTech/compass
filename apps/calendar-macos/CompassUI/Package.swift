@@ -19,5 +19,10 @@ let package = Package(
                 .swiftLanguageMode(.v6),
             ]
         ),
+        .testTarget(
+            name: "CompassUIUnitTests",
+            dependencies: ["CompassUI"],
+            swiftSettings: [.swiftLanguageMode(.v6)]
+        ),
     ]
 )

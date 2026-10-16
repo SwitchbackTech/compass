@@ -54,7 +54,8 @@ public struct EventFormView: View {
                     set: { model.updateDraftFromForm(description: $0) }
                 ),
                 resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
-                isFocused: model.eventFormFocusedField == .description
+                isFocused: model.eventFormFocusedField == .description,
+                isEditable: !model.isEventFormReadOnly(for: draft)
             )
             .frame(minHeight: 72, maxHeight: 140)
             .padding(8)
