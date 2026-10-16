@@ -66,8 +66,10 @@ final class NativeCalendarRootModelCalendarListTests: XCTestCase {
     func testAdditionalCalendarsRemainToggleableInLocalMode() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true, sessionStore: MemorySessionStore(tokens: nil))
-        let extra = LocalCalendarSentinel.synthesizeCalendar(id: CalendarId(rawValue: "507f1f77bcf86cd799439022"))
+        let event = try StoreSampleEvents.timedEvent(id: "additional-local", title: "Additional local event")
+        let extra = LocalCalendarSentinel.synthesizeCalendar(id: event.calendarId)
         try environment.calendarRepository.upsert(calendars: [extra])
+        try environment.localEventRepository.put(LocalEventRecord(id: event.id, event: event, isDemo: false))
         let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
         await model.start()
 
