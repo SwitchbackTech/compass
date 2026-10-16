@@ -1,0 +1,30 @@
+import CompassData
+import SwiftUI
+
+struct ShortcutLevelBadgeView: View {
+    @Environment(\.nativeWebTheme) private var theme
+    @Bindable var levelsStore: LevelsStore
+    let onOpenShortcuts: () -> Void
+
+    var body: some View {
+        if !levelsStore.badgeHidden {
+            let level = levelsStore.levelSnapshot
+            Button(action: onOpenShortcuts) {
+                Text(levelsStore.badgeLabel)
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textColor)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(theme.surfaceColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.borderColor, lineWidth: 1))
+                    .scaleEffect(levelsStore.badgePulsing ? 1.06 : 1)
+                    .animation(.easeInOut(duration: 0.35), value: levelsStore.badgePulsing)
+            }
+            .buttonStyle(.plain)
+            .help("Level \(level.level): \(level.name). \(level.used) of \(level.total) shortcuts used.")
+            .accessibilityLabel("Shortcut level \(level.level), \(level.name). \(level.used) of \(level.total) shortcuts used. Open shortcuts.")
+            .accessibilityIdentifier("compass-native-shortcut-level-badge")
+        }
+    }
+}

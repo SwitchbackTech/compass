@@ -819,7 +819,7 @@ public final class NativeCalendarRootModel {
     private func shiftMonth(by months: Int) {
         let calendar = EffectiveTimeZone.calendar
         if let next = calendar.date(byAdding: .month, value: months, to: monthPickerMonth) {
-            monthPickerMonth = next
+            browseMonth(next)
         }
     }
 

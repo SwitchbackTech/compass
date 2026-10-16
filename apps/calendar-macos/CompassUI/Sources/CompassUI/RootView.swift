@@ -248,13 +248,16 @@ public struct RootView: View {
     private var sidebarBody: some View {
         VStack(alignment: .leading, spacing: 24) {
             SidebarMonthPicker(
-                displayedMonth: $model.monthPickerMonth,
+                displayedMonth: Binding(get: { model.monthPickerMonth }, set: { model.browseMonth($0) }),
                 selectedDate: model.viewStore.anchorDate,
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
                 visibleDayCount: model.viewStore.visibleDayCount,
                 trailingHeader: {
-                    TrialBadgeView(billingStore: model.billingStore)
+                    HStack(spacing: 8) {
+                        TrialBadgeView(billingStore: model.billingStore)
+                        ShortcutLevelBadgeView(levelsStore: model.levelsStore) { model.toggleShortcutsLegend() }
+                    }
                 }
             )
             .pageJumpChipAnchor(id: "month-picker")

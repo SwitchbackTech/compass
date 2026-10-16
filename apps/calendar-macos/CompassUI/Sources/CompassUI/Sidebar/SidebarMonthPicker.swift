@@ -127,6 +127,7 @@ public struct SidebarMonthPicker: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .allowsHitTesting(false)
         .accessibilityLabel(dayAccessibilityLabel(day))
         .accessibilityAddTraits(isInRange(day, from: selectedDate) ? .isSelected : [])
     }

@@ -48,35 +48,14 @@ public struct EventFormView: View {
             .accessibilityIdentifier("compass-event-form-title")
             .pageJumpChipAnchor(id: "form-title")
 
-            DescriptionEditorView(
-                html: Binding(
-                    get: { draft.description },
-                    set: { model.updateDraftFromForm(description: $0) }
-                ),
-                resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
-                isFocused: model.eventFormFocusedField == .description
-            )
-            .frame(minHeight: 72, maxHeight: 140)
-            .padding(8)
-            .background(theme.surfacePanelColor)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(
-                        model.eventFormFocusedField == .description ? theme.accentColor : theme.borderColor,
-                        lineWidth: 1
-                    )
-            )
-            .pageJumpChipAnchor(id: "form-description")
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    EventFormLocationField(
+                    EventFormScheduleSection(
                         model: model,
                         draft: draft,
                         focusField: model.eventFormFocusedField
                     )
-                    EventFormScheduleSection(
+                    EventFormRecurrenceSection(
                         model: model,
                         draft: draft,
                         focusField: model.eventFormFocusedField
@@ -91,11 +70,32 @@ public struct EventFormView: View {
                         draft: draft,
                         focusField: model.eventFormFocusedField
                     )
-                    EventFormRecurrenceSection(
+                    EventFormLocationField(
                         model: model,
                         draft: draft,
                         focusField: model.eventFormFocusedField
                     )
+                    DescriptionEditorView(
+                        html: Binding(
+                            get: { draft.description },
+                            set: { model.updateDraftFromForm(description: $0) }
+                        ),
+                        resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
+                        isFocused: model.eventFormFocusedField == .description
+                    )
+                    .frame(minHeight: 72, maxHeight: 140)
+                    .padding(8)
+                    .background(theme.surfacePanelColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                model.eventFormFocusedField == .description ? theme.accentColor : theme.borderColor,
+                                lineWidth: 1
+                            )
+                    )
+                    .pageJumpChipAnchor(id: "form-description")
+
                     EventFormConferenceSection(
                         model: model,
                         draft: draft,
@@ -112,6 +112,25 @@ public struct EventFormView: View {
                         focusField: model.eventFormFocusedField
                     )
                 }
+            }
+            if !model.isEventFormReadOnly(for: draft) {
+                Button {
+                    Task { await model.saveDraft() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Save")
+                        ShortcutHintChip(label: "Enter")
+                    }
+                    .font(.rubik(14, weight: .medium))
+                    .foregroundStyle(theme.backgroundColor)
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(theme.textColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+                .buttonStyle(.plain)
+                .disabled(model.hasPendingEventMutations)
+                .accessibilityLabel("Save")
+                .accessibilityIdentifier("compass-event-form-save")
             }
         }
         .padding(.horizontal, 16)
