@@ -71,6 +71,7 @@ public final class BookingStore {
             saveErrorMessage = nil
             isDiscardConfirmationPresented = false
             isLoadingPage = false
+            pageLoadFailed = false
             isLoadingStatus = false
             isSaving = false
             serverPage = nil

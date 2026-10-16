@@ -335,6 +335,9 @@ public final class NativeCalendarRootModel {
         if demoPresentation != nil {
             authStore.closeModal()
         }
+        if isSignedIn, (try? AccountCacheIdentity.matches(userId: authStore.userId, repository: environment.userMetadataRepository)) != true {
+            guard resetAccountCaches(discardDraft: false) else { return }
+        }
         try? DemoDataSeeder.seedIfNeeded(
             localEvents: environment.localEventRepository,
             metadata: environment.userMetadataRepository,
@@ -435,6 +438,7 @@ public final class NativeCalendarRootModel {
 
     private func resetAccountCaches(discardDraft: Bool = true) -> Bool {
         sessionRevision += 1
+        keyboardCreateSettleGeneration += 1
         refreshTask?.cancel()
         paletteSearchTask?.cancel()
         paletteEventSearchHits = []
@@ -452,6 +456,7 @@ public final class NativeCalendarRootModel {
             let localId = try LocalCalendarSentinel.calendarId(repository: environment.userMetadataRepository)
             localIds.insert(demoPresentation?.calendarId ?? localId.rawValue)
             try calendarRepository.removeCachedCalendars(except: localIds)
+            try AccountCacheIdentity.record(userId: authStore.userId, repository: environment.userMetadataRepository)
             return true
         } catch {
             statusToastStore.show(id: "session-cache-error", message: "Could not refresh calendar data. Try logging in again.")

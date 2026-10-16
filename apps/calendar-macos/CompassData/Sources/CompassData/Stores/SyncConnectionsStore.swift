@@ -32,6 +32,7 @@ public final class SyncConnectionsStore {
 
     public func resetSession() {
         sessionRevision += 1
+        isBusy = false
         connections = []
         lastError = nil
     }
@@ -155,8 +156,9 @@ public final class SyncConnectionsStore {
     }
 
     private func runBusy(_ work: () async -> Void) async {
+        let revision = sessionRevision
         isBusy = true
-        defer { isBusy = false }
+        defer { if revision == sessionRevision { isBusy = false } }
         await work()
     }
 }
