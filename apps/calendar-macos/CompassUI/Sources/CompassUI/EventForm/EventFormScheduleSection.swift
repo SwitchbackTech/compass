@@ -14,11 +14,11 @@ struct EventFormScheduleSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("All-day", isOn: Binding(
+            Toggle("All day", isOn: Binding(
                 get: { draft.schedule.kind == .allDay },
                 set: { model.setDraftAllDay($0) }
             ))
-            .toggleStyle(.switch)
+            .toggleStyle(.checkbox)
             .disabled(scheduleLocked)
             .accessibilityIdentifier("compass-event-form-allday")
 

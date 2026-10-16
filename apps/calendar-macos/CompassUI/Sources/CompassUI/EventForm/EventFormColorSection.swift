@@ -13,7 +13,10 @@ struct EventFormColorSection: View {
             Text("Color")
                 .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
-            HStack(spacing: 6) {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 20, maximum: 20), spacing: 6)],
+                alignment: .leading, spacing: 6
+            ) {
                 colorSwatch(label: "Default", slot: nil)
                 ForEach(EventColorSlot.allCases, id: \.rawValue) { slot in
                     colorSwatch(label: slot.rawValue, slot: slot)
@@ -30,16 +33,18 @@ struct EventFormColorSection: View {
         return Button {
             model.updateDraftFromForm(color: .some(slot))
         } label: {
-            Circle()
+            RoundedRectangle(cornerRadius: 4)
                 .fill(swatchColor(slot))
                 .frame(width: 20, height: 20)
                 .overlay(
-                    Circle()
+                    RoundedRectangle(cornerRadius: 4)
                         .stroke(selected ? theme.textColor : theme.borderColor, lineWidth: selected ? 2 : 1)
                 )
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private func swatchColor(_ slot: EventColorSlot?) -> Color {
