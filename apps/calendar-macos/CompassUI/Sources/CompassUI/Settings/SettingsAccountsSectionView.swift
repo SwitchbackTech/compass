@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsAccountsSectionView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var syncStore: SyncConnectionsStore
+    @State private var confirmingDisconnectId: String?
     @State private var showCalDavFallback = false
     @State private var appleEmail = ""
     @State private var applePassword = ""
@@ -25,6 +26,11 @@ struct SettingsAccountsSectionView: View {
             }
         }
         .accessibilityIdentifier("settings-section-accounts")
+        .onChange(of: syncStore.connections.map(\.id)) { _, ids in
+            if let confirmingDisconnectId, !ids.contains(confirmingDisconnectId) {
+                self.confirmingDisconnectId = nil
+            }
+        }
     }
 
     @ViewBuilder
@@ -33,19 +39,34 @@ struct SettingsAccountsSectionView: View {
             Text(connection.accountEmail ?? connection.id)
                 .font(.rubik(13))
                 .foregroundStyle(theme.textColor)
-            HStack(spacing: 8) {
-                Button("Reconnect") {
-                    Task { await syncStore.reconnect(connection: connection) }
+            if confirmingDisconnectId == connection.id {
+                Text("Disconnect this account?")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textColor)
+                HStack(spacing: 8) {
+                    Button("Cancel") { confirmingDisconnectId = nil }
+                    Button("Disconnect", role: .destructive) {
+                        confirmingDisconnectId = nil
+                        Task { await syncStore.disconnect(connectionId: connection.id) }
+                    }
+                    .accessibilityLabel("Confirm disconnect \(connection.accountEmail ?? "calendar account")")
+                }
+                .buttonStyle(.plain)
+                .font(.rubik(12))
+                .disabled(syncStore.isBusy)
+            } else {
+                HStack(spacing: 8) {
+                    Button("Reconnect") {
+                        Task { await syncStore.reconnect(connection: connection) }
+                    }
+                    Button("Disconnect") { confirmingDisconnectId = connection.id }
+                        .accessibilityLabel("Disconnect \(connection.accountEmail ?? "calendar account")")
                 }
                 .disabled(syncStore.isBusy)
-                Button("Disconnect") {
-                    Task { await syncStore.disconnect(connectionId: connection.id) }
-                }
-                .disabled(syncStore.isBusy)
+                .buttonStyle(.plain)
+                .font(.rubik(12))
+                .foregroundStyle(theme.accentColor)
             }
-            .buttonStyle(.plain)
-            .font(.rubik(12))
-            .foregroundStyle(theme.accentColor)
         }
         .accessibilityIdentifier("settings-accounts-list")
     }
