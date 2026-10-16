@@ -10,14 +10,18 @@ struct SettingsDataActionsSectionView: View {
             Button(model.isExportingLocalData ? "Exporting…" : "Export data") {
                 Task { await model.exportLocalData() }
             }
+            .accessibilityIdentifier("settings-export-data")
             .disabled(model.isExportingLocalData)
             Text("Export user-created events stored on this Mac. Synced calendar caches and sample events are excluded.")
                 .font(.rubik(12))
                 .foregroundStyle(theme.textMutedColor)
             if model.isSignedIn {
                 Button("Log out") { model.requestLogout() }
+                    .accessibilityIdentifier("settings-log-out")
                     .disabled(model.isLoggingOut)
             }
         }
+        .accessibilityIdentifier("settings-section-data-actions")
     }
 }
+

@@ -88,6 +88,7 @@ public struct SettingsWindowOverlay: View {
 
     private var accountsContent: some View {
         Group {
+            SettingsDataActionsSectionView(model: model)
             SettingsTimezoneSectionView(
                 settingsStore: model.settingsStore,
                 viewStore: model.viewStore)
@@ -98,7 +99,6 @@ public struct SettingsWindowOverlay: View {
             SettingsThemeSectionView(settingsStore: model.settingsStore)
             SettingsLaunchAtLoginSectionView(settingsStore: model.settingsStore)
             SettingsQuickAddHotkeySectionView(settingsStore: model.settingsStore)
-            SettingsDataActionsSectionView(model: model)
             if model.isSignedIn {
                 SettingsAccountsSectionView(syncStore: model.syncConnectionsStore)
             }
