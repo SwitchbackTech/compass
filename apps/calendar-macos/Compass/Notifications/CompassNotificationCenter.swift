@@ -1,4 +1,5 @@
 import AppKit
+import CompassData
 import CompassKit
 import UserNotifications
 
@@ -25,6 +26,7 @@ final class CompassNotificationCenter {
     }
 
     func requestAuthorizationIfNeeded() async {
+        guard UITestLaunchPolicy.allowsSystemNotifications else { return }
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         if permissionString(for: settings) == "default", !didRequestAuthorization {
@@ -35,6 +37,7 @@ final class CompassNotificationCenter {
 
     @discardableResult
     func showNative(_ payload: DesktopNotificationPayload) async -> Bool {
+        guard UITestLaunchPolicy.allowsSystemNotifications else { return false }
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard permissionString(for: settings) == "granted" else {
