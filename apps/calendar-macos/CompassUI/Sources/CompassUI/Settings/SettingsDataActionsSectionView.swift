@@ -24,3 +24,4 @@ struct SettingsDataActionsSectionView: View {
         .accessibilityIdentifier("settings-section-data-actions")
     }
 }
+
