@@ -4,31 +4,28 @@ import dayjs from "@core/util/date/dayjs";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
+import { type OpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
 interface Props {
+  datePickers: OpenDatePickerSide;
   displayEndDate: Date;
   draft: GridEventDraft;
-  isEndDatePickerOpen: boolean;
-  isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
   onScheduleChange: OnEventFormScheduleChange;
-  setIsStartDatePickerOpen: (arg0: boolean) => void;
-  setIsEndDatePickerOpen: (arg0: boolean) => void;
 }
 
 export const DatePickers: FC<Props> = ({
+  datePickers,
   displayEndDate,
   draft,
-  isEndDatePickerOpen,
-  isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
   onScheduleChange,
-  setIsEndDatePickerOpen,
-  setIsStartDatePickerOpen,
 }) => {
+  const { openSide, open, close, closeAll } = datePickers;
+
   const toAllDayDate = (date: Date) =>
     dayjs(dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)).toDate();
 
@@ -41,7 +38,7 @@ export const DatePickers: FC<Props> = ({
   };
 
   const onSelectStartDate = (start: Date) => {
-    setIsStartDatePickerOpen(false);
+    close("start");
 
     const { shouldAdjust: shouldAdjustEnd, compliment } =
       shouldAdjustComplimentDate("start", {
@@ -59,7 +56,7 @@ export const DatePickers: FC<Props> = ({
   };
 
   const onSelectEndDate = (end: Date) => {
-    setIsEndDatePickerOpen(false);
+    close("end");
 
     const { shouldAdjust, compliment } = shouldAdjustComplimentDate("end", {
       start: selectedStartDate,
@@ -81,15 +78,8 @@ export const DatePickers: FC<Props> = ({
     }
   };
 
-  const closeOpenPickers = () => {
-    const wasOpen = isStartDatePickerOpen || isEndDatePickerOpen;
-    setIsStartDatePickerOpen(false);
-    setIsEndDatePickerOpen(false);
-    return wasOpen;
-  };
-
   const onPickerEscape = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Escape" && closeOpenPickers()) {
+    if (event.key === "Escape" && closeAll()) {
       event.stopPropagation();
     }
   };
@@ -100,12 +90,9 @@ export const DatePickers: FC<Props> = ({
         arrowDownOpensCalendar
         calendarClassName="startDatePicker"
         inputId="eventFormStartDate"
-        isOpen={isStartDatePickerOpen}
-        onCalendarClose={() => setIsStartDatePickerOpen(false)}
-        onCalendarOpen={() => {
-          setIsEndDatePickerOpen(false);
-          setIsStartDatePickerOpen(true);
-        }}
+        isOpen={openSide === "start"}
+        onCalendarClose={() => close("start")}
+        onCalendarOpen={() => open("start")}
         onCommit={onSelectStartDate}
         onKeyDown={onPickerEscape}
         selected={selectedStartDate}
@@ -116,12 +103,9 @@ export const DatePickers: FC<Props> = ({
         arrowDownOpensCalendar
         calendarClassName="endDatePicker"
         inputId="eventFormEndDate"
-        isOpen={isEndDatePickerOpen}
-        onCalendarClose={() => setIsEndDatePickerOpen(false)}
-        onCalendarOpen={() => {
-          setIsStartDatePickerOpen(false);
-          setIsEndDatePickerOpen(true);
-        }}
+        isOpen={openSide === "end"}
+        onCalendarClose={() => close("end")}
+        onCalendarOpen={() => open("end")}
         onCommit={onSelectEndDate}
         onKeyDown={onPickerEscape}
         selected={displayEndDate}

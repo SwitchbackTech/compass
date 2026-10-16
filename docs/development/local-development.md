@@ -346,6 +346,32 @@ builds, or the `COMPASS_INTERNAL` Info.plist flag. It exposes theme toggles,
 **Open Quick Add Panel** (for XCUITest and manual panel checks), and staging
 host switches. Release DMGs without those flags hide the menu.
 
+### Shell commands for Debug builds
+
+Debug builds (`#if DEBUG`, so never a Release DMG) accept `compass://debug/...`
+links that run the same model paths as the keyboard, without activating the
+app. Pass the build with `-a` so the link reaches it and not another installed
+Compass, and `-g` to keep it in the background:
+
+```bash
+APP=apps/calendar-macos/build/DerivedData/Build/Products/Debug/Compass.app
+open -g -a "$APP" "compass://debug/create?title=Standup&start=2026-10-16T09:30&minutes=30"
+open -g -a "$APP" "compass://debug/undo"
+```
+
+| Command | Effect |
+|---|---|
+| `create?title=…[&start=yyyy-MM-ddTHH:mm][&minutes=60]` | Saves a timed event on the default calendar. Without `start` it uses the next keyboard-create slot. |
+| `delete?id=…` | Deletes one event (`scope: this`). |
+| `undo`, `redo` | Same as Edit → Undo / Redo. |
+| `today`, `goto?date=yyyy-MM-dd` | Moves the grid. |
+| `view/day`, `view/week`, `view/life` | Switches the view. |
+
+Commands sent during a cold launch wait until the calendar model has started.
+Check results without the UI: in local mode, events live in
+`~/Library/Application Support/Compass/compass.sqlite` (`local_event`).
+Commands record shortcut usage like the keys they mirror.
+
 ### Unsigned local builds
 
 `project.yml` uses ad hoc signing (`CODE_SIGN_IDENTITY: "-"`). Xcode builds

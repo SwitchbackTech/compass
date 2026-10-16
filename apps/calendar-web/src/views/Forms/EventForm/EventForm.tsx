@@ -12,7 +12,6 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
 } from "react";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
@@ -83,6 +82,7 @@ import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/Calend
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
+import { useOpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
@@ -370,8 +370,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     /********
      * State
      ********/
-    const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
-    const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const datePickers = useOpenDatePickerSide();
 
     const setLatestDraft = useCallback(
       (nextDraft: SetStateAction<GridEventDraft | null>) => {
@@ -679,19 +678,16 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         : selectedEndDate;
 
     const dateTimeSectionProps = {
+      datePickers,
       displayEndDate,
       draft,
       endTime,
-      isEndDatePickerOpen,
-      isStartDatePickerOpen,
       onScheduleChange,
       scheduleEnd,
       scheduleStart,
       selectedEndDate,
       selectedStartDate,
       startTime,
-      setIsEndDatePickerOpen,
-      setIsStartDatePickerOpen,
     };
 
     const recurrenceSectionProps = {
@@ -859,13 +855,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           {...props}
           name={ID_EVENT_FORM}
           onMouseUp={() => {
-            if (isStartDatePickerOpen) {
-              setIsStartDatePickerOpen(false);
-            }
-
-            if (isEndDatePickerOpen) {
-              setIsEndDatePickerOpen(false);
-            }
+            datePickers.closeAll();
           }}
           onMouseDown={(e) => {
             e.stopPropagation();

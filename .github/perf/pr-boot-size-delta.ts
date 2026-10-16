@@ -4,7 +4,7 @@
  * the PR has the bundle-size-ok label.
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -56,14 +56,6 @@ function measureBootGzip(cwd: string, metricsPath: string): BootMetrics {
   return parseMetricsFile(metricsPath);
 }
 
-function ghJson(args: string[]): unknown {
-  const out = execFileSync("gh", args, {
-    encoding: "utf8",
-    cwd: repoRoot,
-  }).trim();
-  return out ? JSON.parse(out) : null;
-}
-
 function hasOverrideLabel(prNumber: string): boolean {
   const out = execFileSync(
     "gh",
@@ -73,48 +65,41 @@ function hasOverrideLabel(prNumber: string): boolean {
   return out.split("\n").filter(Boolean).includes(overrideLabel);
 }
 
+function listPrComments(
+  prNumber: string,
+): Array<{ id: number; body?: string }> {
+  const out = execFileSync(
+    "gh",
+    [
+      "api",
+      `repos/${process.env.GITHUB_REPOSITORY}/issues/${prNumber}/comments`,
+      "--paginate",
+    ],
+    { encoding: "utf8", cwd: repoRoot },
+  ).trim();
+  return out ? (JSON.parse(out) as Array<{ id: number; body?: string }>) : [];
+}
+
 function upsertStickyComment(prNumber: string, body: string): void {
-  const marker = commentMarker;
-  const fullBody = `${marker}\n${body}`;
-  const comments = ghJson([
-    "api",
-    `repos/${process.env.GITHUB_REPOSITORY}/issues/${prNumber}/comments`,
-    "--paginate",
-  ]) as Array<{ id: number; body?: string }> | null;
-
-  const existing = (comments ?? []).find((comment) =>
-    (comment.body ?? "").includes(marker),
+  const fullBody = `${commentMarker}\n${body}`;
+  const existing = listPrComments(prNumber).find((comment) =>
+    (comment.body ?? "").includes(commentMarker),
   );
-  if (existing) {
-    execFileSync(
-      "gh",
-      [
-        "api",
-        "--method",
-        "PATCH",
-        `repos/${process.env.GITHUB_REPOSITORY}/issues/comments/${existing.id}`,
-        "-f",
-        `body=${fullBody}`,
-      ],
-      { cwd: repoRoot, stdio: "inherit" },
-    );
-    return;
-  }
-
-  const commentFile = path.join(
-    tmpdir(),
-    `compass-boot-comment-${process.pid}.md`,
+  const repo = process.env.GITHUB_REPOSITORY;
+  execFileSync(
+    "gh",
+    [
+      "api",
+      "--method",
+      existing ? "PATCH" : "POST",
+      existing
+        ? `repos/${repo}/issues/comments/${existing.id}`
+        : `repos/${repo}/issues/${prNumber}/comments`,
+      "-f",
+      `body=${fullBody}`,
+    ],
+    { cwd: repoRoot, stdio: "inherit" },
   );
-  writeFileSync(commentFile, fullBody, "utf8");
-  try {
-    execFileSync(
-      "gh",
-      ["pr", "comment", prNumber, "--body-file", commentFile],
-      { cwd: repoRoot, stdio: "inherit" },
-    );
-  } finally {
-    rmSync(commentFile, { force: true });
-  }
 }
 
 function main(): void {
@@ -137,6 +122,8 @@ function main(): void {
   const headMetrics = measureBootGzip(repoRoot, headMetricsPath);
 
   const baseWorktree = mkdtempSync(path.join(tmpdir(), "compass-boot-base-"));
+  let worktreeAdded = false;
+  let overBudget = false;
   try {
     execFileSync(
       "git",
@@ -146,6 +133,7 @@ function main(): void {
         stdio: "inherit",
       },
     );
+    worktreeAdded = true;
     execFileSync("bun", ["install", "--frozen-lockfile"], {
       cwd: baseWorktree,
       stdio: "inherit",
@@ -170,18 +158,30 @@ function main(): void {
     }
 
     const overridden = prNumber ? hasOverrideLabel(prNumber) : false;
-    if (deltaBytes > maxDeltaBytes && !overridden) {
+    overBudget = deltaBytes > maxDeltaBytes && !overridden;
+    if (overBudget) {
       console.error(
         `Boot gzip grew ${deltaBytes} B (> ${maxDeltaBytes} B) vs ${baseSha}.`,
       );
-      process.exit(1);
     }
   } finally {
     rmSync(headMetricsPath, { force: true });
-    execFileSync("git", ["worktree", "remove", "--force", baseWorktree], {
-      cwd: repoRoot,
-      stdio: "inherit",
-    });
+    // `git worktree add` can fail (bad sha, dirty state); removing a worktree
+    // that was never added throws over the real error, so clean up the bare
+    // mkdtemp directory instead.
+    if (worktreeAdded) {
+      execFileSync("git", ["worktree", "remove", "--force", baseWorktree], {
+        cwd: repoRoot,
+        stdio: "inherit",
+      });
+    } else {
+      rmSync(baseWorktree, { force: true, recursive: true });
+    }
+  }
+
+  // Exiting inside the try above would skip the cleanup in `finally`.
+  if (overBudget) {
+    process.exit(1);
   }
 }
 

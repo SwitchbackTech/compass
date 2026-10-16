@@ -10,6 +10,7 @@ import {
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
 import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
 import { timedScheduleFromDateChange } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
+import { useOpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 import { TimePicker } from "./TimePicker";
 
@@ -38,8 +39,7 @@ export const TimePickers: FC<Props> = ({
 }) => {
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [isEndMenuOpen, setIsEndMenuOpen] = useState(false);
-  const [isStartDateOpen, setIsStartDateOpen] = useState(false);
-  const [isEndDateOpen, setIsEndDateOpen] = useState(false);
+  const datePickers = useOpenDatePickerSide();
   const [timeError, setTimeError] = useState<string | null>(null);
   const timeErrorId = useId();
 
@@ -105,7 +105,7 @@ export const TimePickers: FC<Props> = ({
   };
 
   const onDateSelected = (changed: "start" | "end", nextDate: Date) => {
-    (changed === "start" ? setIsStartDateOpen : setIsEndDateOpen)(false);
+    datePickers.close(changed);
     const mapped = timedScheduleFromDateChange({
       changed,
       nextDate,
@@ -155,25 +155,15 @@ export const TimePickers: FC<Props> = ({
     closeMenu(changed);
   };
 
-  const openStartDate = () => {
-    setIsEndDateOpen(false);
-    setIsStartDateOpen(true);
-  };
-
-  const openEndDate = () => {
-    setIsStartDateOpen(false);
-    setIsEndDateOpen(true);
-  };
-
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <EventFormDateField
           calendarClassName="timedStartDatePicker"
           inputId="eventFormStartDate"
-          isOpen={isStartDateOpen}
-          onCalendarClose={() => setIsStartDateOpen(false)}
-          onCalendarOpen={openStartDate}
+          isOpen={datePickers.openSide === "start"}
+          onCalendarClose={() => datePickers.close("start")}
+          onCalendarOpen={() => datePickers.open("start")}
           onCommit={(date) => onDateSelected("start", date)}
           selected={selectedStartDate}
           sideLabel="start"
@@ -196,9 +186,9 @@ export const TimePickers: FC<Props> = ({
           <EventFormDateField
             calendarClassName="timedEndDatePicker"
             inputId="eventFormEndDate"
-            isOpen={isEndDateOpen}
-            onCalendarClose={() => setIsEndDateOpen(false)}
-            onCalendarOpen={openEndDate}
+            isOpen={datePickers.openSide === "end"}
+            onCalendarClose={() => datePickers.close("end")}
+            onCalendarOpen={() => datePickers.open("end")}
             onCommit={(date) => onDateSelected("end", date)}
             selected={selectedEndDate}
             sideLabel="end"

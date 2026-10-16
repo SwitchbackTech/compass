@@ -10,6 +10,7 @@ final class MainMenuController: NSObject {
 
     var onSelectNativeTheme: ((NativeWebTheme) -> Void)?
     var onReloadAppHost: (() -> Void)?
+    var onShowMainWindow: (() -> Void)?
     weak var nativeRootController: NativeRootController?
     weak var quickAddCoordinator: DesktopQuickAddCoordinator?
 
@@ -109,6 +110,8 @@ final class MainMenuController: NSObject {
             return #selector(useNativeThemeDarkAbyss(_:))
         case .openQuickAddPanel:
             return #selector(openQuickAddPanel(_:))
+        case .showMainWindow:
+            return #selector(showMainWindow(_:))
         case let .standardEdit(selectorName):
             return Selector(selectorName)
         case .undo:
@@ -208,6 +211,10 @@ final class MainMenuController: NSObject {
             return
         }
         nativeRootController?.model.redoLastChange()
+    }
+
+    @objc private func showMainWindow(_ sender: Any?) {
+        onShowMainWindow?()
     }
 
     @objc private func openQuickAddPanel(_ sender: Any?) {

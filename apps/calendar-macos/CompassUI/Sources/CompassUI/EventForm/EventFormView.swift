@@ -139,8 +139,8 @@ public struct EventFormView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("compass-event-form")
+        .focusOnAppear($titleFocused)
         .onAppear {
-            titleFocused = true
             model.eventFormFocusedField = .title
         }
         .onChange(of: model.eventFormFocusedField) { _, field in

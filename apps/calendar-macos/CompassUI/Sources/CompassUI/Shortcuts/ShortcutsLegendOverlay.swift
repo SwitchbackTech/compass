@@ -58,7 +58,7 @@ public struct ShortcutsLegendOverlay: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .accessibilityIdentifier("compass-native-shortcuts-legend")
             }
-            .onAppear { searchFocused = true }
+            .focusOnAppear($searchFocused)
         }
     }
 

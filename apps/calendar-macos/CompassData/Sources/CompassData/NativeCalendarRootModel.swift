@@ -787,6 +787,8 @@ public final class NativeCalendarRootModel {
         let delta = direction * viewStore.visibleDayCount
         if let next = calendar.date(byAdding: .day, value: delta, to: startOfView) {
             viewStore.setAnchorDate(next)
+            // Web `MonthPicker` follows the view into the month it lands in.
+            monthPickerMonth = next
             rebuildPresentation()
             scheduleRefreshVisibleRange()
         }
@@ -796,6 +798,7 @@ public final class NativeCalendarRootModel {
         let calendar = EffectiveTimeZone.calendar
         if let next = calendar.date(byAdding: .day, value: days, to: startOfView) {
             viewStore.setAnchorDate(next)
+            monthPickerMonth = next
             rebuildPresentation()
             scheduleRefreshVisibleRange()
         }
