@@ -162,6 +162,9 @@ final class NativeGridKeyboardRouter {
                 model.toggleCommandPalette()
                 return true
             }
+            if model.handleSettingsNavigation(key, isTextInputFocused: editingText) {
+                return true
+            }
             if model.settingsStore.isPresented, model.settingsStore.page == .accounts,
                 model.settingsStore.timezoneDialogPurpose == nil, !editingText,
                 key.modifiers.isEmpty, case .character(let letter) = key.key {

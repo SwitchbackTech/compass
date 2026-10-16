@@ -10,10 +10,6 @@ public struct SettingsWindowOverlay: View {
         self.model = model
     }
 
-    private var showBillingNav: Bool {
-        BillingPlanBadgeResolver.badge(access: model.billingStore.appAccess) != nil
-    }
-
     public var body: some View {
         if model.settingsStore.isPresented {
             ZStack {
@@ -43,12 +39,10 @@ public struct SettingsWindowOverlay: View {
                 .font(.rubik(18))
                 .foregroundStyle(theme.textColor)
             navButton("Accounts", page: .accounts)
-            if model.isSignedIn
-                || (model.settingsStore.guestMeetingSetupActive && model.settingsStore.isPresented)
-            {
+            if model.settingsHasMeetings {
                 navButton("Meetings", page: .booking, attention: model.bookingStore.bookingNeedsAttention)
             }
-            if showBillingNav {
+            if model.settingsHasBilling {
                 navButton("Billing", page: .billing)
             }
             Spacer()
