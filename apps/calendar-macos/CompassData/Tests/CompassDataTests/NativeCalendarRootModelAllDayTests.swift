@@ -6,9 +6,8 @@ import XCTest
 final class NativeCalendarRootModelAllDayTests: XCTestCase {
     func testChangingStartRetainsEndUntilItWouldInvertRange() throws {
         let savedZone = EffectiveTimeZone.identifier
-        EffectiveTimeZone.identifier = "America/Denver"
         defer { EffectiveTimeZone.identifier = savedZone }
-        let model = try model(start: date(7), end: date(10))
+        let model = try model(startDay: 7, endDay: 10)
         model.updateAllDayDraftStart(date(8))
         XCTAssertEqual(model.draftStore.gridDraft?.schedule.end, date(10))
         model.updateAllDayDraftStart(date(12))
@@ -18,9 +17,8 @@ final class NativeCalendarRootModelAllDayTests: XCTestCase {
 
     func testLastIncludedDayStoresExclusiveEndAcrossDaylightSaving() throws {
         let savedZone = EffectiveTimeZone.identifier
-        EffectiveTimeZone.identifier = "America/Denver"
         defer { EffectiveTimeZone.identifier = savedZone }
-        let model = try model(start: date(7), end: date(8))
+        let model = try model(startDay: 7, endDay: 8)
         model.updateAllDayDraftEnd(date(8))
         let draft = try XCTUnwrap(model.draftStore.gridDraft)
         XCTAssertEqual(draft.schedule.end, date(9))
@@ -38,10 +36,11 @@ final class NativeCalendarRootModelAllDayTests: XCTestCase {
         EffectiveTimeZone.calendar.date(from: DateComponents(year: 2026, month: 3, day: day))!
     }
 
-    private func model(start: Date, end: Date) throws -> NativeCalendarRootModel {
+    private func model(startDay: Int, endDay: Int) throws -> NativeCalendarRootModel {
         let model = NativeCalendarRootModel(environment: try NativeCalendarEnvironment(inMemoryDatabase: true))
+        EffectiveTimeZone.identifier = "America/Denver"
         model.draftStore.startGridDraft(activity: .keyboardPlace, draft: GridEventDraft(
-            clientId: .init(rawValue: "all-day"), schedule: .init(start: start, end: end, kind: .allDay),
+            clientId: .init(rawValue: "all-day"), schedule: .init(start: date(startDay), end: date(endDay), kind: .allDay),
             calendarId: .init(rawValue: "cal-1")))
         return model
     }
