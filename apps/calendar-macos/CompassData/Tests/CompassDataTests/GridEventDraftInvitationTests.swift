@@ -29,6 +29,27 @@ final class GridEventDraftInvitationTests: XCTestCase {
         XCTAssertTrue(GridEventDraftGuests.guestsChanged(draft: draft, baseline: baseline))
     }
 
+    func testOptimisticEditPreservesProviderDetailsAndGuestResponses() throws {
+        let source = sampleEvent(attendees: [])
+        let details = EventContent_DetailsPayload(
+            attendees: [.init(displayName: "Ada", email: "ada@example.com", responseStatus: .accepted)],
+            colorHex: "#123456", conference: .init(label: "Join", url: "https://example.com/meet"),
+            description: "Notes", kind: "details", location: "Room",
+            organizer: .init(displayName: "Host", email: "host@example.com"), title: "Sample")
+        let baseline = Event(
+            calendarId: source.calendarId, content: .details(details), createdAt: source.createdAt,
+            id: source.id, recurrence: source.recurrence, schedule: source.schedule, updatedAt: source.updatedAt)
+        var draft = try XCTUnwrap(GridEventDraftFromEvent.editDraft(from: baseline))
+        draft.title = "Edited"
+        let optimistic = try XCTUnwrap(GridEventDraftMapping.optimisticEvent(from: draft, baseline: baseline))
+        guard case .details(let edited) = optimistic.content else { return XCTFail("Expected details") }
+        XCTAssertEqual(edited.title, "Edited")
+        XCTAssertEqual(edited.attendees, details.attendees)
+        XCTAssertEqual(edited.organizer, details.organizer)
+        XCTAssertEqual(edited.conference, details.conference)
+        XCTAssertEqual(edited.colorHex, details.colorHex)
+    }
+
     private func sampleEvent(attendees: [EventContentDetailsAttendees]) -> Event {
         Event(
             calendarId: CalendarId(rawValue: "cal1"),
