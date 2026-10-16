@@ -5,6 +5,12 @@ import SwiftUI
 struct SettingsAccountsSectionView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var syncStore: SyncConnectionsStore
+    private enum DisconnectFocus: Hashable {
+        case request(String)
+        case confirm(String)
+    }
+
+    @FocusState private var disconnectFocus: DisconnectFocus?
     @State private var confirmingDisconnectId: String?
     @State private var showCalDavFallback = false
     @State private var appleEmail = ""
@@ -26,6 +32,9 @@ struct SettingsAccountsSectionView: View {
             }
         }
         .accessibilityIdentifier("settings-section-accounts")
+        .onChange(of: confirmingDisconnectId) { previous, current in
+            disconnectFocus = current.map(DisconnectFocus.confirm) ?? previous.map(DisconnectFocus.request)
+        }
         .onChange(of: syncStore.connections.map(\.id)) { _, ids in
             if let confirmingDisconnectId, !ids.contains(confirmingDisconnectId) {
                 self.confirmingDisconnectId = nil
@@ -45,11 +54,16 @@ struct SettingsAccountsSectionView: View {
                     .foregroundStyle(theme.textColor)
                 HStack(spacing: 8) {
                     Button("Cancel") { confirmingDisconnectId = nil }
-                    Button("Disconnect", role: .destructive) {
-                        confirmingDisconnectId = nil
-                        Task { await syncStore.disconnect(connectionId: connection.id) }
+                        .foregroundStyle(theme.textMutedColor)
+                    Button(syncStore.isBusy ? "Disconnecting…" : "Confirm", role: .destructive) {
+                        Task {
+                            await syncStore.disconnect(connectionId: connection.id)
+                            confirmingDisconnectId = nil
+                        }
                     }
-                    .accessibilityLabel("Confirm disconnect \(connection.accountEmail ?? "calendar account")")
+                    .foregroundStyle(theme.errorColor)
+                    .focused($disconnectFocus, equals: .confirm(connection.id))
+                    .accessibilityLabel("Confirm disconnecting \(connection.accountEmail ?? "calendar account")")
                 }
                 .buttonStyle(.plain)
                 .font(.rubik(12))
@@ -60,6 +74,7 @@ struct SettingsAccountsSectionView: View {
                         Task { await syncStore.reconnect(connection: connection) }
                     }
                     Button("Disconnect") { confirmingDisconnectId = connection.id }
+                        .focused($disconnectFocus, equals: .request(connection.id))
                         .accessibilityLabel("Disconnect \(connection.accountEmail ?? "calendar account")")
                 }
                 .disabled(syncStore.isBusy)
