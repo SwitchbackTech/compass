@@ -65,7 +65,7 @@ final class NativeCalendarRootModelUpNextTests: XCTestCase {
         try environment.localEventRepository.putMany([
             LocalEventRecord(id: event.id, event: event, isDemo: false),
         ])
-        model.loadedEvents = try environment.eventsStore.fetchAllEvents()
+        model.loadedEvents = [event]
         model.recordCreateUndo(for: event)
         XCTAssertEqual(upNextTitle(), "Just created")
 
