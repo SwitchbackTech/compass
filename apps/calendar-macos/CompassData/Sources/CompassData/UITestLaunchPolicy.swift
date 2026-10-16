@@ -17,6 +17,15 @@ public enum UITestLaunchPolicy {
         arguments.contains(uiTestLaunchArgument)
     }
 
+    /// Fixture interaction tests must not prompt for or post real system notifications.
+    public static var allowsSystemNotifications: Bool {
+        allowsSystemNotifications(arguments: ProcessInfo.processInfo.arguments)
+    }
+
+    public static func allowsSystemNotifications(arguments: [String]) -> Bool {
+        !arguments.contains(uiTestLaunchArgument)
+    }
+
     /// When set, focuses this grid event once the demo fixture layout is ready (no pointer hint).
     public static var initialGridFocusEventId: String? {
         let args = ProcessInfo.processInfo.arguments
