@@ -316,6 +316,10 @@ final class NativeGridKeyboardRouter {
     /// Probes mirror via `EventFormAccessibilityProbeView` when `-COMPASS_UI_TEST` is set.
     private func handleUITestEventFormTyping(_ keyEvent: KeyEvent) -> Bool {
         guard UITestLaunchPolicy.mirrorsEventFormTitleTyping else { return false }
+        // The title probe is a fallback, never a replacement for a real text editor.
+        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView, editor.isEditable {
+            return false
+        }
         if keyEvent.modifiers == [.command],
             case .character(let char) = keyEvent.key,
             char.lowercased() == "v",

@@ -19,6 +19,12 @@ final class UITestLaunchPolicyTests: XCTestCase {
                 arguments: ["Compass", "-COMPASS_UI_TEST", "-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM"]))
     }
 
+    func testOnlyInteractionTestsSuppressSystemNotificationSideEffects() {
+        XCTAssertTrue(UITestLaunchPolicy.allowsSystemNotifications(arguments: ["/Applications/Compass.app"]))
+        XCTAssertTrue(UITestLaunchPolicy.allowsSystemNotifications(arguments: ["Compass", "-COMPASS_FIXTURE", "demo"]))
+        XCTAssertFalse(UITestLaunchPolicy.allowsSystemNotifications(arguments: ["Compass", "-COMPASS_UI_TEST"]))
+    }
+
     func testUITestLaunchAttachesAccessibilityProbes() {
         XCTAssertTrue(
             UITestLaunchPolicy.attachesAccessibilityProbes(arguments: ["Compass", "-COMPASS_UI_TEST"]))

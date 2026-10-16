@@ -153,24 +153,19 @@ enum HTMLFragmentParser {
         }
 
         var blocks: [HTMLFragmentBlock] = []
-        var cursor = html.startIndex
+        let nsHtml = html as NSString
+        var cursor = 0
         for range in ranges {
-            if range.start > html.distance(from: html.startIndex, to: cursor) {
-                let start = cursor
-                let end = html.index(html.startIndex, offsetBy: range.start)
-                let chunk = String(html[start..<end])
-                if !chunk.isEmpty {
-                    blocks.append(.verbatim(chunk))
-                }
+            if range.start > cursor {
+                let chunk = nsHtml.substring(with: NSRange(location: cursor, length: range.start - cursor))
+                blocks.append(.verbatim(chunk))
             }
-            let sliceStart = html.index(html.startIndex, offsetBy: range.start)
-            let sliceEnd = html.index(html.startIndex, offsetBy: range.end)
-            let slice = String(html[sliceStart..<sliceEnd])
+            let slice = nsHtml.substring(with: NSRange(location: range.start, length: range.end - range.start))
             blocks.append(contentsOf: parseStructuredBlocks(fromSanitized: HTMLFragmentSanitizer.sanitize(slice)))
-            cursor = sliceEnd
+            cursor = range.end
         }
-        if cursor < html.endIndex {
-            blocks.append(.verbatim(String(html[cursor...])))
+        if cursor < nsHtml.length {
+            blocks.append(.verbatim(nsHtml.substring(from: cursor)))
         }
         return HTMLFragmentDocument(blocks: blocks)
     }

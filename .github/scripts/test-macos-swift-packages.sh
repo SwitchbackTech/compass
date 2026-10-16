@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Run `swift test` for pure SwiftPM packages under apps/calendar-macos (no XcodeGen).
+# Run `swift test` for native SwiftPM packages under apps/calendar-macos (no XcodeGen).
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
 
-PACKAGES=(CompassKit CompassData)
+PACKAGES=(CompassKit CompassData CompassUI)
 ran=0
 
 for name in "${PACKAGES[@]}"; do
