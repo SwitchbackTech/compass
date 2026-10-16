@@ -31,6 +31,7 @@ final class DescriptionEditorContainerView: NSView {
             button.bezelStyle = .inline
             button.isBordered = false
             button.setAccessibilityLabel(label)
+            button.setAccessibilityIdentifier(label)
             button.toolTip = label
             button.widthAnchor.constraint(equalToConstant: 24).isActive = true
             button.heightAnchor.constraint(equalToConstant: 24).isActive = true
