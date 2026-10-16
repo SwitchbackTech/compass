@@ -18,7 +18,7 @@ final class DescriptionEditorFormattingTests: XCTestCase {
         editor.typeKey("a", modifierFlags: [.command])
         editor.typeText("Formatted note")
         editor.typeKey("a", modifierFlags: [.command])
-        window.buttons["Bold"].click()
+        window.descendants(matching: .any)["Bold"].click()
         window.typeKey(.enter, modifierFlags: [.command])
         XCTAssertFalse(editor.exists)
 
@@ -27,6 +27,6 @@ final class DescriptionEditorFormattingTests: XCTestCase {
         editor.click()
         editor.typeKey("a", modifierFlags: [.command])
         XCTAssertEqual(editor.value as? String, "Formatted note")
-        XCTAssertEqual(window.buttons["Bold"].value as? String, "1")
+        XCTAssertEqual(window.descendants(matching: .any)["Bold"].value as? String, "1")
     }
 }
