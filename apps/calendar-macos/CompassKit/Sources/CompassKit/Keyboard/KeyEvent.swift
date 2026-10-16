@@ -38,6 +38,10 @@ public struct KeyEvent: Hashable, Sendable {
             return lhs == rhs
         case (.punctuation(let lhs), .punctuation(let rhs)):
             if lhs == rhs { return true }
+            if modifiers.contains(.shift),
+               (lhs == "<" && rhs == "," || lhs == ">" && rhs == ".") {
+                return true
+            }
             if rhs == "?", lhs == "/", modifiers.contains(.shift), chord.modifiers.isEmpty {
                 return true
             }

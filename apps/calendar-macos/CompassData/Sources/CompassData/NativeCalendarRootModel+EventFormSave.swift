@@ -2,6 +2,8 @@ import CompassKit
 import Foundation
 
 extension NativeCalendarRootModel {
+    public var hasPendingEventMutations: Bool { eventsStore.inFlightMutations > 0 }
+
     public func cancelInvitationPrompt() {
         invitationPrompt = nil
         pendingInvitationDraft = nil

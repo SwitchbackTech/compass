@@ -21,25 +21,17 @@ struct ShortcutSidebarFooter: View {
                     }
             }
 
-            if !levelsStore.badgeHidden {
+            if !levelsStore.badgeHidden, let tip = levelsStore.currentTip {
                 HStack(spacing: 8) {
-                    Text(levelsStore.badgeLabel)
-                        .font(.rubik(12))
-                        .foregroundStyle(theme.textColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(theme.surfaceColor)
-                        .clipShape(Capsule())
-                        .scaleEffect(levelsStore.badgePulsing ? 1.06 : 1)
-                        .animation(.easeInOut(duration: 0.35), value: levelsStore.badgePulsing)
-                        .accessibilityIdentifier("compass-native-shortcut-level-badge")
-
-                    if let tip = levelsStore.currentTip {
-                        Text("Try \(tip.label)")
-                            .font(.rubik(11))
-                            .foregroundStyle(theme.textMutedColor)
-                            .lineLimit(2)
-                            .accessibilityIdentifier("compass-native-shortcut-tip")
+                    Text("Try \(tip.label)")
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("compass-native-shortcut-tip")
+                    HStack(spacing: 3) {
+                        ForEach(Array(tip.keycaps.enumerated()), id: \.offset) { _, key in
+                            ShortcutHintChip(label: key)
+                        }
                     }
                 }
             }
