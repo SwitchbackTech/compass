@@ -53,13 +53,28 @@ struct EventFormScheduleSection: View {
                     "Start day",
                     selection: Binding(
                         get: { draft.schedule.start },
-                        set: { updateAllDayStart($0) }
+                        set: { model.updateAllDayDraftStart($0) }
                     ),
                     displayedComponents: [.date]
                 )
-                .labelsHidden()
                 .disabled(scheduleLocked)
                 .accessibilityIdentifier("compass-event-form-start")
+                .pageJumpChipAnchor(id: "form-start")
+
+                DatePicker(
+                    "End day",
+                    selection: Binding(
+                        get: {
+                            EffectiveTimeZone.calendar.date(byAdding: .day, value: -1, to: draft.schedule.end)
+                                ?? draft.schedule.start
+                        },
+                        set: { model.updateAllDayDraftEnd($0) }
+                    ),
+                    displayedComponents: [.date]
+                )
+                .disabled(scheduleLocked)
+                .accessibilityIdentifier("compass-event-form-end")
+                .pageJumpChipAnchor(id: "form-end")
             }
 
             if scheduleLocked {
@@ -90,12 +105,4 @@ struct EventFormScheduleSection: View {
         model.updateDraftFromForm(schedule: schedule)
     }
 
-    private func updateAllDayStart(_ date: Date) {
-        let calendar = EffectiveTimeZone.calendar
-        let start = calendar.startOfDay(for: date)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
-        model.updateDraftFromForm(
-            schedule: DraftSchedule(start: start, end: end, kind: .allDay)
-        )
-    }
 }
