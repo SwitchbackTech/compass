@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
     "compass.onboarding.has-seen-anonymous-save-toast",
   ANONYMOUS_CALENDAR_WRITE_COUNT:
     "compass.onboarding.anonymous-calendar-write-count",
+  HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT:
+    "compass.onboarding.has-dismissed-local-mode-connect-prompt",
   HAS_DISMISSED_DEMO_EVENTS_BANNER:
     "compass.onboarding.has-dismissed-demo-events-banner",
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:

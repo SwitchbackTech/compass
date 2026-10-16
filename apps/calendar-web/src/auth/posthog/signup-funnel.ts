@@ -60,6 +60,7 @@ export type SignupSource =
   | "welcome_modal"
   | `welcome_modal_${ProviderKind}`
   | "anon_nudge"
+  | "local_mode_connect_prompt"
   | "command_palette"
   | "connect_chooser"
   | "shortcut_showcase"
