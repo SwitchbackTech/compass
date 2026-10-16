@@ -1,10 +1,12 @@
 import AppKit
+import CompassData
 
 final class DescriptionEditorContainerView: NSView {
     let textView = DescriptionTextView()
     private let scrollView = NSScrollView()
     private let toolbar = NSStackView()
     private var buttons: [NSButton] = []
+    private var formattingActionObserver: NSObjectProtocol?
 
     override var isFlipped: Bool { true }
 
@@ -39,12 +41,25 @@ final class DescriptionEditorContainerView: NSView {
             buttons.append(button)
         }
         textView.onFormattingChange = { [weak self] in self?.updateControls() }
+        formattingActionObserver = NotificationCenter.default.addObserver(
+            forName: UITestDescriptionFormattingAccessibility.actionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            self?.performFormattingAction(notification)
+        }
         addSubview(toolbar)
         addSubview(scrollView)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    deinit {
+        if let formattingActionObserver {
+            NotificationCenter.default.removeObserver(formattingActionObserver)
+        }
+    }
 
     override func layout() {
         super.layout()
@@ -65,6 +80,34 @@ final class DescriptionEditorContainerView: NSView {
             button.state = selected ? .on : .off
             button.isEnabled = textView.isEditable
             if let tint { button.contentTintColor = tint }
+        }
+        publishFormattingProbeSync(states: states)
+    }
+
+    private func publishFormattingProbeSync(states: [Bool]) {
+        guard UITestLaunchPolicy.attachesAccessibilityProbes else { return }
+        NotificationCenter.default.post(
+            name: UITestDescriptionFormattingAccessibility.syncNotification,
+            object: textView,
+            userInfo: [
+                UITestDescriptionFormattingAccessibility.Key.visible: !textView.isHidden,
+                UITestDescriptionFormattingAccessibility.Key.boldOn: states[0],
+                UITestDescriptionFormattingAccessibility.Key.italicOn: states[1],
+                UITestDescriptionFormattingAccessibility.Key.numberedListOn: states[2],
+                UITestDescriptionFormattingAccessibility.Key.bulletListOn: states[3],
+            ]
+        )
+    }
+
+    private func performFormattingAction(_ notification: Notification) {
+        guard let raw = notification.userInfo?[UITestDescriptionFormattingAccessibility.Key.action] as? String,
+              let action = UITestDescriptionFormattingAccessibility.Action(rawValue: raw)
+        else { return }
+        switch action {
+        case .bold: textView.toggleBold(nil)
+        case .italic: textView.toggleItalic(nil)
+        case .numberedList: textView.toggleNumberedList(nil)
+        case .bulletList: textView.toggleBulletList(nil)
         }
     }
 }

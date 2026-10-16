@@ -62,6 +62,7 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
                     ? { [weak model] newTitle in model?.updateDraftFromForm(title: newTitle) }
                     : nil
             )
+            DescriptionFormattingAccessibilityProbe.publish(visible: visible)
         }
         model.onEventFormTitleAccessibilityProbeTitleSync = { title in
             EventFormAccessibilityProbe.syncTitle(title)
@@ -122,6 +123,7 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
                     model?.updateDraftFromForm(title: newTitle)
                 }
             )
+            DescriptionFormattingAccessibilityProbe.publish(visible: model.isEventFormVisible)
             NativeOverlayProbes.statusToast.attach(to: window)
             NativeOverlayProbes.shortcutsLegend.attach(to: window)
         }
