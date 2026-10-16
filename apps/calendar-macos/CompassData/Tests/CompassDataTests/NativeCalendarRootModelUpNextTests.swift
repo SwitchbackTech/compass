@@ -56,10 +56,11 @@ final class NativeCalendarRootModelUpNextTests: XCTestCase {
     /// agenda still showed the event ("Untitled event in 2m").
     func testUndoRedoUndoOfACreateClearsUpNext() async throws {
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        // Start with a local calendar but no sample events competing for Up next.
+        try environment.userMetadataRepository.upsert(key: DemoDataSeeder.migrationKey, value: true)
         let model = NativeCalendarRootModel(environment: environment)
         await model.start()
-        // The redo re-creates on a writable calendar, so reuse the seed's.
-        let calendarId = try XCTUnwrap(model.loadedEvents.first?.calendarId.rawValue)
+        let calendarId = try XCTUnwrap(model.calendars.first?.id)
         let event = try Self.timedEvent(title: "Just created", startingIn: 2 * 60, calendarId: calendarId)
         let upNextTitle = { model.upNextState.snapshot.upNext?.title }
         try environment.localEventRepository.putMany([
