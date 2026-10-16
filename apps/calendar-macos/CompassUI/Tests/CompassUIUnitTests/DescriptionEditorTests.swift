@@ -78,6 +78,20 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertNil(editor.typingAttributes[HTMLFragmentAppKit.listKindKey])
     }
 
+    func testInsertingAnOrderedItemRenumbersFollowingItems() {
+        let coordinator = DescriptionEditorView.Coordinator(html: .constant(""))
+        let editor = DescriptionTextView()
+        coordinator.textView = editor
+        coordinator.load(html: "<ol><li><p>First</p></li><li><p><strong>Second</strong></p></li></ol><p>Separate</p>", resetKey: "event")
+        editor.setSelectedRange(NSRange(location: 8, length: 0))
+        editor.insertNewline(nil)
+        editor.insertText("New", replacementRange: editor.selectedRange())
+        XCTAssertEqual(editor.string, "1. First\n2. New\n3. Second\nSeparate")
+        let second = (editor.string as NSString).range(of: "Second")
+        let font = editor.textStorage?.attribute(.font, at: second.location, effectiveRange: nil) as? NSFont
+        XCTAssertTrue(font.map { NSFontManager.shared.traits(of: $0).contains(.boldFontMask) } ?? false)
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))

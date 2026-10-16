@@ -202,6 +202,28 @@ final class DescriptionTextView: NSTextView {
         typingAttributes[HTMLFragmentAppKit.listKindKey] = kind
         let number = Int(line.components(separatedBy: ".").first ?? "") ?? 0
         insertText(kind == "unordered" ? "• " : "\(number + 1). ", replacementRange: selectedRange())
+        if kind == "ordered" {
+            renumberFollowingItems(after: paragraphRange(containing: selectedRange()), startingAt: number + 2)
+            didChangeText()
+        }
+    }
+
+    private func renumberFollowingItems(after paragraph: NSRange, startingAt firstNumber: Int) {
+        guard let storage = textStorage else { return }
+        var offset = NSMaxRange(paragraph) + 1
+        var number = firstNumber
+        while offset < storage.length {
+            let range = paragraphRange(containing: NSRange(location: offset, length: 0))
+            guard range.length > 0,
+                  storage.attribute(HTMLFragmentAppKit.listKindKey, at: offset, effectiveRange: nil) as? String == "ordered"
+            else { break }
+            let line = (storage.string as NSString).substring(with: range)
+            let prefixLength = HTMLFragmentAppKit.listPrefixLength(line, kind: "ordered")
+            let prefix = NSAttributedString(string: "\(number). ", attributes: storage.attributes(at: offset, effectiveRange: nil))
+            storage.replaceCharacters(in: NSRange(location: offset, length: prefixLength), with: prefix)
+            offset = NSMaxRange(range) + prefix.length - prefixLength + 1
+            number += 1
+        }
     }
 
     private func paragraphRange(containing selection: NSRange) -> NSRange {
