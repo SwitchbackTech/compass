@@ -20,7 +20,7 @@ final class DescriptionEditorFormattingTests: XCTestCase {
         editor.typeKey("a", modifierFlags: [.command])
         window.descendants(matching: .any)["Bold"].click()
         window.typeKey(.enter, modifierFlags: [.command])
-        XCTAssertFalse(editor.exists)
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 8))
 
         window.typeKey(.enter, modifierFlags: [])
         XCTAssertTrue(editor.waitForExistence(timeout: 8))
