@@ -365,6 +365,10 @@ final class NativeGridKeyboardRouter {
     /// Probes mirror via `EventFormAccessibilityProbeView` when `-COMPASS_UI_TEST` is set.
     private func handleUITestEventFormTyping(_ keyEvent: KeyEvent) -> Bool {
         guard UITestLaunchPolicy.mirrorsEventFormTitleTyping else { return false }
+        // The title probe is a fallback, never a replacement for a real text editor.
+        if let editor = NSApp.keyWindow?.firstResponder as? NSTextView, editor.isEditable {
+            return false
+        }
         if keyEvent.modifiers == [.command],
             case .character(let char) = keyEvent.key,
             char.lowercased() == "v",
@@ -584,6 +588,10 @@ final class NativeGridKeyboardRouter {
     /// leaves. Any other key drops the focus and runs as usual.
     private func handleMonthPickerFocusKeys(_ keyEvent: KeyEvent) -> Bool {
         guard model.monthPickerFocusDate != nil else { return false }
+        if keyEvent.modifiers == [.command, .shift],
+           [KeyToken.punctuation(","), .punctuation("."), .punctuation("<"), .punctuation(">")].contains(keyEvent.key) {
+            return false
+        }
         guard keyEvent.modifiers.isEmpty else {
             model.clearMonthPickerFocus()
             return false

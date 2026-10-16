@@ -29,6 +29,7 @@ import { ConnectCalendarPromptGate } from "@web/components/ConnectCalendarPrompt
 import { useConnectCalendarPromptSurfaceEligible } from "@web/components/ConnectCalendarPrompt/useConnectCalendarPromptSurfaceEligible";
 import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import { useFirstEventPromptSurfaceEligible } from "@web/components/FirstEventPrompt/useFirstEventPromptSurfaceEligible";
+import { LocalModeConnectPrompt } from "@web/components/LocalModeConnectPrompt/LocalModeConnectPrompt";
 import { PointerHint } from "@web/components/PointerHint/PointerHint";
 import {
   type OnboardingSurfaceFlags,
@@ -223,6 +224,7 @@ export function RootShell() {
       )}
       {activeOnboardingSurface === "firstEventPrompt" && <FirstEventPrompt />}
       {activeOnboardingSurface === "pointerHint" && <PointerHint />}
+      <LocalModeConnectPrompt />
     </AuthModalProvider>
   );
 }

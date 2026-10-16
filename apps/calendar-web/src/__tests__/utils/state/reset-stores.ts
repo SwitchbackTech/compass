@@ -33,6 +33,7 @@ import {
   initialFirstEventPromptState,
   useFirstEventPromptStore,
 } from "@web/components/FirstEventPrompt/first-event.store";
+import { resetLocalModeConnectPromptStoreForTests } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
 import {
   initialShortcutShowcaseState,
   useShortcutShowcaseStore,
@@ -118,6 +119,7 @@ const storeResets: StoreReset[] = [
   () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
   () => useFirstEventPromptStore.setState(initialFirstEventPromptState, true),
   resetConnectCalendarPromptStoreForTests,
+  resetLocalModeConnectPromptStoreForTests,
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),

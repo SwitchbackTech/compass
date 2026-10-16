@@ -19,10 +19,16 @@ extension NativeCalendarRootModel {
     /// Web `PICK_KEY_LABELS`: the first 12 rows of a focused list.
     public static let calendarPickKeys: [Character] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
 
+    public var anonymousCalendar: CompassCalendar? {
+        guard !isSignedIn, eventsStore.source == .local, let localCalendarId else { return nil }
+        return sidebarCalendars.first { $0.id == localCalendarId }
+    }
+
     public var calendarListGroups: [CalendarListGroup] {
         var order: [String] = []
         var byKey: [String: (account: String?, calendars: [CompassCalendar])] = [:]
-        for calendar in sidebarCalendars {
+        let anonymousId = anonymousCalendar?.id
+        for calendar in sidebarCalendars where calendar.id != anonymousId {
             let account = isSignedIn ? calendar.accountEmail : nil
             let key = account.map { "\(calendar.provider):\($0)" } ?? "local"
             if byKey[key] == nil {

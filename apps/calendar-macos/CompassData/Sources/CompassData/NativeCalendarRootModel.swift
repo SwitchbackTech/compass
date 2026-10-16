@@ -27,6 +27,7 @@ public final class NativeCalendarRootModel {
     /// Title of the focused grid event for native UI tests and accessibility probes.
     public private(set) var gridFocusAccessibilityLabel: String?
     public private(set) var calendars: [CompassCalendar] = []
+    var localCalendarId: String?
     public var isSignedIn: Bool { authStore.authenticated }
     public var shortcutRegistry: ShortcutRegistry { environment.shortcutRegistry }
     public private(set) var contentTrackWidth: CGFloat = 1010
@@ -873,7 +874,7 @@ public final class NativeCalendarRootModel {
     private func shiftMonth(by months: Int) {
         let calendar = EffectiveTimeZone.calendar
         if let next = calendar.date(byAdding: .month, value: months, to: monthPickerMonth) {
-            monthPickerMonth = next
+            browseMonth(next)
         }
     }
 
@@ -1170,6 +1171,7 @@ public final class NativeCalendarRootModel {
                 calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
             }
             try calendarRepository.upsert(calendars: [calendar])
+            localCalendarId = calendar.id
             // Local records prove which cached calendars belong to this device.
             // Other cached calendars require the signed-in session that loaded them.
             var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })

@@ -57,6 +57,38 @@ describe("EventFormDateField", () => {
     expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(12);
   });
 
+  it("can skip the date input in the tab order while keeping it focusable for jumps", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Before</button>
+        <EventFormDateField
+          excludeFromTabOrder
+          inputId="eventFormStartDate"
+          isOpen={false}
+          onCalendarClose={() => undefined}
+          onCalendarOpen={() => undefined}
+          onCommit={() => undefined}
+          selected={START}
+          sideLabel="start"
+          title="Pick Start Date"
+        />
+        <button type="button">After</button>
+      </>,
+    );
+
+    const wrapper = document.getElementById("eventFormStartDate");
+    expect(wrapper?.tabIndex).toBe(-1);
+    expect(screen.getByTitle("Pick Start Date")).toHaveAttribute(
+      "tabindex",
+      "-1",
+    );
+
+    screen.getByRole("button", { name: "Before" }).focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+  });
+
   it("opens the calendar on ArrowDown when arrowDownOpensCalendar is set", async () => {
     const user = userEvent.setup();
     const onCalendarOpen = mock();

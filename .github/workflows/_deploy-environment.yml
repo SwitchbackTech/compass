@@ -317,6 +317,7 @@ jobs:
               "  mongoUri: \"${SYNC_MONGO_URI}\"" \
               "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
               "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
+              "  postConnectRedirectUrl: \"${FRONTEND_URL}\"" \
               '  serviceUrl: "http://sync:3010"' \
               "  enforceLeastPrivilege: ${SYNC_ENFORCE_LEAST_PRIVILEGE}" \
               '  maxConcurrency: 12'

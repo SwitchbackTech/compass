@@ -553,6 +553,42 @@ done
 REMOTE
 }
 
+remote_check_sync_post_connect_redirect() {
+  require_env FRONTEND_URL || return 1
+
+  ssh_remote "FRONTEND_URL=$(printf '%q' "$FRONTEND_URL") bash -se" <<'REMOTE'
+set -euo pipefail
+config="$HOME/compass/compass.yaml"
+if [ ! -f "$config" ]; then
+  printf 'missing %s\n' "$config" >&2
+  exit 1
+fi
+redirect=$(
+  awk '
+    /^sync:[[:space:]]*$/ { in_sync=1; next }
+    in_sync && /^[^[:space:]]/ { in_sync=0 }
+    in_sync && /^[[:space:]]+postConnectRedirectUrl:[[:space:]]*/ {
+      line=$0
+      sub(/^[[:space:]]+postConnectRedirectUrl:[[:space:]]*/, "", line)
+      gsub(/^"/, "", line)
+      gsub(/"$/, "", line)
+      print line
+      exit
+    }
+  ' "$config"
+)
+if [ -z "$redirect" ]; then
+  printf 'compass.yaml sync.postConnectRedirectUrl is not set\n' >&2
+  exit 1
+fi
+if [ "$redirect" != "$FRONTEND_URL" ]; then
+  printf 'compass.yaml sync.postConnectRedirectUrl (%s) must match FRONTEND_URL (%s)\n' \
+    "$redirect" "$FRONTEND_URL" >&2
+  exit 1
+fi
+REMOTE
+}
+
 remote_check_production_email_config() {
   ssh_remote "bash -se" <<'REMOTE'
 set -euo pipefail
@@ -681,6 +717,7 @@ run_all_checks() {
 
   case "$PROFILE" in
     cloud)
+      run_check "sync-post-connect-redirect" remote_check_sync_post_connect_redirect
       if [ "$ENVIRONMENT" = "production" ]; then
         run_check "production-email-config" remote_check_production_email_config
       fi
