@@ -15,8 +15,10 @@ final class AnonymousCalendarRowTests: XCTestCase {
         row.click()
         XCTAssertTrue(standup.exists)
         app.buttons["Start free trial"].click()
-        XCTAssertTrue(window.descendants(matching: .any)["compass-native-auth-modal"].waitForExistence(timeout: 8))
+        let authModal = window.descendants(matching: .any)["compass-native-auth-modal"]
+        XCTAssertTrue(authModal.waitForExistence(timeout: 8))
         window.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(authModal.waitForNonExistence(timeout: 8))
         XCTAssertTrue(window.buttons["Morning standup"].waitForExistence(timeout: 8))
     }
 }

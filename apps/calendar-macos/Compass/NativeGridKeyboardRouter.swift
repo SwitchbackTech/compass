@@ -134,6 +134,18 @@ final class NativeGridKeyboardRouter {
     }
 
     func handleKeyDown(_ event: NSEvent) -> Bool {
+        if model.authStore.isModalPresented, !model.overlayKeyboardCaptureActive {
+            guard let key = KeyEvent(nsEvent: event) else { return false }
+            if key.key == .named(.escape), key.modifiers.isEmpty {
+                model.authStore.closeModal()
+                return true
+            }
+            if key.matches(KeyChord(modifiers: [.command], token: .character("k"))) {
+                model.toggleCommandPalette()
+                return true
+            }
+            return false
+        }
         if handleUndoRedoKeyDown(event) {
             return true
         }
