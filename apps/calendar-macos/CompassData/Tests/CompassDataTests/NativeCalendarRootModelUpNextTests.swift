@@ -60,6 +60,9 @@ final class NativeCalendarRootModelUpNextTests: XCTestCase {
         await model.start()
         // The redo re-creates on a writable calendar, so reuse the seed's.
         let calendarId = try XCTUnwrap(model.loadedEvents.first?.calendarId.rawValue)
+        let demoIds = try environment.localEventRepository.fetchAll().filter(\.isDemo).map(\.id)
+        try environment.localEventRepository.delete(ids: demoIds)
+        model.loadedEvents = model.loadedEvents.filter { !demoIds.contains($0.id) }
         let event = try Self.timedEvent(title: "Just created", startingIn: 2 * 60, calendarId: calendarId)
         let upNextTitle = { model.upNextState.snapshot.upNext?.title }
         try environment.localEventRepository.putMany([

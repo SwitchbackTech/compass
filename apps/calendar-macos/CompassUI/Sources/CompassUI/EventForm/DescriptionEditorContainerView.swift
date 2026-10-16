@@ -46,7 +46,9 @@ final class DescriptionEditorContainerView: NSView {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            self?.performFormattingAction(notification)
+            guard let raw = notification.userInfo?[UITestDescriptionFormattingAccessibility.Key.action] as? String
+            else { return }
+            self?.performFormattingAction(raw)
         }
         addSubview(toolbar)
         addSubview(scrollView)
