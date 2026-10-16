@@ -16,9 +16,9 @@ enum HTMLFragmentAppKit {
             switch block {
             case .paragraph(let inlines):
                 result.append(
-                    attributedInlines(
+                    inlineAttributedString(
                         inlines,
-                        baseFont: baseFont,
+                        font: baseFont,
                         textColor: textColor,
                         linkColor: linkColor
                     )
@@ -35,9 +35,9 @@ enum HTMLFragmentAppKit {
                         )
                     )
                     result.append(
-                        attributedInlines(
+                        inlineAttributedString(
                             item.inlines,
-                            baseFont: baseFont,
+                            font: baseFont,
                             textColor: textColor,
                             linkColor: linkColor
                         )
@@ -56,9 +56,9 @@ enum HTMLFragmentAppKit {
                         )
                     )
                     result.append(
-                        attributedInlines(
+                        inlineAttributedString(
                             item.inlines,
-                            baseFont: baseFont,
+                            font: baseFont,
                             textColor: textColor,
                             linkColor: linkColor
                         )
@@ -109,7 +109,7 @@ enum HTMLFragmentAppKit {
                 if let kind = attributedString.attribute(listKindKey, at: range.location, effectiveRange: nil) as? String {
                     let prefixLength = listPrefixLength(line, kind: kind)
                     let contentRange = NSRange(location: range.location + prefixLength, length: range.length - prefixLength)
-                    let item = HTMLFragmentListItem(inlines: inlinesForLine(line, in: attributedString, range: contentRange))
+                    let item = HTMLFragmentListItem(inlines: inlines(in: attributedString, range: contentRange))
                     switch (kind, blocks.last) {
                     case ("unordered", .unorderedList(let items)):
                         blocks[blocks.count - 1] = .unorderedList(items + [item])
@@ -121,7 +121,7 @@ enum HTMLFragmentAppKit {
                     continue
                 }
             }
-            blocks.append(.paragraph(inlinesForLine(line, in: attributedString, range: range)))
+            blocks.append(.paragraph(inlines(in: attributedString, range: range)))
         }
         return HTMLFragmentDocument(blocks: blocks)
     }
@@ -131,64 +131,6 @@ enum HTMLFragmentAppKit {
         let pattern = kind == "unordered" ? "^• " : "^[0-9]+\\. "
         let range = (line as NSString).range(of: pattern, options: .regularExpression)
         return range.location == 0 ? range.length : 0
-    }
-
-    private static func attributedInlines(
-        _ inlines: [HTMLFragmentInline],
-        baseFont: NSFont,
-        textColor: NSColor,
-        linkColor: NSColor
-    ) -> NSAttributedString {
-        let result = NSMutableAttributedString()
-        for inline in inlines {
-            switch inline {
-            case .text(let value):
-                result.append(
-                    NSAttributedString(
-                        string: value,
-                        attributes: [.font: baseFont, .foregroundColor: textColor]
-                    )
-                )
-            case .lineBreak:
-                result.append(
-                    NSAttributedString(
-                        string: "\u{2028}",
-                        attributes: [.font: baseFont, .foregroundColor: textColor]
-                    )
-                )
-            case .bold(let children):
-                let boldFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .boldFontMask)
-                result.append(
-                    inlineAttributedString(
-                        children,
-                        font: boldFont,
-                        textColor: textColor,
-                        linkColor: linkColor
-                    )
-                )
-            case .italic(let children):
-                let italicFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .italicFontMask)
-                result.append(
-                    inlineAttributedString(
-                        children,
-                        font: italicFont,
-                        textColor: textColor,
-                        linkColor: linkColor
-                    )
-                )
-            case .link(let href, let children):
-                result.append(
-                    inlineAttributedString(
-                        children,
-                        font: baseFont,
-                        textColor: linkColor,
-                        linkColor: linkColor,
-                        link: href
-                    )
-                )
-            }
-        }
-        return result
     }
 
     private static func inlineAttributedString(
@@ -227,14 +169,10 @@ enum HTMLFragmentAppKit {
         return result
     }
 
-    private static func inlinesForLine(
-        _ line: String,
+    private static func inlines(
         in attributedString: NSAttributedString,
         range: NSRange
     ) -> [HTMLFragmentInline] {
-        guard range.location != NSNotFound else {
-            return line.isEmpty ? [] : [.text(line)]
-        }
         var inlines: [HTMLFragmentInline] = []
         attributedString.enumerateAttributes(in: range, options: []) { attrs, subRange, _ in
             let substring = (attributedString.string as NSString).substring(with: subRange)
