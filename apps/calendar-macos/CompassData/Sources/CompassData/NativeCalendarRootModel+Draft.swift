@@ -182,15 +182,18 @@ extension NativeCalendarRootModel {
     }
 
     func persistDraftOptimistic(savedId: String, apply: () async throws -> Void) async {
+        let revision = sessionRevision
         draftStore.commit()
         formFieldDigitHintsVisible = false
         rebuildPresentation()
         do {
             try await apply()
+            guard revision == sessionRevision else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
             focusEvent(eventId: savedId)
         } catch {
+            guard revision == sessionRevision else { return }
             reportSaveFailure(error, action: "save")
         }
     }
