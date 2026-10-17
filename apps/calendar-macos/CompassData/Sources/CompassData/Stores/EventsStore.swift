@@ -74,7 +74,7 @@ public final class EventsStore {
 
     public func fetchAllEvents() throws -> [Event] {
         if source == .local {
-            return try localEvents.fetchAll().map(\.event)
+            return try localEvents.expandedRecords().map(\.event)
         }
         guard remoteSessionReady else { throw CancellationError() }
         return try repository.fetchAll()
@@ -216,6 +216,7 @@ public final class EventsStore {
         beginMutation()
         defer { endMutation() }
         if source == .local {
+            if try localEvents.replaceOccurrence(id: id, input: input, edited: optimisticEvent) { return }
             let snapshot = try localRecurringReplaceSnapshot(targetId: id)
             try applyLocalReplaceCacheUpdate(
                 input: input,
@@ -247,6 +248,7 @@ public final class EventsStore {
         beginMutation()
         defer { endMutation() }
         if source == .local {
+            if try localEvents.deleteOccurrence(id: id, scope: scope) { return }
             let snapshot = try localRecurringDeleteSnapshot(targetId: id)
             try applyLocalDeleteCacheUpdate(id: id, scope: scope, snapshot: snapshot)
             return
@@ -541,20 +543,22 @@ public final class EventsStore {
     }
 
     private func putLocalEvent(_ event: Event) throws {
-        let isDemo = try localEvent(id: event.id)?.isDemo ?? false
-        let record = LocalEventRecord(id: event.id, event: event, isDemo: isDemo)
+        let previous = try localEvent(id: event.id)
+        let record = LocalEventRecord(id: event.id, event: event, isDemo: previous?.isDemo ?? false,
+            exdates: previous?.exdates)
         try localEvents.put(record)
     }
 
     private func putLocalEvents(_ events: [Event]) throws {
-        let demoById = Dictionary(
-            uniqueKeysWithValues: try localEvents.fetchAll().map { ($0.id, $0.isDemo) }
+        let recordsById = Dictionary(
+            uniqueKeysWithValues: try localEvents.fetchAll().map { ($0.id, $0) }
         )
         let records = events.map { event in
             LocalEventRecord(
                 id: event.id,
                 event: event,
-                isDemo: demoById[event.id] ?? false
+                isDemo: recordsById[event.id]?.isDemo ?? false,
+                exdates: recordsById[event.id]?.exdates
             )
         }
         try localEvents.putMany(records)
