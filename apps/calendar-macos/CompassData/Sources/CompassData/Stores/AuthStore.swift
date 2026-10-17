@@ -47,6 +47,8 @@ public enum SignInProviderKind: String, Sendable, CaseIterable {
 @Observable
 public final class AuthStore {
     public private(set) var authenticated = false
+    public private(set) var userId: String?
+    private var sessionRevision = 0
     public private(set) var isModalPresented = false
     public private(set) var currentView: AuthView = .login
     public private(set) var isSubmitting = false
@@ -97,6 +99,9 @@ public final class AuthStore {
     /// Like the web, signed-out users keep using local mode. Only a returning
     /// user whose session is gone gets the login form (web `useLoadProfile`).
     public func bootstrap(forceDemoSignedIn: Bool = false) async {
+        sessionRevision += 1
+        let revision = sessionRevision
+        userId = nil
         submitError = nil
         if forceDemoSignedIn {
             authenticated = true
@@ -104,10 +109,14 @@ public final class AuthStore {
             refreshRepositorySource()
             return
         }
-        authenticated = (try? await apiClient.currentSession()) != nil
+        let session = try? await apiClient.currentSession()
+        guard revision == sessionRevision else { return }
+        authenticated = session != nil
+        userId = session?.userId
         refreshRepositorySource()
         if authenticated {
             await identifyAnalyticsUser()
+            guard revision == sessionRevision, authenticated else { return }
             isModalPresented = false
         } else if hasUserEverAuthenticated() {
             openModal(.login)
@@ -324,6 +333,8 @@ public final class AuthStore {
     }
 
     private func endSessionAndPromptLogin() async {
+        sessionRevision += 1
+        userId = nil
         authenticated = false
         refreshRepositorySource()
         openModal(.login)
@@ -332,15 +343,23 @@ public final class AuthStore {
     }
 
     private func completeAuthentication(closeAfter: Bool) async throws {
+        sessionRevision += 1
+        let revision = sessionRevision
+        userId = nil
         authenticated = true
+        let session = try? await apiClient.currentSession()
+        guard revision == sessionRevision, authenticated else { return }
+        userId = session?.userId
         if let userMetadataRepository {
             try? AuthRememberedState.markUserHasAuthenticated(repository: userMetadataRepository)
         }
         if let localEventSync {
             _ = try? await localEventSync.syncLocalEventsToCloud()
         }
+        guard revision == sessionRevision, authenticated else { return }
         refreshRepositorySource()
         await identifyAnalyticsUser()
+        guard revision == sessionRevision, authenticated else { return }
         if closeAfter {
             closeModal()
         }
@@ -363,9 +382,13 @@ public final class AuthStore {
 
     private func identifyAnalyticsUser() async {
         guard authenticated else { return }
+        let revision = sessionRevision
         do {
             let profile = try await userAPI.profile()
+            guard revision == sessionRevision, authenticated else { return }
+            userId = profile.userId
             await analyticsIdentity.identify(userId: profile.userId)
+            guard revision == sessionRevision, authenticated else { return }
             await analyticsIdentity.trackLoginCompleted()
         } catch {}
     }

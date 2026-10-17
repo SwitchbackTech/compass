@@ -51,6 +51,7 @@ extension NativeCalendarRootModel {
     }
 
     public func refreshSideband() async {
+        let revision = sessionRevision
         guard isSignedIn || eventsStore.source == .local else {
             sidebandEvents = []
             return
@@ -63,6 +64,7 @@ extension NativeCalendarRootModel {
             end: range.endDate)
         do {
             _ = try await eventsStore.loadRange(key: key)
+            guard revision == sessionRevision, isSignedIn || eventsStore.source == .local else { return }
             let all = try eventsStore.fetchAllEvents()
             sidebandEvents = all.filter {
                 EventScheduleBounds.intersectsQueryRange(
@@ -71,6 +73,7 @@ extension NativeCalendarRootModel {
                     end: range.endDate)
             }
         } catch {
+            guard revision == sessionRevision else { return }
             sidebandEvents = []
         }
         onSidebandDidChange?()

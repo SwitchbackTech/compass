@@ -46,6 +46,16 @@ public enum CommandPaletteCatalog {
         built.append(contentsOf: eventActionSections())
         built.append(contentsOf: moreSections(isTrialing: isTrialing))
 
+        var accountItems = [CommandPaletteItem(
+            id: "export-data", sectionId: "account-actions", sectionHeading: "Account",
+            label: "Export data", keywords: ["download", "backup", "local events"])]
+        if isSignedIn {
+            accountItems.append(CommandPaletteItem(
+                id: "log-out", sectionId: "account-actions", sectionHeading: "Account",
+                label: "Log out", keywords: ["sign out"]))
+        }
+        built.append(CommandPaletteSection(id: "account-actions", heading: "Account", items: accountItems))
+
         if !isSignedIn {
             built.append(
                 CommandPaletteSection(

@@ -20,6 +20,9 @@ public final class EventsStore {
     public private(set) var inFlightMutations = 0
     public private(set) var owedInvalidation = false
 
+    private var remoteSessionRevision = 0
+    private var remoteSessionReady = true
+
     private let repository: EventRepository
     private let localEvents: LocalEventRepository
     private let rangeCache: RangeCache
@@ -43,6 +46,15 @@ public final class EventsStore {
         self.source = source
     }
 
+    /// Discard refetchable account caches and invalidate responses from the prior session.
+    public func resetRemoteSession() throws {
+        remoteSessionRevision += 1
+        remoteSessionReady = false
+        try repository.clearRemote()
+        try rangeCache.clear()
+        remoteSessionReady = true
+    }
+
     public func setSource(_ source: EventRepositorySource) {
         self.source = source
     }
@@ -64,6 +76,7 @@ public final class EventsStore {
         if source == .local {
             return try localEvents.fetchAll().map(\.event)
         }
+        guard remoteSessionReady else { throw CancellationError() }
         return try repository.fetchAll()
     }
 
@@ -74,6 +87,8 @@ public final class EventsStore {
             return events
         }
 
+        guard remoteSessionReady else { throw CancellationError() }
+        let revision = remoteSessionRevision
         let coverage = try rangeCache.coverage(for: key)
         if case .fresh = coverage {
             return try eventsInRange(key: key)
@@ -88,6 +103,7 @@ public final class EventsStore {
         do {
             events = try await eventsAPI.list(query)
         } catch let error as URLError {
+            guard revision == remoteSessionRevision, remoteSessionReady else { throw CancellationError() }
             guard !Task.isCancelled, case .stale = coverage,
                   try rangeCache.coverage(for: key) == coverage,
                   [.notConnectedToInternet, .networkConnectionLost, .timedOut,
@@ -96,6 +112,7 @@ public final class EventsStore {
             // Keep the old coverage timestamp so the next load still retries.
             return try eventsInRange(key: key)
         }
+        guard revision == remoteSessionRevision else { throw CancellationError() }
         let systemEvents = try systemCalendarEvents(for: key)
         let merged = events + systemEvents
         try repository.upsert(events: merged, isLocal: false)
@@ -151,8 +168,10 @@ public final class EventsStore {
         beginMutation()
         defer { endMutation() }
         guard source != .local else { return }
+        let revision = remoteSessionRevision
         do {
             let response = try await eventsAPI.create(input)
+            guard revision == remoteSessionRevision else { return }
             let settled = try EventMapping.event(from: response)
             try repository.upsert(events: [settled], isLocal: false)
         } catch {}
@@ -178,8 +197,10 @@ public final class EventsStore {
             return
         }
         try repository.upsert(events: [optimisticEvent], isLocal: false)
+        let revision = remoteSessionRevision
         do {
             let response = try await eventsAPI.create(input)
+            guard revision == remoteSessionRevision else { return }
             let settled = try EventMapping.event(from: response)
             try repository.upsert(events: [settled], isLocal: false)
         } catch {
@@ -209,8 +230,10 @@ public final class EventsStore {
             edited: optimisticEvent,
             snapshot: snapshot
         )
+        let revision = remoteSessionRevision
         do {
             let response = try await eventsAPI.replace(id: id, input: input)
+            guard revision == remoteSessionRevision else { return }
             let settled = try EventMapping.event(from: response)
             try applyReplaceCacheUpdate(
                 input: input,

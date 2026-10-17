@@ -10,23 +10,24 @@ public struct SettingsWindowOverlay: View {
         self.model = model
     }
 
-    private var showBillingNav: Bool {
-        BillingPlanBadgeResolver.badge(access: model.billingStore.appAccess) != nil
-    }
-
     public var body: some View {
         if model.settingsStore.isPresented {
-            ZStack {
-                theme.panelBackdropColor
-                    .ignoresSafeArea()
-                    .onTapGesture { model.closeSettingsIfAllowed() }
-                HStack(alignment: .top, spacing: 0) {
-                    nav
-                    Divider().overlay(theme.borderColor)
-                    content
+            GeometryReader { geometry in
+                ZStack {
+                    theme.panelBackdropColor
+                        .ignoresSafeArea()
+                        .onTapGesture { model.closeSettingsIfAllowed() }
+                    HStack(alignment: .top, spacing: 0) {
+                        nav
+                        Divider().overlay(theme.borderColor)
+                        content
+                    }
+                    .frame(
+                            width: min(640, max(0, geometry.size.width - 32)),
+                            height: min(620, max(0, geometry.size.height - 32))
+                        )
+                    .overlayPanelChrome()
                 }
-                .frame(width: 640, height: 620)
-                .overlayPanelChrome()
             }
             .accessibilityIdentifier("compass-native-settings")
         }
@@ -43,12 +44,10 @@ public struct SettingsWindowOverlay: View {
                 .font(.rubik(18))
                 .foregroundStyle(theme.textColor)
             navButton("Accounts", page: .accounts)
-            if model.isSignedIn
-                || (model.settingsStore.guestMeetingSetupActive && model.settingsStore.isPresented)
-            {
+            if model.settingsHasMeetings {
                 navButton("Meetings", page: .booking, attention: model.bookingStore.bookingNeedsAttention)
             }
-            if showBillingNav {
+            if model.settingsHasBilling {
                 navButton("Billing", page: .billing)
             }
             Spacer()
@@ -77,17 +76,24 @@ public struct SettingsWindowOverlay: View {
 
     @ViewBuilder
     private var content: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if model.settingsStore.page == .billing {
-                    billingContent
-                } else if model.settingsStore.page == .booking {
-                    SettingsBookingSectionView(model: model)
-                } else {
-                    accountsContent
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    if model.settingsStore.page == .billing {
+                        billingContent
+                    } else if model.settingsStore.page == .booking {
+                        SettingsBookingSectionView(model: model)
+                    } else {
+                        accountsContent
+                    }
                 }
+                .padding(20)
             }
-            .padding(20)
+            if model.settingsStore.page == .accounts {
+                Divider().overlay(theme.borderColor)
+                SettingsDataActionsSectionView(model: model)
+                    .padding(20)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

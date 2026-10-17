@@ -75,6 +75,7 @@ extension NativeCalendarRootModel {
     }
 
     private func submitRsvp(event: Event, responseStatus: ResponseStatusEnum, scope: String) async {
+        let revision = sessionRevision
         guard case .details(var payload) = event.content else { return }
         let accountEmail = calendars
             .first { $0.id == event.calendarId.rawValue }?
@@ -120,9 +121,11 @@ extension NativeCalendarRootModel {
                 scope: scope,
                 optimisticEvent: optimistic
             )
+            guard revision == sessionRevision else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
         } catch {
+            guard revision == sessionRevision else { return }
             reportSaveFailure(error, action: "update")
         }
     }
