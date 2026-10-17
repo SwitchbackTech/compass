@@ -1,6 +1,6 @@
 import { type FC, type ReactNode, type RefCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { CALENDAR_GRID_PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
+import { PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
@@ -83,7 +83,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
 
   return (
     <section
-      className={`relative flex w-full shrink-0 items-start bg-background ${CALENDAR_GRID_PH_NO_RAGECLICK_CLASS}${compactHeight ? "transition-[height] duration-200 ease-out motion-reduce:transition-none" : ""}`}
+      className={`relative flex w-full shrink-0 items-start bg-background ${PH_NO_RAGECLICK_CLASS}${compactHeight ? "transition-[height] duration-200 ease-out motion-reduce:transition-none" : ""}`}
       aria-label="All-day events"
       id={rowId}
       ref={allDayRowRef}

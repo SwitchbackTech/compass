@@ -167,7 +167,7 @@ export const EventFormDateField = ({
         calendarClassName={calendarClassName}
         captionPicker
         dateFormat={EVENT_FORM_DATE_INPUT_FORMAT}
-        {...(excludeFromTabOrder ? { tabIndex: -1 } : {})}
+        tabIndex={excludeFromTabOrder ? -1 : undefined}
         {...(resolvedInputId ? { inputId: resolvedInputId } : {})}
         isOpen={isOpen}
         monthTextClassName="text-medium"

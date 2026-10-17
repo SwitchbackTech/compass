@@ -18,11 +18,11 @@ import {
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
 import { hasSeenWelcome } from "@web/components/WelcomeModal/welcome.modal.util";
-import { LOCAL_MODE_CONNECT_PROMPT_AFTER_EVENT_COUNT } from "@web/events/mutations/event.mutation.runtime";
 
-export function useLocalModeConnectPromptEligible(
-  isAuthModalOpen: boolean,
-): boolean {
+export function useLocalModeConnectPromptEligible(isAuthModalOpen: boolean): {
+  isLive: boolean;
+  writeCount: number;
+} {
   const { authenticated } = useContext(SessionContext);
   const writeCount = useLocalModeConnectPromptStore(
     selectLocalModeConnectPromptWriteCount,
@@ -36,18 +36,18 @@ export function useLocalModeConnectPromptEligible(
   );
   const googleSignInAvailable = useIsProviderAvailable("google", "signIn");
 
-  const isWelcomeBlocking = !hasSeenWelcome() || isWelcomeFirstVisitOpen;
-
-  return selectLocalModeConnectPromptEligible({
-    authenticated,
-    hasUserEverAuthenticated: hasUserEverAuthenticated(),
+  return {
+    isLive: selectLocalModeConnectPromptEligible({
+      authenticated,
+      hasUserEverAuthenticated: hasUserEverAuthenticated(),
+      writeCount,
+      isDismissed,
+      storageAvailable: persistentBrowserStore.isAvailable(),
+      isAuthModalOpen,
+      isShowcaseActive,
+      isWelcomeBlocking: !hasSeenWelcome() || isWelcomeFirstVisitOpen,
+      googleSignInAvailable,
+    }),
     writeCount,
-    isDismissed,
-    storageAvailable: persistentBrowserStore.isAvailable(),
-    isAuthModalOpen,
-    isShowcaseActive,
-    isWelcomeBlocking,
-    googleSignInAvailable,
-    threshold: LOCAL_MODE_CONNECT_PROMPT_AFTER_EVENT_COUNT,
-  });
+  };
 }

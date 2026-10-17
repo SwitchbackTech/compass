@@ -6,7 +6,7 @@ import {
 } from "@web/common/constants/web.constants";
 
 /** posthog-js skips rageclick detection on elements with this class. */
-export const CALENDAR_GRID_PH_NO_RAGECLICK_CLASS = "ph-no-rageclick";
+export const PH_NO_RAGECLICK_CLASS = "ph-no-rageclick";
 
 /** Element ids that mark the timed or all-day grid. */
 const GRID_ELEMENT_IDS = [

@@ -56,7 +56,7 @@ public struct EventFormView: View {
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
-                        .id(EventFormField.start) .id(EventFormField.end)
+                        .id(EventFormField.start)
                         EventFormRecurrenceSection(
                             model: model,
                             draft: draft,
@@ -125,7 +125,7 @@ public struct EventFormView: View {
                     }
                 }
                 .onChange(of: model.eventFormFocusedField) { _, field in
-                    proxy.scrollTo(field, anchor: .center)
+                    proxy.scrollTo(field == .end ? EventFormField.start : field, anchor: .center)
                 }
             }
             if !model.isEventFormReadOnly(for: draft) {

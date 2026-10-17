@@ -1,16 +1,13 @@
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { type FC, useCallback, useContext, useEffect, useRef } from "react";
+import { PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import IconButton from "@web/components/IconButton/IconButton";
-import {
-  localModeConnectPromptActions,
-  selectLocalModeConnectPromptWriteCount,
-  useLocalModeConnectPromptStore,
-} from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
+import { localModeConnectPromptActions } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
 import { useLocalModeConnectPromptEligible } from "@web/components/LocalModeConnectPrompt/useLocalModeConnectPromptEligible";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
@@ -20,8 +17,6 @@ export const LOCAL_MODE_CONNECT_PROMPT_MESSAGE =
   "Connect Google to sync your events and start your free trial.";
 
 export const LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL = "Connect Google";
-
-export const LOCAL_MODE_CONNECT_PROMPT_PH_CLASS = "ph-no-rageclick";
 
 const shouldDelegateEnterToConnect = (
   active: Element | null,
@@ -37,10 +32,8 @@ const shouldDelegateEnterToConnect = (
 
 export const LocalModeConnectPrompt: FC = () => {
   const { isOpen: isAuthModalOpen } = useContext(AuthModalContext);
-  const isLive = useLocalModeConnectPromptEligible(isAuthModalOpen);
-  const writeCount = useLocalModeConnectPromptStore(
-    selectLocalModeConnectPromptWriteCount,
-  );
+  const { isLive, writeCount } =
+    useLocalModeConnectPromptEligible(isAuthModalOpen);
   const { closing, beginDismiss } = useDismissTransition(BANNER_DISMISS_MS);
   const connectRef = useRef<HTMLButtonElement>(null);
   const { startSignIn, isLoading } = useSignInProviders({ signupFlow: true });
@@ -95,7 +88,7 @@ export const LocalModeConnectPrompt: FC = () => {
   return (
     <aside
       aria-label={LOCAL_MODE_CONNECT_PROMPT_ARIA_LABEL}
-      className={`fixed right-6 bottom-6 starting:translate-y-2 starting:opacity-0 transition-all duration-300 data-closing:opacity-0 motion-reduce:transition-none ${LOCAL_MODE_CONNECT_PROMPT_PH_CLASS}`}
+      className={`fixed right-6 bottom-6 starting:translate-y-2 starting:opacity-0 transition-all duration-300 data-closing:opacity-0 motion-reduce:transition-none ${PH_NO_RAGECLICK_CLASS}`}
       data-closing={closing || undefined}
       data-local-mode-connect-prompt=""
       data-notice=""
