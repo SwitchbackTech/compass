@@ -1085,14 +1085,17 @@ public final class NativeCalendarRootModel {
         )
     }
 
+    public var writableEventCalendars: [CompassCalendar] {
+        DefaultCalendarResolver.writableCalendars(
+            calendars, hasConnectedAccount: !syncConnectionsStore.connections.isEmpty)
+    }
+
     func defaultTargetCalendarId() -> CalendarId? {
-        if let demoPresentation {
-            return CalendarId(rawValue: demoPresentation.calendarId)
-        }
-        guard let calendar = visibleCalendars().first(where: { $0.capabilities.canWrite }) else {
-            return nil
-        }
-        return CalendarId(rawValue: calendar.id)
+        DefaultCalendarResolver.resolvedDefault(
+            calendars: calendars,
+            storedId: settingsStore.defaultCalendarId,
+            hasConnectedAccount: !syncConnectionsStore.connections.isEmpty
+        ).map { CalendarId(rawValue: $0.id) }
     }
 
     private func scheduleRefreshVisibleRange() {
