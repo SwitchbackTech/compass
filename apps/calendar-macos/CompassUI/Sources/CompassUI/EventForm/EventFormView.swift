@@ -16,6 +16,7 @@ public struct EventFormView: View {
     public var body: some View {
         if model.isEventFormVisible, let draft = model.draftStore.gridDraft {
             formPanel(draft: draft)
+                .environment(\.timeZone, TimeZone(identifier: model.viewStore.effectiveTimeZone) ?? .current)
                 .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in
                 ModHoldChipsOverlay(
                     targets: model.formFieldDigitTargets(),
