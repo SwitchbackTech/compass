@@ -25,6 +25,20 @@ final class RecurrenceRuleLineEditingTests: XCTestCase {
         XCTAssertEqual(rule.all(limit: 10).count, 3)
     }
 
+    func testExistingNativeAllDayUntilSuffixStillLimitsExpansion() throws {
+        let rule = try XCTUnwrap(RecurrenceRule(startDateISO: "2026-03-07", endDateISO: "2026-03-08",
+            recurrenceRule: "RRULE:FREQ=DAILY;UNTIL=20260309Z", timeZoneIdentifier: "UTC"))
+        XCTAssertEqual(rule.all(limit: 10).count, 3)
+    }
+
+    func testYearlyIntervalsExpandBeyondTheDailyScanHorizon() throws {
+        let rule = try XCTUnwrap(RecurrenceRule(startDateISO: "2026-03-07", endDateISO: "2026-03-08",
+            recurrenceRule: "RRULE:FREQ=YEARLY;INTERVAL=12;COUNT=3", timeZoneIdentifier: "UTC"))
+        let formatter = ISO8601DateFormatter()
+        XCTAssertEqual(rule.all(limit: 10).map { String(formatter.string(from: $0).prefix(10)) },
+            ["2026-03-07", "2038-03-07", "2050-03-07"])
+    }
+
     func testYearlyAndCountLimitedPatternsRoundTrip() throws {
         let pattern = try XCTUnwrap(RecurrenceRuleLine.parsePattern(fromLine: "RRULE:FREQ=YEARLY;INTERVAL=2;COUNT=4"))
         let start = try instant("2026-03-07T17:00:00.000Z")
