@@ -108,14 +108,18 @@ struct EventFormRecurrenceSection: View {
                 .background(selected ? theme.accentColor.opacity(0.2) : theme.surfaceColor.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .foregroundStyle(theme.textColor)
+                .accessibilityLabel(entry.name)
+                .accessibilityValue(selected ? "Selected" : "Not selected")
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .accessibilityIdentifier("compass-event-form-recurrence-weekdays")
     }
 
-    private var weekdayLabels: [(index: Int, label: String)] {
+    private var weekdayLabels: [(index: Int, label: String, name: String)] {
         [
-            (0, "M"), (1, "T"), (2, "W"), (3, "T"), (4, "F"), (5, "S"), (6, "S"),
+            (0, "M", "Monday"), (1, "T", "Tuesday"), (2, "W", "Wednesday"),
+            (3, "T", "Thursday"), (4, "F", "Friday"), (5, "S", "Saturday"), (6, "S", "Sunday"),
         ]
     }
 

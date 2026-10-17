@@ -16,6 +16,12 @@ final class EventFormRecurrenceTests: XCTestCase {
         XCTAssertTrue(repeatToggle.waitForExistence(timeout: 8))
         window.typeKey("4", modifierFlags: [.command])
         repeatToggle.click()
+        let tuesday = window.buttons["Tuesday"]
+        XCTAssertTrue(tuesday.exists)
+        XCTAssertTrue(window.buttons["Thursday"].exists)
+        let selected = tuesday.value as? String == "Selected"
+        tuesday.click()
+        XCTAssertEqual(tuesday.value as? String, selected ? "Not selected" : "Selected")
         let endToggle = window.descendants(matching: .any)["compass-event-form-recurrence-has-until"]
         XCTAssertTrue(endToggle.exists)
         let endDate = window.descendants(matching: .any)["compass-event-form-recurrence-until"]
