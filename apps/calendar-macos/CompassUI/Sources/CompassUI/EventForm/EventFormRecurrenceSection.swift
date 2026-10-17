@@ -8,7 +8,7 @@ struct EventFormRecurrenceSection: View {
     let draft: GridEventDraft
     let focusField: EventFormField
 
-    @State private var pattern: RecurrenceRuleLine.Pattern = .init()
+    @State private var pattern: RecurrenceRuleLine.Pattern = .init(frequency: .daily)
     @State private var hasRecurrence: Bool = false
 
     var body: some View {

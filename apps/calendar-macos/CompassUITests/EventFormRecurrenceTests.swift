@@ -16,6 +16,13 @@ final class EventFormRecurrenceTests: XCTestCase {
         XCTAssertTrue(repeatToggle.waitForExistence(timeout: 8))
         window.typeKey("4", modifierFlags: [.command])
         repeatToggle.click()
+        let frequency = window.descendants(matching: .any)["compass-event-form-recurrence-frequency"]
+        XCTAssertEqual(frequency.value as? String, "Daily")
+        frequency.click()
+        app.menuItems["Yearly"].click()
+        XCTAssertEqual(frequency.value as? String, "Yearly")
+        frequency.click()
+        app.menuItems["Weekly"].click()
         let tuesday = window.buttons["Tuesday"]
         XCTAssertTrue(tuesday.exists)
         XCTAssertTrue(window.buttons["Thursday"].exists)
