@@ -51,6 +51,7 @@ public final class NativeCalendarRootModel {
     public private(set) var paletteEventSearchHits: [CommandPaletteEventHit] = []
     var sessionRevision = 0
     var paletteSearchTask: Task<Void, Never>?
+    var paletteEventSearchEvents: [String: Event] = [:]
     public var dedicationDialogVisible = false
     /// Right-hand sidebar, toggled with `]` like the web. Kept between launches.
     public var isSidebarOpen = CompassDevicePreferences.readSidebarOpen() {
@@ -441,8 +442,7 @@ public final class NativeCalendarRootModel {
         sessionRevision += 1
         keyboardCreateSettleGeneration += 1
         refreshTask?.cancel()
-        paletteSearchTask?.cancel()
-        paletteEventSearchHits = []
+        resetPaletteEventSearch()
         commandPaletteStore.close()
         syncConnectionsStore.resetSession()
         if discardDraft { draftStore.discard() }
