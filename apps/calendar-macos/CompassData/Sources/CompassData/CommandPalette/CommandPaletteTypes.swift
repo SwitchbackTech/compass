@@ -7,6 +7,7 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
     public let label: String
     public let shortcut: String?
     public let keywords: [String]
+    public let subtitle: String?
 
     public init(
         id: String,
@@ -14,7 +15,8 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
         sectionHeading: String,
         label: String,
         shortcut: String? = nil,
-        keywords: [String] = []
+        keywords: [String] = [],
+        subtitle: String? = nil
     ) {
         self.id = id
         self.sectionId = sectionId
@@ -22,6 +24,7 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
         self.label = label
         self.shortcut = shortcut
         self.keywords = keywords
+        self.subtitle = subtitle
     }
 }
 

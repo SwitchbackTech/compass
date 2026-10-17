@@ -6,7 +6,10 @@ import Observation
 @Observable
 public final class CommandPaletteStore {
     public var isOpen = false
-    public var query = ""
+    public var query = "" {
+        didSet { if query != oldValue { selectedCommandId = nil } }
+    }
+    public private(set) var selectedCommandId: String?
     public private(set) var recentCommandIds: [String] = []
     public private(set) var statusAnnouncement = ""
 
@@ -19,16 +22,22 @@ public final class CommandPaletteStore {
 
     public func open(focusedQuery: String = "") {
         isOpen = true
+        selectedCommandId = nil
         query = focusedQuery
     }
 
     public func close() {
         isOpen = false
+        selectedCommandId = nil
         query = ""
     }
 
     public func toggle() {
         if isOpen { close() } else { open() }
+    }
+
+    public func select(commandId: String?) {
+        selectedCommandId = commandId
     }
 
     public func recordSelection(commandId: String) {

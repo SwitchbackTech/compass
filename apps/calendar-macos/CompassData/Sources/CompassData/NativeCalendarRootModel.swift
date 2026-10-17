@@ -371,6 +371,7 @@ public final class NativeCalendarRootModel {
         await syncConnectionsStore.reloadFromMetadata()
     }
 
+    public var onShowAbout: (() -> Void)?
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
@@ -487,6 +488,13 @@ public final class NativeCalendarRootModel {
     public func handleShortcut(_ id: ShortcutId) {
         recordShortcut(id)
         switch id {
+        case .createTimed, .createAllday:
+            if viewStore.view == .life {
+                viewStore.view = .week
+                scheduleRefreshVisibleRange()
+            }
+            if id == .createTimed { createTimedDraft(activity: .createShortcut) }
+            else { createAllDayDraft() }
         case .navNext:
             if viewStore.view == .life {
                 lifeStore.cycleVariation(direction: 1)

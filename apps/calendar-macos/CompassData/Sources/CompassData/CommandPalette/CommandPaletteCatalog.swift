@@ -34,7 +34,7 @@ public enum CommandPaletteCatalog {
                             sectionId: "events",
                             sectionHeading: "Events",
                             label: hit.label,
-                            keywords: [hit.subtitle])
+                            keywords: [hit.subtitle], subtitle: hit.subtitle)
                     }))
         }
 
@@ -151,7 +151,11 @@ public enum CommandPaletteCatalog {
         navigation: [CommandPaletteItem]
     ) -> [CommandPaletteItem] {
         let lookup = Dictionary(uniqueKeysWithValues: navigation.map { ($0.id, $0) })
-        return recentIds.compactMap { lookup[$0] }
+        return recentIds.compactMap { id in
+            guard let item = lookup[id] else { return nil }
+            return CommandPaletteItem(id: "recent-" + id, sectionId: "recent", sectionHeading: "Recent",
+                label: item.label, shortcut: item.shortcut, keywords: item.keywords)
+        }
     }
 
     private static func eventActionSections() -> [CommandPaletteSection] {
