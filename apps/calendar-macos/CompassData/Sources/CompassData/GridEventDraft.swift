@@ -14,6 +14,8 @@ public struct GridEventDraft: Sendable, Equatable {
     /// Set for `edit` drafts (the persisted event being edited).
     public var sourceEventId: EventId?
     public var schedule: DraftSchedule
+    /// Preserve the source event's recurrence timezone while editing or duplicating.
+    public var timeZone: IANATimeZone?
     public var title: String
     public var color: EventColorSlot?
     public var description: String
@@ -36,11 +38,13 @@ public struct GridEventDraft: Sendable, Equatable {
         location: String = "",
         recurrence: GridEventRecurrenceDraft = .single,
         attendees: [DraftAttendeeInput]? = nil,
-        createConference: Bool = false
+        createConference: Bool = false,
+        timeZone: IANATimeZone? = nil
     ) {
         self.kind = kind
         self.clientId = clientId
         self.schedule = schedule
+        self.timeZone = timeZone
         self.title = title
         self.calendarId = calendarId
         self.sourceEventId = sourceEventId
