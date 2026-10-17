@@ -45,6 +45,15 @@ public struct LocalEventRepository: Sendable {
         }
     }
 
+    func apply(upserts: [LocalEventRecord], removing ids: [EventId]) throws {
+        try db.write { db in
+            for id in ids { try LocalEventRow.deleteOne(db, key: id.rawValue) }
+            for record in upserts {
+                try LocalEventRowCodec.row(for: record).save(db, onConflict: .replace)
+            }
+        }
+    }
+
     public func clearAll() throws {
         try db.write { db in
             try LocalEventRow.deleteAll(db)
@@ -55,13 +64,24 @@ public struct LocalEventRepository: Sendable {
         intersectingStart start: String,
         end: String
     ) throws -> [Event] {
-        try fetchAll()
-            .map(\.event)
-            .filter { EventScheduleBounds.intersectsQueryRange(event: $0, start: start, end: end) }
+        let expanded = try expandedRecords().map(\.event)
+        let visible = expanded.filter {
+            if case .series = $0.recurrence { return false }
+            return EventScheduleBounds.intersectsQueryRange(event: $0, start: start, end: end)
+        }
+        let seriesIds = Set(visible.compactMap { event -> EventId? in
+            if case .occurrence(let value) = event.recurrence { return value.seriesId }
+            return nil
+        })
+        return visible + expanded.filter { seriesIds.contains($0.id) }
+    }
+
+    public func expandedRecords() throws -> [LocalEventRecord] {
+        LocalEventExpansion.records(from: try fetchAll())
     }
 
     public func demoEventIds() throws -> Set<String> {
-        Set(try fetchAll().filter(\.isDemo).map { $0.id.rawValue })
+        Set(try expandedRecords().filter(\.isDemo).map { $0.id.rawValue })
     }
 }
 
