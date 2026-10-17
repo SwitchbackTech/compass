@@ -25,6 +25,7 @@ struct EventFormRecurrenceSection: View {
                     Text("Daily").tag(RecurrenceRuleLine.Frequency.daily)
                     Text("Weekly").tag(RecurrenceRuleLine.Frequency.weekly)
                     Text("Monthly").tag(RecurrenceRuleLine.Frequency.monthly)
+                    Text("Yearly").tag(RecurrenceRuleLine.Frequency.yearly)
                 }
                 .pickerStyle(.menu)
                 .accessibilityIdentifier("compass-event-form-recurrence-frequency")
@@ -47,18 +48,33 @@ struct EventFormRecurrenceSection: View {
                     weekdayRow
                 }
 
-                DatePicker(
-                    "Ends on",
-                    selection: Binding(
-                        get: { pattern.until ?? defaultUntil },
-                        set: {
-                            pattern.until = $0
-                            syncDraftRecurrence()
-                        }
-                    ),
-                    displayedComponents: [.date]
-                )
-                .accessibilityIdentifier("compass-event-form-recurrence-until")
+                Toggle("End date", isOn: Binding(
+                    get: { pattern.until != nil },
+                    set: { enabled in
+                        pattern.until = enabled ? inclusiveEndDate(defaultUntil) : nil
+                        if enabled { pattern.count = nil }
+                        syncDraftRecurrence()
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .accessibilityIdentifier("compass-event-form-recurrence-has-until")
+
+                if pattern.until != nil {
+                    DatePicker(
+                        "Ends on",
+                        selection: Binding(
+                            get: { pattern.until ?? defaultUntil },
+                            set: {
+                                pattern.until = inclusiveEndDate($0)
+                                pattern.count = nil
+                                syncDraftRecurrence()
+                            }
+                        ),
+                        in: EffectiveTimeZone.calendar.startOfDay(for: draft.schedule.start)...,
+                        displayedComponents: [.date]
+                    )
+                    .accessibilityIdentifier("compass-event-form-recurrence-until")
+                }
 
                 if !summaryText.isEmpty {
                     Text(summaryText)
@@ -150,7 +166,8 @@ struct EventFormRecurrenceSection: View {
     private func reloadFromDraft() {
         let rules = currentRules
         hasRecurrence = !rules.isEmpty || draft.recurrence == .series(rules: [])
-        if let parsed = RecurrenceRuleLine.parsePattern(from: rules) {
+        if let parsed = RecurrenceRuleLine.parsePattern(from: rules,
+            timeZoneIdentifier: EffectiveTimeZone.identifier, isAllDay: draft.schedule.kind == .allDay) {
             pattern = parsed
         } else if hasRecurrence {
             pattern = .init(
@@ -169,11 +186,7 @@ struct EventFormRecurrenceSection: View {
             }
             syncDraftRecurrence()
         } else {
-            if draft.kind == .edit {
-                model.updateDraftRecurrence(.single)
-            } else {
-                model.updateDraftRecurrence(.single)
-            }
+            model.updateDraftRecurrence(.single)
         }
     }
 
@@ -190,6 +203,10 @@ struct EventFormRecurrenceSection: View {
             )
         else { return }
         model.updateDraftRecurrence(.series(rules: [line]))
+    }
+
+    private func inclusiveEndDate(_ date: Date) -> Date {
+        RecurrenceRuleLine.inclusiveEndDate(date, timeZoneIdentifier: EffectiveTimeZone.identifier)
     }
 
     private func weekdayIndex(for date: Date) -> Int {
