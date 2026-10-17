@@ -100,6 +100,13 @@ const startExternalSubscriptions = (): (() => void) => {
   };
 };
 
+/**
+ * Re-reads every notification snapshot in this tab. Writers inside the tab
+ * call it after persisting, because the browser fires "storage" only in the
+ * tabs that did not write.
+ */
+export const notifyNotificationStateChanged = (): void => emit();
+
 export const subscribeToNotificationState = (
   onChange: () => void,
 ): (() => void) => {

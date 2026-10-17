@@ -1,14 +1,17 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { getNotificationPort } from "@web/notifications/notification.port";
-import { isNotificationsPrefEnabled } from "@web/notifications/notification.state";
+import {
+  isNotificationsPrefEnabled,
+  notifyNotificationStateChanged,
+} from "@web/notifications/notification.state";
 import { readNotificationShowFailureCount } from "@web/notifications/notification-diagnostics";
 
 const SHOW_FAILURE_BANNER_THRESHOLD = 2;
 
 export type NotificationBlockedBannerKind = "permission" | "show_blocked";
 
-export function hasDismissedNotificationBlockedBanner(): boolean {
+function hasDismissedNotificationBlockedBanner(): boolean {
   return (
     persistentBrowserStore.get(
       STORAGE_KEYS.NOTIFICATIONS_BLOCKED_BANNER_DISMISSED,
@@ -21,6 +24,7 @@ export function dismissNotificationBlockedBanner(): void {
     STORAGE_KEYS.NOTIFICATIONS_BLOCKED_BANNER_DISMISSED,
     "true",
   );
+  notifyNotificationStateChanged();
 }
 
 export function pickNotificationBlockedBannerKind(): NotificationBlockedBannerKind | null {

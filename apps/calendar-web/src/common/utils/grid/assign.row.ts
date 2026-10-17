@@ -1,7 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type EventWithDates } from "@web/common/utils/event/event.util";
-import { assignEventToRow } from "./grid.util";
+import { findRowForEvent } from "./grid.util";
 
 export const assignEventsToRow = (
   allDayEvents: EventWithDates[],
@@ -23,9 +23,9 @@ export const assignEventsToRow = (
       rows.push(eventDays);
       event["row"] = 1;
     } else {
-      const { fits, rowNum } = assignEventToRow(eventDays, rows);
+      const rowNum = findRowForEvent(eventDays, rows);
 
-      if (fits && rowNum !== undefined) {
+      if (rowNum !== null) {
         // add to existing row
         rows[rowNum] = [...rows[rowNum], ...eventDays];
         event["row"] = rowNum + 1;

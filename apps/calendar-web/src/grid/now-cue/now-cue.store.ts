@@ -11,7 +11,7 @@ type NowCueState = {
   pulseGeneration: number;
 };
 
-export const initialNowCueState: NowCueState = {
+const initialNowCueState: NowCueState = {
   active: false,
   pulseGeneration: 0,
 };
