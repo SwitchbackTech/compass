@@ -68,13 +68,7 @@ struct EventFormRecurrenceSection: View {
                 }
             }
         }
-        .padding(12)
-        .background(theme.surfacePanelColor)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(focusField == .recurrence ? theme.accentColor : theme.borderColor, lineWidth: 1)
-        )
+        .eventFormSectionChrome(focused: focusField == .recurrence)
         .onAppear { reloadFromDraft() }
         .onChange(of: draft.recurrence) { _, _ in reloadFromDraft() }
         .onChange(of: draft.schedule.start) { _, _ in syncDraftRecurrence() }
