@@ -146,19 +146,33 @@ final class MainMenuController: NSObject {
         nativeRootController?.model.openShortcutsCatalogWindow()
     }
 
+    private var calendarMenuShortcutsEnabled: Bool {
+        guard let model = nativeRootController?.model else { return false }
+        let editingText = (NSApp.keyWindow?.firstResponder as? NSTextView)?.isEditable == true
+        return !editingText && NSApp.modalWindow == nil && NSApp.keyWindow?.attachedSheet == nil
+            && !model.settingsStore.isPresented && !model.authStore.isModalPresented
+            && !model.overlayKeyboardCaptureActive && !model.isEventFormVisible
+            && !model.pendingLogoutConfirmation && !model.pendingDiscardDraftConfirmation
+            && model.billingStore.gateStatus == nil
+    }
+
     @objc private func newEvent(_ sender: Any?) {
+        guard calendarMenuShortcutsEnabled else { return }
         nativeRootController?.model.handleShortcut(.createTimed)
     }
 
     @objc private func goToday(_ sender: Any?) {
+        guard calendarMenuShortcutsEnabled else { return }
         nativeRootController?.model.handleShortcut(.navToday)
     }
 
     @objc private func showDay(_ sender: Any?) {
+        guard calendarMenuShortcutsEnabled else { return }
         nativeRootController?.model.handleShortcut(.navDayView)
     }
 
     @objc private func showWeek(_ sender: Any?) {
+        guard calendarMenuShortcutsEnabled else { return }
         nativeRootController?.model.handleShortcut(.navWeekView)
     }
 
@@ -226,6 +240,8 @@ final class MainMenuController: NSObject {
 extension MainMenuController: NSMenuItemValidation {
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         switch item.action {
+        case #selector(newEvent(_:)), #selector(goToday(_:)), #selector(showDay(_:)), #selector(showWeek(_:)):
+            return calendarMenuShortcutsEnabled
         case #selector(checkForUpdates(_:)):
             return updater.canCheckForUpdates
         case #selector(restartToUpdate(_:)):

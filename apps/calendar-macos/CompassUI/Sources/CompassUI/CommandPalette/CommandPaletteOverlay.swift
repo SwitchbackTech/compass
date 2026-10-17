@@ -14,6 +14,8 @@ public struct CommandPaletteOverlay: View {
 
     public var body: some View {
         if paletteStore.isOpen {
+            let sections = model.filteredPaletteSections()
+            let selectedId = model.selectedPaletteItemId
             ZStack {
                 theme.overlayBackdropColor
                     .ignoresSafeArea()
@@ -30,21 +32,39 @@ public struct CommandPaletteOverlay: View {
                     .focused($searchFocused)
                     .accessibilityIdentifier("compass-native-command-palette-search")
 
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 8) {
-                            ForEach(model.filteredPaletteSections()) { section in
-                                if !section.heading.isEmpty {
-                                    Text(section.heading)
-                                        .font(.rubik(12))
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(alignment: .leading, spacing: 8) {
+                                if sections.isEmpty {
+                                    Text("No results for “\(paletteStore.query)”")
                                         .foregroundStyle(theme.textMutedColor)
+                                        .padding(12)
                                 }
-                                ForEach(section.items) { item in
-                                    paletteRow(item)
+                                ForEach(sections) { section in
+                                    if !section.heading.isEmpty {
+                                        Text(section.heading)
+                                            .font(.rubik(12))
+                                            .foregroundStyle(theme.textMutedColor)
+                                    }
+                                    ForEach(section.items) { item in
+                                        paletteRow(item, selected: item.id == selectedId)
+                                            .id(item.id)
+                                    }
                                 }
                             }
                         }
+                        .frame(maxHeight: 360)
+                        .onChange(of: selectedId) { _, id in
+                            if let id { proxy.scrollTo(id, anchor: .center) }
+                        }
+                        .onChange(of: paletteStore.query) { _, _ in
+                            if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
+                        }
                     }
-                    .frame(maxHeight: 360)
+                    Text("↑ ↓ Navigate   ↵ Select   Esc Close")
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                        .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
                 }
                 .padding(16)
                 .frame(maxWidth: 520)
@@ -54,6 +74,7 @@ public struct CommandPaletteOverlay: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(theme.borderColor, lineWidth: 1)
                 )
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-native-command-palette")
             }
             .focusOnAppear($searchFocused)
@@ -64,14 +85,21 @@ public struct CommandPaletteOverlay: View {
     }
 
     @ViewBuilder
-    private func paletteRow(_ item: CommandPaletteItem) -> some View {
+    private func paletteRow(_ item: CommandPaletteItem, selected: Bool) -> some View {
         Button {
             model.runPaletteCommand(id: item.id)
         } label: {
             HStack {
-                Text(item.label)
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textColor)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.label)
+                        .font(.rubik(14))
+                        .foregroundStyle(theme.textColor)
+                    if let subtitle = item.subtitle {
+                        Text(subtitle)
+                            .font(.rubik(11))
+                            .foregroundStyle(theme.textMutedColor)
+                    }
+                }
                 Spacer()
                 if let shortcut = item.shortcut {
                     Text(shortcut)
@@ -81,10 +109,12 @@ public struct CommandPaletteOverlay: View {
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(theme.surfaceColor)
+            .background(selected ? theme.accentColor.opacity(0.18) : theme.surfaceColor)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
+        .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
     }
 }

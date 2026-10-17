@@ -33,6 +33,24 @@ extension NativeCalendarRootModel {
         CommandPaletteSearch.filter(sections: paletteSections(), query: commandPaletteStore.query)
     }
 
+    public var selectedPaletteItemId: String? {
+        let items = filteredPaletteSections().flatMap(\.items)
+        return items.first { $0.id == commandPaletteStore.selectedCommandId }?.id ?? items.first?.id
+    }
+
+    public func movePaletteSelection(by delta: Int) {
+        let items = filteredPaletteSections().flatMap(\.items)
+        guard !items.isEmpty else { return }
+        let index = items.firstIndex { $0.id == commandPaletteStore.selectedCommandId } ?? 0
+        let next = (index + delta % items.count + items.count) % items.count
+        commandPaletteStore.select(commandId: items[next].id)
+    }
+
+    public func activatePaletteSelection() {
+        guard let id = selectedPaletteItemId else { return }
+        runPaletteCommand(id: id)
+    }
+
     func legendSections() -> [ShortcutLegendSection] {
         ShortcutLegendSections.menuSections(
             registry: shortcutRegistry,
@@ -59,7 +77,8 @@ extension NativeCalendarRootModel {
         }
     }
 
-    public func runPaletteCommand(id: String) {
+    public func runPaletteCommand(id selectionId: String) {
+        let id = selectionId.hasPrefix("recent-") ? String(selectionId.dropFirst(7)) : selectionId
         let savedQuery = commandPaletteStore.query
         commandPaletteStore.recordSelection(commandId: id)
 
@@ -75,6 +94,12 @@ extension NativeCalendarRootModel {
         }
 
         switch id {
+        case "create-event":
+            handleShortcut(.createTimed)
+        case "create-allday-event":
+            handleShortcut(.createAllday)
+        case "about":
+            onShowAbout?()
         case "today":
             handleShortcut(.navToday)
         case "go-to-day":

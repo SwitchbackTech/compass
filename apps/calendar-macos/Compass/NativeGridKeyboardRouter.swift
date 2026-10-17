@@ -670,10 +670,8 @@ final class NativeGridKeyboardRouter {
             model.toggleShortcutsLegend()
         case .navGoToDate:
             model.toggleCommandPalette(fromGoToDate: true)
-        case .createTimed:
-            model.createTimedDraft(activity: .createShortcut)
-        case .createAllday:
-            model.createAllDayDraft()
+        case .createTimed, .createAllday:
+            model.handleShortcut(id)
         case .editOpen:
             if model.draftStore.gridDraft != nil {
                 if model.draftStore.status.isFormOpen {
@@ -722,10 +720,16 @@ final class NativeGridKeyboardRouter {
         }
 
         if model.commandPaletteStore.isOpen {
+            if event.matches(KeyChord(token: .named(.arrowDown))) {
+                model.movePaletteSelection(by: 1)
+                return true
+            }
+            if event.matches(KeyChord(token: .named(.arrowUp))) {
+                model.movePaletteSelection(by: -1)
+                return true
+            }
             if event.matches(KeyChord(token: .named(.enter))) {
-                if let first = model.filteredPaletteSections().flatMap(\.items).first {
-                    model.runPaletteCommand(id: first.id)
-                }
+                model.activatePaletteSelection()
                 return true
             }
             if let id = dispatcher.dispatch(event), id == .otherPalette {
