@@ -76,8 +76,6 @@ public enum RecurrenceRuleLine {
 
     public static func buildLine(
         pattern: Pattern,
-        scheduleStart: Date,
-        scheduleEnd: Date,
         timeZoneIdentifier: String,
         isAllDay: Bool
     ) -> String? {
@@ -95,25 +93,6 @@ public enum RecurrenceRuleLine {
             tokens.append("UNTIL=\(formatUntil(until, isAllDay: isAllDay, timeZoneIdentifier: timeZoneIdentifier))")
         }
         return "RRULE:" + tokens.joined(separator: ";")
-    }
-
-    public static func summary(
-        rules: [String],
-        scheduleStartISO: String,
-        scheduleEndISO: String,
-        timeZoneIdentifier: String
-    ) -> String {
-        guard let line = firstRule(from: rules),
-              let rule = RecurrenceRule(
-                  startDateISO: scheduleStartISO,
-                  endDateISO: scheduleEndISO,
-                  recurrenceRule: line,
-                  timeZoneIdentifier: timeZoneIdentifier
-              )
-        else {
-            return ""
-        }
-        return rule.summary()
     }
 
     public static func inclusiveEndDate(_ date: Date, timeZoneIdentifier: String) -> Date {

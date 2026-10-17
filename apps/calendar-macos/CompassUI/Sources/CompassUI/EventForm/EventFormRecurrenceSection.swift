@@ -76,12 +76,6 @@ struct EventFormRecurrenceSection: View {
                     .accessibilityIdentifier("compass-event-form-recurrence-until")
                 }
 
-                if !summaryText.isEmpty {
-                    Text(summaryText)
-                        .font(.rubik(12))
-                        .foregroundStyle(theme.textMutedColor)
-                        .accessibilityIdentifier("compass-event-form-recurrence-summary")
-                }
             }
         }
         .eventFormSectionChrome(focused: focusField == .recurrence)
@@ -128,37 +122,6 @@ struct EventFormRecurrenceSection: View {
             ?? draft.schedule.start
     }
 
-    private var summaryText: String {
-        let rules = currentRules
-        guard !rules.isEmpty else { return "" }
-        let startISO = scheduleStartISO
-        let endISO = scheduleEndISO
-        return RecurrenceRuleLine.summary(
-            rules: rules,
-            scheduleStartISO: startISO,
-            scheduleEndISO: endISO,
-            timeZoneIdentifier: EffectiveTimeZone.identifier
-        )
-    }
-
-    private var scheduleStartISO: String {
-        switch draft.schedule.kind {
-        case .timed:
-            return CompassDateParsing.formatLikeDayjs(draft.schedule.start)
-        case .allDay:
-            return CompassDateParsing.formatCalendarDay(draft.schedule.start)
-        }
-    }
-
-    private var scheduleEndISO: String {
-        switch draft.schedule.kind {
-        case .timed:
-            return CompassDateParsing.formatLikeDayjs(draft.schedule.end)
-        case .allDay:
-            return CompassDateParsing.formatCalendarDay(draft.schedule.end)
-        }
-    }
-
     private var currentRules: [String] {
         GridEventDraftRecurrence.resolvedRules(
             draft: draft,
@@ -200,8 +163,6 @@ struct EventFormRecurrenceSection: View {
         guard
             let line = RecurrenceRuleLine.buildLine(
                 pattern: pattern,
-                scheduleStart: draft.schedule.start,
-                scheduleEnd: draft.schedule.end,
                 timeZoneIdentifier: EffectiveTimeZone.identifier,
                 isAllDay: isAllDay
             )
