@@ -65,6 +65,24 @@ extension NativeCalendarRootModel {
         rebuildPresentation()
     }
 
+    public func updateAllDayDraftStart(_ date: Date) {
+        guard let draft = draftStore.gridDraft, draft.schedule.kind == .allDay else { return }
+        let calendar = EffectiveTimeZone.calendar
+        let start = calendar.startOfDay(for: date)
+        guard let minimumEnd = calendar.date(byAdding: .day, value: 1, to: start) else { return }
+        updateDraftFromForm(schedule: .init(
+            start: start, end: max(draft.schedule.end, minimumEnd), kind: .allDay))
+    }
+
+    /// The form shows the last included day; stored all-day ends are exclusive.
+    public func updateAllDayDraftEnd(_ date: Date) {
+        guard let draft = draftStore.gridDraft, draft.schedule.kind == .allDay else { return }
+        let calendar = EffectiveTimeZone.calendar
+        let lastDay = max(calendar.startOfDay(for: date), draft.schedule.start)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: lastDay) else { return }
+        updateDraftFromForm(schedule: .init(start: draft.schedule.start, end: end, kind: .allDay))
+    }
+
     public func requestCloseEventForm() {
         guard draftStore.status.isFormOpen else { return }
         if draftStore.hasUnsavedFormChanges || hasMeaningfulDraftTitle() {
