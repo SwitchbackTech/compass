@@ -22,7 +22,8 @@ public enum GridEventDraftFromEvent {
             description: details.description,
             location: details.location,
             recurrence: .preserve,
-            attendees: attendees
+            attendees: attendees,
+            timeZone: timeZone(from: event.schedule)
         )
     }
 
@@ -43,8 +44,14 @@ public enum GridEventDraftFromEvent {
             calendarId: calendarId,
             color: details.color,
             description: details.description,
-            location: details.location
+            location: details.location,
+            timeZone: timeZone(from: event.schedule)
         )
+    }
+
+    private static func timeZone(from schedule: EventSchedule) -> IANATimeZone? {
+        if case .timed(let timed) = schedule { return timed.timeZone }
+        return nil
     }
 
     private static func eventDetails(from event: Event) -> (

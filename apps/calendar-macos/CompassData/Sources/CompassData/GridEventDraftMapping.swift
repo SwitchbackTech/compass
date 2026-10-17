@@ -40,7 +40,7 @@ public enum GridEventDraftMapping {
             popupReminderMinutes: editedBaseline?.popupReminderMinutes,
             providerManaged: editedBaseline?.providerManaged,
             recurrence: recurrence,
-            schedule: schedule(from: draft.schedule),
+            schedule: schedule(from: draft.schedule, timeZone: draft.timeZone),
             updatedAt: now
         )
     }
@@ -60,7 +60,7 @@ public enum GridEventDraftMapping {
             id: draft.clientId,
             invitation: invitation,
             recurrence: createRecurrence(from: draft.recurrence),
-            schedule: schedule(from: draft.schedule)
+            schedule: schedule(from: draft.schedule, timeZone: draft.timeZone)
         )
     }
 
@@ -76,7 +76,7 @@ public enum GridEventDraftMapping {
             content: inputContent(from: draft, title: resolvedTitle),
             invitation: invitation,
             recurrence: replaceRecurrence(from: draft.recurrence),
-            schedule: schedule(from: draft.schedule),
+            schedule: schedule(from: draft.schedule, timeZone: draft.timeZone),
             scope: scope
         )
     }
@@ -166,7 +166,7 @@ public enum GridEventDraftMapping {
         draft.color.flatMap { ColorEnum(rawValue: $0.rawValue) }
     }
 
-    private static func schedule(from draftSchedule: DraftSchedule) -> EventSchedule {
+    private static func schedule(from draftSchedule: DraftSchedule, timeZone: IANATimeZone?) -> EventSchedule {
         switch draftSchedule.kind {
         case .timed:
             return .timed(
@@ -174,7 +174,7 @@ public enum GridEventDraftMapping {
                     end: DateTime(rawValue: CompassDateParsing.formatLikeDayjs(draftSchedule.end)),
                     kind: "timed",
                     start: DateTime(rawValue: CompassDateParsing.formatLikeDayjs(draftSchedule.start)),
-                    timeZone: IANATimeZone(rawValue: EffectiveTimeZone.identifier)
+                    timeZone: timeZone ?? IANATimeZone(rawValue: EffectiveTimeZone.identifier)
                 )
             )
         case .allDay:
