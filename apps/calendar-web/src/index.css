@@ -1373,6 +1373,35 @@
 }
 
 /*
+ * Event form date field (react-datepicker input). Match .c-time-picker control
+ * chrome: overlay surface, radius, height, accent focus ring.
+ */
+.c-event-form-date-field {
+  @apply relative min-w-22.5;
+  font-size: var(--font-size-l);
+  & .c-event-form-date-field__input,
+  & input {
+    box-sizing: border-box;
+    min-height: 38px;
+    border: 0;
+    border-radius: var(--radius-default);
+    background: var(--color-surface-overlay);
+    color: var(--text);
+    padding: 0 8px;
+    transition: var(--transition-default);
+  }
+  & .c-event-form-date-field__input:hover,
+  & input:hover {
+    background: hsl(0 0 100 / 12%);
+  }
+  & .c-event-form-date-field__input:focus-visible,
+  & input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}
+
+/*
  * Guest email-chip combobox (AttendeeField). Unlayered for the same reason
  * as .c-time-picker above: it must override react-select's unlayered CSS.
  */

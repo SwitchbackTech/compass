@@ -6,11 +6,11 @@ import {
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 
-/** date-fns tokens for react-datepicker (shows as Tue, Oct 13). */
-export const EVENT_FORM_DATE_INPUT_FORMAT = "eee, MMM d";
+/** date-fns tokens for react-datepicker (display: 10.17.26). */
+export const EVENT_FORM_DATE_INPUT_FORMAT = "MM.dd.yy";
 
 export const formatEventFormDateLabel = (date: Date) =>
-  dayjs(date).format("ddd, MMM D");
+  dayjs(date).format("MM.DD.YY");
 
 export const shiftTimedScheduleByDays = (
   start: Date,

@@ -3,6 +3,7 @@ import { useEffect, useId, useRef } from "react";
 import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import {
@@ -39,6 +40,10 @@ const timePickerTextStyles = {
   singleValue: themeColor("var(--text)"),
   input: themeColor("var(--text)"),
   placeholder: themeColor("var(--text-muted)"),
+  menuPortal: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    zIndex: Z_INDEX_FLOATING_MENU,
+  }),
   option: (
     base: CSSObjectWithLabel,
     { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean },
@@ -200,6 +205,8 @@ export const TimePicker = ({
         value={selectValue}
         maxMenuHeight={4 * 41}
         blurInputOnSelect
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
         menuIsOpen={isMenuOpen}
         //@ts-expect-error uses custom onChange to manage focus in parent
         onChange={(option: SelectOption<string> | null) => {

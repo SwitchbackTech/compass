@@ -277,6 +277,8 @@ describe("TimePickers", () => {
     );
 
     await user.tab();
+    expect(screen.getByTitle("Pick Start Date")).toHaveFocus();
+    await user.tab();
     expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("combobox", { name: "End time" })).toHaveFocus();

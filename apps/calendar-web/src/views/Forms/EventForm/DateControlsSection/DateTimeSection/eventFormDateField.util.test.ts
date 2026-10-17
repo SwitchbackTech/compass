@@ -1,10 +1,19 @@
 import dayjs from "@core/util/date/dayjs";
 import { getTimeOptionByValue } from "@web/common/utils/datetime/web.date.util";
 import {
+  formatEventFormDateLabel,
   shiftTimedScheduleByDays,
   timedScheduleFromDateChange,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
 import { describe, expect, it } from "bun:test";
+
+describe("formatEventFormDateLabel", () => {
+  it("uses MM.DD.YY", () => {
+    expect(formatEventFormDateLabel(new Date("2026-10-17T12:00:00.000Z"))).toBe(
+      "10.17.26",
+    );
+  });
+});
 
 describe("shiftTimedScheduleByDays", () => {
   it("preserves duration when shifting both instants", () => {
