@@ -45,6 +45,79 @@ final class EventsStoreTests: XCTestCase {
         }
     }
 
+    func testOfflineRangeUsesStaleCacheAndRetriesWhenConnectionReturns() async throws {
+        let (store, api, repository, cache, key) = try cachedRange()
+        let cached = try StoreSampleEvents.timedEvent(id: "cached")
+        try repository.upsert(events: [cached], isLocal: false)
+        let stamp = Date(timeIntervalSince1970: 0)
+        try cache.markLoaded(key: key, fetchedAt: stamp)
+        api.listHandler = { _ in throw URLError(.notConnectedToInternet) }
+        let offline = try await store.loadRange(key: key)
+        XCTAssertEqual(offline, [cached])
+        XCTAssertEqual(try store.coverage(for: key), .stale(fetchedAt: stamp))
+
+        api.listHandler = { _ in [] }
+        let online = try await store.loadRange(key: key)
+        XCTAssertTrue(online.isEmpty)
+        XCTAssertTrue(try repository.fetchAll().isEmpty)
+        guard case .fresh = try store.coverage(for: key) else {
+            return XCTFail("Expected successful retry to refresh coverage")
+        }
+    }
+
+    func testOfflineUnloadedRangeDoesNotPretendToBeEmpty() async throws {
+        let (store, api, _, _, key) = try cachedRange()
+        api.listHandler = { _ in throw URLError(.notConnectedToInternet) }
+        do {
+            _ = try await store.loadRange(key: key)
+            XCTFail("Expected the missing-range connection failure")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .notConnectedToInternet)
+        }
+        XCTAssertEqual(try store.coverage(for: key), .missing)
+    }
+
+    func testAuthenticationFailureDoesNotFallBackToCachedRange() async throws {
+        let (store, api, _, cache, key) = try cachedRange()
+        try cache.markLoaded(key: key, fetchedAt: Date(timeIntervalSince1970: 0))
+        api.listHandler = { _ in throw URLError(.userAuthenticationRequired) }
+        do {
+            _ = try await store.loadRange(key: key)
+            XCTFail("Expected authentication error")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .userAuthenticationRequired)
+        }
+    }
+
+    func testInvalidationDuringOfflineRequestDoesNotReuseOldCoverage() async throws {
+        let (store, api, _, cache, key) = try cachedRange()
+        try cache.markLoaded(key: key, fetchedAt: Date(timeIntervalSince1970: 0))
+        api.listHandler = { _ in
+            try cache.clear()
+            throw URLError(.notConnectedToInternet)
+        }
+        do {
+            _ = try await store.loadRange(key: key)
+            XCTFail("Expected invalidated range to reject fallback")
+        } catch let error as URLError {
+            XCTAssertEqual(error.code, .notConnectedToInternet)
+        }
+        XCTAssertEqual(try store.coverage(for: key), .missing)
+    }
+
+    private func cachedRange() throws -> (EventsStore, MockEventsAPI, EventRepository, RangeCache, EventRangeQueryKey) {
+        let database = try AppDatabase.inMemory()
+        let repository = EventRepository(database: database)
+        let cache = RangeCache(database: database)
+        let api = MockEventsAPI()
+        let store = EventsStore(
+            repository: repository, localEvents: LocalEventRepository(database: database),
+            rangeCache: cache, eventsAPI: api)
+        let key = EventRangeQueryKey(scope: .week, source: .remote,
+            start: "2026-01-01T00:00:00.000Z", end: "2026-01-08T00:00:00.000Z")
+        return (store, api, repository, cache, key)
+    }
+
     private func makeCreateInput(from event: Event) throws -> CreateEventInput {
         _ = event
         let json = """
