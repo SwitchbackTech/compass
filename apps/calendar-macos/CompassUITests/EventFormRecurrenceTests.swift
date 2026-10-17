@@ -35,6 +35,10 @@ final class EventFormRecurrenceTests: XCTestCase {
         XCTAssertFalse(endDate.exists)
         endToggle.click()
         XCTAssertTrue(endDate.exists)
+        XCTAssertTrue(endDate.isHittable)
+        let scroll = window.scrollViews.containing(.any, identifier: "compass-event-form-recurrence-toggle").element
+        XCTAssertTrue(scroll.exists)
+        XCTAssertLessThanOrEqual(endDate.frame.maxY, scroll.frame.maxY)
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Recurrence end date enabled"
         evidence.lifetime = .keepAlways

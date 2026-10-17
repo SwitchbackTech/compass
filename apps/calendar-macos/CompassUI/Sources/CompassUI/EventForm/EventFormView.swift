@@ -127,6 +127,11 @@ public struct EventFormView: View {
                 .onChange(of: model.eventFormFocusedField) { _, field in
                     proxy.scrollTo(field == .end ? EventFormField.start : field, anchor: .center)
                 }
+                .onChange(of: draft.recurrence) { _, _ in
+                    if model.eventFormFocusedField == .recurrence {
+                        proxy.scrollTo(EventFormField.recurrence, anchor: .center)
+                    }
+                }
             }
             if !model.isEventFormReadOnly(for: draft) {
                 Button {
@@ -151,6 +156,7 @@ public struct EventFormView: View {
         .padding(.horizontal, 16)
         .padding(.top, 20)
         .padding(.bottom, 16)
+        .tint(theme.accentColor)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("compass-event-form")
