@@ -8,7 +8,7 @@ struct EventFormRecurrenceSection: View {
     let draft: GridEventDraft
     let focusField: EventFormField
 
-    @State private var pattern: RecurrenceRuleLine.Pattern = .init()
+    @State private var pattern: RecurrenceRuleLine.Pattern = .init(frequency: .daily)
     @State private var hasRecurrence: Bool = false
 
     var body: some View {
@@ -25,6 +25,7 @@ struct EventFormRecurrenceSection: View {
                     Text("Daily").tag(RecurrenceRuleLine.Frequency.daily)
                     Text("Weekly").tag(RecurrenceRuleLine.Frequency.weekly)
                     Text("Monthly").tag(RecurrenceRuleLine.Frequency.monthly)
+                    Text("Yearly").tag(RecurrenceRuleLine.Frequency.yearly)
                 }
                 .pickerStyle(.menu)
                 .accessibilityIdentifier("compass-event-form-recurrence-frequency")
@@ -47,25 +48,34 @@ struct EventFormRecurrenceSection: View {
                     weekdayRow
                 }
 
-                DatePicker(
-                    "Ends on",
-                    selection: Binding(
-                        get: { pattern.until ?? defaultUntil },
-                        set: {
-                            pattern.until = $0
-                            syncDraftRecurrence()
-                        }
-                    ),
-                    displayedComponents: [.date]
-                )
-                .accessibilityIdentifier("compass-event-form-recurrence-until")
+                Toggle("End date", isOn: Binding(
+                    get: { pattern.until != nil },
+                    set: { enabled in
+                        pattern.until = enabled ? inclusiveEndDate(defaultUntil) : nil
+                        if enabled { pattern.count = nil }
+                        syncDraftRecurrence()
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .accessibilityIdentifier("compass-event-form-recurrence-has-until")
 
-                if !summaryText.isEmpty {
-                    Text(summaryText)
-                        .font(.rubik(12))
-                        .foregroundStyle(theme.textMutedColor)
-                        .accessibilityIdentifier("compass-event-form-recurrence-summary")
+                if pattern.until != nil {
+                    DatePicker(
+                        "Ends on",
+                        selection: Binding(
+                            get: { pattern.until ?? defaultUntil },
+                            set: {
+                                pattern.until = inclusiveEndDate($0)
+                                pattern.count = nil
+                                syncDraftRecurrence()
+                            }
+                        ),
+                        in: EffectiveTimeZone.calendar.startOfDay(for: draft.schedule.start)...,
+                        displayedComponents: [.date]
+                    )
+                    .accessibilityIdentifier("compass-event-form-recurrence-until")
                 }
+
             }
         }
         .eventFormSectionChrome(focused: focusField == .recurrence)
@@ -92,51 +102,24 @@ struct EventFormRecurrenceSection: View {
                 .background(selected ? theme.accentColor.opacity(0.2) : theme.surfaceColor.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .foregroundStyle(theme.textColor)
+                .accessibilityLabel(entry.name)
+                .accessibilityValue(selected ? "Selected" : "Not selected")
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .accessibilityIdentifier("compass-event-form-recurrence-weekdays")
     }
 
-    private var weekdayLabels: [(index: Int, label: String)] {
+    private var weekdayLabels: [(index: Int, label: String, name: String)] {
         [
-            (0, "M"), (1, "T"), (2, "W"), (3, "T"), (4, "F"), (5, "S"), (6, "S"),
+            (0, "M", "Monday"), (1, "T", "Tuesday"), (2, "W", "Wednesday"),
+            (3, "T", "Thursday"), (4, "F", "Friday"), (5, "S", "Saturday"), (6, "S", "Sunday"),
         ]
     }
 
     private var defaultUntil: Date {
         EffectiveTimeZone.calendar.date(byAdding: .month, value: 3, to: draft.schedule.start)
             ?? draft.schedule.start
-    }
-
-    private var summaryText: String {
-        let rules = currentRules
-        guard !rules.isEmpty else { return "" }
-        let startISO = scheduleStartISO
-        let endISO = scheduleEndISO
-        return RecurrenceRuleLine.summary(
-            rules: rules,
-            scheduleStartISO: startISO,
-            scheduleEndISO: endISO,
-            timeZoneIdentifier: EffectiveTimeZone.identifier
-        )
-    }
-
-    private var scheduleStartISO: String {
-        switch draft.schedule.kind {
-        case .timed:
-            return CompassDateParsing.formatLikeDayjs(draft.schedule.start)
-        case .allDay:
-            return CompassDateParsing.formatCalendarDay(draft.schedule.start)
-        }
-    }
-
-    private var scheduleEndISO: String {
-        switch draft.schedule.kind {
-        case .timed:
-            return CompassDateParsing.formatLikeDayjs(draft.schedule.end)
-        case .allDay:
-            return CompassDateParsing.formatCalendarDay(draft.schedule.end)
-        }
     }
 
     private var currentRules: [String] {
@@ -150,7 +133,8 @@ struct EventFormRecurrenceSection: View {
     private func reloadFromDraft() {
         let rules = currentRules
         hasRecurrence = !rules.isEmpty || draft.recurrence == .series(rules: [])
-        if let parsed = RecurrenceRuleLine.parsePattern(from: rules) {
+        if let parsed = RecurrenceRuleLine.parsePattern(from: rules,
+            timeZoneIdentifier: EffectiveTimeZone.identifier, isAllDay: draft.schedule.kind == .allDay) {
             pattern = parsed
         } else if hasRecurrence {
             pattern = .init(
@@ -169,11 +153,7 @@ struct EventFormRecurrenceSection: View {
             }
             syncDraftRecurrence()
         } else {
-            if draft.kind == .edit {
-                model.updateDraftRecurrence(.single)
-            } else {
-                model.updateDraftRecurrence(.single)
-            }
+            model.updateDraftRecurrence(.single)
         }
     }
 
@@ -183,13 +163,15 @@ struct EventFormRecurrenceSection: View {
         guard
             let line = RecurrenceRuleLine.buildLine(
                 pattern: pattern,
-                scheduleStart: draft.schedule.start,
-                scheduleEnd: draft.schedule.end,
                 timeZoneIdentifier: EffectiveTimeZone.identifier,
                 isAllDay: isAllDay
             )
         else { return }
         model.updateDraftRecurrence(.series(rules: [line]))
+    }
+
+    private func inclusiveEndDate(_ date: Date) -> Date {
+        RecurrenceRuleLine.inclusiveEndDate(date, timeZoneIdentifier: EffectiveTimeZone.identifier)
     }
 
     private func weekdayIndex(for date: Date) -> Int {

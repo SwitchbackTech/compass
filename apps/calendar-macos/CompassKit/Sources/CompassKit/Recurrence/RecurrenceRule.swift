@@ -91,21 +91,24 @@ public struct RecurrenceRule: Sendable, Equatable {
         }
 
         var hits: [Date] = []
-        var dayOffset = 0
-        let maxScan = 6_000
+        var scanIndex = 0
+        let yearly: Bool = {
+            if case .yearly = parts.frequency { return true }
+            return false
+        }()
+        let maxScan = yearly ? max(0, 10_000 - utcCalendar.component(.year, from: dtstartFloating)) : 6_000
         let countCap = parts.count
 
-        while dayOffset < maxScan {
+        while scanIndex < maxScan {
             if let countCap, hits.count >= countCap {
                 break
             }
             if hits.count >= limit {
                 break
             }
-            let candidateFloating = RecurrenceFloatingTime.addDays(
-                to: dtstartFloating,
-                days: dayOffset
-            )
+            let candidateFloating = yearly
+                ? utcCalendar.date(byAdding: .year, value: scanIndex, to: dtstartFloating) ?? dtstartFloating
+                : RecurrenceFloatingTime.addDays(to: dtstartFloating, days: scanIndex)
             if let untilFloating, candidateFloating > untilFloating {
                 break
             }
@@ -120,7 +123,7 @@ public struct RecurrenceRule: Sendable, Equatable {
                     )
                 hits.append(localized)
             }
-            dayOffset += 1
+            scanIndex += 1
         }
 
         if hits.isEmpty {
@@ -330,6 +333,11 @@ private struct ParsedRecurrenceRule: Sendable, Equatable {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        // Earlier native builds serialized date-only cutoffs with a trailing Z.
+        if value.count == 9, value.hasSuffix("Z") {
+            formatter.dateFormat = "yyyyMMdd"
+            return formatter.date(from: String(value.prefix(8)))
+        }
         if value.hasSuffix("Z") {
             formatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
             return formatter.date(from: value)
