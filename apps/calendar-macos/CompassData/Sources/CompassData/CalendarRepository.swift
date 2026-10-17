@@ -19,6 +19,14 @@ public struct CalendarRepository: Sendable {
         }
     }
 
+    public func removeCachedCalendars(except retainedIds: Set<String>) throws {
+        try db.write { db in
+            for record in try CalendarRecord.fetchAll(db) where !retainedIds.contains(record.id) {
+                try CalendarRecord.deleteOne(db, key: record.id)
+            }
+        }
+    }
+
     public func fetchAll() throws -> [CompassCalendar] {
         try db.read { db in
             try CalendarRecord.fetchAll(db).map { try CalendarRecordCodec.calendar(from: $0) }

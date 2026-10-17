@@ -79,6 +79,7 @@ extension NativeCalendarRootModel {
     }
 
     public func duplicateFocusedOrFormEvent() async {
+        let revision = sessionRevision
         let sourceEvent: Event? = {
             if let draft = draftStore.gridDraft, draft.kind == .edit,
                 let id = draft.persistedEventId
@@ -105,6 +106,7 @@ extension NativeCalendarRootModel {
         let savedId = optimistic.id.rawValue
         do {
             try await eventsStore.createOptimistic(input: input, optimisticEvent: optimistic)
+            guard revision == sessionRevision else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
             focusEvent(eventId: savedId)

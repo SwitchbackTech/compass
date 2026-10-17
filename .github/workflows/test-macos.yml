@@ -106,7 +106,7 @@ jobs:
             ${{ runner.os }}-swift-pkgs-v1-
             ${{ runner.os }}-swift-pkgs-
 
-      - name: Test CompassKit and CompassData
+      - name: Test native Swift packages
         run: bash .github/scripts/test-macos-swift-packages.sh
 
   build:

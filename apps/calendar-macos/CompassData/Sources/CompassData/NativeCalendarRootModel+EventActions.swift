@@ -120,6 +120,7 @@ extension NativeCalendarRootModel {
     /// Returns the created copy, which has a new id.
     @discardableResult
     func commitDuplicate(from source: Event, recordUndo: Bool) async -> Event? {
+        let revision = sessionRevision
         guard let input = EventDuplicateCommit.duplicateInput(
             from: source,
             calendars: calendars,
@@ -128,6 +129,7 @@ extension NativeCalendarRootModel {
 
         do {
             try await eventsStore.createOptimistic(input: input, optimisticEvent: optimistic)
+            guard revision == sessionRevision else { return nil }
             loadedEvents = try eventsStore.fetchAllEvents()
             if recordUndo, !undoStore.isRestoringHistory() {
                 undoStore.record(.create(event: optimistic))
@@ -172,12 +174,14 @@ extension NativeCalendarRootModel {
     }
 
     func deleteEvent(_ event: Event, scope: EventDeleteScope) async {
+        let revision = sessionRevision
         let undoable =
             UndoStore.isUndoableRecurrence(event) && scope == .this
         let snapshot = event
         do {
             try await eventsStore.deleteOptimistic(id: event.id, scope: scope)
         } catch {}
+        guard revision == sessionRevision else { return }
         loadedEvents.removeAll { $0.id == event.id }
         refreshLoadedEvents()
         clearFocusIfShowing(eventId: event.id)
@@ -222,13 +226,16 @@ extension NativeCalendarRootModel {
             revertCreatedEvent(event)
         }
         recordShortcut(.otherUndo)
+        let revision = sessionRevision
         Task {
+            guard revision == sessionRevision else { return }
             await eventsStore.settleStagedDelete(id: event.id, scope: .this)
             await refreshSideband()
         }
     }
 
     public func undoLastChangeAndWait() async {
+        let revision = sessionRevision
         guard !undoStore.isRestoringHistory() else { return }
         guard let entry = undoStore.peekUndo() else {
             statusToastStore.show(id: "undo-status", message: "Nothing to undo")
@@ -244,6 +251,7 @@ extension NativeCalendarRootModel {
         await undoStore.runHistoryRestoreAsync {
             await self.replayUndoEntry(entry)
         }
+        guard revision == sessionRevision else { return }
         recordShortcut(.otherUndo)
         // Up next and the menu bar agenda re-read the store once the change
         // has settled, so an undone create never lingers there.
@@ -262,9 +270,11 @@ extension NativeCalendarRootModel {
         }
         guard canReplayEdit(entry, undo: false) else { return }
         undoStore.commitRedo()
+        let revision = sessionRevision
         await undoStore.runHistoryRestoreAsync {
             await self.replayRedoEntry(entry)
         }
+        guard revision == sessionRevision else { return }
         await refreshSideband()
         recordShortcut(.otherRedo)
     }

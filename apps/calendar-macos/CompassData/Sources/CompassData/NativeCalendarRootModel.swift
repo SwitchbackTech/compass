@@ -27,6 +27,7 @@ public final class NativeCalendarRootModel {
     /// Title of the focused grid event for native UI tests and accessibility probes.
     public private(set) var gridFocusAccessibilityLabel: String?
     public private(set) var calendars: [CompassCalendar] = []
+    var localCalendarId: String?
     public var isSignedIn: Bool { authStore.authenticated }
     public var shortcutRegistry: ShortcutRegistry { environment.shortcutRegistry }
     public private(set) var contentTrackWidth: CGFloat = 1010
@@ -48,6 +49,7 @@ public final class NativeCalendarRootModel {
     public private(set) var nowCueHeaderHighlight = false
     private var nowCuePulseTask: Task<Void, Never>?
     public private(set) var paletteEventSearchHits: [CommandPaletteEventHit] = []
+    var sessionRevision = 0
     var paletteSearchTask: Task<Void, Never>?
     public var dedicationDialogVisible = false
     /// Right-hand sidebar, toggled with `]` like the web. Kept between launches.
@@ -334,6 +336,9 @@ public final class NativeCalendarRootModel {
         if demoPresentation != nil {
             authStore.closeModal()
         }
+        if isSignedIn, (try? AccountCacheIdentity.matches(userId: authStore.userId, repository: environment.userMetadataRepository)) != true {
+            guard resetAccountCaches(discardDraft: false) else { return }
+        }
         try? DemoDataSeeder.seedIfNeeded(
             localEvents: environment.localEventRepository,
             metadata: environment.userMetadataRepository,
@@ -366,24 +371,39 @@ public final class NativeCalendarRootModel {
         await syncConnectionsStore.reloadFromMetadata()
     }
 
+    public var onExportLocalData: ((Data, String) async throws -> Bool)?
+    public internal(set) var isExportingLocalData = false
+    public internal(set) var pendingLogoutConfirmation = false
+    public internal(set) var isLoggingOut = false
+    public internal(set) var logoutError: String?
+
     public func signOut() async throws {
         try await authStore.signOut()
     }
 
     private func handleAuthenticated() async {
+        guard resetAccountCaches(discardDraft: false) else { return }
+        let revision = sessionRevision
         billingStore.setAuthenticated(true)
         bookingStore.setAuthenticated(true)
         cachedDemoEventIds = (try? environment.localEventRepository.demoEventIds()) ?? []
         await billingStore.refreshAfterSignIn()
+        guard revision == sessionRevision, isSignedIn else { return }
         await bookingStore.refreshPageIfNeeded()
+        guard revision == sessionRevision, isSignedIn else { return }
         startEventStream()
         await syncConnectionsStore.reloadFromMetadata()
+        guard revision == sessionRevision, isSignedIn else { return }
         onboardingStore.markUserMetadataLoaded()
         onboardingStore.refreshConnectCalendarSnooze()
         await reloadCalendars()
+        guard revision == sessionRevision, isSignedIn else { return }
         try? await hiddenEventsStore.load()
+        guard revision == sessionRevision, isSignedIn else { return }
         await refreshVisibleRange()
+        guard revision == sessionRevision, isSignedIn else { return }
         await refreshSideband()
+        guard revision == sessionRevision, isSignedIn else { return }
         if GuestMeetingSetupDraftStorage.read() != nil {
             settingsStore.beginGuestMeetingSetup()
             bookingStore.resumeGuestMeetingSetupIfNeeded(
@@ -399,6 +419,8 @@ public final class NativeCalendarRootModel {
     }
 
     private func handleSignedOut() async {
+        let cachesReady = resetAccountCaches()
+        let revision = sessionRevision
         billingStore.setAuthenticated(false)
         bookingStore.setAuthenticated(false)
         settingsStore.close()
@@ -406,11 +428,41 @@ public final class NativeCalendarRootModel {
         if let eventStream {
             await eventStream.stop()
         }
+        guard revision == sessionRevision else { return }
         streamTroubleSince = nil
+        if cachesReady, eventsStore.source == .local {
+            await reloadCalendars()
+            await refreshVisibleRange()
+            await refreshSideband()
+        }
+    }
+
+    private func resetAccountCaches(discardDraft: Bool = true) -> Bool {
+        sessionRevision += 1
+        keyboardCreateSettleGeneration += 1
+        refreshTask?.cancel()
+        paletteSearchTask?.cancel()
+        paletteEventSearchHits = []
+        commandPaletteStore.close()
+        syncConnectionsStore.resetSession()
+        if discardDraft { draftStore.discard() }
+        undoStore.clear()
         loadedEvents = []
         sidebandEvents = []
         calendars = []
         rebuildPresentation()
+        do {
+            try eventsStore.resetRemoteSession()
+            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            let localId = try LocalCalendarSentinel.calendarId(repository: environment.userMetadataRepository)
+            localIds.insert(demoPresentation?.calendarId ?? localId.rawValue)
+            try calendarRepository.removeCachedCalendars(except: localIds)
+            try AccountCacheIdentity.record(userId: authStore.userId, repository: environment.userMetadataRepository)
+            return true
+        } catch {
+            statusToastStore.show(id: "session-cache-error", message: "Could not refresh calendar data. Try logging in again.")
+            return false
+        }
     }
 
     public func updateContentTrackWidth(_ width: CGFloat) {
@@ -1053,6 +1105,7 @@ public final class NativeCalendarRootModel {
     }
 
     private func refreshVisibleRange() async {
+        let revision = sessionRevision
         guard viewStore.view != .life else { return }
         let source = eventsStore.source
         guard isSignedIn || source == .local else { return }
@@ -1065,6 +1118,7 @@ public final class NativeCalendarRootModel {
         )
         do {
             _ = try await eventsStore.loadRange(key: key)
+            guard revision == sessionRevision, isSignedIn || eventsStore.source == .local else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
             await refreshSideband()
@@ -1081,12 +1135,15 @@ public final class NativeCalendarRootModel {
     }
 
     private func reloadCalendars() async {
+        let revision = sessionRevision
         if eventsStore.source == .local, !isSignedIn {
             await bootstrapAnonymousCalendarsIfNeeded()
             return
         }
+        guard isSignedIn else { return }
         do {
             let remote = try await environment.apiClient.calendars.list()
+            guard revision == sessionRevision, isSignedIn else { return }
             var merged = remote
             if SystemCalendarConnectionStore.isConnected {
                 let cached = try calendarRepository.fetchAll()
@@ -1105,16 +1162,21 @@ public final class NativeCalendarRootModel {
 
     private func bootstrapAnonymousCalendarsIfNeeded() async {
         do {
+            let calendar: CompassCalendar
             if let demoPresentation {
-                let calendar = demoPresentation.calendarListItem()
-                try calendarRepository.upsert(calendars: [calendar])
+                calendar = demoPresentation.calendarListItem()
             } else {
                 let sentinel = try LocalCalendarSentinel.calendarId(
                     repository: environment.userMetadataRepository)
-                let calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
-                try calendarRepository.upsert(calendars: [calendar])
+                calendar = LocalCalendarSentinel.synthesizeCalendar(id: sentinel)
             }
-            calendars = try calendarRepository.fetchAll()
+            try calendarRepository.upsert(calendars: [calendar])
+            localCalendarId = calendar.id
+            // Local records prove which cached calendars belong to this device.
+            // Other cached calendars require the signed-in session that loaded them.
+            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            localIds.insert(calendar.id)
+            calendars = try calendarRepository.fetchAll().filter { localIds.contains($0.id) }
             rebuildPresentation()
         } catch {
             Self.log.error("bootstrap local calendars failed: \(String(describing: error), privacy: .public)")

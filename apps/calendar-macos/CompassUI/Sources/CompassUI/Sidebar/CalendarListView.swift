@@ -12,6 +12,9 @@ struct CalendarListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let calendar = model.anonymousCalendar {
+                AnonymousCalendarRowView(calendar: calendar) { model.authStore.openModal(.signUp) }
+            }
             if showsConnectButtons {
                 connectButtons
             }

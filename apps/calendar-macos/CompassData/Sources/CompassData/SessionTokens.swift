@@ -5,6 +5,16 @@ public struct SessionTokens: Equatable, Sendable, Codable {
     public var refreshToken: String
     public var frontToken: String
 
+    /// Supertokens' front token is base64-encoded UTF-8 JSON; `uid` survives token refresh.
+    public var userId: String? {
+        struct Identity: Decodable { let uid: String }
+        let padding = String(repeating: "=", count: (4 - frontToken.count % 4) % 4)
+        guard let data = Data(base64Encoded: frontToken + padding),
+              let identity = try? JSONDecoder().decode(Identity.self, from: data),
+              !identity.uid.isEmpty else { return nil }
+        return identity.uid
+    }
+
     public init(accessToken: String, refreshToken: String, frontToken: String) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken

@@ -24,6 +24,7 @@ public final class BillingStore {
     private let analytics: ProductAnalyticsClient
     private let sessionPresenter: any HostedBillingSessionPresenting
     private var authenticated = false
+    private var sessionRevision = 0
     private var statusPollTask: Task<Void, Never>?
     private weak var settingsStore: SettingsStore?
 
@@ -57,8 +58,17 @@ public final class BillingStore {
     }
 
     public func setAuthenticated(_ value: Bool) {
+        sessionRevision += 1
         authenticated = value
         if !value {
+            isLoadingStatus = false
+            isLoadingSubscription = false
+            isSubmitting = false
+            isOpeningHostedSession = false
+            isUpgradeConfirmationPresented = false
+            isCancelConfirmationPresented = false
+            actionError = nil
+            didShowGateAnalytics = false
             status = nil
             subscription = nil
             statusLoadFailed = false
@@ -73,12 +83,16 @@ public final class BillingStore {
 
     public func refreshStatus() async {
         guard authenticated, shouldLoadBilling else { return }
+        let revision = sessionRevision
         isLoadingStatus = true
         statusLoadFailed = false
-        defer { isLoadingStatus = false }
+        defer { if revision == sessionRevision { isLoadingStatus = false } }
         do {
-            status = try await billingAPI.getStatus()
+            let result = try await billingAPI.getStatus()
+            guard revision == sessionRevision else { return }
+            status = result
         } catch {
+            guard revision == sessionRevision else { return }
             statusLoadFailed = true
         }
     }
@@ -86,12 +100,16 @@ public final class BillingStore {
     public func refreshSubscriptionDetails() async {
         guard authenticated, shouldLoadBilling else { return }
         if case .open = appAccess { return }
+        let revision = sessionRevision
         isLoadingSubscription = true
         subscriptionLoadFailed = false
-        defer { isLoadingSubscription = false }
+        defer { if revision == sessionRevision { isLoadingSubscription = false } }
         do {
-            subscription = try await billingAPI.getSubscription()
+            let result = try await billingAPI.getSubscription()
+            guard revision == sessionRevision else { return }
+            subscription = result
         } catch {
+            guard revision == sessionRevision else { return }
             subscriptionLoadFailed = true
         }
     }
@@ -184,8 +202,10 @@ public final class BillingStore {
     }
 
     public func endTrialEarly() async {
+        let revision = sessionRevision
         await runSubmitting {
             _ = try await billingAPI.endTrial()
+            guard revision == sessionRevision else { return }
             await refreshStatus()
             await refreshSubscriptionDetails()
             isUpgradeConfirmationPresented = false
@@ -193,8 +213,10 @@ public final class BillingStore {
     }
 
     public func cancelSubscriptionAtPeriodEnd() async {
+        let revision = sessionRevision
         await runSubmitting {
             _ = try await billingAPI.cancelSubscription()
+            guard revision == sessionRevision else { return }
             analytics.track(.billingCancelScheduled, properties: [:])
             await refreshStatus()
             await refreshSubscriptionDetails()
@@ -203,8 +225,10 @@ public final class BillingStore {
     }
 
     public func resumeSubscription() async {
+        let revision = sessionRevision
         await runSubmitting {
             _ = try await billingAPI.resumeSubscription()
+            guard revision == sessionRevision else { return }
             analytics.track(.billingResumed, properties: [:])
             await refreshStatus()
             await refreshSubscriptionDetails()
@@ -234,14 +258,17 @@ public final class BillingStore {
         trackCardUpdate: Bool,
         fallback: String
     ) async {
+        let revision = sessionRevision
         actionError = nil
         isOpeningHostedSession = true
-        defer { isOpeningHostedSession = false }
+        defer { if revision == sessionRevision { isOpeningHostedSession = false } }
         do {
             guard let urlString = try await fetchURL(), let url = URL(string: urlString) else {
                 throw HostedBillingSessionError.missingHostedURL
             }
+            guard revision == sessionRevision else { return }
             let callback = try await sessionPresenter.presentHostedSession(url: url)
+            guard revision == sessionRevision else { return }
             handleBillingCheckoutDeepLink(
                 callback.absoluteString,
                 refreshSubscriptionDetails: refreshSubscriptionDetails,
@@ -250,6 +277,7 @@ public final class BillingStore {
         } catch HostedBillingSessionError.userCanceled {
             return
         } catch {
+            guard revision == sessionRevision else { return }
             actionError = billingActionMessage(error, fallback: fallback)
         }
     }
@@ -262,12 +290,14 @@ public final class BillingStore {
     }
 
     private func runSubmitting(_ work: () async throws -> Void) async {
+        let revision = sessionRevision
         isSubmitting = true
         actionError = nil
-        defer { isSubmitting = false }
+        defer { if revision == sessionRevision { isSubmitting = false } }
         do {
             try await work()
         } catch {
+            guard revision == sessionRevision else { return }
             actionError = billingActionMessage(error, fallback: "Something went wrong. Try again.")
         }
     }

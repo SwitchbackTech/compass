@@ -138,6 +138,7 @@ extension NativeCalendarRootModel {
     }
 
     func commitDeleteFormEvent(scope: EventDeleteScope, eventId: EventId? = nil) async {
+        let revision = sessionRevision
         guard let draft = draftStore.gridDraft,
             draft.kind == .edit,
             let resolvedId = eventId ?? draft.persistedEventId
@@ -146,6 +147,7 @@ extension NativeCalendarRootModel {
         rebuildPresentation()
         do {
             try await eventsStore.deleteOptimistic(id: resolvedId, scope: scope)
+            guard revision == sessionRevision else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
         } catch {}

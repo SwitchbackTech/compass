@@ -40,6 +40,10 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         self.model = model
         self.catalogController = catalogController
         super.init(rootView: ThemedRootView(webTheme: webTheme, model: model))
+        model.onExportLocalData = { [weak self] data, filename in
+            guard let window = self?.view.window else { return false }
+            return try await NativeDataExportPresenter.save(data, filename: filename, window: window)
+        }
         model.onGridFocusAccessibilityLabelChanged = { [weak self] label in
             let window = Self.compassHostWindow(hostingView: self?.view) ?? NSApp.mainWindow
             if let window {
@@ -236,7 +240,7 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
     private func configureKeyboard() {
         let registry = model.shortcutRegistry
         let router = NativeGridKeyboardRouter(model: model, registry: registry)
-        let monitor = NativeKeyboardMonitor(router: router)
+        let monitor = NativeKeyboardMonitor(router: router, rootView: view)
         keyboardMonitor = monitor
         monitor.start()
         (NSApp as? CompassApplication)?.keyboardMonitor = monitor
