@@ -2,7 +2,7 @@ import XCTest
 
 final class EventFormSaveButtonTests: XCTestCase {
     @MainActor
-    func testSaveButtonCommitsEditedTitle() {
+    func testSaveButtonCommitsEditedTitleAndSupportsUndoRedo() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
@@ -19,5 +19,11 @@ final class EventFormSaveButtonTests: XCTestCase {
         window.buttons["compass-event-form-save"].click()
         XCTAssertTrue(window.buttons["Saved with button"].waitForExistence(timeout: 10))
         XCTAssertFalse(window.buttons["compass-event-form-save"].exists)
+        window.typeKey("z", modifierFlags: [.command])
+        XCTAssertTrue(window.buttons["Morning standup"].waitForExistence(timeout: 8))
+        XCTAssertFalse(window.buttons["Saved with button"].exists)
+        window.typeKey("z", modifierFlags: [.command, .shift])
+        XCTAssertTrue(window.buttons["Saved with button"].waitForExistence(timeout: 8))
+        XCTAssertFalse(window.buttons["Morning standup"].exists)
     }
 }

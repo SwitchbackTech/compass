@@ -236,6 +236,7 @@ extension NativeCalendarRootModel {
 
     public func undoLastChangeAndWait() async {
         let revision = sessionRevision
+        guard !undoStore.isRestoringHistory() else { return }
         guard let entry = undoStore.peekUndo() else {
             statusToastStore.show(id: "undo-status", message: "Nothing to undo")
             return
@@ -245,6 +246,7 @@ extension NativeCalendarRootModel {
             statusToastStore.show(id: "undo-status", message: "Can't undo the last change")
             return
         }
+        guard canReplayEdit(entry, undo: true) else { return }
         undoStore.commitUndo()
         await undoStore.runHistoryRestoreAsync {
             await self.replayUndoEntry(entry)
@@ -257,20 +259,46 @@ extension NativeCalendarRootModel {
     }
 
     public func redoLastChange() {
+        Task { await redoLastChangeAndWait() }
+    }
+
+    public func redoLastChangeAndWait() async {
+        guard !undoStore.isRestoringHistory() else { return }
         guard let entry = undoStore.peekRedo() else {
             statusToastStore.show(id: "undo-status", message: "Nothing to redo")
             return
         }
+        guard canReplayEdit(entry, undo: false) else { return }
         undoStore.commitRedo()
         let revision = sessionRevision
-        Task {
-            guard revision == sessionRevision else { return }
-            await undoStore.runHistoryRestoreAsync {
-                await self.replayRedoEntry(entry)
-            }
-            await refreshSideband()
+        await undoStore.runHistoryRestoreAsync {
+            await self.replayRedoEntry(entry)
         }
+        guard revision == sessionRevision else { return }
+        await refreshSideband()
         recordShortcut(.otherRedo)
+    }
+
+    private func canReplayEdit(_ entry: UndoHistoryEntry, undo: Bool) -> Bool {
+        guard case let .edit(id, before, after) = entry else { return true }
+        let expected = undo ? after : before
+        guard let current = try? eventsStore.fetchAllEvents().first(where: { $0.id == id }),
+              current.calendarId == expected.calendarId,
+              current.schedule == expected.schedule,
+              normalizedContent(current.content) == normalizedContent(expected.content)
+        else {
+            statusToastStore.show(id: "undo-status", message: "Event changed since your last edit")
+            return false
+        }
+        return true
+    }
+
+    private func normalizedContent(_ content: EventContent) -> EventContent {
+        guard case .details(let value) = content else { return content }
+        return .details(.init(
+            attendees: value.attendees, color: value.color, colorHex: value.colorHex,
+            conference: value.conference, description: value.description, kind: value.kind,
+            location: value.location ?? "", organizer: value.organizer, title: value.title))
     }
 
     private func replayUndoEntry(_ entry: UndoHistoryEntry) async {
@@ -314,7 +342,22 @@ extension NativeCalendarRootModel {
     }
 
     private func replaceEvent(with event: Event) async {
-        // Form-less grid: full replace parity deferred; keep undo stack honest for creates/deletes/hidden.
+        guard case .details(let details) = event.content else { return }
+        let input = ReplaceEventInput(
+            calendarId: event.calendarId,
+            content: .init(
+                attendees: details.attendees?.map { .init(displayName: $0.displayName, email: $0.email) },
+                color: details.color, description: details.description, kind: "details",
+                location: details.location ?? "", title: details.title),
+            recurrence: .preserve(.init(kind: "preserve")), restore: true,
+            schedule: event.schedule, scope: .this)
+        do {
+            try await eventsStore.replaceOptimistic(id: event.id, input: input, optimisticEvent: event)
+            refreshLoadedEvents()
+            rebuildPresentation()
+        } catch {
+            statusToastStore.show(id: "undo-status", message: "Could not restore event")
+        }
     }
 
     public func recordCreateUndo(for event: Event) {

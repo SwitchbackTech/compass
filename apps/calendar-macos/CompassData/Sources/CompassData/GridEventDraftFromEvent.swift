@@ -5,6 +5,12 @@ public enum GridEventDraftFromEvent {
     public static func editDraft(from event: Event) -> GridEventDraft? {
         guard let schedule = draftSchedule(from: event.schedule) else { return nil }
         let details = eventDetails(from: event)
+        let attendees: [DraftAttendeeInput]?
+        if case .details(let payload) = event.content {
+            attendees = payload.attendees?.map { .init(email: $0.email, displayName: $0.displayName) }
+        } else {
+            attendees = nil
+        }
         return GridEventDraft(
             kind: .edit,
             clientId: event.id,
@@ -15,7 +21,8 @@ public enum GridEventDraftFromEvent {
             color: details.color,
             description: details.description,
             location: details.location,
-            recurrence: .preserve
+            recurrence: .preserve,
+            attendees: attendees
         )
     }
 

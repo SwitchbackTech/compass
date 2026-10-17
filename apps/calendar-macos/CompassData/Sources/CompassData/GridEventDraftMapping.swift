@@ -29,12 +29,16 @@ public enum GridEventDraftMapping {
         let eventId = wireEventId(from: draft)
         let recurrence = optimisticRecurrence(from: draft, baseline: baseline)
         let createdAt = baseline?.createdAt ?? now
+        let editedBaseline = draft.kind == .edit ? baseline : nil
 
         return Event(
             calendarId: calendarId,
-            content: .details(contentPayload(from: draft, title: resolvedTitle)),
+            content: .details(contentPayload(from: draft, title: resolvedTitle, baseline: baseline)),
             createdAt: createdAt,
+            icalUid: editedBaseline?.icalUid,
             id: eventId,
+            popupReminderMinutes: editedBaseline?.popupReminderMinutes,
+            providerManaged: editedBaseline?.providerManaged,
             recurrence: recurrence,
             schedule: schedule(from: draft.schedule),
             updatedAt: now
@@ -120,20 +124,31 @@ public enum GridEventDraftMapping {
         )
     }
 
-    private static func contentPayload(from draft: GridEventDraft, title: String) -> EventContent_DetailsPayload {
-        let attendees: [EventContentDetailsAttendees]? = draft.attendees?.map {
+    private static func contentPayload(
+        from draft: GridEventDraft, title: String, baseline: Event?
+    ) -> EventContent_DetailsPayload {
+        let existing: EventContent_DetailsPayload?
+        if draft.kind == .edit, case .details(let details) = baseline?.content {
+            existing = details
+        } else {
+            existing = nil
+        }
+        let attendees: [EventContentDetailsAttendees]? = draft.attendees?.map { attendee in
             EventContentDetailsAttendees(
-                displayName: $0.displayName,
-                email: $0.email,
-                responseStatus: .needsAction
+                displayName: attendee.displayName,
+                email: attendee.email,
+                responseStatus: existing?.attendees?.first { $0.email == attendee.email }?.responseStatus ?? .needsAction
             )
         }
         return EventContent_DetailsPayload(
             attendees: attendees,
             color: draftColorEnum(draft),
+            colorHex: draft.color == nil ? existing?.colorHex : nil,
+            conference: existing?.conference,
             description: draft.description,
             kind: "details",
             location: draft.location.isEmpty ? nil : draft.location,
+            organizer: existing?.organizer,
             title: title
         )
     }
