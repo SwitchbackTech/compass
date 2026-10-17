@@ -16,30 +16,19 @@ import {
   FLEX_TODAY,
 } from "@web/views/Week/layout.constants";
 
-interface AssignResult {
-  fits: boolean;
-  rowNum?: number;
-}
-export const assignEventToRow = (
+/** Index of the first row `eventDays` can share, or null when none fits. */
+export const findRowForEvent = (
   eventDays: number[],
   rows: number[][],
-): AssignResult => {
-  let fits = false;
-  let rowNum!: number;
+): number | null => {
+  const rowIndex = rows.findIndex((occupiedDays) =>
+    _noOverlaps(eventDays, occupiedDays),
+  );
 
-  for (let rowIndex = 0; rowIndex < rows.length; ++rowIndex) {
-    const occupiedDays = rows[rowIndex];
-    if (_noOverlaps(eventDays, occupiedDays)) {
-      fits = true;
-      rowNum = rowIndex;
-      break;
-    }
-  }
-
-  return { fits, rowNum };
+  return rowIndex === -1 ? null : rowIndex;
 };
 
-export const getCurrentMinute = (timeZone: string = getEffectiveTimeZone()) => {
+const getCurrentMinute = (timeZone: string = getEffectiveTimeZone()) => {
   return minutesFromCivilMidnight(dayjs(), timeZone);
 };
 
@@ -145,15 +134,14 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
   return prevDayFlex * AFTER_TMRW_MULTIPLE;
 };
 
-export const getLineClamp = (height: number) => {
-  const min = 1;
-  const computed = Math.round(
-    (height - GRID_EVENT_TITLE_VERTICAL_SLACK_PX) /
-      GRID_EVENT_TITLE_LINE_HEIGHT_PX,
+export const getLineClamp = (height: number) =>
+  Math.max(
+    1,
+    Math.round(
+      (height - GRID_EVENT_TITLE_VERTICAL_SLACK_PX) /
+        GRID_EVENT_TITLE_LINE_HEIGHT_PX,
+    ),
   );
-  const lineClamp = Math.max(min, computed);
-  return lineClamp;
-};
 
 export const getPrevDayWidth = (today: Dayjs) => {
   const todayWeekNum = today.get("day") + 1;
@@ -166,43 +154,18 @@ export const getPrevDayWidth = (today: Dayjs) => {
   return width;
 };
 
-const normalizeDayNums = (days: number[]) => {
-  // doesn't support events longer than 365/6 days
-  return days.map((d) => {
-    if (d < 365) {
-      return d + 365;
-    } else {
-      return d;
-    }
-  });
-};
+// Shifts day-of-year numbers from the start of the year onto the end of the
+// previous one, so an event that crosses New Year still compares against its
+// neighbors. Doesn't support events longer than 365/6 days.
+const normalizeDayNums = (days: number[]) =>
+  days.map((day) => (day < 365 ? day + 365 : day));
 
-const _anySharedValues = (arr1: number[], arr2: number[]) => {
-  return arr1.some((v) => arr2.indexOf(v) >= 0);
-};
+const _anySharedValues = (arr1: number[], arr2: number[]) =>
+  arr1.some((value) => arr2.includes(value));
 
-const _noOverlaps = (eventDays: number[], occupiedDays: number[]) => {
-  const anyOverlapsThisYear = eventDays.some(
-    (day) => occupiedDays.indexOf(day) >= 0,
+const _noOverlaps = (eventDays: number[], occupiedDays: number[]) =>
+  !_anySharedValues(eventDays, occupiedDays) &&
+  !_anySharedValues(
+    normalizeDayNums(eventDays),
+    normalizeDayNums(occupiedDays),
   );
-  if (anyOverlapsThisYear) {
-    return false;
-  }
-
-  /*
-  check for events that go into next year
-  */
-  const normalizedDays = normalizeDayNums(eventDays);
-  const normalizedOccupiedDays = normalizeDayNums(occupiedDays);
-
-  const anyOverlapsNextYear = _anySharedValues(
-    normalizedDays,
-    normalizedOccupiedDays,
-  );
-
-  if (anyOverlapsNextYear) {
-    return false;
-  }
-
-  return true;
-};

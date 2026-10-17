@@ -13,21 +13,32 @@ export type LocalModeConnectPromptState = {
   isDismissed: boolean;
 };
 
-const isDismissedInStorage = (): boolean =>
-  !persistentBrowserStore.isAvailable() ||
-  persistentBrowserStore.get(
-    STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
-  ) === "true";
-
 const snapshotFromStorage = (): LocalModeConnectPromptState => ({
   writeCount: readAnonymousCalendarWriteCount(),
-  isDismissed: isDismissedInStorage(),
+  isDismissed:
+    persistentBrowserStore.get(
+      STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
+    ) === "true",
 });
 
 export const useLocalModeConnectPromptStore =
   create<LocalModeConnectPromptState>(() => snapshotFromStorage());
 
 let hasTrackedShown = false;
+
+/** The prompt only ever nudges Google, so every event carries the same shape. */
+const trackPrompt = (
+  event:
+    | "connect_prompt_shown"
+    | "connect_prompt_clicked"
+    | "connect_prompt_dismissed",
+  eventsCreatedCount: number,
+): void => {
+  track(event, {
+    events_created_count: eventsCreatedCount,
+    provider: "google",
+  });
+};
 
 export const localModeConnectPromptActions = {
   syncFromStorage: () => {
@@ -36,23 +47,14 @@ export const localModeConnectPromptActions = {
   markShown: (eventsCreatedCount: number) => {
     if (hasTrackedShown) return;
     hasTrackedShown = true;
-    track("connect_prompt_shown", {
-      events_created_count: eventsCreatedCount,
-      provider: "google",
-    });
+    trackPrompt("connect_prompt_shown", eventsCreatedCount);
   },
   connect: (eventsCreatedCount: number) => {
-    track("connect_prompt_clicked", {
-      events_created_count: eventsCreatedCount,
-      provider: "google",
-    });
+    trackPrompt("connect_prompt_clicked", eventsCreatedCount);
     void trackSignupStartedAtClick("local_mode_connect_prompt");
   },
   dismiss: (eventsCreatedCount: number) => {
-    track("connect_prompt_dismissed", {
-      events_created_count: eventsCreatedCount,
-      provider: "google",
-    });
+    trackPrompt("connect_prompt_dismissed", eventsCreatedCount);
     persistentBrowserStore.set(
       STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
       "true",

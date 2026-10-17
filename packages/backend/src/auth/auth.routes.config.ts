@@ -28,7 +28,7 @@ export const appleSignInCallbackLimiter = rateLimit({
   keyGenerator: (req) => req.ip ?? "anonymous",
 });
 
-export const providerOAuthCallbackLimiter = rateLimit({
+const providerOAuthCallbackLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 60,
   standardHeaders: true,

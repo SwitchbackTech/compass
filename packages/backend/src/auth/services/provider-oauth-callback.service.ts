@@ -6,7 +6,7 @@ import {
 import { providerOAuthSignupAnalytics } from "@backend/auth/services/provider-oauth-signup.analytics";
 import { CONFIG } from "@backend/common/constants/config.constants";
 
-export const PROVIDER_SIGNIN_CALLBACK_PATH_PREFIX = "/auth";
+const PROVIDER_SIGNIN_CALLBACK_PATH_PREFIX = "/auth";
 
 const providerCallbackPath = (provider: ProviderKind) =>
   `${PROVIDER_SIGNIN_CALLBACK_PATH_PREFIX}/${provider}/callback`;

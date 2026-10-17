@@ -2,7 +2,7 @@ import { type Editor } from "@tiptap/react";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
-export const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
+const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
 
 const LINK_SELECTOR = "a[href]";
 

@@ -11,7 +11,7 @@ import { localModeConnectPromptActions } from "@web/components/LocalModeConnectP
 import { useLocalModeConnectPromptEligible } from "@web/components/LocalModeConnectPrompt/useLocalModeConnectPromptEligible";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
-export const LOCAL_MODE_CONNECT_PROMPT_ARIA_LABEL = "Connect Google";
+const LOCAL_MODE_CONNECT_PROMPT_ARIA_LABEL = "Connect Google";
 
 export const LOCAL_MODE_CONNECT_PROMPT_MESSAGE =
   "Connect Google to sync your events and start your free trial.";
