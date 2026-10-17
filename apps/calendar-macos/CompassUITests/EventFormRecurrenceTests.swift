@@ -35,6 +35,10 @@ final class EventFormRecurrenceTests: XCTestCase {
         XCTAssertFalse(endDate.exists)
         endToggle.click()
         XCTAssertTrue(endDate.exists)
+        let evidence = XCTAttachment(screenshot: window.screenshot())
+        evidence.name = "Recurrence end date enabled"
+        evidence.lifetime = .keepAlways
+        add(evidence)
         endToggle.click()
         XCTAssertFalse(endDate.exists)
     }
