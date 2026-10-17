@@ -10,7 +10,7 @@ import {
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
 
 const DATE_FIELD_CLASSNAME =
-  "flex min-w-0 max-w-32 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
+  "c-event-form-date-field flex min-w-0 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
@@ -20,8 +20,6 @@ export interface EventFormDateFieldProps {
   /** When true, bare ArrowDown opens the calendar instead of nudging +1 day. */
   arrowDownOpensCalendar?: boolean;
   calendarClassName?: string;
-  /** When true, the date input is skipped by Tab (Mod+digit jump still works). */
-  excludeFromTabOrder?: boolean;
   id?: string;
   inputId?: string;
   isOpen: boolean;
@@ -37,7 +35,6 @@ export interface EventFormDateFieldProps {
 export const EventFormDateField = ({
   arrowDownOpensCalendar = false,
   calendarClassName,
-  excludeFromTabOrder = false,
   id,
   inputId,
   isOpen,
@@ -124,7 +121,7 @@ export const EventFormDateField = ({
         event.preventDefault();
         if (!commitTypedDate(typedValue)) {
           showErrorToast(
-            `Sorry, IDK what to do with a ${sideLabel} date of '${typedValue}'. Try a format like 10/15 or Oct 15.`,
+            `Sorry, IDK what to do with a ${sideLabel} date of '${typedValue}'. Try 10.17.26, 17.10.26, 10/17/2026, or 2026-10-17.`,
           );
         }
         break;
@@ -167,8 +164,8 @@ export const EventFormDateField = ({
         calendarClassName={calendarClassName}
         captionPicker
         dateFormat={EVENT_FORM_DATE_INPUT_FORMAT}
-        tabIndex={excludeFromTabOrder ? -1 : undefined}
         {...(resolvedInputId ? { inputId: resolvedInputId } : {})}
+        inputClassName="c-event-form-date-field__input"
         isOpen={isOpen}
         monthTextClassName="text-medium"
         onCalendarClose={onCalendarClose}
@@ -184,6 +181,7 @@ export const EventFormDateField = ({
         selected={selected}
         title={title}
         view="grid"
+        withUnderline={false}
       />
     </div>
   );
