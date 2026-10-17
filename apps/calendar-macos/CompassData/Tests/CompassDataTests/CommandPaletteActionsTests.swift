@@ -40,6 +40,17 @@ final class CommandPaletteActionsTests: XCTestCase {
         }
     }
 
+    func testCreateShortcutsDoNotDraftBehindSettingsOrAuthentication() async throws {
+        let model = try await makeModel()
+        model.settingsStore.open()
+        model.handleShortcut(.createTimed)
+        XCTAssertNil(model.draftStore.gridDraft)
+        model.settingsStore.close()
+        model.authStore.openModal(.login)
+        model.handleShortcut(.createAllday)
+        XCTAssertNil(model.draftStore.gridDraft)
+    }
+
     func testCreationFromLifeViewReturnsToCalendar() async throws {
         let model = try await makeModel()
         model.viewStore.view = .life

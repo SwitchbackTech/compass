@@ -30,7 +30,7 @@ final class CommandPaletteKeyboardTests: XCTestCase {
         let title = window.textFields["compass-event-form-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 8))
         let toggle = window.descendants(matching: .any)["compass-event-form-allday"]
-        XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertEqual((toggle.value as? NSNumber)?.intValue, 1)
     }
 
     @MainActor

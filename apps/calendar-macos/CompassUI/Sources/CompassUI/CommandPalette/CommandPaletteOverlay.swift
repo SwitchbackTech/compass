@@ -74,6 +74,7 @@ public struct CommandPaletteOverlay: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(theme.borderColor, lineWidth: 1)
                 )
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-native-command-palette")
             }
             .focusOnAppear($searchFocused)

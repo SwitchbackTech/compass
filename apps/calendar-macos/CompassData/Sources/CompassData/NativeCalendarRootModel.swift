@@ -486,6 +486,11 @@ public final class NativeCalendarRootModel {
     }
 
     public func handleShortcut(_ id: ShortcutId) {
+        if id == .createTimed || id == .createAllday {
+            guard !settingsStore.isPresented, !authStore.isModalPresented,
+                  !pendingLogoutConfirmation, !pendingDiscardDraftConfirmation,
+                  billingStore.gateStatus == nil else { return }
+        }
         recordShortcut(id)
         switch id {
         case .createTimed, .createAllday:
