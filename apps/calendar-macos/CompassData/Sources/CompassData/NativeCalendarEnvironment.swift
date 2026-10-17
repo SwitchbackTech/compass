@@ -28,6 +28,7 @@ public struct NativeCalendarEnvironment: Sendable {
         appURL: URL = AppHostPreference.productionURL,
         inMemoryDatabase: Bool = false,
         sessionStore: (any SessionStore)? = nil,
+        urlSession: URLSession = .shared,
         analytics: ProductAnalyticsClient = NoOpProductAnalyticsClient(),
         analyticsIdentity: AnalyticsIdentityCoordinator = NoOpAnalyticsIdentityCoordinator(),
         sessionPresenter: any HostedBillingSessionPresenting = UnavailableHostedBillingSessionPresenter()
@@ -41,7 +42,7 @@ public struct NativeCalendarEnvironment: Sendable {
         let apiClient = CompassAPIClient(
             appURL: appURL,
             sessionStore: sessionStore,
-            urlSession: .shared
+            urlSession: urlSession
         )
         let remembered = try AuthRememberedState.hasUserEverAuthenticated(repository: userMetadataRepository)
         let source = EventRepositorySelection.source(

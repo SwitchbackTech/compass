@@ -4,6 +4,30 @@ import XCTest
 
 @MainActor
 final class EventsStoreSessionTests: XCTestCase {
+    func testRemovedCalendarRejectsAnEarlierRangeResponse() async throws {
+        let database = try AppDatabase.inMemory()
+        let repository = EventRepository(database: database)
+        let local = LocalEventRepository(database: database)
+        let ranges = RangeCache(database: database)
+        let event = try StoreSampleEvents.timedEvent(id: "removed-calendar-event")
+        let gate = PendingList()
+        let api = MockEventsAPI()
+        api.listHandler = { _ in await gate.response() }
+        let store = EventsStore(repository: repository, localEvents: local, rangeCache: ranges, eventsAPI: api)
+        let key = EventRangeQueryKey(scope: .week, source: .remote,
+            start: "2026-01-01T00:00:00.000Z", end: "2026-01-08T00:00:00.000Z")
+        let request = Task { try await store.loadRange(key: key) }
+        await gate.waitUntilRequested()
+        try store.removeCachedEvents(forCalendarIds: [event.calendarId.rawValue])
+        await gate.resolve([event])
+        do {
+            _ = try await request.value
+            XCTFail("A removed calendar cannot return through an earlier request")
+        } catch is CancellationError {}
+        XCTAssertTrue(try repository.fetchAll().isEmpty)
+        XCTAssertEqual(try ranges.coverage(for: key), .missing)
+    }
+
     func testSessionResetClearsRemoteDataAndRejectsAnOlderResponse() async throws {
         let database = try AppDatabase.inMemory()
         let repository = EventRepository(database: database)

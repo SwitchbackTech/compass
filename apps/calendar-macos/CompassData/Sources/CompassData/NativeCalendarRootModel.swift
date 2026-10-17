@@ -1144,6 +1144,12 @@ public final class NativeCalendarRootModel {
             return
         }
         guard isSignedIn else { return }
+        if (try? AccountCacheIdentity.matches(userId: authStore.userId,
+            repository: environment.userMetadataRepository)) == true,
+           let cached = try? calendarRepository.fetchAll() {
+            calendars = cached
+            rebuildPresentation()
+        }
         do {
             let remote = try await environment.apiClient.calendars.list()
             guard revision == sessionRevision, isSignedIn else { return }
@@ -1155,8 +1161,14 @@ public final class NativeCalendarRootModel {
                 }
                 merged.append(contentsOf: systemCalendars)
             }
-            try calendarRepository.upsert(calendars: merged)
+            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            if let localCalendarId { localIds.insert(localCalendarId) }
+            let previousIds = Set(try calendarRepository.fetchAll().map(\.id))
+            let retainedIds = localIds.union(merged.map(\.id))
+            try calendarRepository.replaceRemote(calendars: merged, preservingIds: localIds)
+            try eventsStore.removeCachedEvents(forCalendarIds: previousIds.subtracting(retainedIds))
             calendars = try calendarRepository.fetchAll()
+            loadedEvents = try eventsStore.fetchAllEvents()
             rebuildPresentation()
         } catch {
             Self.log.error("reload calendars failed: \(String(describing: error), privacy: .public)")

@@ -55,6 +55,16 @@ public final class EventsStore {
         remoteSessionReady = true
     }
 
+    public func removeCachedEvents(forCalendarIds calendarIds: Set<String>) throws {
+        guard source == .remote, !calendarIds.isEmpty else { return }
+        guard remoteSessionReady else { throw CancellationError() }
+        // Responses started before the authoritative calendar change cannot restore removed events.
+        remoteSessionRevision += 1
+        let obsolete = try repository.fetchAll().filter { calendarIds.contains($0.calendarId.rawValue) }
+        try repository.delete(ids: obsolete.map(\.id))
+        try rangeCache.clear()
+    }
+
     public func setSource(_ source: EventRepositorySource) {
         self.source = source
     }

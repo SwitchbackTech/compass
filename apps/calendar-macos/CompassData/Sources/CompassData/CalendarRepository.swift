@@ -27,6 +27,19 @@ public struct CalendarRepository: Sendable {
         }
     }
 
+    /// Apply an authoritative server list without removing device-local calendars.
+    public func replaceRemote(calendars: [CompassCalendar], preservingIds: Set<String>) throws {
+        let retainedIds = preservingIds.union(calendars.map(\.id))
+        try db.write { db in
+            for calendar in calendars {
+                try CalendarRecordCodec.record(for: calendar).save(db, onConflict: .replace)
+            }
+            for record in try CalendarRecord.fetchAll(db) where !retainedIds.contains(record.id) {
+                try CalendarRecord.deleteOne(db, key: record.id)
+            }
+        }
+    }
+
     public func fetchAll() throws -> [CompassCalendar] {
         try db.read { db in
             try CalendarRecord.fetchAll(db).map { try CalendarRecordCodec.calendar(from: $0) }
