@@ -22,7 +22,7 @@ struct EventFormCalendarSection: View {
                     }
                 )
             ) {
-                ForEach(writableCalendars, id: \.id) { calendar in
+                ForEach(model.writableEventCalendars, id: \.id) { calendar in
                     Text(calendar.name).tag(calendar.id)
                 }
             }
@@ -33,7 +33,4 @@ struct EventFormCalendarSection: View {
         .eventFormSectionChrome(focused: focusField == .calendar)
     }
 
-    private var writableCalendars: [CompassCalendar] {
-        model.visibleCalendars().filter(\.capabilities.canWrite)
-    }
 }

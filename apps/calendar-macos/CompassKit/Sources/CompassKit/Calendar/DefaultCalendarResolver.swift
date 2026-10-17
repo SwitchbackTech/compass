@@ -13,7 +13,7 @@ public enum DefaultCalendarResolver {
             if hasConnectedAccount, calendar.provider == "local" {
                 return false
             }
-            return calendar.capabilities.canManage
+            return calendar.capabilities.canWrite
         }
     }
 
