@@ -8,13 +8,6 @@ import { maybeShowAnonymousSaveToast } from "@web/common/utils/toast/anonymous-s
 import { localModeConnectPromptActions } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
 import { eventMutationKeys } from "./event.mutation.keys";
 
-/** Founder decision (Trial v2 WP-03): nudge after this many anonymous calendar writes. */
-export const ANONYMOUS_SAVE_TOAST_AFTER_SAVE_COUNT = 3;
-
-/** Local-mode Google connect prompt uses the same threshold as the save toast. */
-export const LOCAL_MODE_CONNECT_PROMPT_AFTER_EVENT_COUNT =
-  ANONYMOUS_SAVE_TOAST_AFTER_SAVE_COUNT;
-
 const ifAnonymousGuest = async (action: () => void): Promise<void> => {
   if (await session.doesSessionExist()) return;
   if (hasUserEverAuthenticated()) return;

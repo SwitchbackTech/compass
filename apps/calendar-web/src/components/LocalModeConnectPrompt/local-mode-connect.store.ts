@@ -1,35 +1,37 @@
 import { create } from "zustand";
-import { readAnonymousCalendarWriteCount } from "@web/auth/posthog/anon-calendar-write-count.util";
+import {
+  ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT,
+  readAnonymousCalendarWriteCount,
+} from "@web/auth/posthog/anon-calendar-write-count.util";
 import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
-import {
-  isLocalModeConnectPromptDismissed,
-  markLocalModeConnectPromptDismissed,
-} from "@web/components/LocalModeConnectPrompt/local-mode-connect.storage";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 
 export type LocalModeConnectPromptState = {
   writeCount: number;
   isDismissed: boolean;
 };
 
-export const initialLocalModeConnectPromptState: LocalModeConnectPromptState = {
+const isDismissedInStorage = (): boolean =>
+  !persistentBrowserStore.isAvailable() ||
+  persistentBrowserStore.get(
+    STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
+  ) === "true";
+
+const snapshotFromStorage = (): LocalModeConnectPromptState => ({
   writeCount: readAnonymousCalendarWriteCount(),
-  isDismissed: isLocalModeConnectPromptDismissed(),
-};
+  isDismissed: isDismissedInStorage(),
+});
 
 export const useLocalModeConnectPromptStore =
-  create<LocalModeConnectPromptState>(() => ({
-    ...initialLocalModeConnectPromptState,
-  }));
+  create<LocalModeConnectPromptState>(() => snapshotFromStorage());
 
 let hasTrackedShown = false;
 
 export const localModeConnectPromptActions = {
   syncFromStorage: () => {
-    useLocalModeConnectPromptStore.setState({
-      writeCount: readAnonymousCalendarWriteCount(),
-      isDismissed: isLocalModeConnectPromptDismissed(),
-    });
+    useLocalModeConnectPromptStore.setState(snapshotFromStorage());
   },
   markShown: (eventsCreatedCount: number) => {
     if (hasTrackedShown) return;
@@ -51,20 +53,17 @@ export const localModeConnectPromptActions = {
       events_created_count: eventsCreatedCount,
       provider: "google",
     });
-    markLocalModeConnectPromptDismissed();
+    persistentBrowserStore.set(
+      STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
+      "true",
+    );
     useLocalModeConnectPromptStore.setState({ isDismissed: true });
   },
 };
 
 export const resetLocalModeConnectPromptStoreForTests = (): void => {
   hasTrackedShown = false;
-  useLocalModeConnectPromptStore.setState(
-    {
-      writeCount: readAnonymousCalendarWriteCount(),
-      isDismissed: isLocalModeConnectPromptDismissed(),
-    },
-    true,
-  );
+  useLocalModeConnectPromptStore.setState(snapshotFromStorage(), true);
 };
 
 export const selectLocalModeConnectPromptWriteCount = (
@@ -85,7 +84,6 @@ export type LocalModeConnectPromptEligibility = {
   isShowcaseActive: boolean;
   isWelcomeBlocking: boolean;
   googleSignInAvailable: boolean;
-  threshold: number;
 };
 
 export const selectLocalModeConnectPromptEligible = (
@@ -95,7 +93,7 @@ export const selectLocalModeConnectPromptEligible = (
   !input.hasUserEverAuthenticated &&
   input.storageAvailable &&
   !input.isDismissed &&
-  input.writeCount >= input.threshold &&
+  input.writeCount >= ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT &&
   !input.isAuthModalOpen &&
   !input.isShowcaseActive &&
   !input.isWelcomeBlocking &&

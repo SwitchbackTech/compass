@@ -25,47 +25,23 @@ enum HTMLFragmentAppKit {
                 )
                 result.append(NSAttributedString(string: "\n", attributes: [.font: baseFont, .foregroundColor: textColor]))
             case .unorderedList(let items):
-                for item in items {
-                    let start = result.length
-                    let prefix = "• "
-                    result.append(
-                        NSAttributedString(
-                            string: prefix,
-                            attributes: [.font: baseFont, .foregroundColor: textColor]
-                        )
-                    )
-                    result.append(
-                        inlineAttributedString(
-                            item.inlines,
-                            font: baseFont,
-                            textColor: textColor,
-                            linkColor: linkColor
-                        )
-                    )
-                    result.addAttribute(listKindKey, value: "unordered", range: NSRange(location: start, length: result.length - start))
-                    result.append(NSAttributedString(string: "\n", attributes: [.font: baseFont, .foregroundColor: textColor]))
-                }
+                appendList(
+                    items,
+                    kind: "unordered",
+                    to: result,
+                    font: baseFont,
+                    textColor: textColor,
+                    linkColor: linkColor
+                ) { _ in "• " }
             case .orderedList(let items):
-                for (index, item) in items.enumerated() {
-                    let start = result.length
-                    let prefix = "\(index + 1). "
-                    result.append(
-                        NSAttributedString(
-                            string: prefix,
-                            attributes: [.font: baseFont, .foregroundColor: textColor]
-                        )
-                    )
-                    result.append(
-                        inlineAttributedString(
-                            item.inlines,
-                            font: baseFont,
-                            textColor: textColor,
-                            linkColor: linkColor
-                        )
-                    )
-                    result.addAttribute(listKindKey, value: "ordered", range: NSRange(location: start, length: result.length - start))
-                    result.append(NSAttributedString(string: "\n", attributes: [.font: baseFont, .foregroundColor: textColor]))
-                }
+                appendList(
+                    items,
+                    kind: "ordered",
+                    to: result,
+                    font: baseFont,
+                    textColor: textColor,
+                    linkColor: linkColor
+                ) { index in "\(index + 1). " }
             case .verbatim(let html):
                 result.append(
                     NSAttributedString(
@@ -124,6 +100,45 @@ enum HTMLFragmentAppKit {
             blocks.append(.paragraph(inlines(in: attributedString, range: range)))
         }
         return HTMLFragmentDocument(blocks: blocks)
+    }
+
+    private static func appendList(
+        _ items: [HTMLFragmentListItem],
+        kind: String,
+        to result: NSMutableAttributedString,
+        font: NSFont,
+        textColor: NSColor,
+        linkColor: NSColor,
+        prefix: (Int) -> String
+    ) {
+        for (index, item) in items.enumerated() {
+            let start = result.length
+            result.append(
+                NSAttributedString(
+                    string: prefix(index),
+                    attributes: [.font: font, .foregroundColor: textColor]
+                )
+            )
+            result.append(
+                inlineAttributedString(
+                    item.inlines,
+                    font: font,
+                    textColor: textColor,
+                    linkColor: linkColor
+                )
+            )
+            result.addAttribute(
+                listKindKey,
+                value: kind,
+                range: NSRange(location: start, length: result.length - start)
+            )
+            result.append(
+                NSAttributedString(
+                    string: "\n",
+                    attributes: [.font: font, .foregroundColor: textColor]
+                )
+            )
+        }
     }
 
     static func listPrefixLength(_ line: String, kind: String?) -> Int {

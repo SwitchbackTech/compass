@@ -1,5 +1,9 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
+import {
+  ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT,
+  incrementAnonymousCalendarWriteCount,
+} from "@web/auth/posthog/anon-calendar-write-count.util";
 import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -13,7 +17,6 @@ import {
   selectShowcaseActive,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
-import { ANONYMOUS_SAVE_TOAST_AFTER_SAVE_COUNT } from "@web/events/mutations/event.mutation.runtime";
 
 const ANONYMOUS_SAVE_TOAST_ID: Id = "anonymous-save-toast";
 
@@ -55,20 +58,6 @@ function markAnonymousSaveToastSeen(): void {
   );
 }
 
-export function incrementAnonymousCalendarWriteCount(): number {
-  if (!persistentBrowserStore.isAvailable()) return 0;
-  const raw = persistentBrowserStore.get(
-    STORAGE_KEYS.ANONYMOUS_CALENDAR_WRITE_COUNT,
-  );
-  const previous = raw ? Number.parseInt(raw, 10) : 0;
-  const next = Number.isFinite(previous) ? previous + 1 : 1;
-  persistentBrowserStore.set(
-    STORAGE_KEYS.ANONYMOUS_CALENDAR_WRITE_COUNT,
-    String(next),
-  );
-  return next;
-}
-
 interface AnonymousSaveToastProps {
   toastId: Id;
 }
@@ -103,7 +92,7 @@ export const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
 
 export function maybeShowAnonymousSaveToast(): void {
   const writeCount = incrementAnonymousCalendarWriteCount();
-  if (writeCount < ANONYMOUS_SAVE_TOAST_AFTER_SAVE_COUNT) return;
+  if (writeCount < ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT) return;
   if (isAuthModalOpen() || hasSeenAnonymousSaveToast()) return;
   // Don't mark seen here: onboarding suppresses this toast, not removes it,
   // so it still appears once the user has enough writes after onboarding.
