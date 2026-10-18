@@ -30,12 +30,7 @@ public struct EventFormView: View {
 
     private func formPanel(draft: GridEventDraft) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            EventFormToolbarView(
-                isExistingEvent: draft.kind == .edit,
-                onClose: { model.requestCloseEventForm() },
-                onDuplicate: { Task { await model.duplicateFocusedOrFormEvent() } },
-                onDelete: { Task { await model.deleteFormEvent() } }
-            )
+            EventFormToolbarView(model: model, draft: draft)
             .pageJumpChipAnchor(id: "form-actions")
 
             TextField("Title", text: Binding(
@@ -165,6 +160,8 @@ public struct EventFormView: View {
         .onAppear {
             model.eventFormFocusedField = .title
         }
+        .onDisappear { model.cancelBookedMeetingConfirmation() }
+        .onChange(of: draft.clientId) { _, _ in model.cancelBookedMeetingConfirmation() }
         .onChange(of: model.eventFormFocusedField) { _, field in
             titleFocused = field == .title
         }

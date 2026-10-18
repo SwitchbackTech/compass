@@ -17,6 +17,7 @@ extension NativeCalendarRootModel {
             let event = loadedEvents.first(where: { $0.id == eventId }),
             let draft = GridEventDraftFromEvent.editDraft(from: event)
         else { return }
+        pendingBookingCancellation = nil
         draftStore.startGridDraft(activity: .keyboardEdit, draft: draft)
         eventFormFocusedField = .title
         rebuildPresentation()
@@ -85,6 +86,7 @@ extension NativeCalendarRootModel {
 
     public func requestCloseEventForm() {
         guard draftStore.status.isFormOpen else { return }
+        cancelBookedMeetingConfirmation()
         if draftStore.hasUnsavedFormChanges || hasMeaningfulDraftTitle() {
             pendingDiscardDraftConfirmation = true
             return

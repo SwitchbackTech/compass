@@ -408,6 +408,16 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEventFormKeys(_ keyEvent: KeyEvent) -> Bool {
+        if registry.bindingsById[.editCancelMeeting]?.contains(where: { keyEvent.matches($0) }) == true {
+            guard model.hasBookedMeetingActions else { return false }
+            Task { await model.triggerBookedMeetingCancellation() }
+            return true
+        }
+        if registry.bindingsById[.editRescheduleMeeting]?.contains(where: { keyEvent.matches($0) }) == true {
+            guard model.hasBookedMeetingActions else { return false }
+            model.rescheduleBookedMeeting()
+            return true
+        }
         if keyEvent.modifiers == [.command], keyEvent.key == .named(.enter) {
             Task { await model.saveDraft() }
             return true
@@ -420,6 +430,7 @@ final class NativeGridKeyboardRouter {
         }
 
         if keyEvent.key == .named(.escape), keyEvent.modifiers.isEmpty {
+            if model.cancelBookedMeetingConfirmation() { return true }
             model.requestCloseEventForm()
             return true
         }

@@ -1,18 +1,23 @@
+import CompassData
 import SwiftUI
 
 struct EventFormToolbarView: View {
     @Environment(\.nativeWebTheme) private var theme
-    let isExistingEvent: Bool
-    let onClose: () -> Void
-    let onDuplicate: () -> Void
-    let onDelete: () -> Void
+    @Bindable var model: NativeCalendarRootModel
+    let draft: GridEventDraft
 
     var body: some View {
         HStack(spacing: 8) {
-            toolbarButton(label: "Close", systemImage: "xmark", action: onClose)
-            if isExistingEvent {
-                toolbarButton(label: "Duplicate", systemImage: "plus.square.on.square", action: onDuplicate)
-                toolbarButton(label: "Delete", systemImage: "trash", action: onDelete)
+            toolbarButton(label: "Close", systemImage: "xmark") { model.requestCloseEventForm() }
+            if draft.kind == .edit {
+                toolbarButton(label: "Duplicate", systemImage: "plus.square.on.square") {
+                    Task { await model.duplicateFocusedOrFormEvent() }
+                }
+                if model.hasBookedMeetingActions {
+                    BookingEventActionsView(model: model)
+                } else if !model.isEventFormReadOnly(for: draft) {
+                    toolbarButton(label: "Delete", systemImage: "trash") { Task { await model.deleteFormEvent() } }
+                }
             }
             Spacer()
         }

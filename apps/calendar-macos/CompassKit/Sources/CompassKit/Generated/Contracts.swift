@@ -580,6 +580,14 @@ public struct CalendarListResponse: Codable, Hashable, Sendable {
     }
 }
 
+public struct CancelBookingReservationInput: Codable, Hashable, Sendable {
+    public let token: String
+
+    public init(token: String) {
+        self.token = token
+    }
+}
+
 public enum CloudMutationModeEnum: String, Codable, Hashable, Sendable, CaseIterable {
     case enabled = "enabled"
     case maintenance = "maintenance"

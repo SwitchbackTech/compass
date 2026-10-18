@@ -11,6 +11,7 @@ import {
   BookingPageSchema,
   BookingPageStatusResponseSchema,
   BookingSlotsResponseSchema,
+  CancelBookingReservationInputSchema,
   PublicGetBookingPageResponseSchema,
 } from "@core/types/booking.contracts";
 import {
@@ -121,6 +122,10 @@ export const SWIFT_CONTRACT_MANIFEST: SwiftContractManifestEntry[] = [
   },
   { swiftName: "SetEventHiddenInput", schema: SetEventHiddenInputSchema },
   { swiftName: "BookingPage", schema: BookingPageSchema },
+  {
+    swiftName: "CancelBookingReservationInput",
+    schema: CancelBookingReservationInputSchema,
+  },
   {
     swiftName: "AdminPutBookingPageInput",
     schema: AdminPutBookingPageInputSchema,

@@ -122,7 +122,7 @@ extension NativeCalendarRootModel {
         else {
             return
         }
-        openConferenceURLHandler?(url)
+        openExternalURLHandler?(url)
     }
 
     public func upNextBannerShown(_ event: NotifiableEvent) {

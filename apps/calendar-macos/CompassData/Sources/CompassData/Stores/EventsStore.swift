@@ -74,6 +74,10 @@ public final class EventsStore {
         try applyInvalidation(targets: targets)
     }
 
+    func invalidateRanges() throws {
+        try applyInvalidation(targets: [.events])
+    }
+
     public func handleStreamReopen() throws {
         try applyInvalidation(targets: QueryInvalidator.streamReopenInvalidations())
     }
