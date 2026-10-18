@@ -245,17 +245,9 @@ public final class EventsStore {
             edited: optimisticEvent,
             snapshot: snapshot
         )
-        let revision = remoteSessionRevision
-        do {
-            let response = try await eventsAPI.replace(id: id, input: input)
-            guard revision == remoteSessionRevision else { return }
-            let settled = try EventMapping.event(from: response)
-            try applyReplaceCacheUpdate(
-                input: input,
-                edited: settled,
-                snapshot: snapshot
-            )
-        } catch {}
+        // Replace returns a command acknowledgement, not an authoritative event.
+        // Preserve the optimistic projection until the invalidated range is read.
+        _ = try? await eventsAPI.replace(id: id, input: input)
     }
 
     public func deleteOptimistic(id: EventId, scope: EventDeleteScope) async throws {
@@ -556,26 +548,24 @@ public final class EventsStore {
         }
     }
 
+    private func localRecord(for event: Event, previous: LocalEventRecord?) -> LocalEventRecord {
+        LocalEventRecord(
+            id: event.id,
+            event: event,
+            isDemo: previous?.isDemo ?? false,
+            exdates: previous?.exdates
+        )
+    }
+
     private func putLocalEvent(_ event: Event) throws {
-        let previous = try localEvent(id: event.id)
-        let record = LocalEventRecord(id: event.id, event: event, isDemo: previous?.isDemo ?? false,
-            exdates: previous?.exdates)
-        try localEvents.put(record)
+        try localEvents.put(localRecord(for: event, previous: try localEvent(id: event.id)))
     }
 
     private func putLocalEvents(_ events: [Event]) throws {
         let recordsById = Dictionary(
             uniqueKeysWithValues: try localEvents.fetchAll().map { ($0.id, $0) }
         )
-        let records = events.map { event in
-            LocalEventRecord(
-                id: event.id,
-                event: event,
-                isDemo: recordsById[event.id]?.isDemo ?? false,
-                exdates: recordsById[event.id]?.exdates
-            )
-        }
-        try localEvents.putMany(records)
+        try localEvents.putMany(events.map { localRecord(for: $0, previous: recordsById[$0.id]) })
     }
 
     private func nativeOptimisticUpserts(

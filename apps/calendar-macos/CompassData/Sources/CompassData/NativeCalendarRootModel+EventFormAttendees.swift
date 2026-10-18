@@ -36,7 +36,7 @@ extension NativeCalendarRootModel {
         let access = formAccessContext(for: draft)
         return GridEventAccess.isGridEventScheduleLocked(
             lookup: access.lookup,
-            calendarId: draft.calendarId,
+            calendarId: access.baseline?.calendarId ?? draft.calendarId,
             isBusy: access.isBusy,
             isProviderManaged: access.baseline?.providerManaged == true
         )
@@ -46,7 +46,7 @@ extension NativeCalendarRootModel {
         let access = formAccessContext(for: draft)
         return GridEventAccess.isEventReadOnly(
             lookup: access.lookup,
-            calendarId: draft.calendarId,
+            calendarId: access.baseline?.calendarId ?? draft.calendarId,
             isBusy: access.isBusy
         )
     }
@@ -76,14 +76,14 @@ extension NativeCalendarRootModel {
     }
 
     public func updateDraftAttendees(_ attendees: [DraftAttendeeInput]) {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         draft.attendees = attendees
         draftStore.setGridDraft(draft)
         rebuildPresentation()
     }
 
     public func setDraftCreateConference(_ enabled: Bool) {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         draft.createConference = enabled
         draftStore.setGridDraft(draft)
         rebuildPresentation()

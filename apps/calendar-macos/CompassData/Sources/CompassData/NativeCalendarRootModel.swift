@@ -53,6 +53,7 @@ public final class NativeCalendarRootModel {
     public private(set) var paletteEventSearchHits: [CommandPaletteEventHit] = []
     var sessionRevision = 0
     var paletteSearchTask: Task<Void, Never>?
+    var paletteEventSearchEvents: [String: Event] = [:]
     public var dedicationDialogVisible = false
     /// Right-hand sidebar, toggled with `]` like the web. Kept between launches.
     public var isSidebarOpen = CompassDevicePreferences.readSidebarOpen() {
@@ -119,6 +120,8 @@ public final class NativeCalendarRootModel {
     private var didApplyUITestFocusedEventForm = false
     private var eventFormTitleProbeVisible = false
     var keyboardCreateSettleGeneration = 0
+    var quickAddPanelSession: QuickAddPanelSession?
+    public internal(set) var quickAddError: String?
     var blockPartyModHoldTask: Task<Void, Never>?
 
     public var referenceNow: Date {
@@ -443,9 +446,10 @@ public final class NativeCalendarRootModel {
     private func resetAccountCaches(discardDraft: Bool = true) -> Bool {
         sessionRevision += 1
         keyboardCreateSettleGeneration += 1
+        quickAddPanelSession = nil
+        quickAddError = nil
         refreshTask?.cancel()
-        paletteSearchTask?.cancel()
-        paletteEventSearchHits = []
+        resetPaletteEventSearch()
         commandPaletteStore.close()
         syncConnectionsStore.resetSession()
         if discardDraft { draftStore.discard() }
@@ -458,7 +462,7 @@ public final class NativeCalendarRootModel {
         rebuildPresentation()
         do {
             try eventsStore.resetRemoteSession()
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             let localId = try LocalCalendarSentinel.calendarId(repository: environment.userMetadataRepository)
             localIds.insert(demoPresentation?.calendarId ?? localId.rawValue)
             try calendarRepository.removeCachedCalendars(except: localIds)
@@ -1178,7 +1182,7 @@ public final class NativeCalendarRootModel {
                 }
                 merged.append(contentsOf: systemCalendars)
             }
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             if let localCalendarId { localIds.insert(localCalendarId) }
             let previousIds = Set(try calendarRepository.fetchAll().map(\.id))
             let retainedIds = localIds.union(merged.map(\.id))
@@ -1206,13 +1210,17 @@ public final class NativeCalendarRootModel {
             localCalendarId = calendar.id
             // Local records prove which cached calendars belong to this device.
             // Other cached calendars require the signed-in session that loaded them.
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             localIds.insert(calendar.id)
             calendars = try calendarRepository.fetchAll().filter { localIds.contains($0.id) }
             rebuildPresentation()
         } catch {
             Self.log.error("bootstrap local calendars failed: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    private func calendarIdsOwnedByLocalEvents() throws -> Set<String> {
+        Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
     }
 
     private func configureAnalyticsFromConfig() async {

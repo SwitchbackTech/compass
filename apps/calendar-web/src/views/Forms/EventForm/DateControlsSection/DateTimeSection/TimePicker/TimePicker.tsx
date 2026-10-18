@@ -3,6 +3,7 @@ import { useEffect, useId, useRef } from "react";
 import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import {
@@ -10,6 +11,7 @@ import {
   type ParseUserTimeOptions,
   parseUserTime,
 } from "@web/common/utils/datetime/web.date.util";
+import { resolveFormControlJumpIds } from "@web/common/utils/form/form.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
 import { TIME_PICKER_COMMIT_DRAFT_EVENT } from "./timePickerCommitDraft";
@@ -39,11 +41,31 @@ const timePickerTextStyles = {
   singleValue: themeColor("var(--text)"),
   input: themeColor("var(--text)"),
   placeholder: themeColor("var(--text-muted)"),
+  // The menu portals to document.body, outside .c-time-picker, so its
+  // chrome lives here. Fit the longest label ("12:45 PM") without wrapping.
+  menu: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    width: "max-content",
+    minWidth: "100%",
+    border: "1px solid var(--color-border)",
+    borderRadius: 2,
+    backgroundColor: "var(--surface)",
+  }),
+  menuList: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    padding: 0,
+    fontSize: "var(--font-size-m)",
+  }),
+  menuPortal: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    zIndex: Z_INDEX_FLOATING_MENU,
+  }),
   option: (
     base: CSSObjectWithLabel,
     { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean },
   ): CSSObjectWithLabel => ({
     ...base,
+    whiteSpace: "nowrap",
     color: isFocused ? "var(--on-accent)" : "var(--text)",
     backgroundColor: isFocused
       ? "var(--accent)"
@@ -64,16 +86,31 @@ const MENU_NAV_KEYS = new Set([
   "PageDown",
 ]);
 
+/** The menu portals to document.body, so reach it through the combobox. */
+function comboboxFromContainer(
+  container: HTMLElement | null,
+): HTMLElement | null {
+  return container?.querySelector<HTMLElement>('[role="combobox"]') ?? null;
+}
+
+function menuListbox(container: HTMLElement | null): HTMLElement | null {
+  const listboxId =
+    comboboxFromContainer(container)?.getAttribute("aria-controls");
+  return listboxId ? document.getElementById(listboxId) : null;
+}
+
 function optionFromFocusedMenu(
   container: HTMLElement | null,
   options: TimeOption[] | undefined,
   parseContext: ParseUserTimeOptions,
 ): TimeOption | undefined {
-  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
+  const combobox = comboboxFromContainer(container);
   const activeId = combobox?.getAttribute("aria-activedescendant");
   const focusedEl = activeId
     ? document.getElementById(activeId)
-    : container?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0];
+    : menuListbox(container)?.getElementsByClassName(
+        `${TIMEPICKER}__option--is-focused`,
+      )[0];
   const focusedLabel = focusedEl?.textContent?.trim();
   if (!focusedLabel) return undefined;
 
@@ -126,10 +163,10 @@ export const TimePicker = ({
     scrollRafRef.current = requestAnimationFrame(() => {
       scrollRafRef.current = requestAnimationFrame(() => {
         scrollRafRef.current = null;
-        const defaultOpt = containerRef.current?.getElementsByClassName(
-          `${TIMEPICKER}__option--is-selected`,
-        )[0];
-        defaultOpt?.scrollIntoView();
+        const defaultOpt = menuListbox(
+          containerRef.current,
+        )?.getElementsByClassName(`${TIMEPICKER}__option--is-selected`)[0];
+        defaultOpt?.scrollIntoView({ block: "center" });
       });
     });
   };
@@ -178,16 +215,7 @@ export const TimePicker = ({
     };
   }, [setIsMenuOpen]);
 
-  // Jump ids live on this visible wrapper. react-select's dummy input is
-  // often 2px (hidden behind the selected value), which fails the hold-Mod
-  // hint-chip visibility check. `inputId` without a separate `id` is the
-  // jump id; the actual input then gets `${inputId}-input`.
-  const jumpId = id ?? inputId;
-  const resolvedInputId = id
-    ? inputId
-    : inputId
-      ? `${inputId}-input`
-      : undefined;
+  const { jumpId, resolvedInputId } = resolveFormControlJumpIds(id, inputId);
 
   return (
     <div ref={containerRef} className="c-time-picker" id={jumpId}>
@@ -200,6 +228,8 @@ export const TimePicker = ({
         value={selectValue}
         maxMenuHeight={4 * 41}
         blurInputOnSelect
+        menuPortalTarget={document.body}
+        menuPosition="fixed"
         menuIsOpen={isMenuOpen}
         //@ts-expect-error uses custom onChange to manage focus in parent
         onChange={(option: SelectOption<string> | null) => {

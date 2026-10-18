@@ -31,10 +31,9 @@ public enum CommandPaletteCatalog {
                     items: eventHits.map { hit in
                         CommandPaletteItem(
                             id: "event-\(hit.eventId)",
-                            sectionId: "events",
-                            sectionHeading: "Events",
                             label: hit.label,
-                            keywords: [hit.subtitle], subtitle: hit.subtitle)
+                            keywords: [hit.subtitle],
+                            subtitle: hit.subtitle)
                     }))
         }
 
@@ -47,12 +46,14 @@ public enum CommandPaletteCatalog {
         built.append(contentsOf: moreSections(isTrialing: isTrialing))
 
         var accountItems = [CommandPaletteItem(
-            id: "export-data", sectionId: "account-actions", sectionHeading: "Account",
-            label: "Export data", keywords: ["download", "backup", "local events"])]
+            id: "export-data",
+            label: "Export data",
+            keywords: ["download", "backup", "local events"])]
         if isSignedIn {
             accountItems.append(CommandPaletteItem(
-                id: "log-out", sectionId: "account-actions", sectionHeading: "Account",
-                label: "Log out", keywords: ["sign out"]))
+                id: "log-out",
+                label: "Log out",
+                keywords: ["sign out"]))
         }
         built.append(CommandPaletteSection(id: "account-actions", heading: "Account", items: accountItems))
 
@@ -64,14 +65,10 @@ public enum CommandPaletteCatalog {
                     items: [
                         CommandPaletteItem(
                             id: "sign-up",
-                            sectionId: "auth",
-                            sectionHeading: "Account",
                             label: "Sign Up",
                             keywords: ["register", "create account"]),
                         CommandPaletteItem(
                             id: "log-in",
-                            sectionId: "auth",
-                            sectionHeading: "Account",
                             label: "Log In",
                             keywords: ["sign in"]),
                     ]))
@@ -87,8 +84,6 @@ public enum CommandPaletteCatalog {
         guard let date = UserDateParsing.parseUserDate(query, now: now) else { return nil }
         return CommandPaletteItem(
             id: "go-to-date",
-            sectionId: "go-to-date",
-            sectionHeading: "",
             label: UserDateParsing.goToDatePaletteLabel(date),
             keywords: [query])
     }
@@ -99,8 +94,6 @@ public enum CommandPaletteCatalog {
         var items: [CommandPaletteItem] = [
             CommandPaletteItem(
                 id: "today",
-                sectionId: "navigation",
-                sectionHeading: "Navigation",
                 label: "Go to Today",
                 shortcut: "t",
                 keywords: ["now", "current", "jump"]),
@@ -109,8 +102,6 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-day",
-                    sectionId: "navigation",
-                    sectionHeading: "Navigation",
                     label: "Go to Day view",
                     shortcut: "d",
                     keywords: ["day view", "daily"]))
@@ -119,8 +110,6 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-week",
-                    sectionId: "navigation",
-                    sectionHeading: "Navigation",
                     label: "Go to Week view",
                     shortcut: "w",
                     keywords: ["week view", "weekly"]))
@@ -129,8 +118,6 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-life",
-                    sectionId: "navigation",
-                    sectionHeading: "Navigation",
                     label: "Go to Life view",
                     shortcut: "l",
                     keywords: ["life view", "years"]))
@@ -138,8 +125,6 @@ public enum CommandPaletteCatalog {
         items.append(
             CommandPaletteItem(
                 id: "show-shortcuts",
-                sectionId: "navigation",
-                sectionHeading: "Navigation",
                 label: "Show shortcuts",
                 shortcut: "?",
                 keywords: ["keyboard", "legend", "help"]))
@@ -153,8 +138,11 @@ public enum CommandPaletteCatalog {
         let lookup = Dictionary(uniqueKeysWithValues: navigation.map { ($0.id, $0) })
         return recentIds.compactMap { id in
             guard let item = lookup[id] else { return nil }
-            return CommandPaletteItem(id: "recent-" + id, sectionId: "recent", sectionHeading: "Recent",
-                label: item.label, shortcut: item.shortcut, keywords: item.keywords)
+            return CommandPaletteItem(
+                id: "recent-" + id,
+                label: item.label,
+                shortcut: item.shortcut,
+                keywords: item.keywords)
         }
     }
 
@@ -166,15 +154,11 @@ public enum CommandPaletteCatalog {
                 items: [
                     CommandPaletteItem(
                         id: "create-event",
-                        sectionId: "create",
-                        sectionHeading: "Create",
                         label: "Create event",
                         shortcut: "c",
                         keywords: ["new event", "schedule"]),
                     CommandPaletteItem(
                         id: "create-allday-event",
-                        sectionId: "create",
-                        sectionHeading: "Create",
                         label: "Create all-day event",
                         shortcut: "shift+c",
                         keywords: ["all day"]),
@@ -188,14 +172,10 @@ public enum CommandPaletteCatalog {
         var items: [CommandPaletteItem] = [
             CommandPaletteItem(
                 id: "show-welcome-guide",
-                sectionId: "advanced",
-                sectionHeading: "More",
                 label: "Show welcome guide",
                 keywords: ["onboarding", "tour", "intro", "help", "faq"]),
             CommandPaletteItem(
                 id: "practice-shortcuts",
-                sectionId: "advanced",
-                sectionHeading: "More",
                 label: "Play Block Party (practice shortcuts)",
                 keywords: [
                     "onboarding", "tour", "intro", "help", "tutorial", "coach", "sandbox",
@@ -203,15 +183,11 @@ public enum CommandPaletteCatalog {
                 ]),
             CommandPaletteItem(
                 id: "open-settings",
-                sectionId: "advanced",
-                sectionHeading: "More",
                 label: "Settings",
                 shortcut: ",",
                 keywords: ["preferences", "account"]),
             CommandPaletteItem(
                 id: "about",
-                sectionId: "advanced",
-                sectionHeading: "More",
                 label: "About Compass",
                 keywords: ["version", "info"]),
         ]
@@ -219,8 +195,6 @@ public enum CommandPaletteCatalog {
             items.insert(
                 CommandPaletteItem(
                     id: "subscribe",
-                    sectionId: "advanced",
-                    sectionHeading: "More",
                     label: "Subscribe now",
                     shortcut: "b",
                     keywords: ["billing", "upgrade"]),
@@ -241,4 +215,3 @@ public struct CommandPaletteEventHit: Hashable, Sendable {
         self.subtitle = subtitle
     }
 }
-

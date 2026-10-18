@@ -26,6 +26,7 @@ public enum EventDuplicateCommit {
 
         guard case .details(let details) = source.content else { return nil }
         let content = CreateEventInputContent(
+            color: details.color,
             description: details.description ?? "",
             kind: "details",
             location: details.location ?? "",
@@ -52,6 +53,7 @@ public enum EventDuplicateCommit {
             calendarId: input.calendarId,
             content: .details(
                 EventContent_DetailsPayload(
+                    color: details.color,
                     description: details.description,
                     kind: "details",
                     location: details.location,

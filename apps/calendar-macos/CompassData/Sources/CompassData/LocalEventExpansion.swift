@@ -4,8 +4,6 @@ import Foundation
 /// Read projection only. Export and promotion continue to use the compact stored records.
 enum LocalEventExpansion {
     static func records(from stored: [LocalEventRecord]) -> [LocalEventRecord] {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let storedIds = Set(stored.map(\.id))
         // Older native fixtures and caches already contain materialized instances.
         let materializedSeries = Set(stored.compactMap { record -> EventId? in
@@ -23,20 +21,20 @@ enum LocalEventExpansion {
                 guard let rule = rule(event: record.event, line: line) else { continue }
                 for start in rule.occurrences(from: rule.startDate, limit: 730) {
                     guard starts.insert(start).inserted, !excluded.contains(start) else { continue }
-                    let stamp = formatter.string(from: start)
+                    let stamp = LocalOccurrenceKey.string(start)
                     let id = EventId(rawValue: record.id.rawValue + "::" + stamp)
                     guard !storedIds.contains(id) else { continue }
                     let schedule: EventSchedule
                     switch record.event.schedule {
                     case .timed(let timed):
                         schedule = .timed(.init(
-                            end: DateTime(rawValue: formatter.string(from: start.addingTimeInterval(rule.endDate.timeIntervalSince(rule.startDate)))),
+                            end: DateTime(rawValue: LocalOccurrenceKey.string(start.addingTimeInterval(rule.endDate.timeIntervalSince(rule.startDate)))),
                             kind: "timed", start: DateTime(rawValue: stamp),
                             timeZone: timed.timeZone))
                     case .allDay:
                         let days = LocalOccurrenceKey.calendar.dateComponents([.day], from: rule.startDate, to: rule.endDate).day ?? 1
                         let end = LocalOccurrenceKey.calendar.date(byAdding: .day, value: days, to: start) ?? start
-                        schedule = .allDay(.init(end: String(formatter.string(from: end).prefix(10)), kind: "allDay", start: String(stamp.prefix(10))))
+                        schedule = .allDay(.init(end: LocalOccurrenceKey.day(end), kind: "allDay", start: LocalOccurrenceKey.day(start)))
                     }
                     let event = copy(record.event, id: id,
                         recurrence: .occurrence(.init(kind: "occurrence", seriesId: record.id)), schedule: schedule)
@@ -83,19 +81,27 @@ enum LocalOccurrenceKey {
         return (EventId(rawValue: String(id.rawValue[..<range.lowerBound])), start)
     }
 
-    static func instant(_ value: String) -> Date? {
+    // Cached formatters are configured once; reads are concurrent, writes never happen after init.
+    private nonisolated(unsafe) static let iso8601WithFractional: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let normalized = value.count == 10 ? value + "T00:00:00.000Z" : value
-        if let date = formatter.date(from: normalized) { return date }
+        return formatter
+    }()
+
+    private nonisolated(unsafe) static let iso8601Internet: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: normalized)
+        return formatter
+    }()
+
+    static func instant(_ value: String) -> Date? {
+        let normalized = value.count == 10 ? value + "T00:00:00.000Z" : value
+        if let date = iso8601WithFractional.date(from: normalized) { return date }
+        return iso8601Internet.date(from: normalized)
     }
 
     static func string(_ date: Date) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter.string(from: date)
+        iso8601WithFractional.string(from: date)
     }
 
     static func day(_ date: Date) -> String { String(string(date).prefix(10)) }

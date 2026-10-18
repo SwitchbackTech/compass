@@ -34,36 +34,32 @@ describe("DayLabels", () => {
     nowCueActions.resetForTests();
   });
 
-  it("pulses today label text when the now cue is active", () => {
+  it("shimmers today label text when the now cue is active", () => {
     nowCueActions.pulse();
     renderLabels();
 
     expect(useNowCueStore.getState().active).toBe(true);
-    expect(screen.getByText("17")).toHaveClass(
-      "c-now-cue-label-gradient-pulse",
-    );
-    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-pulse");
+    expect(screen.getByText("17")).toHaveClass("c-now-cue-label-shimmer");
+    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-shimmer");
     expect(
       screen.getByText("17").closest("[class*='c-now-cue-pulse']"),
     ).toBeNull();
   });
 
-  it("reapplies pulse classes when the now cue fires again", () => {
+  it("reapplies the shimmer when the now cue fires again", () => {
     renderLabels();
 
     act(() => {
       nowCueActions.pulse();
     });
-    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-pulse");
+    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-shimmer");
 
     act(() => {
       nowCueActions.pulse();
     });
     expect(useNowCueStore.getState().pulseGeneration).toBe(2);
-    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-pulse");
-    expect(screen.getByText("17")).toHaveClass(
-      "c-now-cue-label-gradient-pulse",
-    );
+    expect(screen.getByText("Mon")).toHaveClass("c-now-cue-label-shimmer");
+    expect(screen.getByText("17")).toHaveClass("c-now-cue-label-shimmer");
   });
 
   it("shows the effective timezone in the grid corner", () => {

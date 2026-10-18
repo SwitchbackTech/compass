@@ -29,7 +29,8 @@ public struct EventFormView: View {
     }
 
     private func formPanel(draft: GridEventDraft) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let isReadOnly = model.isEventFormReadOnly(for: draft)
+        return VStack(alignment: .leading, spacing: 12) {
             EventFormToolbarView(model: model, draft: draft)
             .pageJumpChipAnchor(id: "form-actions")
 
@@ -41,6 +42,7 @@ public struct EventFormView: View {
             .font(.rubik(16))
             .foregroundStyle(theme.textColor)
             .focused($titleFocused)
+            .disabled(isReadOnly)
             .accessibilityIdentifier("compass-event-form-title")
             .pageJumpChipAnchor(id: "form-title")
 
@@ -58,24 +60,28 @@ public struct EventFormView: View {
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(model.isScheduleLocked(for: draft))
                         .id(EventFormField.recurrence)
                         EventFormCalendarSection(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.calendar)
                         EventFormColorSection(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.color)
                         EventFormLocationField(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.location)
                         DescriptionEditorView(
                             html: Binding(
@@ -84,7 +90,8 @@ public struct EventFormView: View {
                             ),
                             resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
                             isFocused: model.eventFormFocusedField == .description,
-                            isEditable: !model.isEventFormReadOnly(for: draft)
+                            isEditable: !model.isEventFormReadOnly(for: draft),
+                            onLinkCopied: { model.didCopyDescriptionLink() }
                         )
                         .frame(minHeight: 72, maxHeight: 140)
                         .padding(8)
@@ -129,7 +136,7 @@ public struct EventFormView: View {
                     }
                 }
             }
-            if !model.isEventFormReadOnly(for: draft) {
+            if !isReadOnly {
                 Button {
                     Task { await model.saveDraft() }
                 } label: {

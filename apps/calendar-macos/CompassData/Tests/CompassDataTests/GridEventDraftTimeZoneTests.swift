@@ -10,7 +10,7 @@ final class GridEventDraftTimeZoneTests: XCTestCase {
         let event = try originalEvent()
         var draft = try XCTUnwrap(GridEventDraftFromEvent.editDraft(from: event))
         draft.title = "Updated title"
-        let input = try XCTUnwrap(GridEventDraftMapping.replaceInput(from: draft, scope: .all))
+        let input = try XCTUnwrap(GridEventDraftMapping.replaceInput(from: draft, originalCalendarId: event.calendarId, scope: .all))
         let optimistic = try XCTUnwrap(GridEventDraftMapping.optimisticEvent(from: draft, baseline: event))
         for schedule in [input.schedule, optimistic.schedule] {
             guard case .timed(let timed) = schedule else { return XCTFail("Expected timed schedule") }

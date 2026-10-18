@@ -1,6 +1,7 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type DuplicateCopy } from "@web/common/types/web.event.types";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
@@ -30,6 +31,30 @@ function scheduleKey(schedule: Event["schedule"]): string {
   const { kind, start, end } = schedule;
   if (kind === "allDay") return `allDay ${start} ${end}`;
   return `timed ${Date.parse(start)} ${Date.parse(end)}`;
+}
+
+/** Provider holiday feeds use names like "Holidays in United States" or "holidays-de". */
+function isHolidayCalendar(calendar: Calendar): boolean {
+  return /\bholiday/i.test(calendar.name);
+}
+
+function isSingleDayAllDay(schedule: Event["schedule"]): boolean {
+  if (schedule.kind !== "allDay") return false;
+  const nextDay = dayjs(schedule.start, "YYYY-MM-DD")
+    .add(1, "day")
+    .format("YYYY-MM-DD");
+  return schedule.end === nextDay;
+}
+
+function normalizeHolidayTitle(title: string): string {
+  return title.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function holidayTitleKey(event: Event): string | null {
+  if (!isSingleDayAllDay(event.schedule)) return null;
+  if (event.content.kind !== "details") return null;
+  const normalized = normalizeHolidayTitle(event.content.title);
+  return normalized.length > 0 ? normalized : null;
 }
 
 /**
@@ -81,41 +106,48 @@ export function mergeDuplicateCopies(
   const calendarsById = new Map(calendars.map((c) => [c.id, c]));
   const calendarOrder = new Map(calendars.map((c, i) => [c.id, i]));
 
-  // Group only events that can possibly merge: they need a correlation key
-  // and a calendar to compare against another copy's.
-  const groups = new Map<string, Copy[]>();
-  for (const id of data.ids) {
-    const event = data.entities[id];
-    if (!event?.icalUid) continue;
-    const calendar = event.calendarId
-      ? calendarsById.get(event.calendarId)
-      : undefined;
-    if (!calendar) continue;
-    const groupKey = `${correlationKey(event.icalUid)} ${scheduleKey(event.schedule)}`;
-    const copy: Copy = { id, event, calendar };
-    const group = groups.get(groupKey);
-    if (group) group.push(copy);
-    else groups.set(groupKey, [copy]);
-  }
-
   const dropped = new Set<EventId>();
+
+  /**
+   * Bucket the events a pass can merge by its own group key. An event with no
+   * calendar, no key, or an earlier pass's drop can have no counterpart.
+   */
+  const groupCopies = (
+    keyFor: (event: Event, calendar: Calendar) => string | null,
+  ): Map<string, Copy[]> => {
+    const groups = new Map<string, Copy[]>();
+    for (const id of data.ids) {
+      if (dropped.has(id)) continue;
+      const event = data.entities[id];
+      const calendar = event?.calendarId
+        ? calendarsById.get(event.calendarId)
+        : undefined;
+      if (!event || !calendar) continue;
+      const groupKey = keyFor(event, calendar);
+      if (groupKey === null) continue;
+      const copy: Copy = { id, event, calendar };
+      const group = groups.get(groupKey);
+      if (group) group.push(copy);
+      else groups.set(groupKey, [copy]);
+    }
+    return groups;
+  };
+
   const duplicates = new Map<EventId, DuplicateCopy[]>();
 
-  for (const copies of groups.values()) {
-    if (copies.length < 2) continue;
+  const rank = (copy: Copy) =>
+    copy.calendar.accountEmail === defaultAccountEmail
+      ? -1
+      : (calendarOrder.get(copy.calendar.id) ?? calendars.length);
+
+  const mergeCopyGroup = (copies: Copy[]) => {
+    if (copies.length < 2) return;
     // Two rows on the SAME calendar are never two copies of the meeting; the
     // id de-duplication in normalizeEventList already covers that case.
-    if (new Set(copies.map((c) => c.calendar.id)).size < 2) continue;
+    if (new Set(copies.map((c) => c.calendar.id)).size < 2) return;
 
-    // Deterministic winner: the copy on the default calendar's account when
-    // one of them is, else the copy whose calendar comes first in the
-    // calendars list (the order the server returned, stable per cache entry).
-    const rank = (copy: Copy) =>
-      copy.calendar.accountEmail === defaultAccountEmail
-        ? -1
-        : (calendarOrder.get(copy.calendar.id) ?? calendars.length);
     const [winner, ...others] = [...copies].sort((a, b) => rank(a) - rank(b));
-    if (!winner || others.length === 0) continue;
+    if (!winner || others.length === 0) return;
 
     for (const loser of others) dropped.add(loser.id);
 
@@ -131,8 +163,42 @@ export function mergeDuplicateCopies(
         backgroundColor: other.calendar.backgroundColor,
       });
     }
-    if (otherCopies.length > 0) duplicates.set(winner.id, otherCopies);
-  }
+    if (otherCopies.length === 0) return;
+
+    const existing = duplicates.get(winner.id);
+    if (!existing) {
+      duplicates.set(winner.id, otherCopies);
+      return;
+    }
+    const seenLabels = new Set(existing.map((copy) => copy.label));
+    duplicates.set(winner.id, [
+      ...existing,
+      ...otherCopies.filter((copy) => {
+        if (seenLabels.has(copy.label)) return false;
+        seenLabels.add(copy.label);
+        return true;
+      }),
+    ]);
+  };
+
+  // Two copies can only merge when they share a correlation key and sit at the
+  // same instant.
+  const icalGroups = groupCopies((event) =>
+    event.icalUid
+      ? `${correlationKey(event.icalUid)} ${scheduleKey(event.schedule)}`
+      : null,
+  );
+  for (const copies of icalGroups.values()) mergeCopyGroup(copies);
+
+  // Public holiday feeds on different accounts often carry different
+  // correlation keys for the same civil holiday. Collapse those when the
+  // title and single-day all-day span match on holiday calendars.
+  const holidayGroups = groupCopies((event, calendar) => {
+    if (!isHolidayCalendar(calendar)) return null;
+    const titleKey = holidayTitleKey(event);
+    return titleKey ? `${titleKey} ${scheduleKey(event.schedule)}` : null;
+  });
+  for (const copies of holidayGroups.values()) mergeCopyGroup(copies);
 
   if (dropped.size === 0) return data;
 

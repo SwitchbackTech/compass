@@ -36,6 +36,12 @@ public enum GridEventDraftFromEvent {
         let sourceCalendar = calendars.first { $0.id == event.calendarId.rawValue }
         let calendarId: CalendarId? =
             sourceCalendar?.capabilities.canWrite == true ? event.calendarId : nil
+        let recurrence: GridEventRecurrenceDraft
+        if case .series(let series) = event.recurrence {
+            recurrence = .series(rules: series.rules)
+        } else {
+            recurrence = .single
+        }
         return GridEventDraft(
             kind: .create,
             clientId: GridEventDraftFactory.makeClientEventId(),
@@ -45,6 +51,7 @@ public enum GridEventDraftFromEvent {
             color: details.color,
             description: details.description,
             location: details.location,
+            recurrence: recurrence,
             timeZone: timeZone(from: event.schedule)
         )
     }

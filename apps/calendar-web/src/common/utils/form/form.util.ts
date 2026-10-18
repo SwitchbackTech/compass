@@ -24,6 +24,20 @@ const findFirstMatch = (selectors: string[]): HTMLElement | null => {
   return null;
 };
 
+/**
+ * Jump ids live on the visible wrapper. react-select's dummy input is often
+ * 2px (hidden behind the selected value), which fails the hold-Mod hint-chip
+ * visibility check. When `id` is omitted, `inputId` is the jump id and the
+ * real input becomes `${inputId}-input`.
+ */
+export const resolveFormControlJumpIds = (
+  id?: string,
+  inputId?: string,
+): { jumpId?: string; resolvedInputId?: string } => ({
+  jumpId: id ?? inputId,
+  resolvedInputId: id ? inputId : inputId ? `${inputId}-input` : undefined,
+});
+
 /** Per-field fallback selectors, in priority order. These target the visible
  * control (the chip anchor), not a hidden inner input. react-select's dummy
  * input is often 2px wide — too small for a hint chip — so combobox fields

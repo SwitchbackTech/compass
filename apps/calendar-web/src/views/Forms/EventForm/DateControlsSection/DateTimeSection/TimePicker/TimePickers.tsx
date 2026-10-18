@@ -160,7 +160,6 @@ export const TimePickers: FC<Props> = ({
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <EventFormDateField
           calendarClassName="timedStartDatePicker"
-          excludeFromTabOrder
           inputId="eventFormStartDate"
           isOpen={datePickers.openSide === "start"}
           onCalendarClose={() => datePickers.close("start")}
@@ -176,7 +175,6 @@ export const TimePickers: FC<Props> = ({
           inputId="startTimePicker"
           isMenuOpen={isStartMenuOpen}
           onChange={(option) => onTimeSelected("start", option)}
-          openMenuOnFocus
           options={timeOptions}
           pickerRole="start"
           setIsMenuOpen={setIsStartMenuOpen}
@@ -204,7 +202,6 @@ export const TimePickers: FC<Props> = ({
           inputId="endTimePicker"
           isMenuOpen={isEndMenuOpen}
           onChange={(option) => onTimeSelected("end", option)}
-          openMenuOnFocus
           options={timeOptions}
           pickerRole="end"
           setIsMenuOpen={setIsEndMenuOpen}

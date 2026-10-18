@@ -129,7 +129,7 @@ describe("SelectView", () => {
       expect(button).toHaveAttribute("aria-expanded", "false");
     });
 
-    it("pulses the day heading text when the now cue is active", async () => {
+    it("shimmers the day heading text when the now cue is active", async () => {
       nowCueActions.pulse();
       const router = createTestRouter(
         <SelectView
@@ -145,7 +145,7 @@ describe("SelectView", () => {
       });
 
       expect(screen.getByText("Monday, July 20")).toHaveClass(
-        "c-now-cue-label-pulse",
+        "c-now-cue-label-shimmer",
       );
     });
 

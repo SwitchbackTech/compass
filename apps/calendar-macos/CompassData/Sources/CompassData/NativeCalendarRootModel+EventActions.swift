@@ -344,7 +344,7 @@ extension NativeCalendarRootModel {
     private func replaceEvent(with event: Event) async {
         guard case .details(let details) = event.content else { return }
         let input = ReplaceEventInput(
-            calendarId: event.calendarId,
+            calendarId: eventsStore.source == .local ? event.calendarId : nil,
             content: .init(
                 attendees: details.attendees?.map { .init(displayName: $0.displayName, email: $0.email) },
                 color: details.color, description: details.description, kind: "details",
