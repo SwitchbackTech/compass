@@ -52,6 +52,10 @@ final class BookedMeetingActionsTests: XCTestCase {
         XCTAssertFalse(window.buttons["Delete"].exists)
         window.typeKey("x", modifierFlags: [.command, .shift])
         XCTAssertTrue(window.buttons["Confirm cancel"].waitForExistence(timeout: 8))
+        let confirmation = XCTAttachment(screenshot: window.screenshot())
+        confirmation.name = "Booked meeting cancellation confirmation"
+        confirmation.lifetime = .keepAlways
+        add(confirmation)
         window.typeKey(.escape, modifierFlags: [])
         XCTAssertTrue(window.buttons["Cancel meeting"].waitForExistence(timeout: 8))
         XCTAssertTrue(editor.exists)
