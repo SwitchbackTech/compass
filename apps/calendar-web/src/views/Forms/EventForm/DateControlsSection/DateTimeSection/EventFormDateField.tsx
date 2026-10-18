@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { parseUserDate } from "@web/common/utils/datetime/web.date.util";
+import { resolveFormControlJumpIds } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import {
@@ -173,12 +174,7 @@ export const EventFormDateField = ({
     }
   };
 
-  const jumpId = id ?? inputId;
-  const resolvedInputId = id
-    ? inputId
-    : inputId
-      ? `${inputId}-input`
-      : undefined;
+  const { jumpId, resolvedInputId } = resolveFormControlJumpIds(id, inputId);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: stops date picker mouse events from bubbling to the form.

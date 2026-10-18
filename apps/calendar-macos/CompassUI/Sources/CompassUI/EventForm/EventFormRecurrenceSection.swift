@@ -51,7 +51,11 @@ struct EventFormRecurrenceSection: View {
                 Toggle("End date", isOn: Binding(
                     get: { pattern.until != nil },
                     set: { enabled in
-                        pattern.until = enabled ? inclusiveEndDate(defaultUntil) : nil
+                        pattern.until = enabled
+                            ? RecurrenceRuleLine.inclusiveEndDate(
+                                defaultUntil,
+                                timeZoneIdentifier: EffectiveTimeZone.identifier)
+                            : nil
                         if enabled { pattern.count = nil }
                         syncDraftRecurrence()
                     }
@@ -65,7 +69,9 @@ struct EventFormRecurrenceSection: View {
                         selection: Binding(
                             get: { pattern.until ?? defaultUntil },
                             set: {
-                                pattern.until = inclusiveEndDate($0)
+                                pattern.until = RecurrenceRuleLine.inclusiveEndDate(
+                                    $0,
+                                    timeZoneIdentifier: EffectiveTimeZone.identifier)
                                 pattern.count = nil
                                 syncDraftRecurrence()
                             }
@@ -123,10 +129,11 @@ struct EventFormRecurrenceSection: View {
     }
 
     private var currentRules: [String] {
-        GridEventDraftRecurrence.resolvedRules(
+        let baseline = model.baselineEvent(for: draft)
+        return GridEventDraftRecurrence.resolvedRules(
             draft: draft,
-            baselineEvent: model.baselineEvent(for: draft),
-            seriesMaster: model.baselineEvent(for: draft).flatMap { model.seriesMaster(for: $0) }
+            baselineEvent: baseline,
+            seriesMaster: baseline.flatMap { model.seriesMaster(for: $0) }
         )
     }
 
@@ -168,10 +175,6 @@ struct EventFormRecurrenceSection: View {
             )
         else { return }
         model.updateDraftRecurrence(.series(rules: [line]))
-    }
-
-    private func inclusiveEndDate(_ date: Date) -> Date {
-        RecurrenceRuleLine.inclusiveEndDate(date, timeZoneIdentifier: EffectiveTimeZone.identifier)
     }
 
     private func weekdayIndex(for date: Date) -> Int {

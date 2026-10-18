@@ -11,6 +11,7 @@ import {
   type ParseUserTimeOptions,
   parseUserTime,
 } from "@web/common/utils/datetime/web.date.util";
+import { resolveFormControlJumpIds } from "@web/common/utils/form/form.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
 import { TIME_PICKER_COMMIT_DRAFT_EVENT } from "./timePickerCommitDraft";
@@ -86,9 +87,15 @@ const MENU_NAV_KEYS = new Set([
 ]);
 
 /** The menu portals to document.body, so reach it through the combobox. */
+function comboboxFromContainer(
+  container: HTMLElement | null,
+): HTMLElement | null {
+  return container?.querySelector<HTMLElement>('[role="combobox"]') ?? null;
+}
+
 function menuListbox(container: HTMLElement | null): HTMLElement | null {
-  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
-  const listboxId = combobox?.getAttribute("aria-controls");
+  const listboxId =
+    comboboxFromContainer(container)?.getAttribute("aria-controls");
   return listboxId ? document.getElementById(listboxId) : null;
 }
 
@@ -97,7 +104,7 @@ function optionFromFocusedMenu(
   options: TimeOption[] | undefined,
   parseContext: ParseUserTimeOptions,
 ): TimeOption | undefined {
-  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
+  const combobox = comboboxFromContainer(container);
   const activeId = combobox?.getAttribute("aria-activedescendant");
   const focusedEl = activeId
     ? document.getElementById(activeId)
@@ -208,16 +215,7 @@ export const TimePicker = ({
     };
   }, [setIsMenuOpen]);
 
-  // Jump ids live on this visible wrapper. react-select's dummy input is
-  // often 2px (hidden behind the selected value), which fails the hold-Mod
-  // hint-chip visibility check. `inputId` without a separate `id` is the
-  // jump id; the actual input then gets `${inputId}-input`.
-  const jumpId = id ?? inputId;
-  const resolvedInputId = id
-    ? inputId
-    : inputId
-      ? `${inputId}-input`
-      : undefined;
+  const { jumpId, resolvedInputId } = resolveFormControlJumpIds(id, inputId);
 
   return (
     <div ref={containerRef} className="c-time-picker" id={jumpId}>

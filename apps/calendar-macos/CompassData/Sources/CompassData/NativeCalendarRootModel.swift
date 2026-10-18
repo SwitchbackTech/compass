@@ -454,7 +454,7 @@ public final class NativeCalendarRootModel {
         rebuildPresentation()
         do {
             try eventsStore.resetRemoteSession()
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             let localId = try LocalCalendarSentinel.calendarId(repository: environment.userMetadataRepository)
             localIds.insert(demoPresentation?.calendarId ?? localId.rawValue)
             try calendarRepository.removeCachedCalendars(except: localIds)
@@ -1174,7 +1174,7 @@ public final class NativeCalendarRootModel {
                 }
                 merged.append(contentsOf: systemCalendars)
             }
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             if let localCalendarId { localIds.insert(localCalendarId) }
             let previousIds = Set(try calendarRepository.fetchAll().map(\.id))
             let retainedIds = localIds.union(merged.map(\.id))
@@ -1202,13 +1202,17 @@ public final class NativeCalendarRootModel {
             localCalendarId = calendar.id
             // Local records prove which cached calendars belong to this device.
             // Other cached calendars require the signed-in session that loaded them.
-            var localIds = Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
+            var localIds = try calendarIdsOwnedByLocalEvents()
             localIds.insert(calendar.id)
             calendars = try calendarRepository.fetchAll().filter { localIds.contains($0.id) }
             rebuildPresentation()
         } catch {
             Self.log.error("bootstrap local calendars failed: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    private func calendarIdsOwnedByLocalEvents() throws -> Set<String> {
+        Set(try environment.localEventRepository.fetchAll().map { $0.event.calendarId.rawValue })
     }
 
     private func configureAnalyticsFromConfig() async {

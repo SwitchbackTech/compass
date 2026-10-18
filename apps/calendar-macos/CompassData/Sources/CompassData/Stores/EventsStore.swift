@@ -552,26 +552,24 @@ public final class EventsStore {
         }
     }
 
+    private func localRecord(for event: Event, previous: LocalEventRecord?) -> LocalEventRecord {
+        LocalEventRecord(
+            id: event.id,
+            event: event,
+            isDemo: previous?.isDemo ?? false,
+            exdates: previous?.exdates
+        )
+    }
+
     private func putLocalEvent(_ event: Event) throws {
-        let previous = try localEvent(id: event.id)
-        let record = LocalEventRecord(id: event.id, event: event, isDemo: previous?.isDemo ?? false,
-            exdates: previous?.exdates)
-        try localEvents.put(record)
+        try localEvents.put(localRecord(for: event, previous: try localEvent(id: event.id)))
     }
 
     private func putLocalEvents(_ events: [Event]) throws {
         let recordsById = Dictionary(
             uniqueKeysWithValues: try localEvents.fetchAll().map { ($0.id, $0) }
         )
-        let records = events.map { event in
-            LocalEventRecord(
-                id: event.id,
-                event: event,
-                isDemo: recordsById[event.id]?.isDemo ?? false,
-                exdates: recordsById[event.id]?.exdates
-            )
-        }
-        try localEvents.putMany(records)
+        try localEvents.putMany(events.map { localRecord(for: $0, previous: recordsById[$0.id]) })
     }
 
     private func nativeOptimisticUpserts(

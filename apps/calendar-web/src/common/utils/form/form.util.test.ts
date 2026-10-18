@@ -7,6 +7,7 @@ import {
   isComboboxInteraction,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
+  resolveFormControlJumpIds,
   shouldDeferEnterToTarget,
 } from "./form.util";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -370,6 +371,29 @@ describe("form.util", () => {
       const { title } = mountForm();
       focusEventFormTitle();
       expect(document.activeElement).toBe(title);
+    });
+  });
+
+  describe("resolveFormControlJumpIds", () => {
+    it("uses id as the jump target and keeps the explicit input id", () => {
+      expect(resolveFormControlJumpIds("field", "field-input")).toEqual({
+        jumpId: "field",
+        resolvedInputId: "field-input",
+      });
+    });
+
+    it("treats a lone inputId as the wrapper jump id", () => {
+      expect(resolveFormControlJumpIds(undefined, "startTimePicker")).toEqual({
+        jumpId: "startTimePicker",
+        resolvedInputId: "startTimePicker-input",
+      });
+    });
+
+    it("returns nothing when both ids are absent", () => {
+      expect(resolveFormControlJumpIds()).toEqual({
+        jumpId: undefined,
+        resolvedInputId: undefined,
+      });
     });
   });
 });
