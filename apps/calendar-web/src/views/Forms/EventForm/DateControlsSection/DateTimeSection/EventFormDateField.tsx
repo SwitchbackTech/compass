@@ -50,10 +50,19 @@ export const EventFormDateField = ({
   selectedRef.current = selected;
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const shownDateRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (isOpen) return;
     const input = containerRef.current?.querySelector("input");
     if (!input) return;
+    // Closing the calendar (outside click, Escape) must not wipe a date the
+    // user is still typing; blur commits or reverts it.
+    const isDraft =
+      input === document.activeElement &&
+      shownDateRef.current === selected.getTime();
+    if (isDraft) return;
+    shownDateRef.current = selected.getTime();
     input.value = formatEventFormDateLabel(selected);
   }, [isOpen, selected]);
 
@@ -66,6 +75,31 @@ export const EventFormDateField = ({
 
   const revertInput = (target: HTMLInputElement) => {
     target.value = formatEventFormDateLabel(selectedRef.current);
+  };
+
+  /**
+   * Enter, Tab, and blur all land here: commit a typed date that changes the
+   * day, quietly restore an emptied field, and explain anything unparseable.
+   * Returns false when nothing was committed.
+   */
+  const commitOrRevert = (target: HTMLInputElement) => {
+    const value = target.value.trim();
+    const parsed = value ? parseUserDate(value, dayjs()) : null;
+    if (parsed && !parsed.isSame(selectedRef.current, "day")) {
+      const date = parsed.startOf("day").toDate();
+      // Optimistic until the parent re-renders, so a blur right after Enter
+      // doesn't commit the same draft twice.
+      selectedRef.current = date;
+      onCommit(date);
+      return true;
+    }
+    if (value && !parsed) {
+      showErrorToast(
+        `Sorry, IDK what to do with a ${sideLabel} date of '${value}'. Try 10.17.26, 17.10.26, 10/17/2026, or 2026-10-17.`,
+      );
+    }
+    revertInput(target);
+    return false;
   };
 
   const nudgeDays = (deltaDays: number) => {
@@ -119,11 +153,7 @@ export const EventFormDateField = ({
       case event.key === "Enter": {
         event.stopPropagation();
         event.preventDefault();
-        if (!commitTypedDate(typedValue)) {
-          showErrorToast(
-            `Sorry, IDK what to do with a ${sideLabel} date of '${typedValue}'. Try 10.17.26, 17.10.26, 10/17/2026, or 2026-10-17.`,
-          );
-        }
+        if (!commitOrRevert(target)) onCalendarClose();
         break;
       }
       case event.key === "Escape": {
@@ -137,7 +167,7 @@ export const EventFormDateField = ({
         break;
       }
       case event.key === "Tab": {
-        onCalendarClose();
+        if (!commitOrRevert(target)) onCalendarClose();
         break;
       }
     }
@@ -156,6 +186,16 @@ export const EventFormDateField = ({
       ref={containerRef}
       className={DATE_FIELD_CLASSNAME}
       id={jumpId}
+      onBlur={(event) => {
+        // react-datepicker skips onBlur while its calendar is open, so listen
+        // on the wrapper. Moving into the calendar is not leaving the field.
+        const next = event.relatedTarget;
+        if (next instanceof Element && next.closest(".react-datepicker"))
+          return;
+        if (event.target instanceof HTMLInputElement) {
+          commitOrRevert(event.target);
+        }
+      }}
       onMouseDown={stopPropagation}
       onMouseUp={stopPropagation}
       tabIndex={-1}
@@ -172,6 +212,9 @@ export const EventFormDateField = ({
         onCalendarOpen={onCalendarOpen}
         onChange={() => null}
         onInputClick={onCalendarOpen}
+        onFocus={(event) => {
+          if (event.target instanceof HTMLInputElement) event.target.select();
+        }}
         onKeyDown={handleKeyDown}
         onSelect={(date) => {
           if (!date) return;
