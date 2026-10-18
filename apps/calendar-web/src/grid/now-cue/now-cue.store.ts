@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { IS_DEV } from "@web/common/constants/env.constants";
 
-export const NOW_CUE_PULSE_MS = 700;
+export const NOW_CUE_PULSE_MS = 1000;
 
 type NowCueState = {
   /** True for {@link NOW_CUE_PULSE_MS} after an already-at-now teach pulse. */

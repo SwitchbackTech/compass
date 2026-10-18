@@ -184,7 +184,7 @@ export const SelectView = ({
           aria-controls={isOpen ? dropdownId : undefined}
         >
           <span
-            className={classNames(pulseDayLabel && "c-now-cue-label-pulse")}
+            className={classNames(pulseDayLabel && "c-now-cue-label-shimmer")}
             key={pulseKey("view-label", emphasizeDayLabel)}
           >
             {label}
