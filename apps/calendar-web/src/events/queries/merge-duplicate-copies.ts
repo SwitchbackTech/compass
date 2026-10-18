@@ -106,24 +106,33 @@ export function mergeDuplicateCopies(
   const calendarsById = new Map(calendars.map((c) => [c.id, c]));
   const calendarOrder = new Map(calendars.map((c, i) => [c.id, i]));
 
-  // Group only events that can possibly merge: they need a correlation key
-  // and a calendar to compare against another copy's.
-  const groups = new Map<string, Copy[]>();
-  for (const id of data.ids) {
-    const event = data.entities[id];
-    if (!event?.icalUid) continue;
-    const calendar = event.calendarId
-      ? calendarsById.get(event.calendarId)
-      : undefined;
-    if (!calendar) continue;
-    const groupKey = `${correlationKey(event.icalUid)} ${scheduleKey(event.schedule)}`;
-    const copy: Copy = { id, event, calendar };
-    const group = groups.get(groupKey);
-    if (group) group.push(copy);
-    else groups.set(groupKey, [copy]);
-  }
-
   const dropped = new Set<EventId>();
+
+  /**
+   * Bucket the events a pass can merge by its own group key. An event with no
+   * calendar, no key, or an earlier pass's drop can have no counterpart.
+   */
+  const groupCopies = (
+    keyFor: (event: Event, calendar: Calendar) => string | null,
+  ): Map<string, Copy[]> => {
+    const groups = new Map<string, Copy[]>();
+    for (const id of data.ids) {
+      if (dropped.has(id)) continue;
+      const event = data.entities[id];
+      const calendar = event?.calendarId
+        ? calendarsById.get(event.calendarId)
+        : undefined;
+      if (!event || !calendar) continue;
+      const groupKey = keyFor(event, calendar);
+      if (groupKey === null) continue;
+      const copy: Copy = { id, event, calendar };
+      const group = groups.get(groupKey);
+      if (group) group.push(copy);
+      else groups.set(groupKey, [copy]);
+    }
+    return groups;
+  };
+
   const duplicates = new Map<EventId, DuplicateCopy[]>();
 
   const rank = (copy: Copy) =>
@@ -172,26 +181,23 @@ export function mergeDuplicateCopies(
     ]);
   };
 
-  for (const copies of groups.values()) mergeCopyGroup(copies);
+  // Two copies can only merge when they share a correlation key and sit at the
+  // same instant.
+  const icalGroups = groupCopies((event) =>
+    event.icalUid
+      ? `${correlationKey(event.icalUid)} ${scheduleKey(event.schedule)}`
+      : null,
+  );
+  for (const copies of icalGroups.values()) mergeCopyGroup(copies);
 
   // Public holiday feeds on different accounts often carry different
   // correlation keys for the same civil holiday. Collapse those when the
   // title and single-day all-day span match on holiday calendars.
-  const holidayGroups = new Map<string, Copy[]>();
-  for (const id of data.ids) {
-    if (dropped.has(id)) continue;
-    const event = data.entities[id];
-    if (!event?.calendarId) continue;
-    const calendar = calendarsById.get(event.calendarId);
-    if (!calendar || !isHolidayCalendar(calendar)) continue;
+  const holidayGroups = groupCopies((event, calendar) => {
+    if (!isHolidayCalendar(calendar)) return null;
     const titleKey = holidayTitleKey(event);
-    if (!titleKey) continue;
-    const groupKey = `${titleKey} ${scheduleKey(event.schedule)}`;
-    const copy: Copy = { id, event, calendar };
-    const group = holidayGroups.get(groupKey);
-    if (group) group.push(copy);
-    else holidayGroups.set(groupKey, [copy]);
-  }
+    return titleKey ? `${titleKey} ${scheduleKey(event.schedule)}` : null;
+  });
   for (const copies of holidayGroups.values()) mergeCopyGroup(copies);
 
   if (dropped.size === 0) return data;

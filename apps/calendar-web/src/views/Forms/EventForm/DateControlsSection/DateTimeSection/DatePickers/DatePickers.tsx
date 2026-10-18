@@ -87,7 +87,6 @@ export const DatePickers: FC<Props> = ({
   return (
     <>
       <EventFormDateField
-        arrowDownOpensCalendar
         calendarClassName="startDatePicker"
         inputId="eventFormStartDate"
         isOpen={openSide === "start"}
@@ -100,7 +99,6 @@ export const DatePickers: FC<Props> = ({
         title="Pick Start Date"
       />
       <EventFormDateField
-        arrowDownOpensCalendar
         calendarClassName="endDatePicker"
         inputId="eventFormEndDate"
         isOpen={openSide === "end"}

@@ -17,11 +17,13 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
 };
 
+/** Keys the field acts on itself never reach the form's own shortcuts. */
+const consume = (event: React.KeyboardEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+};
+
 export interface EventFormDateFieldProps {
-  /** When true, bare ArrowDown opens the calendar instead of nudging +1 day. */
-  arrowDownOpensCalendar?: boolean;
-  /** When true, Enter/Space (when not typing) open the calendar like a click. */
-  keyboardOpensCalendar?: boolean;
   calendarClassName?: string;
   id?: string;
   inputId?: string;
@@ -36,8 +38,6 @@ export interface EventFormDateFieldProps {
 }
 
 export const EventFormDateField = ({
-  arrowDownOpensCalendar = true,
-  keyboardOpensCalendar = true,
   calendarClassName,
   id,
   inputId,
@@ -69,13 +69,6 @@ export const EventFormDateField = ({
     shownDateRef.current = selected.getTime();
     input.value = formatEventFormDateLabel(selected);
   }, [isOpen, selected]);
-
-  const commitTypedDate = (value: string) => {
-    const parsed = parseUserDate(value, dayjs());
-    if (!parsed) return false;
-    onCommit(parsed.startOf("day").toDate());
-    return true;
-  };
 
   const revertInput = (target: HTMLInputElement) => {
     target.value = formatEventFormDateLabel(selectedRef.current);
@@ -113,12 +106,6 @@ export const EventFormDateField = ({
   const isShowingCommittedDate = (input: HTMLInputElement) =>
     input.value === formatEventFormDateLabel(selectedRef.current);
 
-  const openCalendarFromKeyboard = (event: React.KeyboardEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onCalendarOpen();
-  };
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
@@ -137,65 +124,56 @@ export const EventFormDateField = ({
       return;
     }
 
-    const typedValue = target.value;
-
-    switch (true) {
-      case event.key === "Backspace": {
+    switch (event.key) {
+      case "Backspace": {
         event.stopPropagation();
         break;
       }
-      case event.key === "ArrowDown" && !isOpen: {
+      case "ArrowDown": {
+        consume(event);
         if (event.shiftKey) {
-          event.preventDefault();
-          event.stopPropagation();
           nudgeDays(7);
           break;
         }
-        if (
-          arrowDownOpensCalendar &&
-          !event.metaKey &&
-          !event.ctrlKey &&
-          !event.altKey
-        ) {
-          openCalendarFromKeyboard(event);
+        // A modifier means the user wants the day nudge, not the calendar.
+        if (event.metaKey || event.ctrlKey || event.altKey) {
+          nudgeDays(1);
           break;
         }
-        event.preventDefault();
-        event.stopPropagation();
-        nudgeDays(1);
+        onCalendarOpen();
         break;
       }
-      case event.key === "ArrowUp" && !isOpen: {
-        event.preventDefault();
-        event.stopPropagation();
+      case "ArrowUp": {
+        consume(event);
         nudgeDays(event.shiftKey ? -7 : -1);
         break;
       }
-      case event.key === "Enter" && (event.metaKey || event.ctrlKey): {
-        commitTypedDate(typedValue);
-        break;
-      }
-      case event.key === "Enter": {
-        event.stopPropagation();
-        event.preventDefault();
-        const trimmed = typedValue.trim();
+      case "Enter": {
+        // Mod+Enter saves the form, so commit the draft and let it through.
+        if (event.metaKey || event.ctrlKey) {
+          const parsed = parseUserDate(target.value, dayjs());
+          if (parsed) onCommit(parsed.startOf("day").toDate());
+          break;
+        }
+        consume(event);
+        const trimmed = target.value.trim();
         if (commitOrRevert(target)) break;
-        if (!keyboardOpensCalendar || !trimmed) break;
-        if (!parseUserDate(trimmed, dayjs())) break;
-        openCalendarFromKeyboard(event);
+        // Enter on an unchanged, parseable date opens the calendar instead.
+        if (trimmed && parseUserDate(trimmed, dayjs())) onCalendarOpen();
         break;
       }
-      case event.key === " ": {
-        if (!keyboardOpensCalendar || !isShowingCommittedDate(target)) break;
-        openCalendarFromKeyboard(event);
+      case " ": {
+        if (!isShowingCommittedDate(target)) break;
+        consume(event);
+        onCalendarOpen();
         break;
       }
-      case event.key === "Escape": {
+      case "Escape": {
         revertInput(target);
         event.stopPropagation();
         break;
       }
-      case event.key === "Tab": {
+      case "Tab": {
         if (!commitOrRevert(target)) onCalendarClose();
         break;
       }

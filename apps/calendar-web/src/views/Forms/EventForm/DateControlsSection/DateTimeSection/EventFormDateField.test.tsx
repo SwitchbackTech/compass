@@ -255,12 +255,11 @@ describe("EventFormDateField", () => {
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
   });
 
-  it("opens the calendar on ArrowDown when arrowDownOpensCalendar is set", async () => {
+  it("opens the calendar on a bare ArrowDown", async () => {
     const user = userEvent.setup();
     const onCalendarOpen = mock();
     render(
       <EventFormDateField
-        arrowDownOpensCalendar
         isOpen={false}
         onCalendarClose={() => undefined}
         onCalendarOpen={onCalendarOpen}
