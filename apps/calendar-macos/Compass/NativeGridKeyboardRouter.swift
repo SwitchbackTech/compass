@@ -408,6 +408,9 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEventFormKeys(_ keyEvent: KeyEvent) -> Bool {
+        if registry.bindingsById[.editCopyDescriptionLink]?.contains(where: { keyEvent.matches($0) }) == true {
+            return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
+        }
         if keyEvent.modifiers == [.command], keyEvent.key == .named(.enter) {
             Task { await model.saveDraft() }
             return true
