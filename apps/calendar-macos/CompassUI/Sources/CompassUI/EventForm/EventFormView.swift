@@ -29,9 +29,11 @@ public struct EventFormView: View {
     }
 
     private func formPanel(draft: GridEventDraft) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let isReadOnly = model.isEventFormReadOnly(for: draft)
+        return VStack(alignment: .leading, spacing: 12) {
             EventFormToolbarView(
                 isExistingEvent: draft.kind == .edit,
+                isReadOnly: isReadOnly,
                 onClose: { model.requestCloseEventForm() },
                 onDuplicate: { Task { await model.duplicateFocusedOrFormEvent() } },
                 onDelete: { Task { await model.deleteFormEvent() } }
@@ -46,6 +48,7 @@ public struct EventFormView: View {
             .font(.rubik(16))
             .foregroundStyle(theme.textColor)
             .focused($titleFocused)
+            .disabled(isReadOnly)
             .accessibilityIdentifier("compass-event-form-title")
             .pageJumpChipAnchor(id: "form-title")
 
@@ -63,24 +66,28 @@ public struct EventFormView: View {
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(model.isScheduleLocked(for: draft))
                         .id(EventFormField.recurrence)
                         EventFormCalendarSection(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.calendar)
                         EventFormColorSection(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.color)
                         EventFormLocationField(
                             model: model,
                             draft: draft,
                             focusField: model.eventFormFocusedField
                         )
+                        .disabled(isReadOnly)
                         .id(EventFormField.location)
                         DescriptionEditorView(
                             html: Binding(
@@ -134,7 +141,7 @@ public struct EventFormView: View {
                     }
                 }
             }
-            if !model.isEventFormReadOnly(for: draft) {
+            if !isReadOnly {
                 Button {
                     Task { await model.saveDraft() }
                 } label: {

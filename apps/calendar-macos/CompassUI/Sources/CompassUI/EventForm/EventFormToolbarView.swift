@@ -3,6 +3,7 @@ import SwiftUI
 struct EventFormToolbarView: View {
     @Environment(\.nativeWebTheme) private var theme
     let isExistingEvent: Bool
+    let isReadOnly: Bool
     let onClose: () -> Void
     let onDuplicate: () -> Void
     let onDelete: () -> Void
@@ -12,7 +13,9 @@ struct EventFormToolbarView: View {
             toolbarButton(label: "Close", systemImage: "xmark", action: onClose)
             if isExistingEvent {
                 toolbarButton(label: "Duplicate", systemImage: "plus.square.on.square", action: onDuplicate)
-                toolbarButton(label: "Delete", systemImage: "trash", action: onDelete)
+                if !isReadOnly {
+                    toolbarButton(label: "Delete", systemImage: "trash", action: onDelete)
+                }
             }
             Spacer()
         }

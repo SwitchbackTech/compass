@@ -66,6 +66,7 @@ extension NativeCalendarRootModel {
     }
 
     public func setDraftTitle(_ title: String) {
+        guard let draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         draftStore.setTitle(title)
         rebuildPresentation()
     }
@@ -98,7 +99,8 @@ extension NativeCalendarRootModel {
     }
 
     private func nudgeDraft(key: String, altKey: Bool) -> Bool {
-        draftStore.nudgeByKeyboard(
+        guard let draft = draftStore.gridDraft, !isScheduleLocked(for: draft) else { return false }
+        return draftStore.nudgeByKeyboard(
             key: key,
             altKey: altKey,
             isStartAllowed: { nextStart in

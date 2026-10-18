@@ -26,7 +26,7 @@ extension NativeCalendarRootModel {
     }
 
     public func saveDraftWithInvitationGate() async {
-        guard let draft = draftStore.gridDraft else { return }
+        guard let draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         let baseline = baselineEvent(for: draft)
         if GridEventDraftGuests.guestsChanged(draft: draft, baseline: baseline) {
             let calendar = attendeeCalendar(for: draft)
