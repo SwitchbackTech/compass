@@ -66,13 +66,14 @@ public enum GridEventDraftMapping {
 
     public static func replaceInput(
         from draft: GridEventDraft,
+        originalCalendarId: CalendarId,
         scope: ScopeEnum,
         invitation: InvitationEnum? = nil
     ) -> ReplaceEventInput? {
         guard draft.kind == .edit, let calendarId = draft.calendarId else { return nil }
         let resolvedTitle = resolvedTitle(from: draft)
         return ReplaceEventInput(
-            calendarId: calendarId,
+            calendarId: calendarId == originalCalendarId ? nil : calendarId,
             content: inputContent(from: draft, title: resolvedTitle),
             invitation: invitation,
             recurrence: replaceRecurrence(from: draft.recurrence),

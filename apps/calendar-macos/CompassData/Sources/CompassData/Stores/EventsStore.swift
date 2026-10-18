@@ -241,17 +241,9 @@ public final class EventsStore {
             edited: optimisticEvent,
             snapshot: snapshot
         )
-        let revision = remoteSessionRevision
-        do {
-            let response = try await eventsAPI.replace(id: id, input: input)
-            guard revision == remoteSessionRevision else { return }
-            let settled = try EventMapping.event(from: response)
-            try applyReplaceCacheUpdate(
-                input: input,
-                edited: settled,
-                snapshot: snapshot
-            )
-        } catch {}
+        // Replace returns a command acknowledgement, not an authoritative event.
+        // Preserve the optimistic projection until the invalidated range is read.
+        _ = try? await eventsAPI.replace(id: id, input: input)
     }
 
     public func deleteOptimistic(id: EventId, scope: EventDeleteScope) async throws {
