@@ -1348,28 +1348,23 @@
   & .timepicker__single-value {
     color: var(--text);
   }
-  & .timepicker__menu {
-    min-width: 150px;
-    border: 1px solid var(--color-border);
-    border-radius: 2px;
-    background: var(--surface);
-  }
-  & .timepicker__menu-list {
-    padding: 0;
-    font-size: var(--font-size-m);
-    transition: var(--transition-default);
-  }
-  & .timepicker__menu-list::-webkit-scrollbar {
-    width: 8px;
-  }
-  & .timepicker__menu-list::-webkit-scrollbar-thumb {
-    border-radius: var(--radius-default);
-    background: var(--color-border);
-  }
-  & .timepicker__menu-list::-webkit-scrollbar-thumb:hover {
-    background: var(--color-border-strong);
-    transition: background-color 0.2s;
-  }
+}
+
+/*
+ * Time picker menus portal to document.body, outside .c-time-picker. Menu
+ * chrome lives in TimePicker's react-select styles; only pseudo-elements,
+ * which style objects can't reach, stay here.
+ */
+.timepicker__menu-list::-webkit-scrollbar {
+  width: 8px;
+}
+.timepicker__menu-list::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-default);
+  background: var(--color-border);
+}
+.timepicker__menu-list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-strong);
+  transition: background-color 0.2s;
 }
 
 /*

@@ -40,6 +40,21 @@ const timePickerTextStyles = {
   singleValue: themeColor("var(--text)"),
   input: themeColor("var(--text)"),
   placeholder: themeColor("var(--text-muted)"),
+  // The menu portals to document.body, outside .c-time-picker, so its
+  // chrome lives here. Fit the longest label ("12:45 PM") without wrapping.
+  menu: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    width: "max-content",
+    minWidth: "100%",
+    border: "1px solid var(--color-border)",
+    borderRadius: 2,
+    backgroundColor: "var(--surface)",
+  }),
+  menuList: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    padding: 0,
+    fontSize: "var(--font-size-m)",
+  }),
   menuPortal: (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
     ...base,
     zIndex: Z_INDEX_FLOATING_MENU,
@@ -49,6 +64,7 @@ const timePickerTextStyles = {
     { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean },
   ): CSSObjectWithLabel => ({
     ...base,
+    whiteSpace: "nowrap",
     color: isFocused ? "var(--on-accent)" : "var(--text)",
     backgroundColor: isFocused
       ? "var(--accent)"
@@ -69,6 +85,13 @@ const MENU_NAV_KEYS = new Set([
   "PageDown",
 ]);
 
+/** The menu portals to document.body, so reach it through the combobox. */
+function menuListbox(container: HTMLElement | null): HTMLElement | null {
+  const combobox = container?.querySelector<HTMLElement>('[role="combobox"]');
+  const listboxId = combobox?.getAttribute("aria-controls");
+  return listboxId ? document.getElementById(listboxId) : null;
+}
+
 function optionFromFocusedMenu(
   container: HTMLElement | null,
   options: TimeOption[] | undefined,
@@ -78,7 +101,9 @@ function optionFromFocusedMenu(
   const activeId = combobox?.getAttribute("aria-activedescendant");
   const focusedEl = activeId
     ? document.getElementById(activeId)
-    : container?.getElementsByClassName(`${TIMEPICKER}__option--is-focused`)[0];
+    : menuListbox(container)?.getElementsByClassName(
+        `${TIMEPICKER}__option--is-focused`,
+      )[0];
   const focusedLabel = focusedEl?.textContent?.trim();
   if (!focusedLabel) return undefined;
 
@@ -131,10 +156,10 @@ export const TimePicker = ({
     scrollRafRef.current = requestAnimationFrame(() => {
       scrollRafRef.current = requestAnimationFrame(() => {
         scrollRafRef.current = null;
-        const defaultOpt = containerRef.current?.getElementsByClassName(
-          `${TIMEPICKER}__option--is-selected`,
-        )[0];
-        defaultOpt?.scrollIntoView();
+        const defaultOpt = menuListbox(
+          containerRef.current,
+        )?.getElementsByClassName(`${TIMEPICKER}__option--is-selected`)[0];
+        defaultOpt?.scrollIntoView({ block: "center" });
       });
     });
   };

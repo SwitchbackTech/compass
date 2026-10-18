@@ -68,6 +68,55 @@ describe("EventFormDateField", () => {
     expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(17);
   });
 
+  it("commits a typed date on Tab instead of discarding it", async () => {
+    const user = userEvent.setup();
+    const onCommit = mock();
+    render(<Harness onCommit={onCommit} />);
+
+    const input = screen.getByTitle("Pick Start Date");
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, "10.20.26");
+    await user.tab();
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(20);
+  });
+
+  it("commits a typed date when focus leaves the field", async () => {
+    const user = userEvent.setup();
+    const onCommit = mock();
+    render(
+      <>
+        <Harness onCommit={onCommit} />
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    await user.click(input);
+    await user.clear(input);
+    await user.type(input, "10.21.26");
+    await user.click(screen.getByRole("button", { name: "Elsewhere" }));
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(21);
+  });
+
+  it("restores the date when Enter is pressed on an empty field", async () => {
+    const user = userEvent.setup();
+    const onCommit = mock();
+    render(<Harness onCommit={onCommit} />);
+
+    const input = screen.getByTitle("Pick Start Date");
+    await user.click(input);
+    await user.clear(input);
+    await user.keyboard("{Enter}");
+
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(input).toHaveValue(formatEventFormDateLabel(START));
+  });
+
   it("nudges one day with arrow keys when the calendar is closed", async () => {
     const user = userEvent.setup();
     const onCommit = mock();
