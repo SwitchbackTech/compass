@@ -112,8 +112,10 @@ extension NativeCalendarRootModel {
             }
         case .edit:
             guard let eventId = draft.persistedEventId,
+                let originalCalendarId = baseline?.calendarId ?? draft.calendarId,
                 let input = GridEventDraftMapping.replaceInput(
                     from: draft,
+                    originalCalendarId: originalCalendarId,
                     scope: scope,
                     invitation: invitation
                 ),

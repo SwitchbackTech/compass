@@ -30,6 +30,10 @@ extension NativeCalendarRootModel {
         rebuildPresentation()
     }
 
+    public var canChangeDraftCalendar: Bool {
+        draftStore.gridDraft?.kind == .create || eventsStore.source == .local
+    }
+
     public func updateDraftFromForm(
         title: String? = nil,
         description: String? = nil,
@@ -42,7 +46,7 @@ extension NativeCalendarRootModel {
         if let title { draft.title = title }
         if let description { draft.description = description }
         if let location { draft.location = location }
-        if let calendarId { draft.calendarId = calendarId }
+        if let calendarId, canChangeDraftCalendar { draft.calendarId = calendarId }
         if let color { draft.color = color }
         if let schedule { draft.schedule = schedule }
         draftStore.setGridDraft(draft)
