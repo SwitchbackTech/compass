@@ -1,7 +1,5 @@
 import {
   isNowLineInTimedGridViewport,
-  isTimedGridNearScrollToNow,
-  isTimedGridScrolledToNow,
   scrollTimedGridToNow,
 } from "@web/common/utils/grid/grid.util";
 import { nowCueActions } from "@web/grid/now-cue/now-cue.store";
@@ -12,14 +10,12 @@ export const scrollToNowOrPulse = (
 ) => {
   if (!timedGrid) return;
 
-  // Read both before scrolling: afterwards every grid looks like "at now".
-  const atNow = isTimedGridScrolledToNow(timedGrid);
-  const nearNow =
-    isNowLineInTimedGridViewport(timedGrid) &&
-    isTimedGridNearScrollToNow(timedGrid);
+  // Read before scrolling. Don't compare against the scroll target: after
+  // midday it sits past the bottom of the grid and is never reached.
+  const nowLineVisible = isNowLineInTimedGridViewport(timedGrid);
 
-  if (!atNow) scrollTimedGridToNow(timedGrid, behavior);
+  scrollTimedGridToNow(timedGrid, behavior);
 
-  // Already looking at now, so there is nothing to scroll to: teach instead.
-  if (atNow || nearNow) nowCueActions.pulse();
+  // The now line is already on screen, so a scroll alone shows little: teach.
+  if (nowLineVisible) nowCueActions.pulse();
 };

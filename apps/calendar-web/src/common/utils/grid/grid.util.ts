@@ -55,9 +55,6 @@ export const SCROLL_TO_NOW_BUFFER_PX = 150;
 
 const SCROLL_TO_NOW_TOLERANCE_PX = 2;
 
-/** When the now line is visible and scroll is within this window, "t" pulses. */
-const SCROLL_TO_NOW_PULSE_NEAR_MINUTES = 5;
-
 export const getScrollToNowTop = (clientHeight: number) =>
   Math.max(
     0,
@@ -72,12 +69,6 @@ const getScrollToNowDelta = (timedGrid: HTMLElement) => {
 
 export const isTimedGridScrolledToNow = (timedGrid: HTMLElement) => {
   return getScrollToNowDelta(timedGrid) <= SCROLL_TO_NOW_TOLERANCE_PX;
-};
-
-export const isTimedGridNearScrollToNow = (timedGrid: HTMLElement) => {
-  const nearPx =
-    getMinuteHeight(timedGrid.clientHeight) * SCROLL_TO_NOW_PULSE_NEAR_MINUTES;
-  return getScrollToNowDelta(timedGrid) <= nearPx;
 };
 
 /** Whether the live now line sits inside the timed grid's visible scroll area. */
