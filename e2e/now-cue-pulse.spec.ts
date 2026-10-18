@@ -28,6 +28,6 @@ test.describe("go-to-today now cue pulse", () => {
     await expect(nowLine).toHaveClass(/c-now-cue-pulse/);
 
     const todayWeekday = page.getByText("Fri", { exact: true }).first();
-    await expect(todayWeekday).toHaveClass(/c-now-cue-label-pulse/);
+    await expect(todayWeekday).toHaveClass(/c-now-cue-label-shimmer/);
   });
 });

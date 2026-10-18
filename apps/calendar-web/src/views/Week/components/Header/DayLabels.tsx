@@ -120,10 +120,10 @@ export const DayLabels: FC<Props> = ({
               <span
                 className={cn(
                   "relative text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none",
-                  isToday && "c-text-gradient",
                   isToday &&
-                    pulseTodayLabel &&
-                    "c-now-cue-label-gradient-pulse",
+                    (pulseTodayLabel
+                      ? "c-now-cue-label-shimmer"
+                      : "c-text-gradient"),
                 )}
                 key={pulseKey("day-num", isToday)}
               >
@@ -139,7 +139,7 @@ export const DayLabels: FC<Props> = ({
                 <span
                   className={cn(
                     "relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none",
-                    isToday && pulseTodayLabel && "c-now-cue-label-pulse",
+                    isToday && pulseTodayLabel && "c-now-cue-label-shimmer",
                   )}
                   key={pulseKey("day-name", isToday)}
                 >

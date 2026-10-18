@@ -43,6 +43,6 @@ describe("nowCueActions.pulse", () => {
 
 describe("NOW_CUE_PULSE_MS", () => {
   it("matches the CSS animation duration", () => {
-    expect(NOW_CUE_PULSE_MS).toBe(700);
+    expect(NOW_CUE_PULSE_MS).toBe(1000);
   });
 });
