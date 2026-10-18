@@ -216,7 +216,7 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         agendaSync = sync
         sync.start(model: model, deepLinkDeliverer: self)
 
-        model.openConferenceURLHandler = { url in
+        model.openExternalURLHandler = { url in
             NSWorkspace.shared.open(url)
         }
         model.onUpNextBannerShown = { [weak scheduler] event in

@@ -33,7 +33,9 @@ public final class NativeCalendarRootModel {
     public private(set) var contentTrackWidth: CGFloat = 1010
     public internal(set) var sidebandEvents: [Event] = []
     public var onSidebandDidChange: (() -> Void)?
-    public var openConferenceURLHandler: ((URL) -> Void)?
+    public var openExternalURLHandler: ((URL) -> Void)?
+    var pendingBookingCancellation: BookingEventActionContext?
+    public internal(set) var isCancellingBookedMeeting = false
     public var onUpNextBannerShown: ((NotifiableEvent) -> Void)?
     /// Window-level accessibility probe for native UI tests (see Compass app).
     public var onGridFocusAccessibilityLabelChanged: ((String?) -> Void)?
@@ -454,6 +456,8 @@ public final class NativeCalendarRootModel {
         undoStore.clear()
         loadedEvents = []
         sidebandEvents = []
+        pendingBookingCancellation = nil
+        isCancellingBookedMeeting = false
         calendars = []
         rebuildPresentation()
         do {
@@ -1124,7 +1128,7 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    private func refreshVisibleRange() async {
+    func refreshVisibleRange() async {
         let revision = sessionRevision
         guard viewStore.view != .life else { return }
         let source = eventsStore.source

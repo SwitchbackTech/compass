@@ -32,6 +32,10 @@ public struct BookingAPI: Sendable {
         return try parsePagePayload(Data(payload.body.utf8))
     }
 
+    public func cancelReservation(id: String, input: CancelBookingReservationInput) async throws {
+        try await client.sendVoid(method: "POST", path: "booking/reservations/\(id)/cancel", body: input, auth: .none)
+    }
+
     private func parsePagePayload(_ body: Data) throws -> AdminBookingPage {
         let object = try JSONSerialization.jsonObject(with: body)
         guard let dictionary = object as? [String: Any] else {
