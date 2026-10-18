@@ -130,6 +130,98 @@ describe("EventFormDateField", () => {
     expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(12);
   });
 
+  it("opens the calendar on Enter when the committed date is unchanged", async () => {
+    const user = userEvent.setup();
+    const onCalendarOpen = mock();
+    render(
+      <EventFormDateField
+        isOpen={false}
+        onCalendarClose={() => undefined}
+        onCalendarOpen={onCalendarOpen}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    input.focus();
+    await user.keyboard("{Enter}");
+
+    expect(onCalendarOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the calendar on Space when showing the committed date", async () => {
+    const user = userEvent.setup();
+    const onCalendarOpen = mock();
+    render(
+      <EventFormDateField
+        isOpen={false}
+        onCalendarClose={() => undefined}
+        onCalendarOpen={onCalendarOpen}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    screen.getByTitle("Pick Start Date").focus();
+    await user.keyboard(" ");
+
+    expect(onCalendarOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not open the calendar on Space while typing a new date", async () => {
+    const user = userEvent.setup();
+    const onCalendarOpen = mock();
+    render(
+      <EventFormDateField
+        isOpen={false}
+        onCalendarClose={() => undefined}
+        onCalendarOpen={onCalendarOpen}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    input.focus();
+    await user.clear(input);
+    await user.type(input, "10");
+    onCalendarOpen.mockClear();
+    await user.keyboard(" ");
+
+    expect(onCalendarOpen).not.toHaveBeenCalled();
+    expect(input).toHaveValue("10 ");
+  });
+
+  it("returns focus to the input when Escape closes the calendar", async () => {
+    const user = userEvent.setup();
+    const onCalendarClose = mock();
+    render(
+      <EventFormDateField
+        isOpen
+        onCalendarClose={onCalendarClose}
+        onCalendarOpen={() => undefined}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    input.focus();
+    await user.keyboard("{Escape}");
+
+    expect(onCalendarClose).toHaveBeenCalledTimes(1);
+    expect(input).toHaveFocus();
+  });
+
   it("is reachable in tab order between surrounding controls", async () => {
     const user = userEvent.setup();
     render(
