@@ -5,8 +5,9 @@ final class QuickAddDraftIsolationUITests: XCTestCase {
     func testCancellingPanelKeepsTheMainFormTitle() {
         let app = launchWithForm()
         let window = app.windows["Compass"]
-        let title = window.textFields["compass-event-form-title"]
+        let title = window.descendants(matching: .any)["compass-event-form"].textFields["compass-event-form-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 8))
+        title.click()
         title.typeKey("a", modifierFlags: [.command])
         title.typeText("Keep this draft")
         let panel = openPanel(app)
@@ -22,15 +23,16 @@ final class QuickAddDraftIsolationUITests: XCTestCase {
     func testSavingPanelKeepsTheMainFormTitle() {
         let app = launchWithForm()
         let window = app.windows["Compass"]
-        let title = window.textFields["compass-event-form-title"]
+        let title = window.descendants(matching: .any)["compass-event-form"].textFields["compass-event-form-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 8))
+        title.click()
         title.typeKey("a", modifierFlags: [.command])
         title.typeText("Keep editing this event")
         let panel = openPanel(app)
         let field = panel.textFields["compass-native-quick-add-field"]
         field.typeText("Separate panel event")
         panel.typeKey(.return, modifierFlags: [])
-        XCTAssertFalse(field.waitForExistence(timeout: 2))
+        XCTAssertTrue(field.waitForNonExistence(timeout: 8))
         XCTAssertTrue(title.exists)
         XCTAssertEqual(title.value as? String, "Keep editing this event")
         let evidence = XCTAttachment(screenshot: window.screenshot())
@@ -55,7 +57,7 @@ final class QuickAddDraftIsolationUITests: XCTestCase {
         field.typeKey("a", modifierFlags: [.command])
         field.typeText("1130")
         panel.typeKey(.return, modifierFlags: [])
-        XCTAssertFalse(field.waitForExistence(timeout: 2))
+        XCTAssertTrue(field.waitForNonExistence(timeout: 8))
         XCTAssertTrue(app.windows["Compass"].buttons["Untitled event"].waitForExistence(timeout: 8))
     }
 
