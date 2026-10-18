@@ -51,6 +51,8 @@ extension NativeCalendarRootModel {
     }
 
     public func refreshSideband() async {
+        // The minute refresh advances the calendar's saved clock snapshot too.
+        rebuildPresentation()
         let revision = sessionRevision
         guard isSignedIn || eventsStore.source == .local else {
             sidebandEvents = []
