@@ -1,5 +1,8 @@
-import { type Calendar } from "@core/types/calendar.contracts";
-import { type Event } from "@core/types/event.contracts";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockCalendar as calendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { mergeDuplicateCopies } from "./merge-duplicate-copies";
@@ -25,6 +28,21 @@ const copy = (
     icalUid: SHARED_ICAL_UID,
     ...overrides,
   }) as Event;
+
+const ALL_DAY = EventScheduleSchema.parse({
+  kind: "allDay",
+  start: "2026-12-25",
+  end: "2026-12-26",
+});
+
+const holidayCopy = (cal: Calendar, overrides: Partial<Event> = {}): Event =>
+  createMockEvent({
+    calendarId: cal.id,
+    schedule: ALL_DAY,
+    content: { kind: "details", title: "Christmas Day", description: "" },
+    icalUid: undefined,
+    ...overrides,
+  });
 
 const dataOf = (...events: Event[]) => ({
   ids: events.map((event) => event.id),
@@ -279,5 +297,97 @@ describe("mergeDuplicateCopies", () => {
     const data = dataOf(copy(work));
 
     expect(mergeDuplicateCopies(data, [work, personal])).toBe(data);
+  });
+
+  it("merges the same holiday on two holiday calendars without a shared icalUid", () => {
+    const googleHolidays = calendar({
+      name: "Holidays in United States",
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+      backgroundColor: "#42d692",
+    });
+    const outlookHolidays = calendar({
+      name: "United States Holidays",
+      accountEmail: "user@outlook.com",
+      provider: "microsoft",
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+      backgroundColor: "#0078D4",
+    });
+    const onGoogle = holidayCopy(googleHolidays, {
+      icalUid: "google-christmas@google.com",
+    });
+    const onOutlook = holidayCopy(outlookHolidays, {
+      icalUid: "outlook-christmas@outlook.com",
+    });
+
+    const merged = mergeDuplicateCopies(dataOf(onGoogle, onOutlook), [
+      googleHolidays,
+      outlookHolidays,
+    ]);
+
+    expect(merged?.ids).toEqual([onGoogle.id]);
+    expect(merged?.duplicateCopies?.get(onGoogle.id)).toEqual([
+      { label: "user@outlook.com", backgroundColor: "#0078D4" },
+    ]);
+  });
+
+  it("merges holiday titles that differ only by case and spacing", () => {
+    const firstHolidays = calendar({
+      name: "holidays-de",
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+    });
+    const secondHolidays = calendar({
+      name: "Holidays in Germany",
+      accountEmail: "other@gmail.com",
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+      backgroundColor: "#ef4444",
+    });
+    const first = holidayCopy(firstHolidays, {
+      content: {
+        kind: "details",
+        title: "  Christmas   Eve ",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "allDay",
+        start: "2026-12-24",
+        end: "2026-12-25",
+      }),
+    });
+    const second = holidayCopy(secondHolidays, {
+      content: { kind: "details", title: "Christmas Eve", description: "" },
+      schedule: EventScheduleSchema.parse({
+        kind: "allDay",
+        start: "2026-12-24",
+        end: "2026-12-25",
+      }),
+    });
+
+    const merged = mergeDuplicateCopies(dataOf(first, second), [
+      firstHolidays,
+      secondHolidays,
+    ]);
+
+    expect(merged?.ids).toEqual([first.id]);
+  });
+
+  it("leaves matching all-day titles on non-holiday calendars separate", () => {
+    const team = calendar({ name: "Team" });
+    const personal = calendar({
+      name: "Personal",
+      accountEmail: "me@gmail.com",
+    });
+    const onTeam = holidayCopy(team);
+    const onPersonal = holidayCopy(personal);
+
+    const merged = mergeDuplicateCopies(dataOf(onTeam, onPersonal), [
+      team,
+      personal,
+    ]);
+
+    expect(merged?.ids).toHaveLength(2);
   });
 });

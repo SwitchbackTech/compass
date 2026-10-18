@@ -152,7 +152,31 @@ function buildEvent(
   };
 }
 
-type FixtureEvent = ReturnType<typeof buildEvent>;
+function buildAllDayEvent(
+  id: string,
+  calendarId: string,
+  title: string,
+  startYmd: string,
+  icalUid?: string,
+) {
+  const [year, month, day] = startYmd.split("-").map(Number);
+  const end = new Date(year!, month! - 1, day! + 1);
+  const endYmd = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
+  return {
+    id,
+    calendarId,
+    content: { kind: "details", title, description: "" },
+    schedule: { kind: "allDay", start: startYmd, end: endYmd },
+    recurrence: { kind: "single" },
+    createdAt: toOffsetDateTime(new Date()),
+    updatedAt: null,
+    ...(icalUid ? { icalUid } : {}),
+  };
+}
+
+type FixtureEvent =
+  | ReturnType<typeof buildEvent>
+  | ReturnType<typeof buildAllDayEvent>;
 
 const DEFAULT_EVENTS: FixtureEvent[] = [
   buildEvent(EVENT_A_ID, CALENDAR_A_ID, EVENT_A_TITLE, 9),
@@ -901,4 +925,86 @@ test("day view keeps calendar column labels clipped with many visible columns", 
       exact: true,
     }),
   ).toContainText("keepsoftwaresimple");
+});
+
+const HOLIDAY_GOOGLE_ID = objectId("5");
+const HOLIDAY_MS_ID = objectId("6");
+const HOLIDAY_GOOGLE_EVENT_ID = objectId("e");
+const HOLIDAY_MS_EVENT_ID = objectId("f");
+
+function googleHolidayCalendar(): FixtureCalendar {
+  return calendar({
+    id: HOLIDAY_GOOGLE_ID,
+    name: "Holidays in United States",
+    timeZone: TIME_ZONE,
+    backgroundColor: "#42d692",
+    provider: "google",
+    access: "reader",
+    isPrimary: false,
+    isVisible: true,
+    accountEmail: GOOGLE_ACCOUNT_EMAIL,
+  });
+}
+
+function microsoftHolidayCalendar(): FixtureCalendar {
+  return calendar({
+    id: HOLIDAY_MS_ID,
+    name: "United States Holidays",
+    timeZone: TIME_ZONE,
+    backgroundColor: "#0078D4",
+    provider: "microsoft",
+    access: "reader",
+    isPrimary: false,
+    isVisible: true,
+    accountEmail: MICROSOFT_ACCOUNT_EMAIL,
+  });
+}
+
+test("week all-day row dedupes the same holiday across connected holiday calendars", async ({
+  page,
+}) => {
+  const today = new Date();
+  const holidayYmd = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  const holidayEvents: FixtureEvent[] = [
+    buildAllDayEvent(
+      HOLIDAY_GOOGLE_EVENT_ID,
+      HOLIDAY_GOOGLE_ID,
+      "Christmas Day",
+      holidayYmd,
+      "google-christmas@google.com",
+    ),
+    buildAllDayEvent(
+      HOLIDAY_MS_EVENT_ID,
+      HOLIDAY_MS_ID,
+      "Christmas Day",
+      holidayYmd,
+      "outlook-christmas@outlook.com",
+    ),
+  ];
+
+  await setupCalendarExperiencePage(page, holidayEvents, {
+    extraCalendars: [googleHolidayCalendar(), microsoftHolidayCalendar()],
+    metadata: {
+      connections: [
+        {
+          id: "e2e-conn",
+          provider: "google",
+          state: "healthy",
+          stateReason: null,
+          lastSyncedAt: null,
+          lastHealthyAt: null,
+          accountEmail: GOOGLE_ACCOUNT_EMAIL,
+          connectionState: "HEALTHY",
+          canSuggestContacts: false,
+        },
+        microsoftConnectionSummary(),
+      ],
+    },
+  });
+
+  const christmasCards = page
+    .locator("#allDayRow")
+    .getByRole("button", { name: /all-day event: christmas day/i });
+  await expect(christmasCards).toHaveCount(1);
 });
