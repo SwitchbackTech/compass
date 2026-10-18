@@ -441,8 +441,8 @@ final class NativeGridKeyboardRouter {
         }
 
         if let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable {
-            // Return saves single-line fields; descriptions retain native newlines.
-            let isSingleLineReturn = textView.isFieldEditor
+            // Guest entry owns Return so an address becomes a chip before saving.
+            let isSingleLineReturn = textView.isFieldEditor && !model.isGuestEmailInputFocused
                 && keyEvent.key == .named(.enter) && keyEvent.modifiers.isEmpty
             let isPalette = keyEvent.matches(KeyChord(modifiers: [.command], token: .character("k")))
             guard isSingleLineReturn || isPalette else { return false }

@@ -28,6 +28,10 @@ struct EventFormAttendeesSection: View {
                     .textFieldStyle(.plain)
                     .font(.rubik(13))
                     .focused($fieldFocused)
+                    .onChange(of: fieldFocused) { _, focused in
+                        model.isGuestEmailInputFocused = focused
+                    }
+                    .onDisappear { model.isGuestEmailInputFocused = false }
                     .onChange(of: query) { _, value in
                         model.scheduleAttendeeSuggestions(for: value)
                     }
