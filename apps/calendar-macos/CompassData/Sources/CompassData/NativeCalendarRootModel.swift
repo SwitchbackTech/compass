@@ -118,6 +118,8 @@ public final class NativeCalendarRootModel {
     private var didApplyUITestFocusedEventForm = false
     private var eventFormTitleProbeVisible = false
     var keyboardCreateSettleGeneration = 0
+    var quickAddPanelSession: QuickAddPanelSession?
+    public internal(set) var quickAddError: String?
     var blockPartyModHoldTask: Task<Void, Never>?
 
     public var referenceNow: Date {
@@ -442,6 +444,8 @@ public final class NativeCalendarRootModel {
     private func resetAccountCaches(discardDraft: Bool = true) -> Bool {
         sessionRevision += 1
         keyboardCreateSettleGeneration += 1
+        quickAddPanelSession = nil
+        quickAddError = nil
         refreshTask?.cancel()
         resetPaletteEventSearch()
         commandPaletteStore.close()
