@@ -8,6 +8,7 @@ struct DescriptionEditorView: NSViewRepresentable {
     var resetKey: String
     var isFocused: Bool
     var isEditable = true
+    var onLinkCopied: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
         Coordinator(html: $html)
@@ -16,6 +17,7 @@ struct DescriptionEditorView: NSViewRepresentable {
     func makeNSView(context: Context) -> DescriptionEditorContainerView {
         let container = DescriptionEditorContainerView()
         let textView = container.textView
+        textView.onLinkCopied = onLinkCopied
         textView.isRichText = true
         textView.importsGraphics = false
         textView.isEditable = isEditable
@@ -40,12 +42,13 @@ struct DescriptionEditorView: NSViewRepresentable {
 
     func updateNSView(_ container: DescriptionEditorContainerView, context: Context) {
         let textView = container.textView
+        textView.onLinkCopied = onLinkCopied
         textView.isEditable = isEditable
         context.coordinator.applyTheme(theme)
         if context.coordinator.resetKey != resetKey {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
-        if isFocused, isEditable, textView.window != nil {
+        if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
     }
@@ -106,6 +109,41 @@ struct DescriptionEditorView: NSViewRepresentable {
 
 final class DescriptionTextView: NSTextView {
     var onFormattingChange: (() -> Void)?
+
+    var onLinkCopied: (() -> Void)?
+
+    @objc func copyDescriptionLink(_ sender: Any?) {
+        _ = copyDescriptionLink(to: .general)
+    }
+
+    @discardableResult
+    func copyDescriptionLink(to pasteboard: NSPasteboard) -> Bool {
+        guard let href = descriptionLinkToCopy() else { return false }
+        pasteboard.clearContents()
+        let copied = pasteboard.setString(href, forType: .string)
+        if copied { onLinkCopied?() }
+        return copied
+    }
+
+    private func descriptionLinkToCopy() -> String? {
+        guard let storage = textStorage, storage.length > 0 else { return nil }
+        func href(_ value: Any?) -> String? {
+            let value = (value as? URL)?.absoluteString ?? value as? String
+            return value?.isEmpty == false ? value : nil
+        }
+        let caret = selectedRange().location
+        if caret < storage.length, let link = href(storage.attribute(.link, at: caret, effectiveRange: nil)) {
+            return link
+        }
+        var firstLink: String?
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+            if let link = href(value) {
+                firstLink = link
+                stop.pointee = true
+            }
+        }
+        return firstLink
+    }
 
     @objc func toggleBold(_ sender: Any?) { toggleFontTrait(.boldFontMask) }
     @objc func toggleItalic(_ sender: Any?) { toggleFontTrait(.italicFontMask) }

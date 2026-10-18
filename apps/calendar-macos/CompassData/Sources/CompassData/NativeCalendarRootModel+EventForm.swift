@@ -6,6 +6,11 @@ extension NativeCalendarRootModel {
         draftStore.status.isFormOpen && draftStore.gridDraft != nil
     }
 
+    public func didCopyDescriptionLink() {
+        recordShortcut(.editCopyDescriptionLink)
+        statusToastStore.show(id: "description-link-copied", message: "Link copied")
+    }
+
     public func focusEventFormField(_ field: EventFormField) {
         eventFormFocusedField = field
     }
