@@ -100,6 +100,7 @@ public final class NativeCalendarRootModel {
     public let calendarVisibilityStore: CalendarVisibilityStore
     private let calendarRepository: CalendarRepository
     private let demoPresentation: DemoSeedFixture?
+    private let now: () -> Date
     private var cachedDemoEventIds: Set<String> = []
     private let analyticsIdentity: AnalyticsIdentityCoordinator
     private var eventStream: ServerEventStream?
@@ -123,7 +124,7 @@ public final class NativeCalendarRootModel {
     var blockPartyModHoldTask: Task<Void, Never>?
 
     public var referenceNow: Date {
-        demoPresentation?.referenceNow ?? Date()
+        demoPresentation?.referenceNow ?? now()
     }
 
     var demoEventIds: Set<String> {
@@ -147,10 +148,12 @@ public final class NativeCalendarRootModel {
     public init(
         environment: NativeCalendarEnvironment,
         demoPresentation: DemoSeedFixture? = nil,
-        overlayStores: OverlayStores = OverlayStores()
+        overlayStores: OverlayStores = OverlayStores(),
+        now: @escaping () -> Date = Date.init
     ) {
         self.environment = environment
         self.demoPresentation = demoPresentation
+        self.now = now
         self.overlayStores = overlayStores
         let pinnedTimeZone = demoPresentation?.timeZone ?? CompassDevicePreferences.readPinnedTimeZone()
         EffectiveTimeZone.identifier = pinnedTimeZone ?? TimeZone.current.identifier
@@ -163,11 +166,11 @@ public final class NativeCalendarRootModel {
         billingStore = environment.billingStore
         bookingStore = environment.bookingStore
         levelsStore = environment.levelsStore
-        lifeStore = LifeStore(today: { demoPresentation?.referenceNow ?? Date() })
+        lifeStore = LifeStore(today: { demoPresentation?.referenceNow ?? now() })
         analyticsIdentity = environment.analyticsIdentity
 
         let anchor: Date = {
-            let today = demoPresentation?.referenceNow ?? Date()
+            let today = demoPresentation?.referenceNow ?? now()
             return EffectiveTimeZone.calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
         }()
         viewStore = ViewStore(
@@ -874,7 +877,7 @@ public final class NativeCalendarRootModel {
     }
 
     private func goToToday() {
-        let today = Date()
+        let today = referenceNow
         let calendar = EffectiveTimeZone.calendar
         if viewStore.visibleDayCount == 1 {
             viewStore.setAnchorDate(today)
@@ -935,7 +938,7 @@ public final class NativeCalendarRootModel {
             headerTitle = "Life"
             return
         }
-        headerTitle = CalendarHeadingLabel.format(start: startOfView, end: endOfView, now: Date())
+        headerTitle = CalendarHeadingLabel.format(start: startOfView, end: endOfView, now: referenceNow)
         let hiddenIds = Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue))
         let demoIds = demoEventIds
         let referenceNow = self.referenceNow

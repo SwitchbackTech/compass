@@ -34,7 +34,6 @@ public final class TimeGridView: NSView {
 
     private var cardPool: [String: EventCardView] = [:]
     private let focusedEventAccessibilityProxy = FocusedGridEventAccessibilityProxy(frame: .zero)
-    private nonisolated(unsafe) var minuteTimer: Timer?
     private var state: TimeGridState
     private var theme: NativeWebTheme
     private var snapshot: GridLayoutSnapshot?
@@ -49,17 +48,12 @@ public final class TimeGridView: NSView {
         scrollView.timeGridView = self
         configureScrollView()
         configureNowLine()
-        startMinuteTimer()
         relayout()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    deinit {
-        minuteTimer?.invalidate()
     }
 
     public func update(state: TimeGridState, theme: NativeWebTheme) {
@@ -267,15 +261,6 @@ public final class TimeGridView: NSView {
 
     private func syncPinnedHeaderScrollX() {
         pinnedHeaderView.setBoundsOrigin(NSPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
-    }
-
-    private func startMinuteTimer() {
-        minuteTimer?.invalidate()
-        minuteTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateNowLine()
-            }
-        }
     }
 
     private func relayout() {
