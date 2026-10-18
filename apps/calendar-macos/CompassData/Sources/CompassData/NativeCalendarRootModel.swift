@@ -90,6 +90,7 @@ public final class NativeCalendarRootModel {
     var _contactSuggestionDebouncer: ContactSuggestionDebouncer?
     var pendingInvitationDraft: GridEventDraft?
     var pendingSaveInvitation: InvitationEnum?
+    public var isGuestEmailInputFocused = false
     public var eventFormFocusedField: EventFormField = .title
     public var formFieldDigitHintsVisible = false
     /// Set when Sparkle has staged an update; cleared after restart prompt dismisses.
@@ -458,6 +459,7 @@ public final class NativeCalendarRootModel {
         if discardDraft { draftStore.discard() }
         undoStore.clear()
         loadedEvents = []
+        isGuestEmailInputFocused = false
         sidebandEvents = []
         pendingBookingCancellation = nil
         isCancellingBookedMeeting = false
