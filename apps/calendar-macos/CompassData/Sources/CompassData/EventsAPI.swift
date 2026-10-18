@@ -59,7 +59,7 @@ public struct EventsAPI: Sendable {
     public func get(id: EventId) async throws -> EventResponseEvent {
         let response: EventResponse = try await client.sendDecodable(
             method: "GET",
-            path: "event/\(id.rawValue.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id.rawValue)"
+            path: "event/\(id.rawValue)"
         )
         return response.event
     }
@@ -74,30 +74,27 @@ public struct EventsAPI: Sendable {
     }
 
     public func replace(id: EventId, input: ReplaceEventInput) async throws -> EventResponseEvent {
-        let encoded = id.rawValue.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id.rawValue
         let response: EventResponse = try await client.sendDecodable(
             method: "PUT",
-            path: "event/\(encoded)",
+            path: "event/\(id.rawValue)",
             body: input
         )
         return response.event
     }
 
     public func delete(id: EventId, scope: EventDeleteScope) async throws {
-        let encoded = id.rawValue.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id.rawValue
         try await client.sendVoid(
             method: "DELETE",
-            path: "event/\(encoded)",
+            path: "event/\(id.rawValue)",
             queryItems: [URLQueryItem(name: "scope", value: scope.rawValue)]
         )
     }
 
     public func rsvp(id: EventId, responseStatus: ResponseStatusEnum, scope: String) async throws {
-        let encoded = id.rawValue.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id.rawValue
         let body = RsvpWireInput(responseStatus: responseStatus, scope: scope)
         try await client.sendVoid(
             method: "POST",
-            path: "event/\(encoded)/rsvp",
+            path: "event/\(id.rawValue)/rsvp",
             body: body
         )
     }
