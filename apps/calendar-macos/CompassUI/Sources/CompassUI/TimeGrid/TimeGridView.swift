@@ -285,7 +285,7 @@ public final class TimeGridView: NSView {
 
         let marginLeft = snapshot.metrics.marginLeft
         let hourHeight = snapshot.metrics.hourHeight
-        let gridHeight = hourHeight * Double(GridTimeConstants.timedDayHours)
+        let gridHeight = hourHeight * state.civilDayHours
         let allDayHeight = snapshot.metrics.allDayRowHeight
         let headerHeight = GridTimeConstants.dayHeaderRowHeight
         let pinnedHeight = GridTimeConstants.timedContentDocumentYOffset(allDayRowHeight: allDayHeight)
@@ -333,7 +333,7 @@ public final class TimeGridView: NSView {
             let mapped = MappedHourLabels.labels(
                 effectiveTimeZone: state.effectiveTimeZone,
                 displayTimeZone: travelZone,
-                at: state.referenceNow)
+                at: state.hourLabelDate)
             renderHourColumn(
                 labels: mapped,
                 xOffset: 0,
@@ -346,7 +346,7 @@ public final class TimeGridView: NSView {
         let primaryLabels = MappedHourLabels.labels(
             effectiveTimeZone: state.effectiveTimeZone,
             displayTimeZone: state.effectiveTimeZone,
-            at: state.referenceNow)
+            at: state.hourLabelDate)
         let primaryX = state.hasSecondaryTimeZone ? columnWidth : 0
         renderHourColumn(
             labels: primaryLabels,
@@ -365,7 +365,7 @@ public final class TimeGridView: NSView {
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
         marginWidth: Double
     ) {
-        for hour in 0 ..< GridTimeConstants.timedDayHours {
+        for hour in 0 ..< Int(ceil(state.civilDayHours)) {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
             label.font = CompassFont.nsFont(size: 11)
@@ -557,7 +557,7 @@ public final class TimeGridView: NSView {
             addGridBackground(divider, to: timedContentView)
         }
 
-        for hour in 1 ..< GridTimeConstants.timedDayHours {
+        for hour in 1 ..< Int(ceil(state.civilDayHours)) {
             let line = NSView(
                 frame: NSRect(
                     x: snapshot.metrics.marginLeft,
@@ -675,7 +675,7 @@ public final class TimeGridView: NSView {
         let columnWidth = GridMetrics.gridTimeColumnWidth
         var x = 0.0
         if state.hasSecondaryTimeZone, let travelZone = state.timeTravelTimeZone {
-            let abbrev = TimeZoneFormatting.abbreviation(for: travelZone, at: state.referenceNow)
+            let abbrev = TimeZoneFormatting.abbreviation(for: travelZone, at: state.hourLabelDate)
             addTimezoneButton(
                 title: abbrev,
                 x: x,
@@ -687,7 +687,7 @@ public final class TimeGridView: NSView {
         }
         let effectiveAbbrev = TimeZoneFormatting.abbreviation(
             for: state.effectiveTimeZone,
-            at: state.referenceNow)
+            at: state.hourLabelDate)
         addTimezoneButton(
             title: effectiveAbbrev,
             x: x,

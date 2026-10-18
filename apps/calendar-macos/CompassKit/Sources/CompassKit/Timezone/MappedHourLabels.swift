@@ -20,10 +20,9 @@ public enum MappedHourLabels {
         formatter.timeZone = displayZone
         formatter.dateFormat = "h a"
 
-        return (1 ... 23).compactMap { hourOffset in
-            guard let instant = calendar.date(byAdding: .hour, value: hourOffset, to: startOfDay) else {
-                return nil
-            }
+        let hours = (calendar.dateInterval(of: .day, for: referenceDate)?.duration ?? 86_400) / 3600
+        return stride(from: 1.0, to: hours, by: 1.0).map { hourOffset in
+            let instant = startOfDay.addingTimeInterval(hourOffset * 3600)
             var displayCalendar = calendar
             displayCalendar.timeZone = displayZone
             let minute = displayCalendar.component(.minute, from: instant)
