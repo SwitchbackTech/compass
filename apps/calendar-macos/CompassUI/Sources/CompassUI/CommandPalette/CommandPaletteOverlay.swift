@@ -53,14 +53,16 @@ public struct CommandPaletteOverlay: View {
                                     }
                                 }
                             }
+                            .fixedSize(horizontal: false, vertical: true)
                             .background {
                                 GeometryReader { geometry in
-                                    Color.clear.preference(key: PaletteResultsHeightKey.self, value: geometry.size.height)
+                                    Color.clear.onChange(of: geometry.size.height, initial: true) { _, height in
+                                        resultsHeight = height
+                                    }
                                 }
                             }
                         }
                         .frame(height: min(resultsHeight, 360))
-                        .onPreferenceChange(PaletteResultsHeightKey.self) { resultsHeight = $0 }
                         .onChange(of: selectedId) { _, id in
                             if let id { proxy.scrollTo(id, anchor: .center) }
                         }
@@ -123,13 +125,5 @@ public struct CommandPaletteOverlay: View {
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
-    }
-}
-
-private struct PaletteResultsHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat { 360 }
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
