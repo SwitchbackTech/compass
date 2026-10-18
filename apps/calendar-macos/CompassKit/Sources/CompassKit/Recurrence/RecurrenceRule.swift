@@ -65,11 +65,6 @@ public struct RecurrenceRule: Sendable, Equatable {
         )
     }
 
-    /// Serialized RRULE line(s) without DTSTART/DTEND.
-    public func serialize() -> String {
-        summary()
-    }
-
     /// Expand occurrences for optimistic series projection (server still expands reads).
     public func occurrences(from: Date, limit: Int) -> [Date] {
         let capped = min(max(limit, 0), RecurrenceConstants.maxRecurrences)

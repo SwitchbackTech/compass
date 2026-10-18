@@ -58,6 +58,7 @@ public struct CommandPaletteOverlay: View {
                             if let id { proxy.scrollTo(id, anchor: .center) }
                         }
                         .onChange(of: paletteStore.query) { _, _ in
+                            model.schedulePaletteEventSearch()
                             if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
                         }
                     }
@@ -78,9 +79,6 @@ public struct CommandPaletteOverlay: View {
                 .accessibilityIdentifier("compass-native-command-palette")
             }
             .focusOnAppear($searchFocused)
-            .onChange(of: paletteStore.query) { _, _ in
-                model.schedulePaletteEventSearch()
-            }
         }
     }
 

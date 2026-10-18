@@ -175,7 +175,6 @@ export const TimePickers: FC<Props> = ({
           inputId="startTimePicker"
           isMenuOpen={isStartMenuOpen}
           onChange={(option) => onTimeSelected("start", option)}
-          openMenuOnFocus
           options={timeOptions}
           pickerRole="start"
           setIsMenuOpen={setIsStartMenuOpen}
@@ -203,7 +202,6 @@ export const TimePickers: FC<Props> = ({
           inputId="endTimePicker"
           isMenuOpen={isEndMenuOpen}
           onChange={(option) => onTimeSelected("end", option)}
-          openMenuOnFocus
           options={timeOptions}
           pickerRole="end"
           setIsMenuOpen={setIsEndMenuOpen}

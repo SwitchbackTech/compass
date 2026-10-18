@@ -1374,8 +1374,7 @@
 .c-event-form-date-field {
   @apply relative min-w-22.5;
   font-size: var(--font-size-l);
-  & .c-event-form-date-field__input,
-  & input {
+  & .c-event-form-date-field__input {
     box-sizing: border-box;
     min-height: 38px;
     border: 0;
@@ -1385,12 +1384,10 @@
     padding: 0 8px;
     transition: var(--transition-default);
   }
-  & .c-event-form-date-field__input:hover,
-  & input:hover {
+  & .c-event-form-date-field__input:hover {
     background: hsl(0 0 100 / 12%);
   }
-  & .c-event-form-date-field__input:focus-visible,
-  & input:focus-visible {
+  & .c-event-form-date-field__input:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--accent);
   }
