@@ -6,6 +6,7 @@ public struct CommandPaletteOverlay: View {
     public var model: NativeCalendarRootModel
     @Bindable private var paletteStore: CommandPaletteStore
     @FocusState private var searchFocused: Bool
+    @State private var resultsHeight: CGFloat = 360
 
     public init(model: NativeCalendarRootModel) {
         self.model = model
@@ -34,7 +35,7 @@ public struct CommandPaletteOverlay: View {
 
                     ScrollViewReader { proxy in
                         ScrollView {
-                            LazyVStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 if sections.isEmpty {
                                     Text("No results for “\(paletteStore.query)”")
                                         .foregroundStyle(theme.textMutedColor)
@@ -52,8 +53,16 @@ public struct CommandPaletteOverlay: View {
                                     }
                                 }
                             }
+                            .fixedSize(horizontal: false, vertical: true)
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.onChange(of: geometry.size.height, initial: true) { _, height in
+                                        resultsHeight = height
+                                    }
+                                }
+                            }
                         }
-                        .frame(maxHeight: 360)
+                        .frame(height: min(resultsHeight, 360))
                         .onChange(of: selectedId) { _, id in
                             if let id { proxy.scrollTo(id, anchor: .center) }
                         }
