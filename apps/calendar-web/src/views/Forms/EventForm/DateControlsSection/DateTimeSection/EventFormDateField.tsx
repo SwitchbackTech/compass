@@ -20,6 +20,8 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
 export interface EventFormDateFieldProps {
   /** When true, bare ArrowDown opens the calendar instead of nudging +1 day. */
   arrowDownOpensCalendar?: boolean;
+  /** When true, Enter/Space (when not typing) open the calendar like a click. */
+  keyboardOpensCalendar?: boolean;
   calendarClassName?: string;
   id?: string;
   inputId?: string;
@@ -34,7 +36,8 @@ export interface EventFormDateFieldProps {
 }
 
 export const EventFormDateField = ({
-  arrowDownOpensCalendar = false,
+  arrowDownOpensCalendar = true,
+  keyboardOpensCalendar = true,
   calendarClassName,
   id,
   inputId,
@@ -107,12 +110,32 @@ export const EventFormDateField = ({
     onCommit(dayjs(selectedRef.current).add(deltaDays, "day").toDate());
   };
 
+  const isShowingCommittedDate = (input: HTMLInputElement) =>
+    input.value === formatEventFormDateLabel(selectedRef.current);
+
+  const openCalendarFromKeyboard = (event: React.KeyboardEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onCalendarOpen();
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
 
     const target = event.target;
     if (!(target instanceof HTMLInputElement)) return;
+
+    if (isOpen) {
+      if (event.key === "Escape") {
+        onCalendarClose();
+        target.focus();
+        event.stopPropagation();
+      }
+      // Other keys: react-datepicker handles arrows and Enter on the input
+      // (onInputKeyDown runs our handler first, then its own).
+      return;
+    }
 
     const typedValue = target.value;
 
@@ -128,12 +151,13 @@ export const EventFormDateField = ({
           nudgeDays(7);
           break;
         }
-        if (arrowDownOpensCalendar && !event.metaKey && !event.ctrlKey) {
-          if (!event.altKey) {
-            event.preventDefault();
-            event.stopPropagation();
-            onCalendarOpen();
-          }
+        if (
+          arrowDownOpensCalendar &&
+          !event.metaKey &&
+          !event.ctrlKey &&
+          !event.altKey
+        ) {
+          openCalendarFromKeyboard(event);
           break;
         }
         event.preventDefault();
@@ -154,15 +178,19 @@ export const EventFormDateField = ({
       case event.key === "Enter": {
         event.stopPropagation();
         event.preventDefault();
-        if (!commitOrRevert(target)) onCalendarClose();
+        const trimmed = typedValue.trim();
+        if (commitOrRevert(target)) break;
+        if (!keyboardOpensCalendar || !trimmed) break;
+        if (!parseUserDate(trimmed, dayjs())) break;
+        openCalendarFromKeyboard(event);
+        break;
+      }
+      case event.key === " ": {
+        if (!keyboardOpensCalendar || !isShowingCommittedDate(target)) break;
+        openCalendarFromKeyboard(event);
         break;
       }
       case event.key === "Escape": {
-        if (isOpen) {
-          onCalendarClose();
-          event.stopPropagation();
-          break;
-        }
         revertInput(target);
         event.stopPropagation();
         break;

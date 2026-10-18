@@ -133,9 +133,36 @@ test("ArrowDown opens the event-form date picker without a mouse", async ({
 
   await page.keyboard.press("Escape");
   await expect(calendar).toHaveCount(0);
+  await expect(startDate).toBeFocused();
 });
 
-test("typed date and arrow keys move a timed event while keeping its duration", async ({
+test("Enter and Space open the timed event-form date picker without a mouse", async ({
+  page,
+}) => {
+  await prepareTimedCalendarPage(page);
+  await openTimedEventFormWithKeyboard(page);
+
+  const startDate = page.locator('input[title="Pick Start Date"]');
+  const calendar = page.locator(".react-datepicker__month");
+
+  await startDate.focus();
+  await page.keyboard.press("Enter");
+  await expect(calendar).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(calendar).toHaveCount(0);
+  await expect(startDate).toBeFocused();
+
+  await page.keyboard.press("Space");
+  await expect(calendar).toBeVisible();
+
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/event-form-date-keyboard-open.png",
+    fullPage: true,
+  });
+});
+
+test("typed date moves a timed event while keeping its duration", async ({
   page,
 }) => {
   await prepareTimedCalendarPage(page);
@@ -161,23 +188,6 @@ test("typed date and arrow keys move a timed event while keeping its duration", 
       return event?.startDate.slice(0, 10);
     })
     .toBe(typedDay);
-
-  const titleArrow = createEventTitle("Date Arrow");
-  await openTimedEventFormWithKeyboard(page);
-  const arrowDate = page.locator('input[title="Pick Start Date"]');
-  await arrowDate.focus();
-  await arrowDate.press("ArrowDown");
-  await fillTitleAndSaveEventForm(page, titleArrow);
-  await expectTimedEventVisible(page, titleArrow);
-
-  const anchorDay = visibleDays[0];
-  const expectedArrowDay = addDays(anchorDay, 1);
-  await expect
-    .poll(async () => {
-      const [event] = await getSavedEventsByTitle(page, titleArrow);
-      return event?.startDate.slice(0, 10);
-    })
-    .toBe(expectedArrowDay);
 });
 
 test("all-day keyboard date entry keeps a valid end date", async ({ page }) => {
