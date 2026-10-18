@@ -9,7 +9,6 @@ public struct RootView: View {
     @State private var titleBarLeadingInset: CGFloat = 72
     /// Web `SIDEBAR_DIVIDER_WIDTH`: the resize handle's column.
     private let sidebarDividerWidth: CGFloat = 32
-    @State private var sidebarDragStartWidth: Double?
     /// Web main column `pl-8`.
     private let contentLeadingInset: CGFloat = 32
     public init(model: NativeCalendarRootModel) {
@@ -189,29 +188,9 @@ public struct RootView: View {
     /// Web `ResizableSidebarPanel`: drag the divider column to resize. The
     /// sidebar sits on the right, so dragging left widens it.
     private var sidebarResizeHandle: some View {
-        Color.clear
+        SidebarResizeHandle(width: model.sidebarWidth,
+            onResize: { model.resizeSidebar(to: $0) }, onCommit: { model.saveSidebarWidth() })
             .frame(width: sidebarDividerWidth)
-            .contentShape(Rectangle())
-            .onHover { inside in
-                if inside {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-            .gesture(
-                DragGesture(minimumDistance: 1)
-                    .onChanged { value in
-                        let start = sidebarDragStartWidth ?? model.sidebarWidth
-                        sidebarDragStartWidth = start
-                        model.resizeSidebar(to: start - value.translation.width)
-                    }
-                    .onEnded { _ in
-                        sidebarDragStartWidth = nil
-                        model.saveSidebarWidth()
-                    }
-            )
-            .accessibilityLabel("Resize sidebar")
     }
 
     /// Mirrors the web sidebar: month picker, Up Next, accounts, then the

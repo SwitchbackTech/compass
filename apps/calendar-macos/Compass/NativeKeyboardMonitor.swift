@@ -1,5 +1,6 @@
 import AppKit
 import CompassKit
+import CompassUI
 
 @MainActor
 final class NativeKeyboardMonitor {
@@ -14,6 +15,7 @@ final class NativeKeyboardMonitor {
     private func owns(_ event: NSEvent) -> Bool {
         guard let window = rootView?.window else { return false }
         return (event.window ?? NSApp.keyWindow) === window && window.attachedSheet == nil
+            && !(window.firstResponder is SidebarResizeHandleControl)
     }
 
     func start() {
