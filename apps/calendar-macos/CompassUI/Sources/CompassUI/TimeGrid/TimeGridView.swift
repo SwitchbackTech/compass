@@ -151,22 +151,20 @@ public final class TimeGridView: NSView {
     }
 
     private func scrollToNowOrPulse() {
-        guard let snapshot, snapshot.nowLine != nil else { return }
+        guard let snapshot, let nowLine = snapshot.nowLine else { return }
         // The scroll document is the timed grid alone; the header is pinned above it.
         let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
             referenceNow: state.referenceNow,
             hourHeight: snapshot.metrics.hourHeight,
             allDayOffset: 0
         ))
-        let currentY = scrollView.contentView.bounds.origin.y
-        if GridScrollMath.isAtScrollTarget(currentY: currentY, targetY: targetY) {
-            pulseNowCue()
-            return
-        }
+        let viewport = scrollView.contentView.bounds
+        let nowLineVisible = nowLine.top >= viewport.minY && nowLine.top <= viewport.maxY
         var origin = scrollView.contentView.bounds.origin
         origin.y = targetY
         scrollView.contentView.scroll(to: origin)
         scrollView.reflectScrolledClipView(scrollView.contentView)
+        if nowLineVisible { pulseNowCue() }
     }
 
     private func pulseNowCue() {
