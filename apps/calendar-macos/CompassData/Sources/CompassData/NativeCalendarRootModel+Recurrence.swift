@@ -19,7 +19,7 @@ extension NativeCalendarRootModel {
     }
 
     public func updateDraftRecurrence(_ recurrence: GridEventRecurrenceDraft) {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isScheduleLocked(for: draft) else { return }
         draft.recurrence = recurrence
         draftStore.setGridDraft(draft)
         rebuildPresentation()
@@ -54,7 +54,7 @@ extension NativeCalendarRootModel {
     }
 
     public func requestSaveDraft() async {
-        guard let draft = draftStore.gridDraft else { return }
+        guard let draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         let baseline = baselineEvent(for: draft)
         let resolvedSeriesMaster = baseline.flatMap { seriesMaster(for: $0) }
         let decision = GridEventDraftRecurrence.resolveSaveDecision(
@@ -81,7 +81,7 @@ extension NativeCalendarRootModel {
 
     public func requestDeleteFormEvent() async {
         guard let draft = draftStore.gridDraft,
-            draft.kind == .edit,
+            draft.kind == .edit, !isEventFormReadOnly(for: draft),
             draft.persistedEventId != nil
         else { return }
         let baseline = baselineEvent(for: draft)
@@ -93,7 +93,7 @@ extension NativeCalendarRootModel {
     }
 
     func commitSaveDraft(scope: ScopeEnum) async {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         draft = normalizedDraftForSave(draft)
         let invitation = pendingSaveInvitation
         pendingSaveInvitation = nil
@@ -142,7 +142,7 @@ extension NativeCalendarRootModel {
     func commitDeleteFormEvent(scope: EventDeleteScope, eventId: EventId? = nil) async {
         let revision = sessionRevision
         guard let draft = draftStore.gridDraft,
-            draft.kind == .edit,
+            draft.kind == .edit, !isEventFormReadOnly(for: draft),
             let resolvedId = eventId ?? draft.persistedEventId
         else { return }
         draftStore.discard()

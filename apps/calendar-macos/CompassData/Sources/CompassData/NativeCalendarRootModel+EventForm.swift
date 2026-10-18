@@ -47,19 +47,19 @@ extension NativeCalendarRootModel {
         color: EventColorSlot?? = nil,
         schedule: DraftSchedule? = nil
     ) {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isEventFormReadOnly(for: draft) else { return }
         if let title { draft.title = title }
         if let description { draft.description = description }
         if let location { draft.location = location }
         if let calendarId, canChangeDraftCalendar { draft.calendarId = calendarId }
         if let color { draft.color = color }
-        if let schedule { draft.schedule = schedule }
+        if let schedule, !isScheduleLocked(for: draft) { draft.schedule = schedule }
         draftStore.setGridDraft(draft)
         rebuildPresentation()
     }
 
     public func setDraftAllDay(_ allDay: Bool) {
-        guard var draft = draftStore.gridDraft else { return }
+        guard var draft = draftStore.gridDraft, !isScheduleLocked(for: draft) else { return }
         let calendar = EffectiveTimeZone.calendar
         if allDay {
             let start = calendar.startOfDay(for: draft.schedule.start)
