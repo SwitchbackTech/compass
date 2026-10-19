@@ -51,6 +51,8 @@ public struct GridLayoutCardSnapshot: Hashable, Sendable, Codable {
     public var accessibilityIdentifier: String
     public var eventId: String
     public var fillColorHex: String?
+    public var calendarAccentColorHex: String?
+    public var focusColorHex: String?
     public var frame: EventPosition
     public var isDraft: Bool
     public var isHiddenStrip: Bool
@@ -63,6 +65,8 @@ public struct GridLayoutCardSnapshot: Hashable, Sendable, Codable {
         accessibilityIdentifier: String,
         eventId: String,
         fillColorHex: String?,
+        calendarAccentColorHex: String? = nil,
+        focusColorHex: String? = nil,
         frame: EventPosition,
         isHiddenStrip: Bool,
         kind: GridLayoutCardKind,
@@ -74,6 +78,8 @@ public struct GridLayoutCardSnapshot: Hashable, Sendable, Codable {
         self.accessibilityIdentifier = accessibilityIdentifier
         self.eventId = eventId
         self.fillColorHex = fillColorHex
+        self.calendarAccentColorHex = calendarAccentColorHex
+        self.focusColorHex = focusColorHex
         self.frame = frame
         self.isHiddenStrip = isHiddenStrip
         self.kind = kind
@@ -88,6 +94,8 @@ public struct GridLayoutCardSnapshot: Hashable, Sendable, Codable {
         accessibilityIdentifier = try container.decode(String.self, forKey: .accessibilityIdentifier)
         eventId = try container.decode(String.self, forKey: .eventId)
         fillColorHex = try container.decodeIfPresent(String.self, forKey: .fillColorHex)
+        calendarAccentColorHex = try container.decodeIfPresent(String.self, forKey: .calendarAccentColorHex)
+        focusColorHex = try container.decodeIfPresent(String.self, forKey: .focusColorHex)
         frame = try container.decode(EventPosition.self, forKey: .frame)
         isHiddenStrip = try container.decode(Bool.self, forKey: .isHiddenStrip)
         kind = try container.decode(GridLayoutCardKind.self, forKey: .kind)

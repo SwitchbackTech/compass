@@ -33,7 +33,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-all-day-span",
             "eventId": "all-day-span",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 20,
               "left": 0,
@@ -50,7 +51,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-hidden-strip",
             "eventId": "hidden-strip",
-            "fillColorHex": "#22c55e",
+            "calendarAccentColorHex": "#22c55e",
+            "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
               "left": 55,
@@ -67,7 +69,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-a",
             "eventId": "overlap-a",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 55,
@@ -85,7 +88,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-b",
             "eventId": "overlap-b",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 99,
@@ -163,7 +167,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-all-day-span",
             "eventId": "all-day-span",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 20,
               "left": 0,
@@ -180,7 +185,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-hidden-strip",
             "eventId": "hidden-strip",
-            "fillColorHex": "#22c55e",
+            "calendarAccentColorHex": "#22c55e",
+            "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
               "left": 375,
@@ -197,7 +203,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-a",
             "eventId": "overlap-a",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 375,
@@ -215,7 +222,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-b",
             "eventId": "overlap-b",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 419,
@@ -315,7 +323,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-all-day-span",
             "eventId": "all-day-span",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 20,
               "left": 210,
@@ -332,7 +341,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-hidden-strip",
             "eventId": "hidden-strip",
-            "fillColorHex": "#22c55e",
+            "calendarAccentColorHex": "#22c55e",
+            "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
               "left": 385,
@@ -349,7 +359,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-a",
             "eventId": "overlap-a",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 385,
@@ -367,7 +378,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-b",
             "eventId": "overlap-b",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 429,
@@ -484,7 +496,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-all-day-span",
             "eventId": "all-day-span",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 20,
               "left": 0,
@@ -501,7 +514,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-hidden-strip",
             "eventId": "hidden-strip",
-            "fillColorHex": "#22c55e",
+            "calendarAccentColorHex": "#22c55e",
+            "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
               "left": 375,
@@ -518,7 +532,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-a",
             "eventId": "overlap-a",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 55,
@@ -536,7 +551,8 @@
           {
             "accessibilityIdentifier": "compass-grid-event-overlap-b",
             "eventId": "overlap-b",
-            "fillColorHex": "#3b82f6",
+            "calendarAccentColorHex": "#3b82f6",
+            "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
               "left": 99,

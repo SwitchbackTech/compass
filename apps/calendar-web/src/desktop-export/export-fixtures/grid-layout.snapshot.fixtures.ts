@@ -8,6 +8,7 @@ import { BusyPeriodSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   buildCalendarLookup,
+  resolveCalendarCardIdentity,
   resolveCalendarFocusColor,
 } from "@web/calendars/useCalendarLookup";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
@@ -184,7 +185,9 @@ const buildSnapshot = ({
   const cards: Array<{
     accessibilityIdentifier: string;
     eventId: string;
-    fillColorHex: string | null;
+    fillColorHex?: string;
+    calendarAccentColorHex?: string;
+    focusColorHex?: string;
     frame: ReturnType<typeof getTimedEventPosition>;
     isDraft: boolean;
     isHiddenStrip: boolean;
@@ -218,9 +221,12 @@ const buildSnapshot = ({
     cards.push({
       accessibilityIdentifier: eventIdentifier(eventId),
       eventId,
-      fillColorHex:
+      calendarAccentColorHex: resolveCalendarCardIdentity(lookup, {
+        calendarId: input?.calendarId,
+      })?.backgroundColor,
+      focusColorHex:
         resolveCalendarFocusColor(lookup, { calendarId: input?.calendarId }) ??
-        null,
+        undefined,
       frame,
       isDraft: false,
       isHiddenStrip: false,
@@ -272,9 +278,12 @@ const buildSnapshot = ({
     cards.push({
       accessibilityIdentifier: eventIdentifier(timed.eventId),
       eventId: timed.eventId,
-      fillColorHex:
+      calendarAccentColorHex: resolveCalendarCardIdentity(lookup, {
+        calendarId: timed.calendarId,
+      })?.backgroundColor,
+      focusColorHex:
         resolveCalendarFocusColor(lookup, { calendarId: timed.calendarId }) ??
-        null,
+        undefined,
       frame,
       isDraft: false,
       isHiddenStrip: item.isHidden,
@@ -311,7 +320,7 @@ const buildSnapshot = ({
       eventId: segment.key,
       fillColorHex:
         resolveCalendarFocusColor(lookup, { calendarId: segment.calendarId }) ??
-        null,
+        undefined,
       frame,
       isDraft: false,
       isHiddenStrip: false,

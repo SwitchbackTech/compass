@@ -301,11 +301,11 @@ public enum GridLayoutSnapshotBuilder {
         GridLayoutCardSnapshot(
             accessibilityIdentifier: GridLayoutAccessibility.eventIdentifier(eventId: eventId),
             eventId: eventId,
-            fillColorHex: GridEventCardChrome.cardFillColorHex(
-                lookup: lookup,
-                calendarId: calendarId,
-                eventColorHex: colorHex
-            ),
+            fillColorHex: colorHex,
+            calendarAccentColorHex: GridEventCardChrome.resolveCalendarCardIdentity(
+                lookup: lookup, calendarId: calendarId)?.backgroundColor,
+            focusColorHex: GridEventCardChrome.resolveCalendarFocusColor(
+                lookup: lookup, calendarId: calendarId),
             frame: frame,
             isHiddenStrip: isHidden,
             kind: kind,
@@ -361,11 +361,11 @@ public enum GridLayoutSnapshotBuilder {
             return GridLayoutCardSnapshot(
                 accessibilityIdentifier: GridLayoutAccessibility.eventIdentifier(eventId: draft.eventId),
                 eventId: draft.eventId,
-                fillColorHex: GridEventCardChrome.cardFillColorHex(
-                    lookup: lookup,
-                    calendarId: draft.calendarId,
-                    eventColorHex: draft.colorHex
-                ),
+                fillColorHex: draft.colorHex,
+                calendarAccentColorHex: GridEventCardChrome.resolveCalendarCardIdentity(
+                    lookup: lookup, calendarId: draft.calendarId)?.backgroundColor,
+                focusColorHex: GridEventCardChrome.resolveCalendarFocusColor(
+                    lookup: lookup, calendarId: draft.calendarId),
                 frame: position,
                 isHiddenStrip: false,
                 kind: .allDay,
@@ -400,11 +400,11 @@ public enum GridLayoutSnapshotBuilder {
         return GridLayoutCardSnapshot(
             accessibilityIdentifier: GridLayoutAccessibility.eventIdentifier(eventId: draft.eventId),
             eventId: draft.eventId,
-            fillColorHex: GridEventCardChrome.cardFillColorHex(
-                lookup: lookup,
-                calendarId: draft.calendarId,
-                eventColorHex: draft.colorHex
-            ),
+            fillColorHex: draft.colorHex,
+            calendarAccentColorHex: GridEventCardChrome.resolveCalendarCardIdentity(
+                lookup: lookup, calendarId: draft.calendarId)?.backgroundColor,
+            focusColorHex: GridEventCardChrome.resolveCalendarFocusColor(
+                lookup: lookup, calendarId: draft.calendarId),
             frame: floated,
             isHiddenStrip: false,
             kind: .timed,

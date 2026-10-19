@@ -39,14 +39,4 @@ public enum GridEventCardChrome {
         return lookup[calendarId]?.backgroundColor
     }
 
-    public static func cardFillColorHex(
-        lookup: CalendarLookup,
-        calendarId: String?,
-        eventColorHex: String?
-    ) -> String? {
-        if let eventColorHex, !eventColorHex.isEmpty {
-            return eventColorHex
-        }
-        return resolveCalendarFocusColor(lookup: lookup, calendarId: calendarId)
-    }
 }
