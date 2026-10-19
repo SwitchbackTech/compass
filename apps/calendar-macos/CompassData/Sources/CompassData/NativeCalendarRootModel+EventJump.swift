@@ -48,7 +48,7 @@ extension NativeCalendarRootModel {
             let start = CompassDateParsing.parseInEffectiveTimeZone(timed.start.rawValue) ?? referenceNow
             return CompassDateParsing.formatCalendarDay(start)
         case .allDay(let allDay):
-            let start = CompassDateParsing.calendarDateInEffectiveTimeZone(allDay.start.rawValue) ?? referenceNow
+            let start = CompassDateParsing.calendarDateInEffectiveTimeZone(allDay.start) ?? referenceNow
             return CompassDateParsing.formatCalendarDay(start)
         }
     }
