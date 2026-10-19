@@ -49,39 +49,60 @@ public struct EventFormView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        EventFormScheduleSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
+                        EventFormCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                EventFormScheduleSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                EventFormRecurrenceSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                .disabled(model.isScheduleLocked(for: draft))
+                            }
+                        }
                         .id(EventFormField.start)
-                        EventFormRecurrenceSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .disabled(model.isScheduleLocked(for: draft))
-                        .id(EventFormField.recurrence)
-                        EventFormCalendarSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .disabled(isReadOnly)
+                        EventFormCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                EventFormCalendarSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                .disabled(isReadOnly)
+                                EventFormColorSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                .disabled(isReadOnly)
+                            }
+                        }
                         .id(EventFormField.calendar)
-                        EventFormColorSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .disabled(isReadOnly)
-                        .id(EventFormField.color)
-                        EventFormLocationField(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .disabled(isReadOnly)
+                        EventFormCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                EventFormLocationField(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                .disabled(isReadOnly)
+                                EventFormConferenceSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                EventFormAttendeesSection(
+                                    model: model,
+                                    draft: draft,
+                                    focusField: model.eventFormFocusedField
+                                )
+                                .id(EventFormField.attendees)
+                            }
+                        }
                         .id(EventFormField.location)
                         DescriptionEditorView(
                             html: Binding(
@@ -107,18 +128,6 @@ public struct EventFormView: View {
                         .pageJumpChipAnchor(id: "form-description")
                         .id(EventFormField.description)
 
-                        EventFormConferenceSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .id(EventFormField.conference)
-                        EventFormAttendeesSection(
-                            model: model,
-                            draft: draft,
-                            focusField: model.eventFormFocusedField
-                        )
-                        .id(EventFormField.attendees)
                         EventFormRsvpSection(
                             model: model,
                             draft: draft,
@@ -142,13 +151,25 @@ public struct EventFormView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text("Save")
-                        ShortcutHintChip(label: "Enter")
+                        Spacer(minLength: 8)
+                        Text(KeycapGlyphs.display(["Mod", "Enter"]))
+                            .font(.rubik(11, weight: .medium))
+                            .foregroundStyle(theme.onAccentColor.opacity(0.92))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(theme.onAccentColor.opacity(0.1))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(theme.onAccentColor.opacity(0.35), lineWidth: 1)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .font(.rubik(14, weight: .medium))
-                    .foregroundStyle(theme.backgroundColor)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .background(theme.textColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .foregroundStyle(theme.onAccentColor)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .background(theme.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
                 }
                 .buttonStyle(.plain)
                 .disabled(model.hasPendingEventMutations)

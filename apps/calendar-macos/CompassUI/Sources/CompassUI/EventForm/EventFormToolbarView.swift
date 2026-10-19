@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 struct EventFormToolbarView: View {
@@ -8,15 +9,19 @@ struct EventFormToolbarView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            toolbarButton(label: "Close", systemImage: "xmark") { model.requestCloseEventForm() }
+            toolbarButton(label: "Close", systemImage: "xmark", keycaps: ["Esc"]) {
+                model.requestCloseEventForm()
+            }
             if draft.kind == .edit {
-                toolbarButton(label: "Duplicate", systemImage: "plus.square.on.square") {
+                toolbarButton(label: "Duplicate", systemImage: "plus.square.on.square", keycaps: ["Mod", "D"]) {
                     Task { await model.duplicateFocusedOrFormEvent() }
                 }
                 if model.hasBookedMeetingActions {
                     BookingEventActionsView(model: model)
                 } else if !model.isEventFormReadOnly(for: draft) {
-                    toolbarButton(label: "Delete", systemImage: "trash") { Task { await model.deleteFormEvent() } }
+                    toolbarButton(label: "Delete", systemImage: "trash", keycaps: ["Delete"]) {
+                        Task { await model.deleteFormEvent() }
+                    }
                 }
             }
             Spacer()
@@ -24,12 +29,23 @@ struct EventFormToolbarView: View {
         .accessibilityIdentifier("compass-event-form-actions")
     }
 
-    private func toolbarButton(label: String, systemImage: String, action: @escaping () -> Void) -> some View {
+    private func toolbarButton(
+        label: String,
+        systemImage: String,
+        keycaps: [String],
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(theme.textMutedColor)
-                .frame(width: 28, height: 28)
+            VStack(spacing: 2) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(theme.textMutedColor)
+                    .frame(width: 28, height: 22)
+                Text(KeycapGlyphs.display(keycaps))
+                    .font(.rubik(NativeWebLayoutTokens.fontSizeXS, weight: .medium))
+                    .foregroundStyle(theme.textSubtleColor)
+            }
+            .frame(minWidth: 36)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)

@@ -15,14 +15,19 @@ final class EventFormLayoutTests: XCTestCase {
         let form = window.descendants(matching: .any)["compass-event-form"]
         XCTAssertTrue(form.waitForExistence(timeout: 8))
         window.typeKey("6", modifierFlags: [.command])
+        let colorGrid = form.descendants(matching: .any)["compass-event-form-color"]
+        XCTAssertTrue(colorGrid.waitForExistence(timeout: 8))
+        for _ in 0 ..< 3 where !colorGrid.buttons["red"].exists {
+            form.swipeUp()
+        }
         for name in ["Default", "blue", "coral", "gold", "green", "indigo", "lavender",
                      "mint", "orange", "plum", "red", "slate"] {
-            let swatch = window.buttons[name]
-            XCTAssertTrue(swatch.exists, "Missing color \(name)")
+            let swatch = colorGrid.buttons[name]
+            XCTAssertTrue(swatch.waitForExistence(timeout: 2), "Missing color \(name)")
             XCTAssertGreaterThanOrEqual(swatch.frame.minX, form.frame.minX)
             XCTAssertLessThanOrEqual(swatch.frame.maxX, form.frame.maxX)
         }
-        let slate = window.buttons["slate"]
+        let slate = colorGrid.buttons["slate"]
         slate.click()
         XCTAssertEqual(slate.value as? String, "Selected")
     }

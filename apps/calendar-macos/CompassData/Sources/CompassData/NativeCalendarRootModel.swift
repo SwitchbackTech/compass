@@ -786,6 +786,7 @@ public final class NativeCalendarRootModel {
         applyFocusPresentation()
     }
 
+    /// Web `onFocusCalendar` / `u`: seed grid focus on the nearest event when nothing is focused.
     public func focusFirstCalendarEvent() {
         guard viewStore.view != .life else { return }
         guard focusStore.focusedEventId == nil else { return }
