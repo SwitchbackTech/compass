@@ -4,6 +4,10 @@ import {
   type RequestHandler,
   type Response,
 } from "express";
+import {
+  oauthCallbackFailureReason,
+  type SyncOAuthCallbackOutcome,
+} from "@core/analytics/oauth-callback.analytics";
 import { Status } from "@core/errors/status.codes";
 import {
   captureSafely,
@@ -67,7 +71,12 @@ import {
   HORIZON_FUTURE_MONTHS,
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
-import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
+import {
+  type OAuthStateFailure,
+  peekOAuthStatePayload,
+  signOAuthState,
+  verifyOAuthState,
+} from "@sync/oauth/oauth-state";
 import { isPasswordCredentialAuthAdapter } from "@sync/providers/apple/apple-auth.adapter";
 import { APPLE_PROVIDER_CAPABILITIES } from "@sync/providers/apple/apple-capabilities";
 import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
@@ -105,19 +114,11 @@ import { randomUUID } from "node:crypto";
 const logger = Logger("sync:connection.routes");
 
 const OAUTH_CALLBACK_EVENT = "oauth_callback";
-const SYNC_POSTHOG_DISTINCT_ID = "compass-sync";
 const CONNECT_CORRELATION_QUERY = "cid";
 const CONNECT_INTENT_QUERY = "intent";
 const CONNECT_CORRELATION_ID_LENGTH = 8;
 
-type OAuthCallbackOutcome =
-  | "connected"
-  | "declined"
-  | "missingScopes"
-  | "stateMismatch"
-  | "consentRequired"
-  | "accountMismatch"
-  | "error";
+type OAuthCallbackOutcome = SyncOAuthCallbackOutcome;
 
 type OAuthConnectIntent = "connect" | "reconnect";
 
@@ -874,11 +875,23 @@ export function registerConnectionRoutes(
 
   const handleOAuthCallback =
     (routeProvider: ProviderKind) => async (req: Request, res: Response) => {
-      const redirect = (status: OAuthCallbackOutcome, error?: unknown) =>
+      const callbackQuery = {
+        state: req.query["state"],
+        code: req.query["code"],
+        oauthError: req.query["error"],
+        oauthErrorDescription: req.query["error_description"],
+      };
+
+      const redirect = (
+        status: OAuthCallbackOutcome,
+        error?: unknown,
+        stateVerifyReason?: OAuthStateFailure,
+      ) =>
         captureOAuthCallbackThenRedirect(deps, res, {
           provider: routeProvider,
           outcome: status,
-          state: req.query["state"],
+          ...callbackQuery,
+          stateVerifyReason,
           error,
         });
 
@@ -886,8 +899,8 @@ export function registerConnectionRoutes(
         return redirect("error");
       }
       if (!deps.mongo.isConnected) return redirect("error");
-      const oauthError = req.query["error"];
-      const oauthDescription = req.query["error_description"];
+      const oauthError = callbackQuery.oauthError;
+      const oauthDescription = callbackQuery.oauthErrorDescription;
       if (typeof oauthError === "string") {
         if (
           routeProvider === "microsoft" &&
@@ -901,8 +914,8 @@ export function registerConnectionRoutes(
         return redirect("declined");
       }
 
-      const code = req.query["code"];
-      const state = req.query["state"];
+      const code = callbackQuery.code;
+      const state = callbackQuery.state;
       if (typeof code !== "string" || typeof state !== "string") {
         return redirect("error");
       }
@@ -916,6 +929,8 @@ export function registerConnectionRoutes(
       if (!verified.ok) {
         return redirect(
           verified.reason === "stateMismatch" ? "stateMismatch" : "error",
+          undefined,
+          verified.reason,
         );
       }
 
@@ -1090,6 +1105,17 @@ function oauthCallbackErrorClass(error: unknown): string {
   return "Error";
 }
 
+function oauthCallbackDistinctId(
+  deps: ConnectionApiDeps,
+  state: unknown,
+): string | undefined {
+  if (typeof state !== "string" || state.length === 0) return undefined;
+  const now = (deps.now ?? Date.now)();
+  const verified = verifyOAuthState(deps.stateSecret, state, now);
+  if (verified.ok) return verified.payload.principalId;
+  return peekOAuthStatePayload(state)?.principalId;
+}
+
 function connectIntentFromState(
   deps: ConnectionApiDeps,
   state: unknown,
@@ -1118,12 +1144,17 @@ async function captureOAuthCallbackThenRedirect(
     provider: ProviderKind;
     outcome: OAuthCallbackOutcome;
     state: unknown;
+    code: unknown;
+    oauthError: unknown;
+    oauthErrorDescription?: unknown;
+    stateVerifyReason?: OAuthStateFailure;
     error?: unknown;
   },
 ): Promise<void> {
   const correlationId = newConnectCorrelationId();
   const intent = connectIntentFromState(deps, input.state, input.provider);
   const relayDesktop = relayDesktopConnectFromState(deps, input.state);
+  const distinctId = oauthCallbackDistinctId(deps, input.state);
   const properties: Record<string, unknown> = {
     provider: input.provider,
     outcome: input.outcome,
@@ -1133,11 +1164,28 @@ async function captureOAuthCallbackThenRedirect(
   if (input.outcome === "error") {
     properties["errorClass"] = oauthCallbackErrorClass(input.error);
   }
-  await captureSafely(deps.posthog ?? null, {
-    event: OAUTH_CALLBACK_EVENT,
-    distinctId: SYNC_POSTHOG_DISTINCT_ID,
-    properties,
+  const failure = oauthCallbackFailureReason({
+    outcome: input.outcome,
+    state: input.state,
+    code: input.code,
+    oauthError: input.oauthError,
+    oauthErrorDescription: input.oauthErrorDescription,
+    stateVerifyReason: input.stateVerifyReason,
+    exchangeError: input.error,
   });
+  if (failure) {
+    properties["reason"] = failure.reason;
+    if (failure.provider_error) {
+      properties["provider_error"] = failure.provider_error;
+    }
+  }
+  if (distinctId) {
+    await captureSafely(deps.posthog ?? null, {
+      event: OAUTH_CALLBACK_EVENT,
+      distinctId,
+      properties,
+    });
+  }
   redirectAfterConnect(deps, res, input.provider, input.outcome, {
     correlationId,
     intent,
