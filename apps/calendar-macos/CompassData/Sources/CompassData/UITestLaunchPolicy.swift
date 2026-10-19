@@ -1,3 +1,4 @@
+import CompassKit
 import Foundation
 
 /// Launch arguments read by native UI for XCUITest only. Production launches omit these.
@@ -66,6 +67,11 @@ public enum UITestLaunchPolicy {
 
     /// Full week column count so demo fixture events stay in the focus layout during XCUITest.
     public static var pinnedWeekGridTrackWidth: CGFloat? {
+        if ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_PARITY_CAPTURE")
+        {
+            return CGFloat(ParityCaptureGeometry.contentTrackWidth)
+        }
         if initialGridFocusEventId != nil
             || openFocusedEventFormAfterInitialGridFocus
             || ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_PIN_WEEK_GRID_TRACK")

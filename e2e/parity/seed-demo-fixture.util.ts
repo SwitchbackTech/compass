@@ -5,6 +5,15 @@ import { join } from "node:path";
 /** Matches `AppDelegate` default content size on macOS. */
 export const PARITY_VIEWPORT = { width: 1280, height: 820 } as const;
 
+/** Keep in sync with `ParityCaptureGeometry.swift` and index.html boot track math. */
+export const PARITY_SIDEBAR_WIDTH = 345;
+export const PARITY_CONTENT_LEADING_INSET = 32;
+export const PARITY_SIDEBAR_DIVIDER_WIDTH = 32;
+export const PARITY_CONTENT_TRACK_WIDTH =
+  PARITY_VIEWPORT.width -
+  PARITY_CONTENT_LEADING_INSET -
+  (PARITY_SIDEBAR_DIVIDER_WIDTH + PARITY_SIDEBAR_WIDTH);
+
 const DEMO_SEED_PATH = join(
   process.cwd(),
   "apps/calendar-macos/CompassKit/Sources/CompassKit/Resources/Fixtures/demo-seed.json",
@@ -34,6 +43,8 @@ export async function installParityWebEnvironment(
     "compass.theme": "light-beach",
     "compass.migration.demo-data-seed-v2": "done",
     "compass.localCalendarId": demoFixture.calendarId,
+    "compass.view.sidebar-open": "true",
+    "compass.sidebar.width": String(PARITY_SIDEBAR_WIDTH),
   };
   if (dismissOnboarding) {
     localStorageSeed["compass.onboarding.has-seen-welcome"] = "true";
