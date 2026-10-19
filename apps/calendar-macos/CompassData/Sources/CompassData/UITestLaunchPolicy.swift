@@ -69,6 +69,7 @@ public enum UITestLaunchPolicy {
     public static var isParityCapture: Bool {
         ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
             || ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_PARITY_CAPTURE")
+            || ProcessInfo.processInfo.arguments.contains("-PARITY_CAPTURE")
     }
 
     /// Full week column count so demo fixture events stay in the focus layout during XCUITest.

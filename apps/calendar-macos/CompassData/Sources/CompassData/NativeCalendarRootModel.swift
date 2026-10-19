@@ -498,6 +498,10 @@ public final class NativeCalendarRootModel {
     }
 
     public func updateContentTrackWidth(_ width: CGFloat) {
+        if UITestLaunchPolicy.isParityCapture {
+            applyParityCapturePresentationIfNeeded()
+            return
+        }
         let resolved = max(UITestLaunchPolicy.pinnedWeekGridTrackWidth ?? width, 320)
         if abs(resolved - contentTrackWidth) > 0.5 {
             contentTrackWidth = resolved

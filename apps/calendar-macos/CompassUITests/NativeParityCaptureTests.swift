@@ -9,6 +9,7 @@ final class NativeParityCaptureTests: XCTestCase {
         "-COMPASS_FIXTURE", "demo",
         "-compass.theme", "light-beach",
         "-COMPASS_UI_TEST_PARITY_CAPTURE",
+        "-PARITY_CAPTURE",
         "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
     ]
 
