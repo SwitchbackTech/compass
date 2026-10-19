@@ -67,6 +67,20 @@ export const expectNoAxeViolations = async (
   page: Page,
   { include, checkpoint, knownIncomplete = [] }: AxeCheckOptions = {},
 ) => {
+  // Scan the settled UI, not text composited halfway through a fade.
+  // Infinite status animations must not prevent the scan from running.
+  await page.evaluate(async () => {
+    await Promise.allSettled(
+      document
+        .getAnimations()
+        .filter(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect?.getComputedTiming().endTime !== Infinity,
+        )
+        .map((animation) => animation.finished),
+    );
+  });
   let builder = new AxeBuilder({ page }).withTags(WCAG_22_AA_TAGS);
   if (include) {
     builder = builder.include(include);

@@ -60,13 +60,12 @@ const googleCalendar = (
 });
 
 const holdMod = async (page: Page) => {
-  // This VM resolves Mod to Control. Hold only that key: a second modifier
-  // (Meta) is treated as "not pausing to look" and cancels the hold timer.
-  await page.keyboard.down("Control");
+  // Hold only the platform modifier: a second modifier cancels the hold timer.
+  await page.keyboard.down("ControlOrMeta");
 };
 
 const releaseMod = async (page: Page) => {
-  await page.keyboard.up("Control");
+  await page.keyboard.up("ControlOrMeta");
 };
 
 const setupTwoAccountWeek = async (page: Page) => {

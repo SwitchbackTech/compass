@@ -1308,7 +1308,7 @@ export async function prepareSignedInBookingSettingsPage(
     return captured;
   }
 
-  await page.keyboard.press("Control+Comma");
+  await page.keyboard.press("ControlOrMeta+Comma");
 
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   await expect(settingsDialog).toBeVisible({ timeout: 10000 });
@@ -1546,11 +1546,11 @@ export const dispatchBlur = async (
  * This VM resolves Mod to Control; a second modifier cancels the hold.
  */
 export const holdSettingsMod = async (page: Page) => {
-  await page.keyboard.down("Control");
+  await page.keyboard.down("ControlOrMeta");
 };
 
 export const releaseSettingsMod = async (page: Page) => {
-  await page.keyboard.up("Control");
+  await page.keyboard.up("ControlOrMeta");
 };
 
 const MEETING_NAV_CHIPS = ["1", "3"] as const;

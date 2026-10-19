@@ -47,6 +47,7 @@ export default defineConfig({
     // Product default is Light Beach. Specs that need Dark Abyss set
     // compass.theme in localStorage.
     colorScheme: "light",
+    timezoneId: "UTC",
     trace: "on-first-retry",
   },
   projects: [
@@ -78,7 +79,7 @@ export default defineConfig({
         COMPASS_CONFIG_FILE: TEST_CONFIG_PATH,
       },
       port: BOOKING_WEB_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
@@ -88,7 +89,7 @@ export default defineConfig({
         COMPASS_CONFIG_FILE: TEST_CONFIG_PATH,
       },
       port: TEST_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
     },
     {
@@ -99,7 +100,7 @@ export default defineConfig({
         WEB_BUILD_OUTDIR: STAGING_SIDEBAR_BUILD_OUTDIR,
       },
       port: STAGING_SIDEBAR_PORT,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 120_000,
     },
   ],
