@@ -316,3 +316,23 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | Date | Change |
 | --- | --- |
 | 2026-10-19 | Initial audit checklist for #4331 dogfood gate |
+| 2026-10-19 | §7 visual evidence table (web CI captures; macOS/compare pending runner) |
+
+---
+
+## 7. Visual parity evidence (1280×820, Light Beach, demo seed)
+
+Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
+
+| Surface | Web CI | macOS CI | Match | Diff notes (from code + web reference until compare lands) |
+| --- | --- | --- | --- | --- |
+| Week grid | ✅ run 39278514788 | ⏳ queue | 🟡 | #4604 now line gradient/rim; header focus ring still AppKit |
+| Mini-calendar | ✅ | ⏳ queue | 🟡 | Custom grid styling vs react-datepicker theme |
+| Event form | ✅ | ⏳ queue | 🟡 | #4603 FormCard grouping, MM.DD.YY, save bar, toolbar keycaps |
+| Command palette | ✅ | ⏳ queue | 🟡 | #4602 fuzzy filter, label highlight, shadow, keycaps |
+| Settings | ✅ | ⏳ queue | 🟡 | Not re-audited this pass |
+| Onboarding welcome | ✅ | ⏳ queue | 🟡 | Not re-audited this pass |
+
+**Keyboard / tips (non-screenshot):** #4605 Shift+weekday column jump + sidebar tip strip; partial vs web full `useShiftHoldEventHints` (weekend `s`→u/a, digit jump, quick-time slots still ❌).
+
+When `macos-capture` completes, replace 🟡 rows with ✅/❌ from side-by-side PNGs and open focused fix PRs for any new visual deltas.
