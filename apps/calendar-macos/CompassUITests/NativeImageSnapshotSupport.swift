@@ -51,18 +51,7 @@ enum NativeImageSnapshotSupport {
         }
 
         if parityCapture {
-            guard let url = referenceImageURL(named: name) else {
-                XCTFail("Could not resolve ReferenceImages bundle path for parity \(name)", file: file, line: line)
-                return
-            }
-            do {
-                try FileManager.default.createDirectory(
-                    at: url.deletingLastPathComponent(),
-                    withIntermediateDirectories: true)
-                try screenshot.pngRepresentation.write(to: url)
-            } catch {
-                XCTFail("Failed to write parity capture \(name): \(error)", file: file, line: line)
-            }
+            // CI exports PNGs from the .xcresult attachments (the test bundle cannot write to disk).
             return
         }
 

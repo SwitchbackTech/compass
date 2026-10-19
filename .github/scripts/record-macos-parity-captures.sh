@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 OUT="${PARITY_OUTPUT_DIR:-$ROOT/build/desktop-parity/macos}"
+RESULT="$ROOT/apps/calendar-macos/build/ParityCapture.xcresult"
 SURFACES=(week-grid mini-calendar event-form command-palette settings onboarding-welcome)
 mkdir -p "$OUT"
 cd "$ROOT/apps/calendar-macos"
@@ -16,12 +17,7 @@ fi
 bash "$ROOT/.github/scripts/render-macos-icon.sh"
 xcodegen generate
 
-# UI test runners do not inherit shell exports; launchctl setenv reaches XCTest.
 launchctl setenv PARITY_CAPTURE 1
-cleanup_env() {
-  launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
-}
-trap cleanup_env EXIT
 
 xcodebuild test \
   -project Compass.xcodeproj \
@@ -32,25 +28,48 @@ xcodebuild test \
   -resultBundlePath build/ParityCapture.xcresult \
   -only-testing:CompassUITests/NativeParityCaptureTests/testExportParitySurfaces
 
-REF_DIR=$(find "$ROOT/apps/calendar-macos/build/DerivedData/Build/Products" -type d -path '*CompassUITests.xctest/Contents/Resources/ReferenceImages' 2>/dev/null | head -1)
-if [ -z "${REF_DIR:-}" ] || [ ! -d "$REF_DIR" ]; then
-  echo "Could not find CompassUITests ReferenceImages output under DerivedData" >&2
+if [ ! -d "$RESULT" ]; then
+  echo "Missing result bundle at ${RESULT}" >&2
   exit 1
 fi
 
-copied=0
-for name in "${SURFACES[@]}"; do
-  if [ -f "$REF_DIR/$name.png" ]; then
-    cp "$REF_DIR/$name.png" "$OUT/"
-    copied=$((copied + 1))
-  else
-    echo "Missing parity PNG: $REF_DIR/$name.png" >&2
-  fi
-done
+RAW="$(mktemp -d)"
+trap 'rm -rf "$RAW"; cleanup_env' EXIT
+xcrun xcresulttool export attachments --path "$RESULT" --output-path "$RAW" >/dev/null
 
-if [ "$copied" -lt "${#SURFACES[@]}" ]; then
-  echo "Expected ${#SURFACES[@]} parity PNGs, copied $copied" >&2
-  exit 1
-fi
+python3 - "$RAW" "$OUT" "${SURFACES[@]}" <<'PY'
+import json
+import os
+import re
+import shutil
+import sys
 
-echo "Parity PNGs written to ${OUT} (${copied} files, from ${REF_DIR})"
+raw, out, *surfaces = sys.argv[1], sys.argv[2], *sys.argv[3:]
+wanted = set(surfaces)
+
+with open(os.path.join(raw, "manifest.json")) as handle:
+    manifest = json.load(handle)
+
+found: dict[str, str] = {}
+for test in manifest:
+    for attachment in test.get("attachments", []):
+        if attachment.get("isAssociatedWithFailure"):
+            continue
+        exported = attachment["exportedFileName"]
+        if not exported.lower().endswith(".png"):
+            continue
+        name = attachment.get("suggestedHumanReadableName", exported)
+        name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
+        base = os.path.splitext(name)[0]
+        if base in wanted and base not in found:
+            found[base] = os.path.join(raw, exported)
+
+missing = [s for s in surfaces if s not in found]
+if missing:
+    raise SystemExit(f"Missing parity attachments: {', '.join(missing)}")
+
+for surface, src in found.items():
+    shutil.copyfile(src, os.path.join(out, f"{surface}.png"))
+
+print(f"Parity PNGs written to {out} ({len(found)} files)")
+PY
