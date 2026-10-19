@@ -87,7 +87,6 @@ struct EventFormScheduleSection: View {
                 .accessibilityIdentifier("compass-event-form-schedule-locked-note")
             }
         }
-        .eventFormSectionChrome(focused: focusField == .start || focusField == .end)
     }
 
     private func updateStart(_ date: Date) {

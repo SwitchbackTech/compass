@@ -6,14 +6,14 @@ struct EventFormSectionChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(.rubik(13))
+            .font(.rubik(NativeWebLayoutTokens.fontSizeM))
             .controlSize(.small)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
             .background(theme.surfaceOverlayColor)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay(
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
                     .stroke(focused ? theme.accentColor : .clear, lineWidth: 1)
             )
     }
