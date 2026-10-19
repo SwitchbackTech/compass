@@ -101,6 +101,14 @@ final class CommandPaletteActionsTests: XCTestCase {
         XCTAssertFalse(model.commandPaletteStore.recentCommandIds.contains("recent-today"))
     }
 
+    func testMoreSectionIncludesUndoAndRedoRows() async throws {
+        let model = try await makeModel()
+        model.commandPaletteStore.open()
+        let ids = Set(model.filteredPaletteSections().flatMap(\.items).map(\.id))
+        XCTAssertTrue(ids.contains("undo"))
+        XCTAssertTrue(ids.contains("redo"))
+    }
+
     func testAboutInvokesNativePresentation() async throws {
         let model = try await makeModel()
         var presented = false

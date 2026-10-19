@@ -171,6 +171,16 @@ public enum CommandPaletteCatalog {
     ) -> [CommandPaletteSection] {
         var items: [CommandPaletteItem] = [
             CommandPaletteItem(
+                id: "undo",
+                label: "Undo",
+                shortcut: "mod+z",
+                keywords: ["revert", "back"]),
+            CommandPaletteItem(
+                id: "redo",
+                label: "Redo",
+                shortcut: "mod+shift+z",
+                keywords: ["repeat", "forward"]),
+            CommandPaletteItem(
                 id: "show-welcome-guide",
                 label: "Show welcome guide",
                 keywords: ["onboarding", "tour", "intro", "help", "faq"]),
