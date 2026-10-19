@@ -51,18 +51,11 @@ export const timedScheduleFromDateChange = ({
   scheduleEnd: Date;
 }): MapToBackendResult => {
   if (changed === "start") {
+    // A start date moves the whole span, so the end rides along. A same-day
+    // pick shifts by zero, which is already the identity.
     const dayDelta = dayjs(nextDate)
       .startOf("day")
       .diff(dayjs(selectedStartDate).startOf("day"), "day");
-    if (dayDelta === 0) {
-      return tryMapToBackend({
-        startDate: scheduleStart,
-        startTime,
-        endDate: scheduleEnd,
-        endTime,
-        isAllDay: false,
-      });
-    }
     const shifted = shiftTimedScheduleByDays(
       scheduleStart,
       scheduleEnd,

@@ -3,11 +3,11 @@ import { type SelectOption } from "@web/common/types/component.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
-import { type OpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
+import { type OpenSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenSide";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
 export interface Props {
-  datePickers: OpenDatePickerSide;
+  datePickers: OpenSide;
   displayEndDate: Date;
   draft: GridEventDraft;
   endTime: SelectOption<string>;

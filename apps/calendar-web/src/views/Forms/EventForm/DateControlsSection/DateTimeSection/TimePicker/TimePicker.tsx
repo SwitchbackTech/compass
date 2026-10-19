@@ -1,4 +1,3 @@
-import type React from "react";
 import { useEffect, useId, useRef } from "react";
 import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
@@ -23,7 +22,8 @@ export interface Props extends Omit<RSProps, "onChange" | "value"> {
   options?: TimeOption[];
   pickerRole?: ParseUserTimeOptions["role"];
   selectClassName?: string;
-  setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Kept in an effect dependency list below, so pass a stable callback. */
+  setIsMenuOpen: (isOpen: boolean) => void;
   value: SelectOption<string>;
 }
 

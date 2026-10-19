@@ -4,11 +4,11 @@ import dayjs from "@core/util/date/dayjs";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
-import { type OpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
+import { type OpenSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenSide";
 import { type OnEventFormScheduleChange } from "@web/views/Forms/EventForm/types";
 
 interface Props {
-  datePickers: OpenDatePickerSide;
+  datePickers: OpenSide;
   displayEndDate: Date;
   draft: GridEventDraft;
   selectedEndDate: Date;

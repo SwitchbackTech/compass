@@ -77,9 +77,12 @@ export const EventFormDateField = ({
   /**
    * Enter, Tab, and blur all land here: commit a typed date that changes the
    * day, quietly restore an emptied field, and explain anything unparseable.
-   * Returns false when nothing was committed.
+   * The outcome tells Enter apart from the rest - a parseable date that is
+   * already the committed one opens the calendar instead of committing.
    */
-  const commitOrRevert = (target: HTMLInputElement) => {
+  const commitOrRevert = (
+    target: HTMLInputElement,
+  ): "committed" | "unchanged" | "rejected" => {
     const value = target.value.trim();
     const parsed = value ? parseUserDate(value, dayjs()) : null;
     if (parsed && !parsed.isSame(selectedRef.current, "day")) {
@@ -88,7 +91,7 @@ export const EventFormDateField = ({
       // doesn't commit the same draft twice.
       selectedRef.current = date;
       onCommit(date);
-      return true;
+      return "committed";
     }
     if (value && !parsed) {
       showErrorToast(
@@ -96,7 +99,7 @@ export const EventFormDateField = ({
       );
     }
     revertInput(target);
-    return false;
+    return parsed ? "unchanged" : "rejected";
   };
 
   const nudgeDays = (deltaDays: number) => {
@@ -156,10 +159,8 @@ export const EventFormDateField = ({
           break;
         }
         consume(event);
-        const trimmed = target.value.trim();
-        if (commitOrRevert(target)) break;
         // Enter on an unchanged, parseable date opens the calendar instead.
-        if (trimmed && parseUserDate(trimmed, dayjs())) onCalendarOpen();
+        if (commitOrRevert(target) === "unchanged") onCalendarOpen();
         break;
       }
       case " ": {
@@ -174,7 +175,7 @@ export const EventFormDateField = ({
         break;
       }
       case "Tab": {
-        if (!commitOrRevert(target)) onCalendarClose();
+        if (commitOrRevert(target) !== "committed") onCalendarClose();
         break;
       }
     }
