@@ -1,0 +1,75 @@
+import CompassKit
+import SwiftUI
+
+struct EventFormCompactDateField: View {
+    @Environment(\.nativeWebTheme) private var theme
+    @Binding var date: Date
+    let accessibilityIdentifier: String
+    @State private var text: String
+    @State private var showsCalendar = false
+    @FocusState private var isFocused: Bool
+
+    init(date: Binding<Date>, accessibilityIdentifier: String) {
+        _date = date
+        self.accessibilityIdentifier = accessibilityIdentifier
+        _text = State(initialValue: EventFormDateFormat.formatLabel(for: date.wrappedValue))
+    }
+
+    var body: some View {
+        TextField("Date", text: $text)
+            .textFieldStyle(.plain)
+            .font(.rubik(13))
+            .foregroundStyle(theme.textColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(theme.surfacePanelColor)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(isFocused ? theme.accentColor : theme.borderColor, lineWidth: 1)
+            }
+            .focused($isFocused)
+            .accessibilityIdentifier(accessibilityIdentifier)
+            .onSubmit { commitTypedDate() }
+            .onChange(of: isFocused) { _, focused in
+                if !focused { commitTypedDate() }
+            }
+            .onChange(of: date) { _, newValue in
+                guard !isFocused else { return }
+                text = EventFormDateFormat.formatLabel(for: newValue)
+            }
+            .onTapGesture(count: 2) {
+                showsCalendar = true
+            }
+            .popover(isPresented: $showsCalendar, arrowEdge: .bottom) {
+                DatePicker(
+                    "Pick date",
+                    selection: Binding(
+                        get: { date },
+                        set: { newDate in
+                            date = newDate
+                            text = EventFormDateFormat.formatLabel(for: newDate)
+                        }
+                    ),
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+                .padding(12)
+            }
+    }
+
+    private func commitTypedDate() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            text = EventFormDateFormat.formatLabel(for: date)
+            return
+        }
+        if let parsed = EventFormDateFormat.parseTypedLabel(trimmed, now: date) {
+            date = parsed
+            text = EventFormDateFormat.formatLabel(for: parsed)
+            return
+        }
+        text = EventFormDateFormat.formatLabel(for: date)
+    }
+}

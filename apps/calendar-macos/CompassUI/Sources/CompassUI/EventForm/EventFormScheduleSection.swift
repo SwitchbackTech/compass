@@ -23,57 +23,75 @@ struct EventFormScheduleSection: View {
             .accessibilityIdentifier("compass-event-form-allday")
 
             if draft.schedule.kind == .timed {
-                DatePicker(
-                    "Start",
-                    selection: Binding(
-                        get: { draft.schedule.start },
-                        set: { updateStart($0) }
-                    ),
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
-                .disabled(scheduleLocked)
-                .accessibilityIdentifier("compass-event-form-start")
-                .pageJumpChipAnchor(id: "form-start")
+                HStack(spacing: 8) {
+                    EventFormCompactDateField(
+                        date: Binding(
+                            get: { draft.schedule.start },
+                            set: { updateStart(mergeCalendarDay(into: draft.schedule.start, day: $0)) }
+                        ),
+                        accessibilityIdentifier: "compass-event-form-start-date"
+                    )
+                    .disabled(scheduleLocked)
+                    .pageJumpChipAnchor(id: "form-start")
 
-                DatePicker(
-                    "End",
-                    selection: Binding(
-                        get: { draft.schedule.end },
-                        set: { updateEnd($0) }
-                    ),
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .labelsHidden()
-                .disabled(scheduleLocked)
-                .accessibilityIdentifier("compass-event-form-end")
-                .pageJumpChipAnchor(id: "form-end")
+                    DatePicker(
+                        "Start time",
+                        selection: Binding(
+                            get: { draft.schedule.start },
+                            set: { updateStart($0) }
+                        ),
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .labelsHidden()
+                    .disabled(scheduleLocked)
+                    .accessibilityIdentifier("compass-event-form-start")
+                }
+
+                HStack(spacing: 8) {
+                    EventFormCompactDateField(
+                        date: Binding(
+                            get: { draft.schedule.end },
+                            set: { updateEnd(mergeCalendarDay(into: draft.schedule.end, day: $0)) }
+                        ),
+                        accessibilityIdentifier: "compass-event-form-end-date"
+                    )
+                    .disabled(scheduleLocked)
+                    .pageJumpChipAnchor(id: "form-end")
+
+                    DatePicker(
+                        "End time",
+                        selection: Binding(
+                            get: { draft.schedule.end },
+                            set: { updateEnd($0) }
+                        ),
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .labelsHidden()
+                    .disabled(scheduleLocked)
+                    .accessibilityIdentifier("compass-event-form-end")
+                }
             } else {
-                DatePicker(
-                    "Start day",
-                    selection: Binding(
+                EventFormCompactDateField(
+                    date: Binding(
                         get: { draft.schedule.start },
                         set: { model.updateAllDayDraftStart($0) }
                     ),
-                    displayedComponents: [.date]
+                    accessibilityIdentifier: "compass-event-form-start"
                 )
                 .disabled(scheduleLocked)
-                .accessibilityIdentifier("compass-event-form-start")
                 .pageJumpChipAnchor(id: "form-start")
 
-                DatePicker(
-                    "End day",
-                    selection: Binding(
+                EventFormCompactDateField(
+                    date: Binding(
                         get: {
                             EffectiveTimeZone.calendar.date(byAdding: .day, value: -1, to: draft.schedule.end)
                                 ?? draft.schedule.start
                         },
                         set: { model.updateAllDayDraftEnd($0) }
                     ),
-                    displayedComponents: [.date]
+                    accessibilityIdentifier: "compass-event-form-end"
                 )
                 .disabled(scheduleLocked)
-                .accessibilityIdentifier("compass-event-form-end")
                 .pageJumpChipAnchor(id: "form-end")
             }
 
@@ -87,6 +105,16 @@ struct EventFormScheduleSection: View {
                 .accessibilityIdentifier("compass-event-form-schedule-locked-note")
             }
         }
+    }
+
+    private func mergeCalendarDay(into scheduleDate: Date, day: Date) -> Date {
+        var calendar = EffectiveTimeZone.calendar
+        let time = calendar.dateComponents([.hour, .minute, .second], from: scheduleDate)
+        var dayComponents = calendar.dateComponents([.year, .month, .day], from: day)
+        dayComponents.hour = time.hour
+        dayComponents.minute = time.minute
+        dayComponents.second = time.second ?? 0
+        return calendar.date(from: dayComponents) ?? day
     }
 
     private func updateStart(_ date: Date) {
