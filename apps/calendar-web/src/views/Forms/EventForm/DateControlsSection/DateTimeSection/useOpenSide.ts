@@ -19,9 +19,7 @@ export interface OpenSide {
 
 /**
  * Which of a start/end overlay pair is open: a date picker calendar in
- * DatePickers, a time combobox menu in TimePickers. Two independent booleans
- * allowed both at once and made every open handler responsible for closing
- * its sibling; the open side is the whole state.
+ * DatePickers, a time combobox menu in TimePickers.
  *
  * The callbacks are stable, so a consumer can hand one to a child that keeps
  * it in an effect dependency list.
