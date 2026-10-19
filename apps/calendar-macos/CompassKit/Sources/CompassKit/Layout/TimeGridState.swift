@@ -46,6 +46,18 @@ public struct TimeGridState: Sendable {
         self.timeTravelTimeZone = timeTravelTimeZone
     }
 
+    public var hourLabelDate: Date {
+        let today = CompassDateParsing.formatCalendarDay(referenceNow)
+        if scenario.visibleDateKeys.contains(today) { return referenceNow }
+        return scenario.visibleDateKeys.first.flatMap(CompassDateParsing.calendarDateInEffectiveTimeZone) ?? referenceNow
+    }
+
+    public var civilDayHours: Double {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: effectiveTimeZone) ?? EffectiveTimeZone.timeZone
+        return (calendar.dateInterval(of: .day, for: hourLabelDate)?.duration ?? 86_400) / 3600
+    }
+
     public func snapshot(colWidths: [Double]) -> GridLayoutSnapshot {
         GridLayoutSnapshotBuilder.build(
             scenario: scenario,
