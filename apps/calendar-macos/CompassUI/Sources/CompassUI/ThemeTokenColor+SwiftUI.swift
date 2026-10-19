@@ -21,6 +21,7 @@ private protocol NativeThemePalette {
     var success: ThemeTokenColor { get }
     var warning: ThemeTokenColor { get }
     var overlayBackdrop: ThemeTokenColor { get }
+    var shadowDefault: ThemeTokenColor { get }
 }
 
 extension LightBeachPalette: NativeThemePalette {}
@@ -70,6 +71,7 @@ public enum NativeWebTheme: String, Sendable, CaseIterable {
     public var successColor: Color { palette.success.swiftUIColor }
     public var warningColor: Color { palette.warning.swiftUIColor }
     public var overlayBackdropColor: Color { palette.overlayBackdrop.swiftUIColor }
+    public var shadowDefaultColor: Color { palette.shadowDefault.swiftUIColor }
     /// Web `OverlayPanel` backdrop (`bg-background/85`), used by modal panels.
     public var panelBackdropColor: Color { backgroundColor.opacity(0.85) }
 }
