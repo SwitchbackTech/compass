@@ -427,6 +427,10 @@ final class NativeLaunchTests: XCTestCase {
         XCTAssertTrue(window.waitForExistence(timeout: 15))
 
         window.typeKey("k", modifierFlags: [.command])
+        let search = window.textFields["compass-native-command-palette-search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 8))
+        search.click()
+        search.typeText("Practice shortcuts")
         let practiceItem = window.descendants(matching: .any)["compass-native-palette-item-practice-shortcuts"]
         XCTAssertTrue(practiceItem.waitForExistence(timeout: 8))
         practiceItem.click()
