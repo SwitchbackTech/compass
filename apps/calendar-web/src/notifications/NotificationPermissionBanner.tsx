@@ -1,5 +1,11 @@
+import { useCallback } from "react";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { notificationActions } from "@web/notifications/notification.state";
 import { type NotificationBlockedBannerKind } from "@web/notifications/notification-blocked-banner.util";
+import {
+  NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
 export function NotificationPermissionBanner({
   kind,
@@ -13,6 +19,16 @@ export function NotificationPermissionBanner({
       ? "Allow browser notifications so Compass can alert you before events."
       : "Event notifications are on, but this browser is not showing them. Check Brave Shields, Focus or Do Not Disturb, and site notification settings for compasscalendar.com.";
 
+  const allowNotifications = useCallback(() => {
+    void notificationActions.enable("palette");
+  }, []);
+
+  useNoticeActionShortcut(
+    NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY,
+    allowNotifications,
+    { enabled: kind === "permission" },
+  );
+
   return (
     <section
       aria-label="Event notifications blocked"
@@ -23,13 +39,12 @@ export function NotificationPermissionBanner({
       <div className="flex shrink-0 gap-2">
         {kind === "permission" ? (
           <button
-            className="c-focus-ring rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
-            onClick={() => {
-              void notificationActions.enable("palette");
-            }}
+            className="c-focus-ring inline-flex shrink-0 items-center gap-2 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
+            onClick={allowNotifications}
             type="button"
           >
             Allow notifications
+            <ShortcutKeys keys={NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY} />
           </button>
         ) : null}
         <button
