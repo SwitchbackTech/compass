@@ -49,6 +49,7 @@ final class NativeImageSnapshotTests: XCTestCase {
             birth.click()
             birth.typeKey("a", modifierFlags: [.command])
             birth.typeText("2100-01-01")
+            XCTAssertEqual(birth.value as? String, "2100-01-01")
             birth.typeKey(.return, modifierFlags: [])
             XCTAssertTrue(window.staticTexts["Enter a date from 1900 through today."].exists)
             birth.typeKey("a", modifierFlags: [.command])

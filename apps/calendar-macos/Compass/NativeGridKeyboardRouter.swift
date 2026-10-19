@@ -206,6 +206,14 @@ final class NativeGridKeyboardRouter {
             }
             return false
         }
+        if editingText, model.viewStore.view == .life, !model.overlayKeyboardCaptureActive {
+            if let key = KeyEvent(nsEvent: event),
+                key.matches(KeyChord(modifiers: [.command], token: .character("k"))) {
+                model.toggleCommandPalette()
+                return true
+            }
+            return false
+        }
         if editingText, event.modifierFlags.contains(.command),
             event.charactersIgnoringModifiers?.lowercased() == "z" {
             return false

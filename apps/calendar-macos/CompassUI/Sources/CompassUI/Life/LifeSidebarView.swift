@@ -42,6 +42,10 @@ struct LifeSidebarView: View {
               .padding(.vertical, 8).frame(width: 176)
               .background(theme.surfaceColor).foregroundStyle(theme.textColor)
               .clipShape(RoundedRectangle(cornerRadius: 4))
+            if invalidBirthDate {
+              Text("Enter a date from 1900 through today.")
+                .font(.rubik(11)).foregroundStyle(theme.textColor)
+            }
           }
           VStack(spacing: 4) {
             HStack(spacing: 4) {
@@ -70,6 +74,10 @@ struct LifeSidebarView: View {
       .font(.rubik(14))
       .foregroundStyle(theme.textMutedColor)
       .padding(20)
+    }
+    .onKeyPress(.escape) {
+      focusedField = nil
+      return .handled
     }
     .onAppear { refreshInputs() }
     .onChange(of: model.lifeStore.preferences) { _, _ in refreshInputs() }
