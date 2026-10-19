@@ -114,6 +114,13 @@ function signaturesMatch(expected: string, provided: string): boolean {
   return timingSafeEqual(Buffer.from(expected), Buffer.from(provided));
 }
 
+/** Decode the payload without verifying the signature (analytics only). */
+export function peekOAuthStatePayload(token: string): OAuthStatePayload | null {
+  const dot = token.indexOf(".");
+  if (dot <= 0 || dot === token.length - 1) return null;
+  return decodePayload(token.slice(0, dot));
+}
+
 function encodePayload(payload: OAuthStatePayload): string {
   const json = JSON.stringify({
     t: payload.tenantId,

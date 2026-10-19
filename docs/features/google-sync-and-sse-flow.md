@@ -233,11 +233,13 @@ stream for that user closes, polling stops until another stream opens.
 Every Google or Microsoft calendar connect round-trip emits two PostHog events
 that share a short `correlationId` (`cid` on the redirect URL):
 
-1. Sync's public OAuth callback captures `oauth_callback` (distinct id
-   `compass-sync`) with `provider`, `outcome` (the redirect status), `intent`
-   (`connect` or `reconnect`, recovered from whether the signed state named a
-   connection), and `errorClass` (the Error class name, never the message)
-   when the outcome is `error`.
+1. Sync's public OAuth callback captures `oauth_callback` with the Compass user
+   id from signed OAuth state as the PostHog distinct id, plus `provider`,
+   `outcome` (the redirect status), `intent` (`connect` or `reconnect`,
+   recovered from whether the signed state named a connection), `reason` and
+   optional sanitized `provider_error` on failures, and `errorClass` (the Error
+   class name, never the message) when the outcome is `error`. Callbacks with
+   no recoverable user id skip server-side capture.
 2. The web app's `applyConnectRedirect` captures `oauth_return` with
    `provider`, `status`, `intent`, and the same `correlationId` for every
    parsed redirect, including `connected`. Existing `calendar_connected` and

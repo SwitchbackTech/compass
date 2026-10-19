@@ -6,6 +6,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import {
   type OAuthStatePayload,
+  peekOAuthStatePayload,
   signOAuthState,
   verifyOAuthState,
 } from "@sync/oauth/oauth-state";
@@ -34,6 +35,12 @@ describe("oauth-state", () => {
     const result = verifyOAuthState(SECRET, token, original.issuedAt);
 
     expect(result).toEqual({ ok: true, payload: original });
+  });
+
+  it("peeks at a payload without verifying the signature", () => {
+    const original = payload();
+    const token = signOAuthState(SECRET, original);
+    expect(peekOAuthStatePayload(token)).toEqual(original);
   });
 
   it("round-trips a reconnect payload carrying a connection id", () => {

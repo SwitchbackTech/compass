@@ -1190,7 +1190,7 @@ describe("GET /sync/google", () => {
 
     const captured = oauthCallbackOf(posthog.events);
     expect(captured).toHaveLength(1);
-    expect(captured[0]!.distinctId).toBe("compass-sync");
+    expect(captured[0]!.distinctId).toBe(principalId);
     expect(captured[0]!.properties).toEqual(
       expect.objectContaining({
         provider: "google",
@@ -1238,14 +1238,20 @@ describe("GET /sync/google", () => {
   });
 
   it("captures oauth_callback declined when the user rejects consent", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
     const posthog = capturingPosthog();
     await startService(activeConfig(), adapter, undefined, posthog.client);
 
-    await hitCallback("error=access_denied");
+    await hitCallback(
+      `error=access_denied&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
 
     const captured = oauthCallbackOf(posthog.events);
     expect(captured).toHaveLength(1);
+    expect(captured[0]!.distinctId).toBe(principalId);
     expect(captured[0]!.properties["outcome"]).toBe("declined");
+    expect(captured[0]!.properties["reason"]).toBe("access_denied");
   });
 
   it("captures oauth_callback missingScopes when calendar access was withheld", async () => {
@@ -1322,6 +1328,8 @@ describe("GET /sync/google", () => {
   });
 
   it("captures oauth_callback consentRequired for a Microsoft admin-consent error", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
     const posthog = capturingPosthog();
     await startService(
       activeConfig(),
@@ -1330,14 +1338,24 @@ describe("GET /sync/google", () => {
       posthog.client,
     );
 
-    await fetch(`${base}/sync/microsoft?error=consent_required`, {
-      redirect: "manual",
+    const state = signOAuthState(deriveOAuthStateSecret(SECRET), {
+      tenantId,
+      principalId,
+      connectionId: null,
+      provider: "microsoft",
+      issuedAt: Date.now(),
     });
+    await fetch(
+      `${base}/sync/microsoft?error=consent_required&state=${encodeURIComponent(state)}`,
+      { redirect: "manual" },
+    );
 
     const captured = oauthCallbackOf(posthog.events);
     expect(captured).toHaveLength(1);
+    expect(captured[0]!.distinctId).toBe(principalId);
     expect(captured[0]!.properties["outcome"]).toBe("consentRequired");
     expect(captured[0]!.properties["provider"]).toBe("microsoft");
+    expect(captured[0]!.properties["reason"]).toBe("other");
   });
 
   it("captures oauth_callback error with the class name and no message text", async () => {
@@ -1356,7 +1374,10 @@ describe("GET /sync/google", () => {
 
     const captured = oauthCallbackOf(posthog.events);
     expect(captured).toHaveLength(1);
+    expect(captured[0]!.distinctId).toBe(principalId);
     expect(captured[0]!.properties["outcome"]).toBe("error");
+    expect(captured[0]!.properties["reason"]).toBe("token_exchange_error");
+    expect(captured[0]!.properties["provider_error"]).toBe("exchangeFailed");
     expect(captured[0]!.properties["errorClass"]).toBe("ProviderAuthError");
     expect(captured[0]!.properties).not.toHaveProperty("message");
     expect(JSON.stringify(captured[0]!.properties)).not.toContain(
