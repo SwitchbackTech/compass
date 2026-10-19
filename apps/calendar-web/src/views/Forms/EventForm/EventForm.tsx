@@ -82,7 +82,7 @@ import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/Calend
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
-import { useOpenDatePickerSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenDatePickerSide";
+import { useOpenSide } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/useOpenSide";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
@@ -370,7 +370,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     /********
      * State
      ********/
-    const datePickers = useOpenDatePickerSide();
+    const datePickers = useOpenSide();
 
     const setLatestDraft = useCallback(
       (nextDraft: SetStateAction<GridEventDraft | null>) => {

@@ -268,7 +268,7 @@ public final class TimeGridView: NSView {
 
         let marginLeft = snapshot.metrics.marginLeft
         let hourHeight = snapshot.metrics.hourHeight
-        let gridHeight = hourHeight * Double(GridTimeConstants.timedDayHours)
+        let gridHeight = hourHeight * state.civilDayHours
         let allDayHeight = snapshot.metrics.allDayRowHeight
         let headerHeight = GridTimeConstants.dayHeaderRowHeight
         let pinnedHeight = GridTimeConstants.timedContentDocumentYOffset(allDayRowHeight: allDayHeight)
@@ -309,35 +309,32 @@ public final class TimeGridView: NSView {
         hourGutterView.subviews.forEach { $0.removeFromSuperview() }
         let palette = themePalette
         hourGutterView.layer?.backgroundColor = palette.background.cgColor
-        let margin = snapshot.metrics.marginLeft
         let columnWidth = GridMetrics.gridTimeColumnWidth
 
         if state.hasSecondaryTimeZone, let travelZone = state.timeTravelTimeZone {
             let mapped = MappedHourLabels.labels(
                 effectiveTimeZone: state.effectiveTimeZone,
                 displayTimeZone: travelZone,
-                at: state.referenceNow)
+                at: state.hourLabelDate)
             renderHourColumn(
                 labels: mapped,
                 xOffset: 0,
                 width: columnWidth,
                 hourHeight: hourHeight,
-                palette: palette,
-                marginWidth: margin)
+                palette: palette)
         }
 
         let primaryLabels = MappedHourLabels.labels(
             effectiveTimeZone: state.effectiveTimeZone,
             displayTimeZone: state.effectiveTimeZone,
-            at: state.referenceNow)
+            at: state.hourLabelDate)
         let primaryX = state.hasSecondaryTimeZone ? columnWidth : 0
         renderHourColumn(
             labels: primaryLabels,
             xOffset: primaryX,
             width: columnWidth,
             hourHeight: hourHeight,
-            palette: palette,
-            marginWidth: margin)
+            palette: palette)
     }
 
     private func renderHourColumn(
@@ -345,29 +342,20 @@ public final class TimeGridView: NSView {
         xOffset: Double,
         width: Double,
         hourHeight: Double,
-        palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
-        marginWidth: Double
+        palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor)
     ) {
-        for hour in 0 ..< GridTimeConstants.timedDayHours {
+        for hour in 0 ..< Int(ceil(state.civilDayHours)) {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
-            label.font = CompassFont.nsFont(size: 11)
+            label.font = CompassFont.nsFont(size: 10)
             label.textColor = palette.textMuted
-            label.alignment = .right
+            label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,
                 y: Double(hour) * hourHeight + 2,
                 width: width - 8,
                 height: 14)
             hourGutterView.addSubview(label)
-
-            if hour > 0 {
-                let line = NSView(
-                    frame: NSRect(x: xOffset, y: Double(hour) * hourHeight, width: marginWidth, height: 1))
-                line.wantsLayer = true
-                line.layer?.backgroundColor = palette.border.withAlphaComponent(0.35).cgColor
-                hourGutterView.addSubview(line)
-            }
         }
     }
 
@@ -491,7 +479,7 @@ public final class TimeGridView: NSView {
                 frame: NSRect(x: column.left, y: 0, width: 1, height: allDayHeight + headerHeight)
             )
             divider.wantsLayer = true
-            divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.5).cgColor
+            divider.layer?.backgroundColor = palette.border.cgColor
             addGridBackground(divider, to: allDayRowView)
         }
     }
@@ -513,15 +501,11 @@ public final class TimeGridView: NSView {
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
 
         for column in snapshot.columns {
-            // Web `TimedGrid`: past day columns sit on the surface tone so today
-            // and the days ahead read brighter; today carries the focused-day
-            // tint web shows before any keyboard navigation.
-            if state.layoutMode == .week, column.key <= todayKey {
+            // Web `TimedGrid`: only past days receive the surface tone.
+            if state.layoutMode == .week, column.key < todayKey {
                 let tint = NSView(frame: NSRect(x: column.left, y: 0, width: column.width, height: gridHeight))
                 tint.wantsLayer = true
-                tint.layer?.backgroundColor = column.key == todayKey
-                    ? themeAccentColor.withAlphaComponent(0.1).cgColor
-                    : palette.surface.cgColor
+                tint.layer?.backgroundColor = palette.surface.cgColor
                 addGridBackground(tint, to: timedContentView)
             }
             if state.layoutMode == .day,
@@ -536,11 +520,11 @@ public final class TimeGridView: NSView {
             }
             let divider = NSView(frame: NSRect(x: column.left, y: 0, width: 1, height: gridHeight))
             divider.wantsLayer = true
-            divider.layer?.backgroundColor = palette.border.withAlphaComponent(0.35).cgColor
+            divider.layer?.backgroundColor = palette.border.cgColor
             addGridBackground(divider, to: timedContentView)
         }
 
-        for hour in 1 ..< GridTimeConstants.timedDayHours {
+        for hour in 1 ..< Int(ceil(state.civilDayHours)) {
             let line = NSView(
                 frame: NSRect(
                     x: snapshot.metrics.marginLeft,
@@ -550,7 +534,7 @@ public final class TimeGridView: NSView {
                 )
             )
             line.wantsLayer = true
-            line.layer?.backgroundColor = palette.border.withAlphaComponent(0.25).cgColor
+            line.layer?.backgroundColor = palette.border.cgColor
             addGridBackground(line, to: timedContentView)
         }
     }
@@ -569,7 +553,8 @@ public final class TimeGridView: NSView {
                 card: card,
                 theme: theme,
                 isFocused: isFocused,
-                isSidebarEditing: isSidebarEditing
+                isSidebarEditing: isSidebarEditing,
+                timeLabel: EventCardTimeLabel.text(for: card, state: state)
             )
             view.cardDelegate = self
             view.layoutSubtreeIfNeeded()
@@ -658,7 +643,7 @@ public final class TimeGridView: NSView {
         let columnWidth = GridMetrics.gridTimeColumnWidth
         var x = 0.0
         if state.hasSecondaryTimeZone, let travelZone = state.timeTravelTimeZone {
-            let abbrev = TimeZoneFormatting.abbreviation(for: travelZone, at: state.referenceNow)
+            let abbrev = TimeZoneFormatting.abbreviation(for: travelZone, at: state.hourLabelDate)
             addTimezoneButton(
                 title: abbrev,
                 x: x,
@@ -670,7 +655,7 @@ public final class TimeGridView: NSView {
         }
         let effectiveAbbrev = TimeZoneFormatting.abbreviation(
             for: state.effectiveTimeZone,
-            at: state.referenceNow)
+            at: state.hourLabelDate)
         addTimezoneButton(
             title: effectiveAbbrev,
             x: x,
