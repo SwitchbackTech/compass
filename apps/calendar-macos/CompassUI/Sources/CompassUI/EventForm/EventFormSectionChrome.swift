@@ -1,3 +1,4 @@
+import CompassKit
 import SwiftUI
 
 struct EventFormSectionChrome: ViewModifier {
