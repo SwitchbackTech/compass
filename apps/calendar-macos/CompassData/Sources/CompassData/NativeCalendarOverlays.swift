@@ -344,17 +344,26 @@ public final class NoOpShortcutsCatalogPresenter: ShortcutsCatalogPresenting {
 
 enum CommandPaletteSearch {
     static func filter(sections: [CommandPaletteSection], query: String) -> [CommandPaletteSection] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !needle.isEmpty else { return sections }
-        return sections.compactMap { section in
-            if section.id == "go-to-date" { return section }
-            let items = section.items.filter { item in
-                item.label.lowercased().contains(needle)
-                    || item.keywords.contains { $0.lowercased().contains(needle) }
-                    || (item.shortcut?.lowercased().contains(needle) ?? false)
-            }
-            guard !items.isEmpty else { return nil }
-            return CommandPaletteSection(id: section.id, heading: section.heading, items: items)
+        let mapped = sections.map { section in
+            CommandPaletteSearchLogic.Section(
+                id: section.id,
+                heading: section.heading,
+                items: section.items.map {
+                    CommandPaletteSearchLogic.CommandPaletteSearchItem(
+                        id: $0.id,
+                        label: $0.label,
+                        keywords: $0.keywords + ($0.shortcut.map { [$0] } ?? []))
+                })
+        }
+        let filtered = CommandPaletteSearchLogic.filter(sections: mapped, query: query)
+        let byId = Dictionary(uniqueKeysWithValues: sections.flatMap { section in
+            section.items.map { ($0.id, $0) }
+        })
+        return filtered.map { section in
+            CommandPaletteSection(
+                id: section.id,
+                heading: section.heading,
+                items: section.items.compactMap { byId[$0.id] })
         }
     }
 }

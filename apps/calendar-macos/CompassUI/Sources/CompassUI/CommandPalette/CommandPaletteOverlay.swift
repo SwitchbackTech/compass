@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 public struct CommandPaletteOverlay: View {
@@ -19,6 +20,7 @@ public struct CommandPaletteOverlay: View {
         if paletteStore.isOpen {
             let sections = model.filteredPaletteSections()
             let selectedId = model.selectedPaletteItemId
+            let query = paletteStore.query
             ZStack {
                 theme.overlayBackdropColor
                     .ignoresSafeArea()
@@ -39,7 +41,7 @@ public struct CommandPaletteOverlay: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 8) {
                                 if sections.isEmpty {
-                                    Text("No results for “\(paletteStore.query)”")
+                                    Text("No results for “\(query)”")
                                         .foregroundStyle(theme.textMutedColor)
                                         .padding(12)
                                 }
@@ -50,7 +52,7 @@ public struct CommandPaletteOverlay: View {
                                             .foregroundStyle(theme.textMutedColor)
                                     }
                                     ForEach(section.items) { item in
-                                        paletteRow(item, selected: item.id == selectedId)
+                                        paletteRow(item, query: query, selected: item.id == selectedId)
                                             .id(item.id)
                                     }
                                 }
@@ -86,6 +88,7 @@ public struct CommandPaletteOverlay: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(theme.borderColor, lineWidth: 1)
                 )
+                .shadow(color: theme.shadowDefaultColor, radius: 16, x: 0, y: 8)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-native-command-palette")
             }
@@ -94,15 +97,13 @@ public struct CommandPaletteOverlay: View {
     }
 
     @ViewBuilder
-    private func paletteRow(_ item: CommandPaletteItem, selected: Bool) -> some View {
+    private func paletteRow(_ item: CommandPaletteItem, query: String, selected: Bool) -> some View {
         Button {
             model.runPaletteCommand(id: item.id)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.label)
-                        .font(.rubik(14))
-                        .foregroundStyle(theme.textColor)
+                    CommandPaletteHighlightedLabel(label: item.label, query: query)
                     if let subtitle = item.subtitle {
                         Text(subtitle)
                             .font(.rubik(11))
@@ -111,19 +112,42 @@ public struct CommandPaletteOverlay: View {
                 }
                 Spacer()
                 if let shortcut = item.shortcut {
-                    Text(shortcut)
-                        .font(.rubik(12))
+                    Text(paletteShortcutLabel(shortcut))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(selected ? theme.accentColor.opacity(0.18) : theme.surfaceColor)
+            .background(selected ? theme.accentColor.opacity(0.12) : theme.surfaceColor)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(theme.accentColor, lineWidth: 1)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
+    }
+
+    private func paletteShortcutLabel(_ shortcut: String) -> String {
+        let normalized = shortcut
+            .replacingOccurrences(of: "mod+", with: "Mod+")
+            .replacingOccurrences(of: "shift+", with: "Shift+")
+            .replacingOccurrences(of: "alt+", with: "Alt+")
+        let parts = normalized.split(separator: "+").map { part -> String in
+            let token = String(part)
+            switch token.lowercased() {
+            case "mod": return "Mod"
+            case "shift": return "Shift"
+            case "alt": return "Alt"
+            default: return token.count == 1 ? token.uppercased() : token
+            }
+        }
+        return KeycapGlyphs.display(parts)
     }
 }
