@@ -172,7 +172,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Navigation / create / events / recent | ✅ | |
 | Fuzzy search + highlight | ❌ | Web `HighlightedLabel` + `filterSections` |
 | Row icons (Phosphor) | ❌ | Plain text rows |
-| Keycaps (`ShortcutKeys`) | 🟡 | Plain shortcut strings, not `KeycapGlyphs` chips |
+| Keycaps (`ShortcutKeys`) | 🟡 | Row shortcuts use `KeycapGlyphs`; Phosphor row icons still missing |
 | Selected row ring inset | ✅ | Accent inset ring + lighter fill (web `ring-inset`) |
 | **Missing rows** vs web | 🟡 | Undo/redo wired in catalog; still missing theme, notifications, booking, feedback, shortcut-tip rows vs web `CommandPalette.tsx` |
 | Footer hint | ✅ | Keycap chips for navigate / select / close |
