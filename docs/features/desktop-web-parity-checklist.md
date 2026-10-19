@@ -328,7 +328,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 
 Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
 
-| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39327804343, #4607 logistics) |
+| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39331068008 on `main` post-#4607) |
 | --- | --- | --- | --- | --- |
 | Week grid | ✅ | ✅ | 🟡 | Capture uses macOS day view vs web week; demo events only on web shot; sidebar lacks web “Hold Mod jump targets” tip line |
 | Mini-calendar | ✅ | ✅ | 🟡 | Selected-day ring OK; web shows selected-week wash + denser header type |
