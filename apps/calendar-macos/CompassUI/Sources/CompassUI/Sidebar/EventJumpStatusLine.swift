@@ -15,6 +15,8 @@ struct EventJumpStatusLine: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .accessibilityIdentifier("compass-native-event-jump-status")
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .animation(.easeInOut(duration: 0.2), value: text)
         }
     }
 }

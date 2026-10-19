@@ -5,27 +5,57 @@ extension NativeCalendarRootModel {
     public var eventJumpSelection: EventJumpSelectionStore { overlayStores.eventJumpSelection }
 
     public var eventJumpStatusText: String? {
-        if let announcement = eventJumpSelection.announcement, eventJumpSelection.isActive {
+        guard eventJumpSelection.isActive else { return nil }
+        if eventJumpSelection.dayJumpBuffer == "s", eventJumpSelection.activeDayKeys.isEmpty {
+            return "Shift+U Sunday · Shift+A Saturday · Esc"
+        }
+        if let announcement = eventJumpSelection.announcement {
             if eventJumpSelection.activeDayKeys.isEmpty {
-                return "Event jump · Esc"
+                return "Event jump · \(announcement) · Esc"
             }
             return "Jump · \(announcement) · C timed · Shift+C all-day · Esc"
         }
-        return nil
+        return "Event jump · Esc"
     }
 
     public func handleShiftDayJump(letter: Character) {
         guard viewStore.view == .week || viewStore.view == .day else { return }
-        guard let prefix = DayJumpPrefixes.dayPrefix(forShiftedLetter: letter), prefix != "s" else { return }
+        let lower = String(letter).lowercased()
 
+        if eventJumpSelection.dayJumpBuffer == "s" {
+            if lower == "u" {
+                selectJumpDay(prefix: "su")
+                return
+            }
+            if lower == "a" {
+                selectJumpDay(prefix: "sa")
+                return
+            }
+        }
+
+        if lower == "s" {
+            eventJumpSelection.setWeekendDisambiguation(announcement: "Weekend")
+            recordShortcut(.focusWeekDay)
+            applyFocusPresentation()
+            return
+        }
+
+        guard let prefix = DayJumpPrefixes.dayPrefix(forShiftedLetter: letter), prefix != "s" else { return }
+        selectJumpDay(prefix: prefix)
+    }
+
+    private func selectJumpDay(prefix: String) {
         let calendar = EffectiveTimeZone.calendar
         for dayKey in visibleDateKeysForJump() {
             guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { continue }
             let weekday = calendar.component(.weekday, from: date) - 1
             guard DayJumpPrefixes.prefix(forWeekday: weekday) == prefix else { continue }
+            let name = DayJumpPrefixes.displayName(forPrefix: prefix)
             eventJumpSelection.selectDay(
                 key: dayKey,
-                announcement: "\(DayJumpPrefixes.displayName(forPrefix: prefix)) selected")
+                announcement: "\(name) selected",
+                buffer: prefix
+            )
             recordShortcut(.focusWeekDay)
             if let first = loadedEvents.first(where: { event in
                 eventJumpDayKey(for: event) == dayKey
