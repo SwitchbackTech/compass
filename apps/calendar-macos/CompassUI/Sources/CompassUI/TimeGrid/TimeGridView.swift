@@ -31,6 +31,7 @@ public final class TimeGridView: NSView {
     private let hourGutterView = FlippedView()
     private let headerRowView = FlippedView()
     private let nowLineView = NSView()
+    private let nowLineGradientLayer = CAGradientLayer()
 
     private var cardPool: [String: EventCardView] = [:]
     private let focusedEventAccessibilityProxy = FocusedGridEventAccessibilityProxy(frame: .zero)
@@ -197,7 +198,7 @@ public final class TimeGridView: NSView {
         let pulse = CABasicAnimation(keyPath: keyPath)
         pulse.fromValue = from
         pulse.toValue = to
-        pulse.duration = 0.35
+        pulse.duration = 0.7
         pulse.autoreverses = true
         pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         return pulse
@@ -630,9 +631,22 @@ public final class TimeGridView: NSView {
         // Re-added each pass so it stays above cards and grid lines.
         nowLineView.removeFromSuperview()
         timedContentView.addSubview(nowLineView)
-        nowLineView.layer?.backgroundColor = themeAccentColor.cgColor
         nowLineView.isHidden = false
-        nowLineView.frame = NSRect(x: column.left, y: nowLine.top, width: column.width, height: 2)
+        let lineSize = NSSize(width: column.width, height: 2)
+        nowLineView.frame = NSRect(x: column.left, y: nowLine.top, width: lineSize.width, height: lineSize.height)
+        nowLineView.layer?.backgroundColor = nil
+        nowLineView.layer?.borderWidth = 1
+        nowLineView.layer?.borderColor = themeBackgroundColor.cgColor
+        nowLineGradientLayer.colors = [
+            themeAccentColor.cgColor,
+            themeAccentStrongColor.cgColor,
+        ]
+        nowLineGradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+        nowLineGradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+        nowLineGradientLayer.frame = CGRect(origin: .zero, size: lineSize)
+        if nowLineGradientLayer.superlayer == nil {
+            nowLineView.layer?.addSublayer(nowLineGradientLayer)
+        }
     }
 
     private func renderTimezoneHeader(
@@ -719,6 +733,24 @@ public final class TimeGridView: NSView {
             ThemeTokens.lightBeach.accent.nsColor
         case .darkAbyss:
             ThemeTokens.darkAbyss.accent.nsColor
+        }
+    }
+
+    private var themeAccentStrongColor: NSColor {
+        switch theme {
+        case .lightBeach:
+            ThemeTokens.lightBeach.accentStrong.nsColor
+        case .darkAbyss:
+            ThemeTokens.darkAbyss.accentStrong.nsColor
+        }
+    }
+
+    private var themeBackgroundColor: NSColor {
+        switch theme {
+        case .lightBeach:
+            ThemeTokens.lightBeach.background.nsColor
+        case .darkAbyss:
+            ThemeTokens.darkAbyss.background.nsColor
         }
     }
 

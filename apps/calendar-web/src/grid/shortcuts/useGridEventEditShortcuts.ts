@@ -34,7 +34,6 @@ import {
   nudgeEventFromKeyboard,
 } from "@web/common/utils/event/event-nudge-shortcut.util";
 import {
-  isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
 } from "@web/common/utils/form/form.util";
@@ -318,7 +317,7 @@ export function useGridEventEditShortcuts({
 
   const deleteFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (
-      isDeleteTextEditingTarget(keyboardEvent) ||
+      isEditableKeyboardTarget(keyboardEvent) ||
       isEventFormKeyboardTarget(keyboardEvent)
     ) {
       return;
