@@ -19,7 +19,7 @@ public struct RootView: View {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
                     header
-                    if model.showsDemoEventsBanner {
+                    if model.viewStore.view != .life, model.showsDemoEventsBanner {
                         DemoEventsBannerView {
                             model.dismissDemoEventsBanner()
                         }
@@ -58,6 +58,7 @@ public struct RootView: View {
                     }
                     .noticeFocusRing(model.focusedNotice == .updateReady)
                 }
+                if model.viewStore.view != .life {
                 UpNextBanner(
                     model: model,
                     onOpen: { model.openUpNextEvent() },
@@ -65,6 +66,7 @@ public struct RootView: View {
                     onBannerShown: { event in
                         model.upNextBannerShown(event)
                     })
+                }
             }
             .padding(.bottom, 24)
         }
@@ -180,6 +182,8 @@ public struct RootView: View {
         VStack(alignment: .leading, spacing: 0) {
             if model.isEventFormVisible {
                 EventFormView(model: model)
+            } else if model.viewStore.view == .life {
+                LifeSidebarView(model: model)
             } else {
                 sidebarBody
             }
@@ -228,7 +232,7 @@ public struct RootView: View {
             CalendarListView(model: model)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.top, 20)
         .padding(.bottom, 20)
     }

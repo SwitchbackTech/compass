@@ -16,6 +16,8 @@ struct LifeContentView: View {
             snapshot: snapshot,
             currentWeekLabel: model.lifeStore.currentWeekLabel,
             scrollToCurrentWeekToken: model.lifeStore.scrollToCurrentWeekToken)
+            .padding(.trailing, 20)
+            .padding(.bottom, 24)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.backgroundColor)
             .accessibilityIdentifier("compass-native-content")
