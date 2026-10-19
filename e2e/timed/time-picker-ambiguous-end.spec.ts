@@ -6,7 +6,7 @@ import {
 
 test("typed 1145 on the end field resolves to 11:45 AM after an 11:30 AM start", async ({
   page,
-}) => {
+}, testInfo) => {
   // Start-field parsing picks the meridiem nearest the draft default (wall
   // clock). Pin before navigation so "11:30" stays AM regardless of CI hour.
   await prepareTimedCalendarPage(page);
@@ -29,6 +29,6 @@ test("typed 1145 on the end field resolves to 11:45 AM after an 11:30 AM start",
   await expect(page.locator("#endTimePicker")).not.toContainText("11:45 PM");
 
   await page.locator("#endTimePicker").screenshot({
-    path: "/opt/cursor/artifacts/time-picker-1145-fixed.png",
+    path: testInfo.outputPath("time-picker-1145-fixed.png"),
   });
 });

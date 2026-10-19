@@ -140,7 +140,7 @@ test("keeps billing receipts aligned and plan actions on one row", async ({
   });
 
   await page.keyboard.press("Escape");
-  await page.keyboard.press("Control+Comma");
+  await page.keyboard.press("ControlOrMeta+Comma");
 
   const settings = page.getByRole("dialog", { name: "Settings" });
   await expect(settings).toBeVisible({ timeout: 10000 });

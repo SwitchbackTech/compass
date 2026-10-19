@@ -6,7 +6,7 @@ test.use({ viewport: { width: 1600, height: 900 } });
 
 test("shows a Google connect prompt after three anonymous writes and dismisses permanently", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.route("**/api/config", async (route) => {
     await route.fulfill({
       status: 200,
@@ -45,7 +45,7 @@ test("shows a Google connect prompt after three anonymous writes and dismisses p
     "Connect Google to sync your events and start your free trial.",
   );
   await page.screenshot({
-    path: "/opt/cursor/artifacts/local-mode-connect-prompt-demo.png",
+    path: testInfo.outputPath("local-mode-connect-prompt-demo.png"),
   });
 
   await prompt.getByRole("button", { name: "Dismiss" }).click();

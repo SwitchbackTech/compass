@@ -16,9 +16,7 @@ const addDays = (date: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-test("Shift+ArrowRight at the week edge carries the event into the next window", async ({
-  page,
-}) => {
+test("Shift+ArrowRight at the week edge carries the event into the next window", async ({ page }) => {
   await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Carry Across");
@@ -65,9 +63,7 @@ test("Shift+ArrowRight at the week edge carries the event into the next window",
   await expect(eventButton).toBeFocused();
 });
 
-test("Alt+Shift+ArrowRight carries the event a week into the next window", async ({
-  page,
-}) => {
+test("Alt+Shift+ArrowRight carries the event a week into the next window", async ({ page }) => {
   await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Coarse Carry");
@@ -118,9 +114,7 @@ test("m opens the focused event's menu without a mouse", async ({ page }) => {
   await expect(menu).toHaveCount(0);
 });
 
-test("ArrowDown opens the event-form date picker without a mouse", async ({
-  page,
-}) => {
+test("ArrowDown opens the event-form date picker without a mouse", async ({ page }) => {
   await prepareTimedCalendarPage(page);
   await openAllDayEventFormWithKeyboard(page);
 
@@ -138,7 +132,7 @@ test("ArrowDown opens the event-form date picker without a mouse", async ({
 
 test("Enter and Space open the timed event-form date picker without a mouse", async ({
   page,
-}) => {
+}, testInfo) => {
   await prepareTimedCalendarPage(page);
   await openTimedEventFormWithKeyboard(page);
 
@@ -157,14 +151,12 @@ test("Enter and Space open the timed event-form date picker without a mouse", as
   await expect(calendar).toBeVisible();
 
   await page.screenshot({
-    path: "/opt/cursor/artifacts/event-form-date-keyboard-open.png",
+    path: testInfo.outputPath("event-form-date-keyboard-open.png"),
     fullPage: true,
   });
 });
 
-test("typed date moves a timed event while keeping its duration", async ({
-  page,
-}) => {
+test("typed date moves a timed event while keeping its duration", async ({ page }) => {
   await prepareTimedCalendarPage(page);
 
   const visibleDays = await getVisibleDayDates(page);
