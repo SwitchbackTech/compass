@@ -1,4 +1,5 @@
 import AppKit
+import CompassData
 import CompassKit
 import CompassUI
 
