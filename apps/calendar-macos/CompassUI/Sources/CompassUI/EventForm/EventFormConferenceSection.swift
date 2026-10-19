@@ -20,16 +20,9 @@ struct EventFormConferenceSection: View {
             ) {
                 Text("Add \(CalendarCapabilities.conferenceKindLabel(kind))")
                     .font(.rubik(13))
-                    .foregroundStyle(theme.textColor)
+                    .foregroundStyle(theme.textMutedColor)
             }
             .toggleStyle(.switch)
-            .padding(12)
-            .background(theme.surfacePanelColor)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(focusField == .conference ? theme.accentColor : theme.borderColor, lineWidth: 1)
-            )
             .accessibilityIdentifier("compass-event-form-conference")
             .pageJumpChipAnchor(id: "form-conference")
         }

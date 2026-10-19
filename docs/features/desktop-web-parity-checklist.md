@@ -306,6 +306,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 3. **Command palette** — missing commands, fuzzy highlight, keycap chips, row chrome.
 4. **Grid** — now line gradient/rim, now-cue timing/shimmer, all-day tip strip.
 5. **Keyboard gaps** — `focus-event` (U), Shift+M week-day focus, palette undo/redo.
+6. **Event form logistics card** — match web #4599: one FormCard for Location, Add Google Meet, Add guests; Description in the following FormCard (not nested mini-panels).
 
 Each PR should link a child issue, include before/after screenshots (web Chromium + macOS snapshot or manual), label `agent-automerge`, and pass macOS workflow on GitHub runners.
 
@@ -318,6 +319,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | Initial audit checklist for #4331 dogfood gate |
 | 2026-10-19 | §7 visual evidence table (web CI captures; macOS/compare pending runner) |
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
+| 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 
 ---
 

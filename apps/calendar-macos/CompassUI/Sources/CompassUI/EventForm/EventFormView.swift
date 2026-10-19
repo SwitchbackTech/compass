@@ -103,28 +103,32 @@ public struct EventFormView: View {
                                 .id(EventFormField.attendees)
                             }
                         }
+                        .overlay {
+                            if isLogisticsFieldFocused(model.eventFormFocusedField) {
+                                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                                    .stroke(theme.accentColor, lineWidth: 1)
+                            }
+                        }
                         .id(EventFormField.location)
-                        DescriptionEditorView(
-                            html: Binding(
-                                get: { draft.description },
-                                set: { model.updateDraftFromForm(description: $0) }
-                            ),
-                            resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
-                            isFocused: model.eventFormFocusedField == .description,
-                            isEditable: !isReadOnly,
-                            onLinkCopied: { model.didCopyDescriptionLink() }
-                        )
-                        .frame(minHeight: 72, maxHeight: 140)
-                        .padding(8)
-                        .background(theme.surfaceOverlayColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(
-                                    model.eventFormFocusedField == .description ? theme.accentColor : theme.borderColor,
-                                    lineWidth: 1
-                                )
-                        )
+                        EventFormCard {
+                            DescriptionEditorView(
+                                html: Binding(
+                                    get: { draft.description },
+                                    set: { model.updateDraftFromForm(description: $0) }
+                                ),
+                                resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
+                                isFocused: model.eventFormFocusedField == .description,
+                                isEditable: !isReadOnly,
+                                onLinkCopied: { model.didCopyDescriptionLink() }
+                            )
+                            .frame(minHeight: 72, maxHeight: 140)
+                        }
+                        .overlay {
+                            if model.eventFormFocusedField == .description {
+                                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                                    .stroke(theme.accentColor, lineWidth: 1)
+                            }
+                        }
                         .pageJumpChipAnchor(id: "form-description")
                         .id(EventFormField.description)
 
@@ -193,5 +197,9 @@ public struct EventFormView: View {
         .onChange(of: model.eventFormFocusedField) { _, field in
             titleFocused = field == .title
         }
+    }
+
+    private func isLogisticsFieldFocused(_ field: EventFormField) -> Bool {
+        field == .location || field == .conference || field == .attendees
     }
 }

@@ -67,7 +67,6 @@ struct EventFormLocationField: View {
                 .accessibilityLabel("Location suggestions")
             }
         }
-        .eventFormSectionChrome(focused: focusField == .location)
         .pageJumpChipAnchor(id: "form-location")
         .onChange(of: focusField) { _, field in
             fieldFocused = field == .location
