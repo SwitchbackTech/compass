@@ -16,7 +16,9 @@ const addDays = (date: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-test("Shift+ArrowRight at the week edge carries the event into the next window", async ({ page }) => {
+test("Shift+ArrowRight at the week edge carries the event into the next window", async ({
+  page,
+}) => {
   await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Carry Across");
@@ -63,7 +65,9 @@ test("Shift+ArrowRight at the week edge carries the event into the next window",
   await expect(eventButton).toBeFocused();
 });
 
-test("Alt+Shift+ArrowRight carries the event a week into the next window", async ({ page }) => {
+test("Alt+Shift+ArrowRight carries the event a week into the next window", async ({
+  page,
+}) => {
   await prepareTimedCalendarPage(page);
 
   const title = createEventTitle("Coarse Carry");
@@ -114,7 +118,9 @@ test("m opens the focused event's menu without a mouse", async ({ page }) => {
   await expect(menu).toHaveCount(0);
 });
 
-test("ArrowDown opens the event-form date picker without a mouse", async ({ page }) => {
+test("ArrowDown opens the event-form date picker without a mouse", async ({
+  page,
+}) => {
   await prepareTimedCalendarPage(page);
   await openAllDayEventFormWithKeyboard(page);
 
@@ -156,7 +162,9 @@ test("Enter and Space open the timed event-form date picker without a mouse", as
   });
 });
 
-test("typed date moves a timed event while keeping its duration", async ({ page }) => {
+test("typed date moves a timed event while keeping its duration", async ({
+  page,
+}) => {
   await prepareTimedCalendarPage(page);
 
   const visibleDays = await getVisibleDayDates(page);
@@ -196,8 +204,25 @@ test("all-day keyboard date entry keeps a valid end date", async ({ page }) => {
   await endDate.fill("10/14");
   await page.keyboard.press("Enter");
 
-  await page.getByPlaceholder("Title").fill(createEventTitle("All-day span"));
-  await page.keyboard.press("Meta+Enter");
+  const title = createEventTitle("All-day span");
+  await page.getByPlaceholder("Title").fill(title);
+  await page.keyboard.press("ControlOrMeta+Enter");
 
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("form")).toHaveCount(0);
+  // The datepicker keeps an empty announcement region mounted in the sidebar.
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveCount(
+    0,
+  );
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return (
+        event && {
+          start: event.startDate.slice(5, 10),
+          end: event.endDate.slice(5, 10),
+        }
+      );
+    })
+    // All-day storage keeps the end exclusive, through October 14.
+    .toEqual({ start: "10-12", end: "10-15" });
 });
