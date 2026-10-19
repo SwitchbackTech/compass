@@ -13,7 +13,7 @@ struct EventFormScheduleSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Toggle("All day", isOn: Binding(
                 get: { draft.schedule.kind == .allDay },
                 set: { model.setDraftAllDay($0) }
@@ -43,6 +43,8 @@ struct EventFormScheduleSection: View {
                         displayedComponents: [.hourAndMinute]
                     )
                     .labelsHidden()
+                    .controlSize(.small)
+                    .frame(minHeight: 38)
                     .disabled(scheduleLocked)
                     .accessibilityIdentifier("compass-event-form-start")
                 }
@@ -67,6 +69,8 @@ struct EventFormScheduleSection: View {
                         displayedComponents: [.hourAndMinute]
                     )
                     .labelsHidden()
+                    .controlSize(.small)
+                    .frame(minHeight: 38)
                     .disabled(scheduleLocked)
                     .accessibilityIdentifier("compass-event-form-end")
                 }

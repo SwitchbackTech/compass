@@ -18,14 +18,14 @@ struct EventFormCompactDateField: View {
     var body: some View {
         TextField("Date", text: $text)
             .textFieldStyle(.plain)
-            .font(.rubik(13))
+            .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
             .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(theme.surfacePanelColor)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .frame(minHeight: 38)
+            .background(theme.surfaceOverlayColor)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay {
-                RoundedRectangle(cornerRadius: 4)
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
                     .stroke(isFocused ? theme.accentColor : theme.borderColor, lineWidth: 1)
             }
             .focused($isFocused)

@@ -8,7 +8,7 @@ struct EventFormCard<Content: View>: View {
 
     var body: some View {
         content()
-            .padding(10)
+            .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
