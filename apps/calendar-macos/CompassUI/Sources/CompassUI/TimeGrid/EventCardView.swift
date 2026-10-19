@@ -99,17 +99,17 @@ final class EventCardView: NSView {
         syncFocusAccessibilityAnchor(isFocused: isFocused, label: card.label)
 
         let fill = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? defaultEventFill(for: theme)
-        layer?.backgroundColor = fill.withAlphaComponent(card.isHiddenStrip ? 0.6 : 0.92).cgColor
+        layer?.backgroundColor = fill.cgColor
+        layer?.opacity = card.isHiddenStrip ? 0.6 : 1
         titleField.textColor = contrastText(on: fill, theme: theme)
         timeField.textColor = titleField.textColor
-        accentLayer.backgroundColor = (
-            EventCardColorParser.nsColor(hex: card.fillColorHex) ?? accentColor(for: theme)
-        ).cgColor
+        accentLayer.backgroundColor = EventCardColorParser.nsColor(hex: card.calendarAccentColorHex)?.cgColor
+        accentLayer.isHidden = card.calendarAccentColorHex == nil
 
         if isSidebarEditing {
             focusRingLayer.borderColor = theme.textColor.cgColor
         } else {
-            focusRingLayer.borderColor = focusRingColor(fill: fill, theme: theme).cgColor
+            focusRingLayer.borderColor = focusRingColor(fill: EventCardColorParser.nsColor(hex: card.focusColorHex) ?? fill, theme: theme).cgColor
         }
         focusRingLayer.isHidden = !(isFocused || isSidebarEditing)
         // The ring sits outside the card, like the web's 2px outline with a
@@ -361,14 +361,5 @@ extension EventCardView: NSTextFieldDelegate {
     func controlTextDidChange(_ obj: Notification) {
         guard showsInlineTitleEditor, obj.object as? NSTextField === titleField else { return }
         cardDelegate?.eventCardView(self, didEditDraftTitle: titleField.stringValue, eventId: eventId)
-    }
-}
-
-private func accentColor(for theme: NativeWebTheme) -> NSColor {
-    switch theme {
-    case .lightBeach:
-        ThemeTokens.lightBeach.accent.nsColor
-    case .darkAbyss:
-        ThemeTokens.darkAbyss.accent.nsColor
     }
 }

@@ -44,7 +44,10 @@ final class QuickAddDraftIsolationUITests: XCTestCase {
     @MainActor
     func testInvalidTimeStaysOpenAndCanBeCorrected() {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += ["-COMPASS_FIXTURE", "demo", "-COMPASS_UI_TEST_STICKY_QUICK_ADD_PANEL"]
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo", "-COMPASS_APP_URL", "https://compass.invalid",
+            "-COMPASS_UI_TEST_STICKY_QUICK_ADD_PANEL",
+        ]
         app.launch()
         let panel = openPanel(app)
         let field = panel.textFields["compass-native-quick-add-field"]
@@ -65,7 +68,8 @@ final class QuickAddDraftIsolationUITests: XCTestCase {
     private func launchWithForm() -> XCUIApplication {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += [
-            "-COMPASS_FIXTURE", "demo", "-COMPASS_UI_TEST_STICKY_QUICK_ADD_PANEL",
+            "-COMPASS_FIXTURE", "demo", "-COMPASS_APP_URL", "https://compass.invalid",
+            "-COMPASS_UI_TEST_STICKY_QUICK_ADD_PANEL",
             "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
             "-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM",
         ]
