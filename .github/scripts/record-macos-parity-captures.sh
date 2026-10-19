@@ -34,7 +34,11 @@ if [ ! -d "$RESULT" ]; then
 fi
 
 RAW="$(mktemp -d)"
-trap 'rm -rf "$RAW"; cleanup_env' EXIT
+cleanup() {
+  rm -rf "$RAW"
+  launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
+}
+trap cleanup EXIT
 xcrun xcresulttool export attachments --path "$RESULT" --output-path "$RAW" >/dev/null
 
 python3 - "$RAW" "$OUT" "${SURFACES[@]}" <<'PY'
@@ -73,3 +77,5 @@ for surface, src in found.items():
 
 print(f"Parity PNGs written to {out} ({len(found)} files)")
 PY
+
+launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
