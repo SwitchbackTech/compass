@@ -90,8 +90,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         window.title = "Compass"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
-        window.toolbar = NSToolbar()
-        window.toolbarStyle = .unified
         window.minSize = NSSize(width: 720, height: 480)
         window.isReleasedWhenClosed = false
         // Window > Compass reopens it, so AppKit's own window list would repeat it.

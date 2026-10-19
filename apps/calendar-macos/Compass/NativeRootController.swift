@@ -9,7 +9,9 @@ struct ThemedRootView: View {
     @Bindable var model: NativeCalendarRootModel
 
     var body: some View {
-        RootView(model: model).environment(\.nativeWebTheme, webTheme)
+        RootView(model: model)
+            .environment(\.nativeWebTheme, webTheme)
+            .ignoresSafeArea(.container, edges: .top)
     }
 }
 

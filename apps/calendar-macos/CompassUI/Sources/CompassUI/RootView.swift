@@ -6,7 +6,6 @@ import SwiftUI
 public struct RootView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable public var model: NativeCalendarRootModel
-    @State private var titleBarLeadingInset: CGFloat = 72
     /// Web `SIDEBAR_DIVIDER_WIDTH`: the resize handle's column.
     private let sidebarDividerWidth: CGFloat = 32
     /// Web main column `pl-8`.
@@ -165,24 +164,6 @@ public struct RootView: View {
                 onConfirm: { scope in Task { await model.confirmRsvpScope(scope) } }
             )
         }
-        .background {
-            GeometryReader { geometry in
-                Color.clear
-                    .onAppear {
-                        applyTitleBarInset(geometry.safeAreaInsets.leading)
-                    }
-                    .onChange(of: geometry.safeAreaInsets.leading) { _, leading in
-                        applyTitleBarInset(leading)
-                    }
-            }
-        }
-    }
-
-    private func applyTitleBarInset(_ leading: CGFloat) {
-        let resolved = max(leading, 72)
-        if abs(resolved - titleBarLeadingInset) > 0.5 {
-            titleBarLeadingInset = resolved
-        }
     }
 
     /// Web `ResizableSidebarPanel`: drag the divider column to resize. The
@@ -313,7 +294,7 @@ public struct RootView: View {
                 }
                 ViewSwitcherView(model: model)
             }
-            .padding(.leading, titleBarLeadingInset)
+            .padding(.leading, contentLeadingInset)
 
             Spacer()
 
@@ -326,6 +307,7 @@ public struct RootView: View {
             .padding(.trailing, 20)
         }
         .frame(height: 48)
+        .padding(.top, 20)
         .frame(maxWidth: .infinity)
         .background(theme.backgroundColor)
         .overlay {
@@ -394,7 +376,7 @@ public struct RootView: View {
             Image(systemName: systemImage)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(theme.textMutedColor)
-                .frame(minWidth: 28, minHeight: 28)
+                .frame(width: 24, height: 24)
         }
         .buttonStyle(.plain)
         .help(label)
