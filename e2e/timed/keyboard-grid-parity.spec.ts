@@ -138,7 +138,7 @@ test("ArrowDown opens the event-form date picker without a mouse", async ({
 
 test("Enter and Space open the timed event-form date picker without a mouse", async ({
   page,
-}) => {
+}, testInfo) => {
   await prepareTimedCalendarPage(page);
   await openTimedEventFormWithKeyboard(page);
 
@@ -157,7 +157,7 @@ test("Enter and Space open the timed event-form date picker without a mouse", as
   await expect(calendar).toBeVisible();
 
   await page.screenshot({
-    path: "/opt/cursor/artifacts/event-form-date-keyboard-open.png",
+    path: testInfo.outputPath("event-form-date-keyboard-open.png"),
     fullPage: true,
   });
 });
@@ -204,8 +204,25 @@ test("all-day keyboard date entry keeps a valid end date", async ({ page }) => {
   await endDate.fill("10/14");
   await page.keyboard.press("Enter");
 
-  await page.getByPlaceholder("Title").fill(createEventTitle("All-day span"));
-  await page.keyboard.press("Meta+Enter");
+  const title = createEventTitle("All-day span");
+  await page.getByPlaceholder("Title").fill(title);
+  await page.keyboard.press("ControlOrMeta+Enter");
 
-  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("form")).toHaveCount(0);
+  // The datepicker keeps an empty announcement region mounted in the sidebar.
+  await expect(page.getByRole("alert").filter({ hasText: /\S/ })).toHaveCount(
+    0,
+  );
+  await expect
+    .poll(async () => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return (
+        event && {
+          start: event.startDate.slice(5, 10),
+          end: event.endDate.slice(5, 10),
+        }
+      );
+    })
+    // All-day storage keeps the end exclusive, through October 14.
+    .toEqual({ start: "10-12", end: "10-15" });
 });

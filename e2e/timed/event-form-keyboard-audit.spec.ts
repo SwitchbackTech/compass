@@ -3,9 +3,6 @@ import {
   openTimedEventFormWithKeyboard,
   prepareTimedCalendarPage,
 } from "../utils/event-test-utils";
-import path from "node:path";
-
-const ARTIFACTS = "/opt/cursor/artifacts";
 
 const getFormScrollLeft = (page: import("@playwright/test").Page) =>
   page.evaluate(() => {
@@ -20,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 
 test("keyboard tab order: title, date, start time, end time, all day", async ({
   page,
-}) => {
+}, testInfo) => {
   await openTimedEventFormWithKeyboard(page);
 
   const title = page.getByRole("form").getByPlaceholder("Title");
@@ -43,14 +40,14 @@ test("keyboard tab order: title, date, start time, end time, all day", async ({
   await expect(allDay).toBeFocused();
 
   await page.screenshot({
-    path: path.join(ARTIFACTS, "event-form-tab-order.png"),
+    path: testInfo.outputPath("event-form-tab-order.png"),
     fullPage: true,
   });
 });
 
 test("typed date formats commit on Enter and preserve clock times", async ({
   page,
-}) => {
+}, testInfo) => {
   await openTimedEventFormWithKeyboard(page);
 
   const startDate = page.locator('input[title="Pick Start Date"]');
@@ -72,14 +69,14 @@ test("typed date formats commit on Enter and preserve clock times", async ({
   await expect(startDate).toHaveValue("11.03.26");
 
   await page.screenshot({
-    path: path.join(ARTIFACTS, "event-form-date-formats.png"),
+    path: testInfo.outputPath("event-form-date-formats.png"),
     fullPage: true,
   });
 });
 
 test("end time menu opens without shifting the form panel horizontally", async ({
   page,
-}) => {
+}, testInfo) => {
   await openTimedEventFormWithKeyboard(page);
 
   const endTime = page.getByRole("combobox", { name: "End time" });
@@ -93,7 +90,7 @@ test("end time menu opens without shifting the form panel horizontally", async (
   expect(scrollAfter).toBe(scrollBefore);
 
   await page.screenshot({
-    path: path.join(ARTIFACTS, "event-form-end-time-menu.png"),
+    path: testInfo.outputPath("event-form-end-time-menu.png"),
     fullPage: true,
   });
 
