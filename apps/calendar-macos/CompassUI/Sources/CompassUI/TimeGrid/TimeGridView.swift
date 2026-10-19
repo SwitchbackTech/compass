@@ -175,23 +175,30 @@ public final class TimeGridView: NSView {
                 guard let header = subview as? NSTextField, header.identifier?.rawValue == todayKey else {
                     continue
                 }
-                pulseHeaderBackground(header, accent: accent)
+                pulseHeaderLabel(header, accent: accent)
             }
         } else {
             onNowCuePulse?()
         }
     }
 
-    private func pulseHeaderBackground(_ view: NSView, accent: NSColor) {
-        view.wantsLayer = true
-        view.layer?.add(
-            nowCuePulseAnimation(
-                keyPath: "backgroundColor",
-                from: NSColor.clear.cgColor,
-                to: accent.withAlphaComponent(0.18).cgColor
-            ),
-            forKey: "nowCuePulse"
-        )
+    private func pulseHeaderLabel(_ header: NSTextField, accent: NSColor) {
+        header.wantsLayer = true
+        let shimmer = CABasicAnimation(keyPath: "opacity")
+        shimmer.fromValue = 1
+        shimmer.toValue = 0.55
+        shimmer.duration = 0.7
+        shimmer.autoreverses = true
+        shimmer.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        header.layer?.add(shimmer, forKey: "nowCueLabelShimmer")
+        if let attributed = header.attributedStringValue.mutableCopy() as? NSMutableAttributedString {
+            attributed.addAttribute(.foregroundColor, value: accent, range: NSRange(location: 0, length: attributed.length))
+            header.attributedStringValue = attributed
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { [weak header] in
+                guard let header else { return }
+                header.layer?.opacity = 1
+            }
+        }
     }
 
     private func nowCuePulseAnimation(keyPath: String, from: Any?, to: Any?) -> CABasicAnimation {

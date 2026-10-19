@@ -84,10 +84,10 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | All-day row above timed scroll | ✅ | `TimeGridView.renderAllDayColumns` |
 | Now line position | ✅ | Shared now math |
 | Now line **visual** (gradient + 1px rim) | ❌ | Web: `accentGradient` + `c-now-line-rim`; macOS: solid 2px accent |
-| Now-cue pulse on **`t`** (today) | 🟡 | Web 700ms pulse + label shimmer; macOS 700ms header flag, 350ms line animation, shimmer partial on day view |
+| Now-cue pulse on **`t`** (today) | 🟡 | Web 700ms label shimmer; macOS week header opacity pulse + day view switcher pulse |
 | Click grid teaches shortcut | ✅ | Pointer hint overlay |
 | Day column header focus | 🟡 | AppKit exterior ring vs web `c-focus-ring` |
-| Shift+C all-day tip strip | 🟡 | Verify animation + copy vs web `useShiftHoldEventHints` all-day path |
+| Shift+C all-day tip strip | 🟡 | Sidebar jump line animates; full web tip stack still partial |
 
 ### 2.2 Event chips
 
@@ -95,7 +95,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Timed / all-day card shell | ✅ | `EventCardView`, palette tests |
 | Jump / hold-F digit hints | ✅ | `eventJumpHold`, chips overlay |
-| Shift+M weekday column jump | ❌ | Web `useShiftHoldEventHints.ts`; macOS not wired (`focus-week-day`) |
+| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump + quick-time slots still web-only |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
 
 ### 2.3 Sidebar event form
@@ -106,7 +106,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Date field **MM.DD.YY** closed display | ❌ | Web `EventFormDateField.tsx`; macOS `DatePicker` locale format |
 | Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
 | Time pickers | 🟡 | Visual parity pass needed |
-| Location / Meet / guests grouping | 🟡 | Sections exist; spacing/dividers vs web `FormCard` |
+| Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
 | Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | ❌ | Web `SaveSection.tsx` + `c-button-save-bar`; macOS inverted text/background + Enter chip only |
 | Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
@@ -173,9 +173,9 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Fuzzy search + highlight | ❌ | Web `HighlightedLabel` + `filterSections` |
 | Row icons (Phosphor) | ❌ | Plain text rows |
 | Keycaps (`ShortcutKeys`) | 🟡 | Plain shortcut strings, not `KeycapGlyphs` chips |
-| Selected row ring inset | 🟡 | Web `ring-accent ring-inset`; macOS fill tint |
-| **Missing rows** vs web | ❌ | Undo/redo, theme, timezone, notifications, booking, feedback, onboarding URL, meeting page, accounts shortcuts, demo events, shortcut tips hooks (`CommandPalette.tsx` vs `CommandPaletteCatalog.swift`) |
-| Footer hint | 🟡 | Text arrows vs web keycaps |
+| Selected row ring inset | ✅ | Accent inset ring + lighter fill (web `ring-inset`) |
+| **Missing rows** vs web | 🟡 | Undo/redo wired in catalog; still missing theme, notifications, booking, feedback, shortcut-tip rows vs web `CommandPalette.tsx` |
+| Footer hint | ✅ | Keycap chips for navigate / select / close |
 
 ### 2.11 Command palette (desktop quick-add variant)
 
@@ -238,9 +238,9 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | ID | Binding | Status | Notes |
 | --- | --- | --- | --- |
 | `focus-sidebar` | I | ✅ | Month picker |
-| `focus-event` | U | ❌ | Dispatched but `handleShortcut` no-op; web `onFocusCalendar` / seed focus |
+| `focus-event` | U | ✅ | `focusFirstCalendarEvent()` seeds nearest grid event |
 | `focus-shift-hold` | F (+ digits) | 🟡 | Hold-F jump chips; not full web jump mode |
-| `focus-week-day` | Shift+M… | ❌ | Web column state machine missing |
+| `focus-week-day` | Shift+M… | 🟡 | Column select + first event; weekend S→U/A; digit hints after day pick ❌ |
 | `focus-notice` | P | 🟡 | Subset of notices |
 | `focus-calendar-digit` | 1–9 in list | ✅ | |
 | `focus-page-jump` | Mod+digit (hold hints) | ✅ | |
@@ -259,7 +259,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `edit-menu` | ✅ | Context menu |
 | Arrow move focus | ✅ | |
 | Shift+Tab cycle edge | ✅ | |
-| Undo/redo | ✅ | Not in palette on macOS |
+| Undo/redo | ✅ | Palette rows + Cmd+Z |
 
 ### 3.5 Other
 
@@ -320,6 +320,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 visual evidence table (web CI captures; macOS/compare pending runner) |
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
+| 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
 
 ---
 
@@ -327,15 +328,15 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 
 Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
 
-| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39299882448, pre–v2 merge on macOS) |
+| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39327804343, #4607 logistics) |
 | --- | --- | --- | --- | --- |
-| Week grid | ✅ | ✅ | 🟡 | macOS day view vs web week columns; web shows events + now column; #4604 now line on main |
-| Mini-calendar | ✅ | ✅ | 🟡 | Selected day ring matches; month chrome and spacing differ |
-| Event form | ✅ | ✅ | 🟡 | macOS slash dates + steppers vs web MM.DD.YY chips; #4603 targets form parity |
-| Command palette | ✅ | ✅ | 🟡 | macOS flat list vs web icons, keycaps, selection ring; #4602 in queue |
-| Settings | ✅ | ✅ | 🟡 | Layout close; verify row density after theme PR |
-| Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; button/footer spacing differs slightly |
+| Week grid | ✅ | ✅ | 🟡 | Capture uses macOS day view vs web week; demo events only on web shot; sidebar lacks web “Hold Mod jump targets” tip line |
+| Mini-calendar | ✅ | ✅ | 🟡 | Selected-day ring OK; web shows selected-week wash + denser header type |
+| Event form | ✅ | ✅ | 🟡 | Logistics card grouped (#4607); dates still locale steppers vs MM.DD.YY; save bar / Enter hint gaps |
+| Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
+| Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
+| Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
 
-**Keyboard / tips (non-screenshot):** #4605 Shift+weekday column jump + sidebar tip strip; partial vs web full `useShiftHoldEventHints` (weekend `s`→u/a, digit jump, quick-time slots still ❌).
+**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick and quick-time slots still ❌ vs web `useShiftHoldEventHints`.
 
-Re-run compare after #4602–#4605 merge; promote rows to ✅ when side-by-side PNGs match within tolerance.
+Re-run `desktop-web-parity-screenshots.yml` on `main` after #4607 merge for canonical compare PNGs.

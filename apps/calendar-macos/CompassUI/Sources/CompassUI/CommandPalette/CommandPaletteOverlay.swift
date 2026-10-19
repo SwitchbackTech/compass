@@ -47,9 +47,10 @@ public struct CommandPaletteOverlay: View {
                                 }
                                 ForEach(sections) { section in
                                     if !section.heading.isEmpty {
-                                        Text(section.heading)
-                                            .font(.rubik(12))
+                                        Text(section.heading.uppercased())
+                                            .font(.rubik(11, weight: .medium))
                                             .foregroundStyle(theme.textMutedColor)
+                                            .tracking(0.4)
                                     }
                                     ForEach(section.items) { item in
                                         paletteRow(item, query: query, selected: item.id == selectedId)
@@ -75,9 +76,7 @@ public struct CommandPaletteOverlay: View {
                             if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
                         }
                     }
-                    Text("↑ ↓ Navigate   ↵ Select   Esc Close")
-                        .font(.rubik(11))
-                        .foregroundStyle(theme.textMutedColor)
+                    paletteFooterHints
                         .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
                 }
                 .padding(16)
@@ -119,11 +118,12 @@ public struct CommandPaletteOverlay: View {
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(selected ? theme.accentColor.opacity(0.12) : theme.surfaceColor)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .background(selected ? theme.accentColor.opacity(0.08) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay {
                 if selected {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                        .inset(by: 0.5)
                         .stroke(theme.accentColor, lineWidth: 1)
                 }
             }
@@ -149,5 +149,27 @@ public struct CommandPaletteOverlay: View {
             }
         }
         return KeycapGlyphs.display(parts)
+    }
+
+    private var paletteFooterHints: some View {
+        HStack(spacing: 6) {
+            footerKeycap("↑")
+            footerKeycap("↓")
+            Text("Navigate")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+            footerKeycap("↩")
+            Text("Select")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+            footerKeycap("Esc")
+            Text("Close")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+        }
+    }
+
+    private func footerKeycap(_ label: String) -> some View {
+        ShortcutHintChip(label: label)
     }
 }
