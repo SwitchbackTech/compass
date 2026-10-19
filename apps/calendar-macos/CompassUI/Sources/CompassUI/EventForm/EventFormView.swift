@@ -142,12 +142,24 @@ public struct EventFormView: View {
                 } label: {
                     HStack(spacing: 8) {
                         Text("Save")
-                        ShortcutHintChip(label: "Enter")
+                        Spacer(minLength: 8)
+                        Text(KeycapGlyphs.display(["Mod", "Enter"]))
+                            .font(.rubik(11, weight: .medium))
+                            .foregroundStyle(theme.onAccentColor.opacity(0.92))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(theme.onAccentColor.opacity(0.1))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(theme.onAccentColor.opacity(0.35), lineWidth: 1)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
                     }
                     .font(.rubik(14, weight: .medium))
-                    .foregroundStyle(theme.backgroundColor)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-                    .background(theme.textColor)
+                    .foregroundStyle(theme.onAccentColor)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .background(theme.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
                 .buttonStyle(.plain)
