@@ -23,7 +23,7 @@ final class SidebarMonthPickerTests: XCTestCase {
         picker.buttons["Current month"].click()
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "MMM yyyy"
         XCTAssertTrue(picker.staticTexts[formatter.string(from: Date())].exists)
         XCTAssertEqual(title.label, originalTitle)
     }

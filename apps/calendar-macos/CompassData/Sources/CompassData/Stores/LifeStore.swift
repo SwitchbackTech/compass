@@ -75,6 +75,30 @@ public final class LifeStore {
         scrollToCurrentWeekToken += 1
     }
 
+    @discardableResult
+    public func updateBirthDate(_ value: String) -> Bool {
+        let value = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !value.isEmpty {
+            guard let date = LifeMath.parseLifeDate(value), value >= "1900-01-01",
+                EffectiveTimeZone.calendar.startOfDay(for: date) <= EffectiveTimeZone.calendar.startOfDay(for: today())
+            else { return false }
+        }
+        preferences = LifePreferences(birthDate: value,
+            lifespan: preferences.variation == .random && !value.isEmpty
+                ? LifeMath.randomLifespan(birthDateValue: value, today: today()) : preferences.lifespan,
+            variation: preferences.variation)
+        persist()
+        return true
+    }
+
+    @discardableResult
+    public func updateLifespan(_ value: Double) -> Bool {
+        guard value.isFinite else { return false }
+        preferences.lifespan = LifeMath.clampLifespan(value)
+        persist()
+        return true
+    }
+
     public func updatePreferences(_ transform: (LifePreferences) -> LifePreferences) {
         preferences = transform(preferences)
         persist()

@@ -43,16 +43,17 @@ public struct SidebarMonthPicker: View {
                     if let trailingHeader { trailingHeader }
                 }
             }
-            VStack(spacing: 4) {
+            VStack(spacing: 0) {
                 HStack(spacing: 4) {
                     ForEach(0 ..< 7, id: \.self) { index in
                         Text(weekdayLabel(index))
-                            .font(.rubik(11))
+                            .font(.rubik(10))
                             .foregroundStyle(theme.textMutedColor)
                             .frame(maxWidth: .infinity, minHeight: 20)
                             .accessibilityHidden(true)
                     }
                 }
+                .padding(.bottom, 6)
                 ForEach(0 ..< dayCells.count / 7, id: \.self) { row in
                     let days = Array(dayCells[(row * 7) ..< (row * 7 + 7)])
                     HStack(spacing: 4) {
@@ -60,6 +61,7 @@ public struct SidebarMonthPicker: View {
                             dayButton(day)
                         }
                     }
+                    .frame(height: 32.333)
                     .background {
                         if days.contains(where: { isInRange($0, from: selectedDate) })
                             || (visibleDayCount > 1 && days.contains(where: { isInRange($0, from: focusedDate ?? selectedDate) }))
@@ -71,13 +73,14 @@ public struct SidebarMonthPicker: View {
                     .overlay {
                         if visibleDayCount > 1, let focusedDate, days.contains(where: { isInRange($0, from: focusedDate) }) {
                             RoundedRectangle(cornerRadius: 4)
-                                .stroke(theme.accentColor, lineWidth: 2)
+                                .strokeBorder(theme.accentColor, lineWidth: 2)
                                 .allowsHitTesting(false)
                         }
                     }
                 }
             }
         }
+        .frame(height: 252, alignment: .top)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Date navigation")
         .accessibilityIdentifier("compass-native-month-picker")
@@ -108,9 +111,10 @@ public struct SidebarMonthPicker: View {
             onSelectDate(day)
         } label: {
             Text(dayNumber(day))
-                .font(.rubik(12, weight: selected ? .semibold : .regular))
+                .font(.rubik(11, weight: selected ? .semibold : .regular))
+                .underline(calendar.isDateInToday(day) && !ink, color: theme.accentColor)
                 .foregroundStyle(ink ? theme.backgroundColor : isDisplayedMonth(day) ? theme.textColor : theme.textMutedColor)
-                .frame(width: 24, height: 24)
+                .frame(width: 24.8, height: 24.8)
                 .background {
                     if ink {
                         Circle().fill(theme.textColor)
@@ -136,7 +140,7 @@ public struct SidebarMonthPicker: View {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = EffectiveTimeZone.timeZone
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.dateFormat = "MMM yyyy"
         return formatter.string(from: displayedMonth)
     }
 
