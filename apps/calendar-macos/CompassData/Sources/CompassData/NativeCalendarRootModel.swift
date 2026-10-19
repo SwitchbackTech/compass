@@ -367,6 +367,7 @@ public final class NativeCalendarRootModel {
     func applyParityCapturePresentationIfNeeded() {
         guard UITestLaunchPolicy.isParityCapture else { return }
         viewStore.view = .week
+        isSidebarOpen = true
         sidebarWidth = CGFloat(ParityCaptureGeometry.defaultSidebarWidth)
         contentTrackWidth = CGFloat(ParityCaptureGeometry.contentTrackWidth)
         viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)

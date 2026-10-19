@@ -55,9 +55,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let window = makeMainWindow()
         self.window = window
         installRootContent(on: window)
-        // Installing the content controller resizes the window, so restore the saved frame afterwards.
-        window.setFrameUsingName(Self.windowFrameName)
-        window.setFrameAutosaveName(Self.windowFrameName)
+        if UITestLaunchPolicy.isParityCapture {
+            // Parity XCUITest must match web 1280×820; never restore a narrow autosaved frame.
+            window.setContentSize(NSSize(width: 1280, height: 820))
+            window.center()
+        } else {
+            // Installing the content controller resizes the window, so restore the saved frame afterwards.
+            window.setFrameUsingName(Self.windowFrameName)
+            window.setFrameAutosaveName(Self.windowFrameName)
+        }
 
         if let launchDeepLink = UserDefaults.standard.string(forKey: "COMPASS_LAUNCH_DEEP_LINK") {
             nativeRootController?.receiveDeepLink(urlString: launchDeepLink)
