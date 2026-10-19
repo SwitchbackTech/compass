@@ -5,6 +5,9 @@ name: Desktop web parity screenshots
 # UI PR via workflow_dispatch.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "cursor/desktop-parity-screenshots-2ef3"
   pull_request:
     paths:
       - "apps/calendar-macos/CompassUI/**"
