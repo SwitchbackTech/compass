@@ -56,7 +56,9 @@ describe("NotificationPermissionBannerGate", () => {
 
     render(<NotificationPermissionBannerGate />);
 
-    expect(banner()).toHaveTextContent("has not granted permission");
+    expect(banner()).toHaveTextContent(
+      "Allow browser notifications so Compass can alert you before events.",
+    );
     expect(
       screen.getByRole("button", { name: "Allow notifications" }),
     ).toBeInTheDocument();
