@@ -430,6 +430,14 @@ public final class TimeGridView: NSView {
             header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
             header.alignment = .center
             header.setAccessibilityIdentifier(column.accessibilityIdentifier)
+            if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.calendar = EffectiveTimeZone.calendar
+                formatter.timeZone = EffectiveTimeZone.timeZone
+                formatter.dateFormat = "d EEE"
+                header.setAccessibilityLabel(formatter.string(from: date))
+            }
             headerRowView.addSubview(header)
         }
     }

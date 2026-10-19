@@ -357,9 +357,28 @@ public final class NativeCalendarRootModel {
         await reloadCalendars()
         await refreshVisibleRange()
         await refreshSideband()
+        applyParityCapturePresentationIfNeeded()
         if isSignedIn {
             startEventStream()
         }
+    }
+
+    /// Match web parity captures: five day columns @ 1280×820 and demo-seed scroll position.
+    func applyParityCapturePresentationIfNeeded() {
+        guard UITestLaunchPolicy.isParityCapture else { return }
+        viewStore.view = .week
+        isSidebarOpen = true
+        sidebarWidth = CGFloat(ParityCaptureGeometry.defaultSidebarWidth)
+        contentTrackWidth = CGFloat(ParityCaptureGeometry.contentTrackWidth)
+        viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)
+        let today = referenceNow
+        let calendar = EffectiveTimeZone.calendar
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+        viewStore.setAnchorDate(weekStart)
+        monthPickerMonth = today
+        pendingScroll = .scrollToNowOrPulse
+        rebuildPresentation()
+        scheduleRefreshVisibleRange()
     }
 
     public func dismissDemoEventsBanner() {
@@ -480,6 +499,10 @@ public final class NativeCalendarRootModel {
     }
 
     public func updateContentTrackWidth(_ width: CGFloat) {
+        if UITestLaunchPolicy.isParityCapture {
+            applyParityCapturePresentationIfNeeded()
+            return
+        }
         let resolved = max(UITestLaunchPolicy.pinnedWeekGridTrackWidth ?? width, 320)
         if abs(resolved - contentTrackWidth) > 0.5 {
             contentTrackWidth = resolved

@@ -9,6 +9,7 @@ final class NativeParityCaptureTests: XCTestCase {
         "-COMPASS_FIXTURE", "demo",
         "-compass.theme", "light-beach",
         "-COMPASS_UI_TEST_PARITY_CAPTURE",
+        "-PARITY_CAPTURE",
         "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
     ]
 
@@ -89,6 +90,7 @@ final class NativeParityCaptureTests: XCTestCase {
     private func launchDemoWindow() -> XCUIElement {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += Self.demoLaunchArgs
+        app.launchEnvironment["PARITY_CAPTURE"] = "1"
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
@@ -102,8 +104,36 @@ final class NativeParityCaptureTests: XCTestCase {
         if okay.waitForExistence(timeout: 4) {
             okay.tap()
         }
+        let wednesdayHeader = window.staticTexts.matching(
+            NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
+        ).firstMatch
+        XCTAssertTrue(
+            wednesdayHeader.waitForExistence(timeout: 20),
+            "Expected Wednesday column in parity week grid")
+        XCTAssertTrue(
+            waitForGridColumnCount(window, atLeast: 5, timeout: 20),
+            "Expected five day columns in parity week grid")
+        window.typeKey("t", modifierFlags: [])
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
+        sleep(1)
+    }
+
+    @MainActor
+    private func waitForGridColumnCount(
+        _ window: XCUIElement,
+        atLeast count: Int,
+        timeout: TimeInterval
+    ) -> Bool {
+        let columns = window.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "compass-grid-column-")
+        )
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if columns.count >= count { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+        }
+        return columns.count >= count
     }
 }
