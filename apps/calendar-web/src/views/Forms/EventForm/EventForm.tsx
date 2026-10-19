@@ -1019,15 +1019,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     />
                   </FormCardIconRow>
                 )}
-              </FormCard>
-
-              {showAttendeeEditor && (
-                <FormCard>
-                  <div className="flex items-start gap-2">
-                    <UsersIcon
-                      size={16}
-                      className="mt-1 shrink-0 text-text-muted"
-                    />
+                {showAttendeeEditor && (
+                  <FormCardIconRow
+                    icon={<UsersIcon size={16} />}
+                    className="items-start"
+                  >
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       {attendeeChipTally && (
                         <p className="text-text-muted text-xs">
@@ -1054,9 +1050,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                         }
                       />
                     </div>
-                  </div>
-                </FormCard>
-              )}
+                  </FormCardIconRow>
+                )}
+              </FormCard>
 
               <FormCard>
                 <DescriptionEditor
