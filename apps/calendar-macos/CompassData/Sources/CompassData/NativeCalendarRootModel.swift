@@ -370,6 +370,11 @@ public final class NativeCalendarRootModel {
         sidebarWidth = CGFloat(ParityCaptureGeometry.defaultSidebarWidth)
         contentTrackWidth = CGFloat(ParityCaptureGeometry.contentTrackWidth)
         viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)
+        let today = referenceNow
+        let calendar = EffectiveTimeZone.calendar
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+        viewStore.setAnchorDate(weekStart)
+        monthPickerMonth = today
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()

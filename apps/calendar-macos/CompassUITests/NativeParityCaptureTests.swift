@@ -103,12 +103,36 @@ final class NativeParityCaptureTests: XCTestCase {
         if okay.waitForExistence(timeout: 4) {
             okay.tap()
         }
+        let wednesdayHeader = window.staticTexts.matching(
+            NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
+        ).firstMatch
         XCTAssertTrue(
-            window.staticTexts["Wed"].waitForExistence(timeout: 20),
+            wednesdayHeader.waitForExistence(timeout: 20),
+            "Expected Wednesday column in parity week grid")
+        XCTAssertTrue(
+            waitForGridColumnCount(window, atLeast: 5, timeout: 20),
             "Expected five day columns in parity week grid")
+        window.typeKey("t", modifierFlags: [])
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
         sleep(1)
+    }
+
+    @MainActor
+    private func waitForGridColumnCount(
+        _ window: XCUIElement,
+        atLeast count: Int,
+        timeout: TimeInterval
+    ) -> Bool {
+        let columns = window.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "compass-grid-column-")
+        )
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if columns.count >= count { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
+        }
+        return columns.count >= count
     }
 }
