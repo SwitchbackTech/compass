@@ -328,6 +328,7 @@ public final class OverlayStores {
     public let eventMenu: EventMenuStore
     public let statusToast: StatusToastStore
     public let recurrenceScope: RecurrenceScopeStore
+    public let eventJumpSelection: EventJumpSelectionStore
     public var editSequenceMenuVisible = false
 
     public init(catalog: ShortcutsCatalogPresenting = NoOpShortcutsCatalogPresenter()) {
@@ -337,6 +338,7 @@ public final class OverlayStores {
         eventMenu = EventMenuStore()
         statusToast = StatusToastStore()
         recurrenceScope = RecurrenceScopeStore()
+        eventJumpSelection = EventJumpSelectionStore()
     }
 }
 

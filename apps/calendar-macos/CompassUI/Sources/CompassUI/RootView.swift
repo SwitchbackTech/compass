@@ -187,6 +187,9 @@ public struct RootView: View {
             } else {
                 sidebarBody
             }
+            EventJumpStatusLine(model: model)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 2)
             SidebarSyncStatusLine(model: model)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
