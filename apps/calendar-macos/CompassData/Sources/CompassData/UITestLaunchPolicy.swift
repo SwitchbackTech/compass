@@ -65,11 +65,15 @@ public enum UITestLaunchPolicy {
         arguments.contains("-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM")
     }
 
+    /// Desktop ↔ web screenshot capture (`NativeParityCaptureTests`).
+    public static var isParityCapture: Bool {
+        ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
+            || ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_PARITY_CAPTURE")
+    }
+
     /// Full week column count so demo fixture events stay in the focus layout during XCUITest.
     public static var pinnedWeekGridTrackWidth: CGFloat? {
-        if ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
-            || ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_PARITY_CAPTURE")
-        {
+        if isParityCapture {
             return CGFloat(ParityCaptureGeometry.contentTrackWidth)
         }
         if initialGridFocusEventId != nil

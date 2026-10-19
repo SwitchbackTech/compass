@@ -357,9 +357,22 @@ public final class NativeCalendarRootModel {
         await reloadCalendars()
         await refreshVisibleRange()
         await refreshSideband()
+        applyParityCapturePresentationIfNeeded()
         if isSignedIn {
             startEventStream()
         }
+    }
+
+    /// Match web parity captures: five day columns @ 1280×820 and demo-seed scroll position.
+    func applyParityCapturePresentationIfNeeded() {
+        guard UITestLaunchPolicy.isParityCapture else { return }
+        viewStore.view = .week
+        sidebarWidth = CGFloat(ParityCaptureGeometry.defaultSidebarWidth)
+        contentTrackWidth = CGFloat(ParityCaptureGeometry.contentTrackWidth)
+        viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)
+        pendingScroll = .scrollToNowOrPulse
+        rebuildPresentation()
+        scheduleRefreshVisibleRange()
     }
 
     public func dismissDemoEventsBanner() {

@@ -89,6 +89,7 @@ final class NativeParityCaptureTests: XCTestCase {
     private func launchDemoWindow() -> XCUIElement {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += Self.demoLaunchArgs
+        app.launchEnvironment["PARITY_CAPTURE"] = "1"
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
@@ -103,7 +104,11 @@ final class NativeParityCaptureTests: XCTestCase {
             okay.tap()
         }
         XCTAssertTrue(
+            window.staticTexts["Wed"].waitForExistence(timeout: 20),
+            "Expected five day columns in parity week grid")
+        XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
+        sleep(1)
     }
 }

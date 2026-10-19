@@ -65,6 +65,9 @@ export async function prepareParityDemoWeek(page: Page) {
   await seedParityDemoEvents(page);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expectDemoGrid(page);
+  await page.locator("#mainGrid").focus();
+  await page.keyboard.press("t");
+  await page.getByRole("button", { name: /Exercise/i }).waitFor({ timeout: 15_000 });
 }
 
 export async function expectDemoGrid(page: Page) {
