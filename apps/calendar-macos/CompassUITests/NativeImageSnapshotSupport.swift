@@ -50,7 +50,11 @@ enum NativeImageSnapshotSupport {
             return
         }
 
-        if parityCapture, let outputDir = parityOutputDirectory {
+        if parityCapture {
+            let outputDir =
+                parityOutputDirectory
+                ?? FileManager.default.temporaryDirectory
+                    .appendingPathComponent("compass-parity-captures", isDirectory: true).path
             let url = URL(fileURLWithPath: outputDir, isDirectory: true)
                 .appendingPathComponent("\(name).png")
             do {

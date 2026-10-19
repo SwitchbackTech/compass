@@ -4,8 +4,8 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 OUT="${PARITY_OUTPUT_DIR:-$ROOT/build/desktop-parity/macos}"
-# XCTest runs sandboxed and cannot write under the repo-root build/ tree; stage next to the Xcode project.
-STAGING="$ROOT/apps/calendar-macos/build/parity-captures"
+# XCTest runs sandboxed; /tmp is writable from the UI test runner (repo build/ is not).
+STAGING="${PARITY_STAGING_DIR:-/tmp/compass-parity-captures}"
 mkdir -p "$STAGING" "$OUT"
 cd "$ROOT/apps/calendar-macos"
 
