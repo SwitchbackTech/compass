@@ -5,7 +5,12 @@ import XCTest
 /// `.github/workflows/desktop-web-parity-screenshots.yml`). Run with
 /// `PARITY_CAPTURE=1` and `PARITY_OUTPUT_DIR` set; skips ReferenceImages diff.
 final class NativeParityCaptureTests: XCTestCase {
-    private static let demoLaunchArgs = ["-COMPASS_FIXTURE", "demo", "-compass.theme", "light-beach"]
+    private static let demoLaunchArgs = [
+        "-COMPASS_FIXTURE", "demo",
+        "-compass.theme", "light-beach",
+        "-COMPASS_UI_TEST_PARITY_CAPTURE",
+        "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+    ]
 
     @MainActor
     func testExportParitySurfaces() throws {
@@ -24,12 +29,14 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureWeekGrid() {
         let window = launchDemoWindow()
+        prepareParityGrid(window)
         NativeImageSnapshotSupport.captureWindow(window, named: "week-grid")
     }
 
     @MainActor
     private func captureMiniCalendar() {
         let window = launchDemoWindow()
+        prepareParityGrid(window)
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-month-picker"].waitForExistence(timeout: 10))
         window.typeKey("i", modifierFlags: [])
@@ -39,6 +46,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureEventForm() {
         let window = launchDemoWindow()
+        prepareParityGrid(window)
         window.typeKey("c", modifierFlags: [])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-event-form"].waitForExistence(timeout: 8))
@@ -48,6 +56,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureCommandPalette() {
         let window = launchDemoWindow()
+        prepareParityGrid(window)
         window.typeKey("k", modifierFlags: [.command])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-command-palette"].waitForExistence(timeout: 8))
@@ -57,6 +66,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureSettings() {
         let window = launchDemoWindow()
+        prepareParityGrid(window)
         window.typeKey(",", modifierFlags: [.command])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-settings"].waitForExistence(timeout: 8))
@@ -83,5 +93,17 @@ final class NativeParityCaptureTests: XCTestCase {
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         return window
+    }
+
+    /// Dismiss demo chrome and wait for the shared demo-seed grid event (web parity uses the same fixture).
+    @MainActor
+    private func prepareParityGrid(_ window: XCUIElement) {
+        let okay = window.buttons["Okay"]
+        if okay.waitForExistence(timeout: 4) {
+            okay.tap()
+        }
+        XCTAssertTrue(
+            window.buttons["Morning standup"].waitForExistence(timeout: 20),
+            "Expected demo-seed timed event on the week grid")
     }
 }
