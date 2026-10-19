@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 OUT="${PARITY_OUTPUT_DIR:-$ROOT/build/desktop-parity/macos}"
-mkdir -p "$OUT"
+# XCTest runs sandboxed and cannot write under the repo-root build/ tree; stage next to the Xcode project.
+STAGING="$ROOT/apps/calendar-macos/build/parity-captures"
+mkdir -p "$STAGING" "$OUT"
 cd "$ROOT/apps/calendar-macos"
 
 if ! command -v xcodegen >/dev/null 2>&1; then
@@ -17,7 +19,7 @@ xcodegen generate
 
 # UI test runners do not inherit shell exports; launchctl setenv reaches XCTest.
 launchctl setenv PARITY_CAPTURE 1
-launchctl setenv PARITY_OUTPUT_DIR "$OUT"
+launchctl setenv PARITY_OUTPUT_DIR "$STAGING"
 cleanup_env() {
   launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
   launchctl unsetenv PARITY_OUTPUT_DIR 2>/dev/null || true
@@ -33,10 +35,11 @@ xcodebuild test \
   -resultBundlePath build/ParityCapture.xcresult \
   -only-testing:CompassUITests/NativeParityCaptureTests/testExportParitySurfaces
 
-png_count=$(find "$OUT" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
+png_count=$(find "$STAGING" -maxdepth 1 -name '*.png' 2>/dev/null | wc -l | tr -d ' ')
 if [ "${png_count:-0}" -lt 1 ]; then
-  echo "No parity PNGs in ${OUT} (did the capture test skip?)" >&2
+  echo "No parity PNGs in ${STAGING} (did the capture test skip?)" >&2
   exit 1
 fi
 
-echo "Parity PNGs written to ${OUT} (${png_count} files)"
+cp "$STAGING"/*.png "$OUT/"
+echo "Parity PNGs written to ${OUT} (${png_count} files, staged in ${STAGING})"
