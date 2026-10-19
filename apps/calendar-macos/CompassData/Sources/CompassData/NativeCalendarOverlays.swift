@@ -130,6 +130,10 @@ extension NativeCalendarRootModel {
             requestLogout()
         case "subscribe":
             handleShortcut(.otherSubscribe)
+        case "undo":
+            undoLastChange()
+        case "redo":
+            redoLastChange()
         default:
             if id.hasPrefix("event-") {
                 let eventId = String(id.dropFirst("event-".count))

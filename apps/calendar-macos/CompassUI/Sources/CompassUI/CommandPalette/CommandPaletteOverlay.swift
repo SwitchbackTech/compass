@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 public struct CommandPaletteOverlay: View {
@@ -111,19 +112,42 @@ public struct CommandPaletteOverlay: View {
                 }
                 Spacer()
                 if let shortcut = item.shortcut {
-                    Text(shortcut)
-                        .font(.rubik(12))
+                    Text(paletteShortcutLabel(shortcut))
+                        .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(selected ? theme.accentColor.opacity(0.18) : theme.surfaceColor)
+            .background(selected ? theme.accentColor.opacity(0.12) : theme.surfaceColor)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(theme.accentColor, lineWidth: 1)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
+    }
+
+    private func paletteShortcutLabel(_ shortcut: String) -> String {
+        let normalized = shortcut
+            .replacingOccurrences(of: "mod+", with: "Mod+")
+            .replacingOccurrences(of: "shift+", with: "Shift+")
+            .replacingOccurrences(of: "alt+", with: "Alt+")
+        let parts = normalized.split(separator: "+").map { part -> String in
+            let token = String(part)
+            switch token.lowercased() {
+            case "mod": return "Mod"
+            case "shift": return "Shift"
+            case "alt": return "Alt"
+            default: return token.count == 1 ? token.uppercased() : token
+            }
+        }
+        return KeycapGlyphs.display(parts)
     }
 }
