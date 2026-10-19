@@ -317,6 +317,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | --- | --- |
 | 2026-10-19 | Initial audit checklist for #4331 dogfood gate |
 | 2026-10-19 | §7 visual evidence table (web CI captures; macOS/compare pending runner) |
+| 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 
 ---
 
@@ -324,15 +325,15 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 
 Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
 
-| Surface | Web CI | macOS CI | Match | Diff notes (from code + web reference until compare lands) |
+| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39299882448, pre–v2 merge on macOS) |
 | --- | --- | --- | --- | --- |
-| Week grid | ✅ run 39278514788 | ⏳ queue | 🟡 | #4604 now line gradient/rim; header focus ring still AppKit |
-| Mini-calendar | ✅ | ⏳ queue | 🟡 | Custom grid styling vs react-datepicker theme |
-| Event form | ✅ | ⏳ queue | 🟡 | #4603 FormCard grouping, MM.DD.YY, save bar, toolbar keycaps |
-| Command palette | ✅ | ⏳ queue | 🟡 | #4602 fuzzy filter, label highlight, shadow, keycaps |
-| Settings | ✅ | ⏳ queue | 🟡 | Not re-audited this pass |
-| Onboarding welcome | ✅ | ⏳ queue | 🟡 | Not re-audited this pass |
+| Week grid | ✅ | ✅ | 🟡 | macOS day view vs web week columns; web shows events + now column; #4604 now line on main |
+| Mini-calendar | ✅ | ✅ | 🟡 | Selected day ring matches; month chrome and spacing differ |
+| Event form | ✅ | ✅ | 🟡 | macOS slash dates + steppers vs web MM.DD.YY chips; #4603 targets form parity |
+| Command palette | ✅ | ✅ | 🟡 | macOS flat list vs web icons, keycaps, selection ring; #4602 in queue |
+| Settings | ✅ | ✅ | 🟡 | Layout close; verify row density after theme PR |
+| Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; button/footer spacing differs slightly |
 
 **Keyboard / tips (non-screenshot):** #4605 Shift+weekday column jump + sidebar tip strip; partial vs web full `useShiftHoldEventHints` (weekend `s`→u/a, digit jump, quick-time slots still ❌).
 
-When `macos-capture` completes, replace 🟡 rows with ✅/❌ from side-by-side PNGs and open focused fix PRs for any new visual deltas.
+Re-run compare after #4602–#4605 merge; promote rows to ✅ when side-by-side PNGs match within tolerance.
