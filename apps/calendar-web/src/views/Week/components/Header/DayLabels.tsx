@@ -60,17 +60,8 @@ export const DayLabels: FC<Props> = ({
         .map((day) => `${day.format("dddd")} ${dayJumpPrefix(day)}`)
         .join(", ")}. ${dayJumpHowTo}`
     : "";
-  const getColor = (day: Dayjs) => {
-    const isCurrentWeek = today.week() === week;
-    const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
-    const color = day.isBefore(today, "day")
-      ? "var(--text-muted)"
-      : isToday
-        ? "var(--accent)"
-        : "var(--text-muted)";
-
-    return { isToday, color };
-  };
+  const isTodayColumn = (day: Dayjs) =>
+    today.week() === week && today.format("DD") === day.format("DD");
 
   const getDayNumber = (day: Dayjs) => {
     let dayNumber = day.format("D");
@@ -101,7 +92,8 @@ export const DayLabels: FC<Props> = ({
       >
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
-          const { isToday, color } = getColor(day);
+          const isToday = isTodayColumn(day);
+          const color = isToday ? "var(--accent)" : "var(--text-muted)";
           const dayKey = day.format(YEAR_MONTH_DAY_FORMAT);
           const isJumpDay = activeDayKeys.includes(dayKey);
           const prefix = dayJumpPrefix(day);

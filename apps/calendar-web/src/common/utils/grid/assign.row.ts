@@ -16,25 +16,21 @@ export const assignEventsToRow = (
     ...e,
   })) as GridEvent[];
 
-  orderedAllDayEvents?.forEach((event, i) => {
+  orderedAllDayEvents?.forEach((event) => {
     const eventDays = _getEventDayNumbers(event);
+    const rowNum = findRowForEvent(eventDays, rows);
 
-    if (i === 0) {
-      rows.push(eventDays);
-      event["row"] = 1;
-    } else {
-      const rowNum = findRowForEvent(eventDays, rows);
-
-      if (rowNum !== null) {
-        // add to existing row
-        rows[rowNum] = [...rows[rowNum], ...eventDays];
-        event["row"] = rowNum + 1;
-      } else {
-        // add to new row
-        rows[rows.length] = eventDays;
-        event["row"] = rows.length;
-      }
+    if (rowNum !== null) {
+      // add to existing row
+      rows[rowNum] = [...rows[rowNum], ...eventDays];
+      event["row"] = rowNum + 1;
+      return;
     }
+
+    // add to new row. The first event lands here too: no rows exist yet, so
+    // nothing can fit it.
+    rows.push(eventDays);
+    event["row"] = rows.length;
   });
 
   return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
@@ -65,17 +61,11 @@ const _getEventDayNumbers = (event: EventWithDates) => {
 };
 
 const _range = (start: number, end: number) => {
-  const yearChanges = end - start < 0;
+  // An end before the start means the span crosses New Year, so count on
+  // past the end of the year instead: eg. an end of 2 becomes 367/8.
+  const last = end < start ? start + end : end;
 
-  if (yearChanges) {
-    const endYearChange = start + end; // eg. converts 2 to 367/8 (365/6 +2)
-    const r = Array(endYearChange - start + 1)
-      .fill(null)
-      .map((_, idx) => start + idx);
-    return r;
-  }
-
-  return Array(end - start + 1)
+  return Array(last - start + 1)
     .fill(null)
     .map((_, idx) => start + idx);
 };
