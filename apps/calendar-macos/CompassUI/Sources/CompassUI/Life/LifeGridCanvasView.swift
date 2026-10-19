@@ -40,6 +40,7 @@ struct LifeGridCanvasView: View {
                   }
               }
               .buttonStyle(.plain)
+              .focusEffectDisabled()
               .frame(width: max(1, rect.width), height: LifeGridMetrics.rowHeight)
               .position(x: rect.midX, y: rect.midY)
               .id("life-current-week-anchor")
