@@ -61,13 +61,6 @@ struct EventFormAttendeesSection: View {
                     EnableContactSuggestionsNudgeView(model: model)
                 }
             }
-            .padding(12)
-            .background(theme.surfacePanelColor)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(focusField == .attendees ? theme.accentColor : theme.borderColor, lineWidth: 1)
-            )
             .accessibilityIdentifier("compass-event-form-attendees")
             .pageJumpChipAnchor(id: "form-attendees")
             .onChange(of: focusField) { _, field in
