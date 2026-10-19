@@ -10,7 +10,7 @@ export function NotificationPermissionBanner({
 }) {
   const message =
     kind === "permission"
-      ? "Event notifications are on in Compass, but this browser has not granted permission. Allow notifications for compasscalendar.com in your browser settings, then turn notifications on again from the command palette."
+      ? "Allow browser notifications so Compass can alert you before events."
       : "Event notifications are on, but this browser is not showing them. Check Brave Shields, Focus or Do Not Disturb, and site notification settings for compasscalendar.com.";
 
   return (
