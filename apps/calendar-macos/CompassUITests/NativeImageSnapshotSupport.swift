@@ -2,6 +2,8 @@ import XCTest
 
 enum NativeImageSnapshotSupport {
     static let recordSnapshots = ProcessInfo.processInfo.environment["RECORD_SNAPSHOTS"] == "1"
+    /// Export PNGs for web parity comparison (no ReferenceImages assert).
+    static let parityCapture = ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
 
     @MainActor
     static func captureWindow(_ window: XCUIElement, named name: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -30,6 +32,18 @@ enum NativeImageSnapshotSupport {
                 try screenshot.pngRepresentation.write(to: referenceURL)
             } catch {
                 XCTFail("Failed to record snapshot \(name): \(error)", file: file, line: line)
+            }
+            return
+        }
+
+        if parityCapture, let outputDir = ProcessInfo.processInfo.environment["PARITY_OUTPUT_DIR"] {
+            let url = URL(fileURLWithPath: outputDir, isDirectory: true)
+                .appendingPathComponent("\(name).png")
+            do {
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try screenshot.pngRepresentation.write(to: url)
+            } catch {
+                XCTFail("Failed to write parity capture \(name): \(error)", file: file, line: line)
             }
             return
         }
