@@ -3,6 +3,9 @@
 **Status:** Shipped on `main` (native cutover, October 2026). Release tags,
 founder acceptance, and open bugs stay on the tracking issue
 [#4215](https://github.com/KeepSoftwareSimple/compass-calendar/issues/4215).
+Web visual and keyboard parity gaps for dogfood are tracked in
+[desktop-web-parity-checklist.md](./desktop-web-parity-checklist.md) under
+[#4331](https://github.com/KeepSoftwareSimple/compass-calendar/issues/4331).
 Board:
 [Compass Desktop](https://github.com/orgs/KeepSoftwareSimple/projects/9),
 milestone
