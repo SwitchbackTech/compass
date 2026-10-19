@@ -587,6 +587,8 @@ public final class NativeCalendarRootModel {
             isSidebarOpen.toggle()
         case .focusSidebar:
             focusSidebar()
+        case .focusEvent:
+            focusFirstCalendarEvent()
         case .focusNotice:
             focusNextNotice()
         case .otherSubscribe:
@@ -782,6 +784,15 @@ public final class NativeCalendarRootModel {
             eventType: type
         )
         applyFocusPresentation()
+    }
+
+    /// Web `onFocusCalendar` / `u`: seed grid focus on the nearest event when nothing is focused.
+    public func focusFirstCalendarEvent() {
+        guard viewStore.view != .life else { return }
+        guard focusStore.focusedEventId == nil else { return }
+        if let seeded = seedFocusEventId() {
+            focusEvent(eventId: seeded)
+        }
     }
 
     private func seedFocusEventId() -> String? {

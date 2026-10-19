@@ -55,6 +55,18 @@ final class NativeCalendarRootModelFocusTests: XCTestCase {
         XCTAssertEqual(model.draftStore.gridDraft?.title, "Morning standup")
     }
 
+    func testFocusEventShortcutSeedsNearestEvent() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+
+        XCTAssertNil(model.timeGridState.focusedEventId)
+        model.handleShortcut(.focusEvent)
+        XCTAssertNotNil(model.timeGridState.focusedEventId)
+        XCTAssertNotNil(model.gridFocusAccessibilityLabel)
+    }
+
     func testShowPointerHintForEventCardKeepsFocusedGridEventLabel() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
