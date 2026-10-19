@@ -51,14 +51,14 @@ enum NativeImageSnapshotSupport {
         }
 
         if parityCapture {
-            let outputDir =
-                parityOutputDirectory
-                ?? FileManager.default.temporaryDirectory
-                    .appendingPathComponent("compass-parity-captures", isDirectory: true).path
-            let url = URL(fileURLWithPath: outputDir, isDirectory: true)
-                .appendingPathComponent("\(name).png")
+            guard let url = referenceImageURL(named: name) else {
+                XCTFail("Could not resolve ReferenceImages bundle path for parity \(name)", file: file, line: line)
+                return
+            }
             do {
-                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try FileManager.default.createDirectory(
+                    at: url.deletingLastPathComponent(),
+                    withIntermediateDirectories: true)
                 try screenshot.pngRepresentation.write(to: url)
             } catch {
                 XCTFail("Failed to write parity capture \(name): \(error)", file: file, line: line)
