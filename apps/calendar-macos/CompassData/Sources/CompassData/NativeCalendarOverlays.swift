@@ -15,13 +15,17 @@ extension NativeCalendarRootModel {
         blockPartyStore.isActive
     }
 
+    private var trimmedPaletteQuery: String {
+        commandPaletteStore.query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     func paletteSections() -> [CommandPaletteSection] {
-        let trimmed = commandPaletteStore.query
-        let localHits = paletteEventHits(query: trimmed)
+        let query = commandPaletteStore.query
+        let localHits = paletteEventHits(query: query)
         let mergedHits = mergePaletteHits(local: localHits, remote: paletteEventSearchHits)
         return CommandPaletteCatalog.sections(
             view: viewStore.view,
-            query: trimmed,
+            query: query,
             now: referenceNow,
             isSignedIn: isSignedIn,
             isTrialing: billingStore.status?.subscriptionStatus == .trialing,
@@ -197,7 +201,7 @@ extension NativeCalendarRootModel {
     }
 
     public func schedulePaletteEventSearch() {
-        let query = commandPaletteStore.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let query = trimmedPaletteQuery
         resetPaletteEventSearch()
         guard query.count >= EventTitleSearch.minQueryLength else { return }
         let revision = sessionRevision
@@ -229,8 +233,7 @@ extension NativeCalendarRootModel {
     }
 
     func acceptPaletteSearchResults(_ events: [Event], query: String) {
-        guard commandPaletteStore.isOpen,
-              query == commandPaletteStore.query.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
+        guard commandPaletteStore.isOpen, query == trimmedPaletteQuery else { return }
         let matches = EventTitleSearch.search(events: events, query: query,
             now: referenceNow, limit: EventTitleSearch.paletteLimit)
         paletteEventSearchEvents = Dictionary(matches.map { ($0.id.rawValue, $0) },

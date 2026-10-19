@@ -94,14 +94,6 @@ extension NativeCalendarRootModel {
         recordShortcut(.editPaste)
     }
 
-    public func duplicateFocusedEvent() {
-        guard let event = focusedEvent(),
-              !EventInteractionPolicy.isReadOnly(event: event, calendars: calendars)
-        else { return }
-        Task { await commitDuplicate(from: event, recordUndo: true) }
-        recordShortcut(.editDuplicate)
-    }
-
     public func deleteFocusedEvent() {
         guard let event = focusedEvent(),
               !EventInteractionPolicy.isReadOnly(event: event, calendars: calendars)

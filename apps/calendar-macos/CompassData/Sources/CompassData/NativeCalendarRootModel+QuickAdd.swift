@@ -20,10 +20,7 @@ extension NativeCalendarRootModel {
     }
 
     public func syncQuickAddQuery(_ query: String) {
-        guard let session = quickAddPanelSession, session.sessionRevision == sessionRevision else {
-            quickAddError = "Reopen Quick Add to use the current account."
-            return
-        }
+        guard let session = activeQuickAddSession() else { return }
         guard !session.isSaving else { return }
         quickAddPanelSession?.query = query
         quickAddError = nil
@@ -32,10 +29,7 @@ extension NativeCalendarRootModel {
     @discardableResult
     public func saveQuickAddFromPanel(submitTitle: String? = nil) async -> Bool {
         if let submitTitle { syncQuickAddQuery(submitTitle) }
-        guard let session = quickAddPanelSession, session.sessionRevision == sessionRevision else {
-            quickAddError = "Reopen Quick Add to use the current account."
-            return false
-        }
+        guard let session = activeQuickAddSession() else { return false }
         guard !session.isSaving else { return false }
         guard isSignedIn || eventsStore.source == .local else {
             quickAddError = "Sign in before saving an event."
@@ -94,5 +88,13 @@ extension NativeCalendarRootModel {
     public func cancelQuickAddPanelSession() {
         quickAddPanelSession = nil
         quickAddError = nil
+    }
+
+    private func activeQuickAddSession() -> QuickAddPanelSession? {
+        guard let session = quickAddPanelSession, session.sessionRevision == sessionRevision else {
+            quickAddError = "Reopen Quick Add to use the current account."
+            return nil
+        }
+        return session
     }
 }
