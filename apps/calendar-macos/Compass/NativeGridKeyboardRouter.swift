@@ -367,6 +367,16 @@ final class NativeGridKeyboardRouter {
 
         syncEventJumpHints()
 
+        if keyEvent.modifiers == .shift, case .character(let letter) = keyEvent.key {
+            model.handleShiftDayJump(letter: letter)
+            return true
+        }
+
+        if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.escape), model.eventJumpSelection.isActive {
+            model.clearEventJumpSelection()
+            return true
+        }
+
         dispatcher.shortcutContext = model.shortcutContext
         if let id = dispatcher.dispatch(keyEvent) {
             model.syncEditSequencePhase(dispatcher.leaderEngine.phase)
