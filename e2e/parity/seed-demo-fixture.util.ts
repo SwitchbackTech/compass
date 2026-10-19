@@ -67,7 +67,9 @@ export async function prepareParityDemoWeek(page: Page) {
   await expectDemoGrid(page);
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("t");
-  await page.getByRole("button", { name: /Exercise/i }).waitFor({ timeout: 15_000 });
+  await page
+    .getByRole("button", { name: /Exercise/i })
+    .waitFor({ timeout: 15_000 });
 }
 
 export async function expectDemoGrid(page: Page) {
