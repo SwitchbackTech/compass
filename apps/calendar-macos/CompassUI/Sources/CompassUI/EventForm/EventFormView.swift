@@ -30,7 +30,7 @@ public struct EventFormView: View {
 
     private func formPanel(draft: GridEventDraft) -> some View {
         let isReadOnly = model.isEventFormReadOnly(for: draft)
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 10) {
             EventFormToolbarView(model: model, draft: draft)
             .pageJumpChipAnchor(id: "form-actions")
 
@@ -39,7 +39,7 @@ public struct EventFormView: View {
                 set: { model.updateDraftFromForm(title: $0) }
             ))
             .textFieldStyle(.plain)
-            .font(.rubik(16))
+            .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
             .focused($titleFocused)
             .disabled(isReadOnly)
@@ -48,7 +48,7 @@ public struct EventFormView: View {
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 10) {
                         EventFormCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 EventFormScheduleSection(
@@ -171,7 +171,7 @@ public struct EventFormView: View {
                     .font(.rubik(14, weight: .medium))
                     .foregroundStyle(theme.onAccentColor)
                     .padding(.horizontal, 20)
-                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36)
                     .background(theme.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
                 }
