@@ -553,7 +553,8 @@ public final class TimeGridView: NSView {
                 card: card,
                 theme: theme,
                 isFocused: isFocused,
-                isSidebarEditing: isSidebarEditing
+                isSidebarEditing: isSidebarEditing,
+                timeLabel: EventCardTimeLabel.text(for: card, state: state)
             )
             view.cardDelegate = self
             view.layoutSubtreeIfNeeded()

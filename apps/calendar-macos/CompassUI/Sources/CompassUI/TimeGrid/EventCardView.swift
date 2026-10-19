@@ -9,6 +9,7 @@ protocol EventCardViewDelegate: AnyObject {
 
 final class EventCardView: NSView {
     private let titleField = NSTextField(labelWithString: "")
+    private let timeField = NSTextField(labelWithString: "")
     private let accentLayer = CALayer()
     private let focusRingLayer = CALayer()
     private let focusAccessibilityAnchor = FocusedEventAccessibilityAnchorView()
@@ -49,6 +50,13 @@ final class EventCardView: NSView {
         addSubview(titleField)
         titleField.setAccessibilityElement(false)
         titleField.refusesFirstResponder = true
+        timeField.font = CompassFont.nsFont(size: 11)
+        timeField.lineBreakMode = .byTruncatingTail
+        timeField.maximumNumberOfLines = 1
+        timeField.alphaValue = 0.82
+        timeField.isHidden = true
+        timeField.setAccessibilityElement(false)
+        addSubview(timeField)
 
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
@@ -63,7 +71,8 @@ final class EventCardView: NSView {
         card: GridLayoutCardSnapshot,
         theme: NativeWebTheme,
         isFocused: Bool,
-        isSidebarEditing: Bool = false
+        isSidebarEditing: Bool = false,
+        timeLabel: String? = nil
     ) {
         eventId = card.eventId
         layoutRectInParent = NSRect(
@@ -81,6 +90,10 @@ final class EventCardView: NSView {
         titleField.isEditable = card.showsInlineTitleEditor
         titleField.isSelectable = card.showsInlineTitleEditor
         setAccessibilityLabel(card.label)
+        setAccessibilityHelp(timeLabel)
+        timeField.stringValue = timeLabel ?? ""
+        timeField.isHidden = timeLabel == nil || card.kind != .timed || card.isHiddenStrip
+            || card.frame.height < 36 || card.frame.width < 90
         setAccessibilityIdentifier(card.accessibilityIdentifier)
         setAccessibilityValue(card.isHiddenStrip ? "hidden" : "visible")
         syncFocusAccessibilityAnchor(isFocused: isFocused, label: card.label)
@@ -88,6 +101,7 @@ final class EventCardView: NSView {
         let fill = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? defaultEventFill(for: theme)
         layer?.backgroundColor = fill.withAlphaComponent(card.isHiddenStrip ? 0.6 : 0.92).cgColor
         titleField.textColor = contrastText(on: fill, theme: theme)
+        timeField.textColor = titleField.textColor
         accentLayer.backgroundColor = (
             EventCardColorParser.nsColor(hex: card.fillColorHex) ?? accentColor(for: theme)
         ).cgColor
@@ -125,7 +139,21 @@ final class EventCardView: NSView {
         // title line is not clipped.
         let titleLineHeight = 16.0
         let verticalInset = max(0, min(4, (bounds.height - titleLineHeight) / 2))
-        titleField.frame = bounds.insetBy(dx: 6, dy: verticalInset)
+        let titleBounds = bounds.insetBy(dx: 6, dy: verticalInset)
+        let timeHeight: CGFloat = timeField.isHidden ? 0 : 13
+        let titleFont = CompassFont.nsFont(size: bounds.height <= 15 ? 10 : 13)
+        titleField.font = titleFont
+        let lineHeight: CGFloat = bounds.height <= 15 ? 11 : 16
+        let availableHeight = max(lineHeight, titleBounds.height - timeHeight)
+        titleField.maximumNumberOfLines = max(1, Int((availableHeight / lineHeight).rounded(.down)))
+        let measured = (titleField.stringValue as NSString).boundingRect(
+            with: NSSize(width: max(1, titleBounds.width), height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin], attributes: [.font: titleFont]).height
+        let titleHeight = min(availableHeight, max(lineHeight, ceil(measured / lineHeight) * lineHeight))
+        titleField.frame = NSRect(x: titleBounds.minX, y: titleBounds.minY,
+            width: titleBounds.width, height: titleHeight)
+        timeField.frame = NSRect(x: titleBounds.minX, y: titleField.frame.maxY,
+            width: titleBounds.width, height: timeHeight)
         accentLayer.frame = CGRect(x: 0, y: 0, width: 3, height: bounds.height)
         focusRingLayer.frame = bounds.insetBy(dx: -4, dy: -4)
         focusAccessibilityAnchor.frame = bounds
