@@ -78,7 +78,7 @@ public enum CommandPaletteSearchLogic {
                 merged.append((start, end))
             }
         }
-        return merged.map { Range($0.0..<$0.1) }
+        return merged.map { $0.0..<$0.1 }
     }
 
     public static func scoreCommandItem(item: CommandPaletteSearchItem, query: String) -> Int {
