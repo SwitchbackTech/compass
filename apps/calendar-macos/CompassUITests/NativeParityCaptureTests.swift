@@ -1,3 +1,4 @@
+import CompassKit
 import XCTest
 
 /// Exports window PNGs for desktop ↔ web visual parity (see
@@ -7,7 +8,7 @@ final class NativeParityCaptureTests: XCTestCase {
     private static let demoLaunchArgs = ["-COMPASS_FIXTURE", "demo", "-compass.theme", "light-beach"]
 
     @MainActor
-    func testExportParitySurfaces() {
+    func testExportParitySurfaces() throws {
         guard NativeImageSnapshotSupport.parityCapture else {
             throw XCTSkip("Set PARITY_CAPTURE=1 to export parity PNGs")
         }
