@@ -119,7 +119,7 @@ final class NativeGridKeyboardRouter {
     func handleFlagsChanged(_ event: NSEvent) {
         let commandDown = event.modifierFlags.contains(.command)
         if model.settingsStore.isPresented || model.authStore.isModalPresented || model.pendingLogoutConfirmation
-            || model.invitationPrompt != nil {
+            || model.invitationPrompt != nil || model.pendingRsvpChoice != nil {
             modHold.handleFlagsChanged(modifierDown: false)
             formModHold.handleFlagsChanged(modifierDown: false)
             model.setPageJumpHintsVisible(false)
@@ -150,6 +150,14 @@ final class NativeGridKeyboardRouter {
             }
             if key.key == .named(.enter), key.modifiers.isEmpty {
                 Task { await model.confirmLogout() }
+                return true
+            }
+            return false
+        }
+        if model.pendingRsvpChoice != nil {
+            guard let key = KeyEvent(nsEvent: event) else { return false }
+            if key.key == .named(.escape), key.modifiers.isEmpty {
+                model.cancelRsvpScopeDialog()
                 return true
             }
             return false
