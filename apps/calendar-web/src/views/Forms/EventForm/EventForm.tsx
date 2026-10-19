@@ -45,7 +45,7 @@ import {
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
-  isDeleteTextEditingTarget,
+  isEditableKeyboardTarget,
   shouldDeferEnterToTarget,
 } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -699,7 +699,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     useAppShortcut(
       "Delete",
       (keyboardEvent) => {
-        if (isDeleteTextEditingTarget(keyboardEvent)) {
+        if (isEditableKeyboardTarget(keyboardEvent)) {
           return;
         }
 
