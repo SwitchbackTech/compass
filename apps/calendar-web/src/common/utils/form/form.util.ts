@@ -269,7 +269,3 @@ export const isEventFormKeyboardTarget = (
 
   return Boolean(formContainer);
 };
-
-export const isDeleteTextEditingTarget = (
-  keyboardEvent: Pick<KeyboardEvent, "target">,
-) => isEditableKeyboardTarget(keyboardEvent);
