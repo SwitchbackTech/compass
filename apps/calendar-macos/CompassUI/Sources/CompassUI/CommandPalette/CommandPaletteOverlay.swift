@@ -2,11 +2,13 @@ import CompassData
 import SwiftUI
 
 public struct CommandPaletteOverlay: View {
+    private static let resultsMaxHeight: CGFloat = 360
+
     @Environment(\.nativeWebTheme) private var theme
     public var model: NativeCalendarRootModel
     @Bindable private var paletteStore: CommandPaletteStore
     @FocusState private var searchFocused: Bool
-    @State private var resultsHeight: CGFloat = 360
+    @State private var resultsHeight: CGFloat = Self.resultsMaxHeight
 
     public init(model: NativeCalendarRootModel) {
         self.model = model
@@ -62,7 +64,7 @@ public struct CommandPaletteOverlay: View {
                                 }
                             }
                         }
-                        .frame(height: min(resultsHeight, 360))
+                        .frame(height: min(resultsHeight, Self.resultsMaxHeight))
                         .onChange(of: selectedId) { _, id in
                             if let id { proxy.scrollTo(id, anchor: .center) }
                         }

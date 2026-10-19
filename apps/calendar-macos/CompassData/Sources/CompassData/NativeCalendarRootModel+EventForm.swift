@@ -115,10 +115,7 @@ extension NativeCalendarRootModel {
             {
                 return loadedEvents.first { $0.id == id }
             }
-            if let id = focusStore.focusedEventId {
-                return loadedEvents.first { $0.id == id }
-            }
-            return nil
+            return focusedEvent()
         }()
         guard let event = sourceEvent,
             let duplicate = GridEventDraftFromEvent.duplicateDraft(from: event, calendars: calendars)

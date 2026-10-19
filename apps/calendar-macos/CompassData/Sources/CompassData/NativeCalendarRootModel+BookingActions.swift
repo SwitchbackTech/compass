@@ -2,7 +2,6 @@ import CompassKit
 import Foundation
 
 struct BookingEventActionContext: Equatable, Sendable {
-    let eventId: EventId
     let links: BookingEventLinks
     let guestName: String
 }
@@ -41,7 +40,7 @@ extension NativeCalendarRootModel {
             message = "This meeting was already cancelled."
         } catch {
             guard revision == sessionRevision else { return }
-            statusToastStore.show(id: "booking-cancel-meeting", message: "Could not cancel meeting. Try again.")
+            statusToastStore.show(id: Self.bookingCancelToastId, message: "Could not cancel meeting. Try again.")
             return
         }
         guard revision == sessionRevision else { return }
@@ -49,7 +48,7 @@ extension NativeCalendarRootModel {
             draftStore.discard()
             rebuildPresentation()
         }
-        statusToastStore.show(id: "booking-cancel-meeting", message: message)
+        statusToastStore.show(id: Self.bookingCancelToastId, message: message)
         try? eventsStore.invalidateRanges()
         await refreshVisibleRange()
     }
@@ -66,11 +65,18 @@ extension NativeCalendarRootModel {
         guard let draft = draftStore.gridDraft, draft.kind == .edit,
               let event = baselineEvent(for: draft), !EventInteractionPolicy.isReadOnly(event: event, calendars: calendars),
               case .details(let details) = event.content, let links = BookingEventLinks.parse(details.description),
-              isAppBookingURL(links.cancelURL), isAppBookingURL(links.rescheduleURL) else { return nil }
+              areAppBookingLinks(links) else { return nil }
         let guest = details.attendees?.first
         let name = guest?.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return BookingEventActionContext(eventId: event.id, links: links,
+        return BookingEventActionContext(
+            links: links,
             guestName: name.isEmpty ? (guest?.email ?? "Guest") : name)
+    }
+
+    private static let bookingCancelToastId = "booking-cancel-meeting"
+
+    private func areAppBookingLinks(_ links: BookingEventLinks) -> Bool {
+        isAppBookingURL(links.cancelURL) && isAppBookingURL(links.rescheduleURL)
     }
 
     private func isAppBookingURL(_ value: String) -> Bool {

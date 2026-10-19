@@ -40,13 +40,9 @@ extension NativeCalendarRootModel {
 
     func syncSidebandWithLoadedEvents() {
         guard isSignedIn || eventsStore.source == .local else { return }
-        let range = CalendarWindowMath.notifiableEventQueryRange(now: referenceNow)
-        sidebandEvents = loadedEvents.filter {
-            EventScheduleBounds.intersectsQueryRange(
-                event: $0,
-                start: range.startDate,
-                end: range.endDate)
-        }
+        sidebandEvents = eventsInNotifiableRange(
+            from: loadedEvents,
+            range: CalendarWindowMath.notifiableEventQueryRange(now: referenceNow))
         onSidebandDidChange?()
     }
 
@@ -68,12 +64,7 @@ extension NativeCalendarRootModel {
             _ = try await eventsStore.loadRange(key: key)
             guard revision == sessionRevision, isSignedIn || eventsStore.source == .local else { return }
             let all = try eventsStore.fetchAllEvents()
-            sidebandEvents = all.filter {
-                EventScheduleBounds.intersectsQueryRange(
-                    event: $0,
-                    start: range.startDate,
-                    end: range.endDate)
-            }
+            sidebandEvents = eventsInNotifiableRange(from: all, range: range)
         } catch {
             guard revision == sessionRevision else { return }
             sidebandEvents = []
@@ -129,6 +120,18 @@ extension NativeCalendarRootModel {
 
     public func upNextBannerShown(_ event: NotifiableEvent) {
         onUpNextBannerShown?(event)
+    }
+
+    private func eventsInNotifiableRange(
+        from events: [Event],
+        range: (startDate: String, endDate: String)
+    ) -> [Event] {
+        events.filter {
+            EventScheduleBounds.intersectsQueryRange(
+                event: $0,
+                start: range.startDate,
+                end: range.endDate)
+        }
     }
 
     private func focusEventDeepLink(eventId: String) {

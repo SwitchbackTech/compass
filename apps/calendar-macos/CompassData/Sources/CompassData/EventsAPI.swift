@@ -59,7 +59,7 @@ public struct EventsAPI: Sendable {
     public func get(id: EventId) async throws -> EventResponseEvent {
         let response: EventResponse = try await client.sendDecodable(
             method: "GET",
-            path: "event/\(id.rawValue)"
+            path: eventPath(id)
         )
         return response.event
     }
@@ -76,7 +76,7 @@ public struct EventsAPI: Sendable {
     public func replace(id: EventId, input: ReplaceEventInput) async throws -> EventResponseEvent {
         let response: EventResponse = try await client.sendDecodable(
             method: "PUT",
-            path: "event/\(id.rawValue)",
+            path: eventPath(id),
             body: input
         )
         return response.event
@@ -85,7 +85,7 @@ public struct EventsAPI: Sendable {
     public func delete(id: EventId, scope: EventDeleteScope) async throws {
         try await client.sendVoid(
             method: "DELETE",
-            path: "event/\(id.rawValue)",
+            path: eventPath(id),
             queryItems: [URLQueryItem(name: "scope", value: scope.rawValue)]
         )
     }
@@ -94,8 +94,12 @@ public struct EventsAPI: Sendable {
         let body = RsvpWireInput(responseStatus: responseStatus, scope: scope)
         try await client.sendVoid(
             method: "POST",
-            path: "event/\(id.rawValue)/rsvp",
+            path: eventPath(id, suffix: "/rsvp"),
             body: body
         )
+    }
+
+    private func eventPath(_ id: EventId, suffix: String = "") -> String {
+        "event/\(id.rawValue)\(suffix)"
     }
 }

@@ -417,17 +417,17 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEventFormKeys(_ keyEvent: KeyEvent) -> Bool {
-        if registry.bindingsById[.editCancelMeeting]?.contains(where: { keyEvent.matches($0) }) == true {
+        if matchesBinding(keyEvent, id: .editCancelMeeting) {
             guard model.hasBookedMeetingActions else { return false }
             Task { await model.triggerBookedMeetingCancellation() }
             return true
         }
-        if registry.bindingsById[.editRescheduleMeeting]?.contains(where: { keyEvent.matches($0) }) == true {
+        if matchesBinding(keyEvent, id: .editRescheduleMeeting) {
             guard model.hasBookedMeetingActions else { return false }
             model.rescheduleBookedMeeting()
             return true
         }
-        if registry.bindingsById[.editCopyDescriptionLink]?.contains(where: { keyEvent.matches($0) }) == true {
+        if matchesBinding(keyEvent, id: .editCopyDescriptionLink) {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
         if keyEvent.modifiers == [.command], keyEvent.key == .named(.enter) {
@@ -480,6 +480,10 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    private func matchesBinding(_ keyEvent: KeyEvent, id: ShortcutId) -> Bool {
+        registry.bindingsById[id]?.contains(where: { keyEvent.matches($0) }) == true
     }
 
     private func handleEditSequenceField(_ fieldName: String) {
