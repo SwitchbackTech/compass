@@ -13,7 +13,7 @@ final class CommandPaletteSearchLogicTests: XCTestCase {
 
     func testLabelMatchRangesMergeAdjacent() {
         let ranges = CommandPaletteSearchLogic.labelMatchRanges(label: "Go to Day", query: "go day")
-        XCTAssertEqual(ranges.map { ($0.lowerBound, $0.upperBound) }, [(0, 2), (6, 9)])
+        XCTAssertEqual(ranges, [0..<2, 6..<9])
     }
 
     func testKeywordOnlyMatchDoesNotHighlightLabel() {
