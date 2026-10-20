@@ -1,5 +1,6 @@
 import { calendar, type calendar_v3 } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
+import { LoggerFactory } from "@core/logger/logger.factory";
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type Attendee } from "@core/types/event-attendance.contracts";
 import {
@@ -11,7 +12,10 @@ import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import {
+  formatGoogleErrorEntriesForLog,
+  googleErrorReasons,
   googleFailureCause,
+  googleRequestBodyKeys,
   googleStatus,
 } from "@sync/providers/google/google-error";
 import {
@@ -223,10 +227,12 @@ export class GoogleEventWriter implements ProviderEventWriter {
         }
       }
       if (googleStatus(error) === 400) {
-        throw googleUnsupportedCapability(
-          error,
-          "Google declined to change this event",
-        );
+        throw classifyGoogle400(error, "Google declined to change this event", {
+          operation: "events.insert",
+          requestBodyKeys: googleRequestBodyKeys(
+            requestBody as Record<string, unknown>,
+          ),
+        });
       }
       throw classifyWriteError(error);
     }
@@ -240,38 +246,69 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // colorId on read and rehydrate as Compass colorHex. Google only accepts
       // eventLabelId writes under eventLabelVersion=1, and that version ignores
       // colorId — so clear the label first, then write colorId at default v0.
-      if (typeof input.content.color === "string") {
-        const cleared = await api.patch({
+      // Events with slot-only colors must not send eventLabelId: "" — Google
+      // 400s that patch and the failure masked the real main-patch error.
+      if (
+        typeof input.content.color === "string" &&
+        input.usesEventLabelColor === true
+      ) {
+        try {
+          const cleared = await api.patch({
+            calendarId: input.calendarId,
+            eventId: input.providerEventId,
+            requestBody: { eventLabelId: "" },
+            sendUpdates: "none",
+            ifMatch,
+            eventLabelVersion: 1,
+          });
+          if (cleared.etag) ifMatch = cleared.etag;
+        } catch (error) {
+          if (googleStatus(error) === 400) {
+            throw classifyGoogle400(
+              error,
+              "Google declined to clear the event label",
+              {
+                operation: "events.patch(clearEventLabel)",
+                requestBodyKeys: ["eventLabelId"],
+              },
+            );
+          }
+          throw classifyWriteError(error);
+        }
+      }
+      const mainBody = toGoogleBody(
+        input.content,
+        input.schedule,
+        input.recurrence,
+        input.attendees,
+        input.providerManaged,
+      );
+      try {
+        const patched = await api.patch({
           calendarId: input.calendarId,
           eventId: input.providerEventId,
-          requestBody: { eventLabelId: "" },
-          sendUpdates: "none",
+          requestBody: mainBody,
+          sendUpdates: toSendUpdates(input.invitation),
           ifMatch,
-          eventLabelVersion: 1,
         });
-        if (cleared.etag) ifMatch = cleared.etag;
+        return toResult(patched);
+      } catch (error) {
+        if (googleStatus(error) === 400) {
+          throw classifyGoogle400(
+            error,
+            "Google declined to change this event",
+            {
+              operation: "events.patch",
+              requestBodyKeys: googleRequestBodyKeys(
+                mainBody as Record<string, unknown>,
+              ),
+            },
+          );
+        }
+        throw classifyWriteError(error);
       }
-      const patched = await api.patch({
-        calendarId: input.calendarId,
-        eventId: input.providerEventId,
-        requestBody: toGoogleBody(
-          input.content,
-          input.schedule,
-          input.recurrence,
-          input.attendees,
-          input.providerManaged,
-        ),
-        sendUpdates: toSendUpdates(input.invitation),
-        ifMatch,
-      });
-      return toResult(patched);
     } catch (error) {
-      if (googleStatus(error) === 400) {
-        throw googleUnsupportedCapability(
-          error,
-          "Google declined to change this event",
-        );
-      }
+      if (error instanceof ProviderWriteError) throw error;
       throw classifyWriteError(error);
     }
   }
@@ -296,10 +333,10 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // never resolve; a typed capability refusal maps to an honest,
       // non-retryable error instead.
       if (googleStatus(error) === 400) {
-        throw googleUnsupportedCapability(
-          error,
-          "Google declined to delete this event",
-        );
+        throw classifyGoogle400(error, "Google declined to delete this event", {
+          operation: "events.delete",
+          requestBodyKeys: [],
+        });
       }
       throw classifyWriteError(error);
     }
@@ -607,11 +644,35 @@ const GOOGLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
   writeRejectedMessage: "Google rejected the write",
 };
 
+const GOOGLE_UNSUPPORTED_400_REASONS = new Set(["eventTypeRestriction"]);
+
+const googleWriteLog = LoggerFactory("sync:google-write");
+
 function googleUnsupportedCapability(
   error: unknown,
   message: string,
 ): ProviderWriteError {
   return new ProviderWriteError("unsupportedCapability", message, {
+    cause: googleFailureCause(error),
+  });
+}
+
+function classifyGoogle400(
+  error: unknown,
+  message: string,
+  context: { operation: string; requestBodyKeys: readonly string[] },
+): ProviderWriteError {
+  googleWriteLog.warn(
+    `Google ${context.operation} HTTP 400: ${formatGoogleErrorEntriesForLog(error)}; bodyKeys=[${context.requestBodyKeys.join(",")}]`,
+  );
+  if (
+    googleErrorReasons(error).some((reason) =>
+      GOOGLE_UNSUPPORTED_400_REASONS.has(reason),
+    )
+  ) {
+    return googleUnsupportedCapability(error, message);
+  }
+  return new ProviderWriteError("providerRejectedChange", message, {
     cause: googleFailureCause(error),
   });
 }

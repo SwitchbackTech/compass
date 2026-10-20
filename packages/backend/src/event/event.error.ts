@@ -5,6 +5,7 @@ import {
   type EventMutationError,
   type EventMutationErrorCodeSchema,
 } from "@core/types/event-command.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncClientError } from "@backend/common/services/sync-service/sync-service.client";
 
 export type EventMutationErrorCode = z.infer<
@@ -33,6 +34,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   // event (e.g. deleting one occurrence of a Google birthday event) — not a
   // provider outage, so never the retryable 502 it used to surface as.
   UNSUPPORTED_OPERATION: Status.FORBIDDEN,
+  PROVIDER_REJECTED: 502 as Status,
   // 403 like the capability refusals above: guests can only be written to a
   // writable calendar that can invite attendees, and retrying cannot change that.
   ATTENDEES_UNSUPPORTED: Status.FORBIDDEN,
@@ -54,6 +56,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   INVALID_INPUT: false,
   BILLING_REQUIRED: false,
   UNSUPPORTED_OPERATION: false,
+  PROVIDER_REJECTED: true,
   ATTENDEES_UNSUPPORTED: false,
 };
 
@@ -68,6 +71,8 @@ export class EventMutationException extends BaseError {
     // defect, and the correlation id belongs in the log rather than in the
     // message, which PostHog groups issues by.
     public readonly syncError?: SyncClientError,
+    // Calendar provider for user-facing save-failure copy when known.
+    public readonly provider?: ProviderKind,
   ) {
     super(
       mutationCode,
@@ -83,8 +88,9 @@ export const eventMutationError = (
   code: EventMutationErrorCode,
   message: string,
   syncError?: SyncClientError,
+  provider?: ProviderKind,
 ): EventMutationException =>
-  new EventMutationException(code, message, syncError);
+  new EventMutationException(code, message, syncError, provider);
 
 /**
  * Maps any thrown error into the strict EventMutationError envelope (B5).
@@ -101,6 +107,7 @@ export const toEventMutationError = (
         code: e.mutationCode,
         message: e.message,
         retryable: RETRYABLE_BY_CODE[e.mutationCode],
+        ...(e.provider ? { provider: e.provider } : {}),
       },
     };
   }

@@ -91,4 +91,22 @@ describe("SidebarActions", () => {
       screen.queryByRole("button", { name: /^Shortcut level/ }),
     ).not.toBeInTheDocument();
   });
+
+  it("groups footer controls in one leading row for tab order", () => {
+    const { wrapper } = createStoreWrapper();
+    const { container } = render(<SidebarActions />, { wrapper });
+
+    const footer = container.firstElementChild;
+    expect(footer?.childElementCount).toBe(3);
+    expect(footer?.className).not.toContain("justify-between");
+
+    const labels = screen
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"));
+    expect(labels).toEqual([
+      "Open shortcuts",
+      "Open settings",
+      "Open command palette",
+    ]);
+  });
 });

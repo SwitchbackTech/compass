@@ -5,17 +5,15 @@ struct SettingsUnsignedAccountsSectionView: View {
     @Environment(\.nativeWebTheme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Accounts")
-                .font(.rubik(15))
-                .foregroundStyle(theme.textColor)
+        // Web shows no section heading; the nav already says Accounts.
+        VStack(alignment: .leading, spacing: 12) {
             Text("No accounts connected yet.")
-                .font(.rubik(13))
+                .font(.rubik(14))
                 .foregroundStyle(theme.textMutedColor)
             Text(
                 "Pick Google, Microsoft, or Apple. Or keep using this device only from the calendar list."
             )
-            .font(.rubik(13))
+            .font(.rubik(12))
             .foregroundStyle(theme.textMutedColor)
         }
         .accessibilityIdentifier("settings-section-accounts")

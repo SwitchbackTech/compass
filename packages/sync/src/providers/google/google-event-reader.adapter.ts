@@ -7,6 +7,7 @@ import {
   googleErrorReasons,
   googleFailureCause,
   googleStatus,
+  summarizeGoogleEventFieldsForLog,
 } from "@sync/providers/google/google-error";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
@@ -127,8 +128,23 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
         // dropped so one bad row never fails the whole page or the import.
         if (error instanceof ProviderEventError) {
           skipped++;
+          const zodPath =
+            error.cause &&
+            typeof error.cause === "object" &&
+            "issues" in error.cause &&
+            Array.isArray((error.cause as { issues: unknown[] }).issues)
+              ? (
+                  (error.cause as { issues: Array<{ path?: unknown[] }> })
+                    .issues[0]?.path ?? []
+                )
+                  .map(String)
+                  .join(".")
+              : "";
           this.#log.warn(
-            `Skipped unusable Google event ${item.id ?? "(no id)"} (${error.reason})`,
+            `Skipped unusable Google event ${item.id ?? "(no id)"} (${error.reason})` +
+              ` message=${error.message}` +
+              (zodPath ? ` schemaPath=${zodPath}` : "") +
+              ` fields={${summarizeGoogleEventFieldsForLog(item)}}`,
           );
           continue;
         }

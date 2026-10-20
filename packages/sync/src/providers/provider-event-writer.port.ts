@@ -58,6 +58,9 @@ export interface ProviderPatchInput extends ProviderWriteBody {
   readonly accessToken: string;
   readonly calendarId: string;
   readonly providerEventId: string;
+  // When true, a slot colorId write must first clear a custom Google event
+  // label (eventLabelVersion=1). Omit/false when the event has no label.
+  readonly usesEventLabelColor?: true;
   // When true, the writer must send only the fields its provider accepts on
   // a provider-managed event (Google: color and attendees; others ignore).
   readonly providerManaged?: true;
@@ -155,6 +158,7 @@ export type ProviderWriteErrorReason =
   | "authorizationRevoked" // the credential is no longer valid
   | "transient" // network / 5xx / rate limit — safe to retry
   | "unsupportedCapability" // the provider declines this operation for this event
+  | "providerRejectedChange" // a well-formed write the provider rejected (generic 400)
   | "permanentProviderError"; // an unrecoverable provider rejection
 
 export class ProviderWriteError extends ProviderError<ProviderWriteErrorReason> {}

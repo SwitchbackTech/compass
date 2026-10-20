@@ -258,6 +258,7 @@ public struct RootView: View {
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
                 visibleDayCount: model.viewStore.visibleDayCount,
+                today: model.referenceNow,
                 trailingHeader: {
                     HStack(spacing: 8) {
                         TrialBadgeView(billingStore: model.billingStore)
@@ -278,7 +279,7 @@ public struct RootView: View {
         .padding(.bottom, 20)
     }
 
-    /// Web `SidebarActions`: shortcuts on the left, settings and palette on the right.
+    /// Web `SidebarActions`: one leading group; refresh trails so stable icons never shift.
     private var sidebarActions: some View {
         HStack(spacing: 8) {
             sidebarActionButton(
@@ -287,15 +288,15 @@ public struct RootView: View {
             ) {
                 model.toggleShortcutsLegend()
             }
-            SidebarRefreshButton(model: model)
-            Spacer()
             sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
                 model.settingsStore.open()
             }
             sidebarActionButton(label: "Open command palette", systemImage: "command") {
                 model.toggleCommandPalette()
             }
+            SidebarRefreshButton(model: model)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .frame(height: 48)
         .overlay(alignment: .top) {

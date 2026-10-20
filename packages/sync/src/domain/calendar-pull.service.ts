@@ -31,6 +31,7 @@ export type CalendarPullResult =
       resource: SyncResourceRecord;
       changed: number;
       deleted: number;
+      skipped: number;
       // A push notification for this calendar landed AFTER this pull had
       // already read the provider, so the change it announced is in neither
       // this pull nor any queued job (the enqueue coalesced onto this pull's
@@ -125,6 +126,7 @@ export async function pullCalendarChanges(
   let pageToken = resource.pageCursor;
   let cursor = resource.syncCursor;
   let deleted = 0;
+  let readerSkipped = 0;
   const colorLabels = toColorLabelMap(calendar.eventLabels);
   const calendarDefaultPopupReminderMinutes =
     calendar.defaultPopupReminderMinutes ?? [];
@@ -160,6 +162,7 @@ export async function pullCalendarChanges(
       throw error;
     }
 
+    readerSkipped += page.skipped;
     const standalone = await applier.applyPage(page.events);
     deleted += await applyDeletions(deps, calendar, standalone);
 
@@ -211,6 +214,7 @@ export async function pullCalendarChanges(
     resource: updated ?? resource,
     changed: applier.importedCount,
     deleted,
+    skipped: readerSkipped,
     changedDuringPull: !served,
     pushLatencyMs: notifiedAtStart
       ? appliedAt.getTime() - notifiedAtStart.getTime()

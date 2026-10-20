@@ -607,6 +607,7 @@ public enum CodeEnum: String, Codable, Hashable, Sendable, CaseIterable {
     case mAINTENANCE = "MAINTENANCE"
     case mOVE_UNSUPPORTED = "MOVE_UNSUPPORTED"
     case pROVIDER_FAILURE = "PROVIDER_FAILURE"
+    case pROVIDER_REJECTED = "PROVIDER_REJECTED"
     case rECURRENCE_CONFLICT = "RECURRENCE_CONFLICT"
     case sYNC_UNAVAILABLE = "SYNC_UNAVAILABLE"
     case uNSUPPORTED_OPERATION = "UNSUPPORTED_OPERATION"
@@ -1090,12 +1091,14 @@ public struct EventMutationError: Codable, Hashable, Sendable {
     public let code: CodeEnum
     public let connectionId: String?
     public let message: String
+    public let provider: ProviderEnum?
     public let retryable: Bool
 
-    public init(code: CodeEnum, connectionId: String? = nil, message: String, retryable: Bool) {
+    public init(code: CodeEnum, connectionId: String? = nil, message: String, provider: ProviderEnum? = nil, retryable: Bool) {
         self.code = code
         self.connectionId = connectionId
         self.message = message
+        self.provider = provider
         self.retryable = retryable
     }
 }

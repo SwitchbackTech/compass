@@ -11,7 +11,7 @@ struct DeleteAccountConfirmationDialogView: View {
 
     var body: some View {
         if model.pendingDeleteAccountConfirmation {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 ModalDialogTitle("Delete your Compass account?")
                 Text(
                     "This deletes your Compass account and data: your calendars, events, and settings. "
@@ -21,12 +21,13 @@ struct DeleteAccountConfirmationDialogView: View {
                         + "Your connected calendars are not affected. Nothing there gets deleted, Compass just "
                         + "loses its access to them."
                 )
-                .font(.rubik(14))
+                .font(.rubik(16))
                 .foregroundStyle(theme.textColor)
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Type \(Self.confirmPhrase) to confirm")
-                        .font(.rubik(13))
-                        .foregroundStyle(theme.textMutedColor)
+                    (Text("Type ").foregroundColor(theme.textColor)
+                        + Text(Self.confirmPhrase).foregroundColor(theme.textMutedColor)
+                        + Text(" to confirm").foregroundColor(theme.textColor))
+                        .font(.rubik(14))
                     TextField("Confirmation phrase", text: $typedPhrase)
                         .textFieldStyle(.plain)
                         .font(.rubik(14))
@@ -45,15 +46,19 @@ struct DeleteAccountConfirmationDialogView: View {
                         .font(.rubik(14))
                         .foregroundStyle(theme.textColor)
                 }
-                HStack {
-                    Button("Cancel") { model.cancelDeleteAccount() }
-                        .keyboardShortcut(.cancelAction)
-                    Spacer()
-                    Button(model.isDeletingAccount ? "Deleting…" : "Delete account") {
+                HStack(spacing: 12) {
+                    OverlayPanelActionButton(
+                        model.isDeletingAccount ? "Deleting…" : "Delete account",
+                        variant: .destructive,
+                        shortcut: typedPhrase == Self.confirmPhrase ? ["Enter"] : []
+                    ) {
                         Task { await model.confirmDeleteAccount() }
                     }
                     .keyboardShortcut(.defaultAction)
                     .disabled(typedPhrase != Self.confirmPhrase || model.isDeletingAccount)
+                    OverlayPanelActionButton("Cancel", shortcut: ["Esc"]) { model.cancelDeleteAccount() }
+                        .keyboardShortcut(.cancelAction)
+                    Spacer()
                 }
             }
             .accessibilityAddTraits(.isModal)

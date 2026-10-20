@@ -11,19 +11,31 @@ public struct BillingUpgradeConfirmationSheet: View {
 
     public var body: some View {
         if billingStore.isUpgradeConfirmationPresented {
+            let dismiss = { billingStore.isUpgradeConfirmationPresented = false }
             BillingDialogPanel(
                 title: "Start Premium now?",
                 message: "Premium starts right away and the card on file is charged today. Everything in your calendar keeps working, and the trial badge goes away. Manage billing opens your invoices and card on file. It does not charge you or end the trial.",
-                primaryTitle: billingStore.isSubmitting ? "Starting Premium…" : "Start Premium",
-                primaryDestructive: false,
-                primaryAction: { Task { await billingStore.endTrialEarly() } },
-                secondaryTitle: "Manage billing",
-                secondaryAction: {
-                    billingStore.isUpgradeConfirmationPresented = false
-                    billingStore.openSettings()
-                },
-                onDismiss: { billingStore.isUpgradeConfirmationPresented = false }
-            )
+                onDismiss: dismiss
+            ) {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 12) {
+                        OverlayPanelActionButton(
+                            billingStore.isSubmitting ? "Starting Premium…" : "Start Premium",
+                            variant: .primary,
+                            shortcut: ["Enter"]
+                        ) { Task { await billingStore.endTrialEarly() } }
+                        .keyboardShortcut(.defaultAction)
+                        OverlayPanelActionButton("Cancel", shortcut: ["Esc"], action: dismiss)
+                            .keyboardShortcut(.cancelAction)
+                    }
+                    OverlayPanelActionButton("Manage billing", variant: .ghost, shortcut: ["M"]) {
+                        dismiss()
+                        billingStore.openSettings()
+                    }
+                    .keyboardShortcut("m", modifiers: [])
+                }
+                .disabled(billingStore.isSubmitting)
+            }
         }
     }
 }
@@ -45,57 +57,42 @@ public struct BillingCancelConfirmationSheet: View {
             let message = isTrialing
                 ? "You keep access until the trial ends on \(periodEndLabel). You can resume any time before then."
                 : "Your plan stays active until \(periodEndLabel). You can resume any time before then."
-            BillingDialogPanel(
-                title: "Cancel your plan?",
-                message: message,
-                primaryTitle: billingStore.isSubmitting ? "Canceling…" : "Cancel subscription",
-                primaryDestructive: true,
-                primaryAction: { Task { await billingStore.cancelSubscriptionAtPeriodEnd() } },
-                secondaryTitle: "Keep plan",
-                secondaryAction: { billingStore.isCancelConfirmationPresented = false },
-                onDismiss: { billingStore.isCancelConfirmationPresented = false }
-            )
+            let dismiss = {
+                guard !billingStore.isSubmitting else { return }
+                billingStore.isCancelConfirmationPresented = false
+            }
+            BillingDialogPanel(title: "Cancel your plan?", message: message, onDismiss: dismiss) {
+                HStack(spacing: 12) {
+                    OverlayPanelActionButton(
+                        billingStore.isSubmitting ? "Canceling…" : "Cancel subscription",
+                        variant: .destructive,
+                        shortcut: ["Enter"]
+                    ) { Task { await billingStore.cancelSubscriptionAtPeriodEnd() } }
+                    .keyboardShortcut(.defaultAction)
+                    OverlayPanelActionButton("Keep plan", shortcut: ["Esc"], action: dismiss)
+                        .keyboardShortcut(.cancelAction)
+                }
+                .disabled(billingStore.isSubmitting)
+            }
         }
     }
 }
 
-private struct BillingDialogPanel: View {
-    @Environment(\.nativeWebTheme) private var theme
+/// Web `OverlayPanel` modal with a title, message, and start-aligned actions.
+private struct BillingDialogPanel<Actions: View>: View {
     let title: String
     let message: String
-    let primaryTitle: String
-    let primaryDestructive: Bool
-    let primaryAction: () -> Void
-    let secondaryTitle: String
-    let secondaryAction: () -> Void
     let onDismiss: () -> Void
+    @ViewBuilder let actions: Actions
 
     var body: some View {
-        ZStack {
-            theme.panelBackdropColor.ignoresSafeArea()
-            VStack(alignment: .leading, spacing: 12) {
-                Text(title)
-                    .font(.rubik(18))
-                    .foregroundStyle(theme.textColor)
-                Text(message)
-                    .font(.rubik(13))
-                    .foregroundStyle(theme.textMutedColor)
-                HStack(spacing: 8) {
-                    Button(primaryTitle, action: primaryAction)
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(primaryDestructive ? theme.warningColor : theme.textColor)
-                        .foregroundStyle(theme.backgroundColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    Button(secondaryTitle, action: secondaryAction)
-                        .buttonStyle(.plain)
-                        .foregroundStyle(theme.textMutedColor)
-                }
-            }
-            .padding(OverlayPanelChrome.padding)
-            .frame(maxWidth: 440)
-            .overlayPanelChrome()
+        VStack(alignment: .leading, spacing: 24) {
+            ModalDialogTitle(title)
+            ModalDialogMessage(message)
+            actions
         }
+        .accessibilityAddTraits(.isModal)
+        .modalDialogChrome(maxWidth: 400, identifier: "compass-billing-dialog")
+        .onExitCommand(perform: onDismiss)
     }
 }

@@ -3,12 +3,16 @@ import {
   type SyncCommand,
   type SyncCommandFailureReason,
 } from "@core/types/sync/command.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { throwSyncCommandSubmitFailure } from "@backend/common/services/sync-service/sync-proxy-error";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { eventMutationError } from "@backend/event/event.error";
 
-const mapSyncFailure = (reason: SyncCommandFailureReason) => {
+const mapSyncFailure = (
+  reason: SyncCommandFailureReason,
+  provider?: ProviderKind,
+) => {
   switch (reason) {
     case "readOnlyCalendar":
       return eventMutationError("CALENDAR_READ_ONLY", "Calendar is read-only");
@@ -31,10 +35,19 @@ const mapSyncFailure = (reason: SyncCommandFailureReason) => {
         "UNSUPPORTED_OPERATION",
         "This calendar doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in your calendar.",
       );
+    case "providerRejectedChange":
+      return eventMutationError(
+        "PROVIDER_REJECTED",
+        "Sync command failed (providerRejectedChange)",
+        undefined,
+        provider,
+      );
     case "permanentProviderError":
       return eventMutationError(
         "PROVIDER_FAILURE",
         `Sync command failed (${reason})`,
+        undefined,
+        provider,
       );
   }
 };
@@ -44,10 +57,15 @@ const mapSyncFailure = (reason: SyncCommandFailureReason) => {
 // have been accepted by Sync, so retrying via eventService would duplicate
 // the write. Booking and event mutations share this boundary so HTTP 200
 // with a failed/cancelled/nonterminal command cannot look like success.
+export type SubmitCommandContext = {
+  provider?: ProviderKind;
+};
+
 export const submitCommandOrThrow = async (
   client: SyncServiceClient,
   userId: string,
   request: CommandSubmitRequest,
+  context: SubmitCommandContext = {},
 ): Promise<SyncCommand> => {
   const result = await client.submitCommand(toSyncPrincipal(userId), request);
   if (!result.ok) {
@@ -59,10 +77,15 @@ export const submitCommandOrThrow = async (
 
   const { outcome } = result.value.command;
   if (outcome.state === "failed") {
-    throw mapSyncFailure(outcome.failureReason);
+    throw mapSyncFailure(outcome.failureReason, context.provider);
   }
   if (outcome.state === "cancelled") {
-    throw eventMutationError("PROVIDER_FAILURE", "Sync command was cancelled");
+    throw eventMutationError(
+      "PROVIDER_FAILURE",
+      "Sync command was cancelled",
+      undefined,
+      context.provider,
+    );
   }
   // Backstop for invariant 1 ("every write resolves definitively"): a
   // command that is still pending/applying/reconciling has NOT actually
@@ -78,6 +101,8 @@ export const submitCommandOrThrow = async (
     throw eventMutationError(
       "PROVIDER_FAILURE",
       `Sync command did not resolve (${outcome.state})`,
+      undefined,
+      context.provider,
     );
   }
   return result.value.command;

@@ -110,15 +110,16 @@ public struct SettingsWindowOverlay: View {
     @ViewBuilder
     private var content: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 16) {
                 if model.settingsStore.page == .billing {
                     billingContent
                 } else if model.settingsStore.page == .booking {
                     SettingsBookingSectionView(model: model)
                 } else {
                     accountsContent
+                    // Web: `mt-2 border-t border-border pt-3` above the actions.
                     VStack(alignment: .leading, spacing: 12) {
-                        Divider().overlay(theme.borderColor)
+                        Rectangle().fill(theme.borderColor).frame(height: 1)
                         SettingsDataActionsSectionView(model: model)
                     }
                     .padding(.top, 8)
@@ -129,7 +130,7 @@ public struct SettingsWindowOverlay: View {
     }
 
     private var accountsContent: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 16) {
             SettingsTimezoneSectionView(
                 settingsStore: model.settingsStore,
                 viewStore: model.viewStore)

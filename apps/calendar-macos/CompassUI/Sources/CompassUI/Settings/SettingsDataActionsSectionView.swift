@@ -12,6 +12,7 @@ struct SettingsDataActionsSectionView: View {
                 title: model.isExportingLocalData ? "Exporting…" : "Export data",
                 variant: .secondary,
                 identifier: "settings-export-data",
+                shortcut: "E",
                 disabled: model.isExportingLocalData
             ) {
                 Task { await model.exportLocalData() }
@@ -19,7 +20,8 @@ struct SettingsDataActionsSectionView: View {
             settingsActionButton(
                 title: "Delete account",
                 variant: .destructive,
-                identifier: "settings-delete-account"
+                identifier: "settings-delete-account",
+                shortcut: "D"
             ) {
                 model.requestDeleteAccount()
             }
@@ -28,6 +30,7 @@ struct SettingsDataActionsSectionView: View {
                     title: "Log out",
                     variant: .secondary,
                     identifier: "settings-log-out",
+                    shortcut: "O",
                     disabled: model.isLoggingOut
                 ) {
                     model.requestLogout()
@@ -46,11 +49,18 @@ struct SettingsDataActionsSectionView: View {
         title: String,
         variant: ActionVariant,
         identifier: String,
+        shortcut: String,
         disabled: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Text(title)
+            // Web shows the action letter while Mod is held (`showShortcut={areHintsVisible}`).
+            HStack(spacing: 8) {
+                Text(title)
+                if model.focusStore.pageJumpHintsVisible {
+                    ShortcutHintChip(label: shortcut)
+                }
+            }
                 .font(.rubik(14))
                 .foregroundStyle(variant == .destructive ? theme.onAccentColor : theme.textColor)
                 .padding(.horizontal, 16)
