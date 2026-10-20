@@ -17,10 +17,10 @@ public struct SettingsWindowOverlay: View {
                     theme.panelBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { model.closeSettingsIfAllowed() }
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 24) {
                         HStack(alignment: .center) {
                             Text("Settings")
-                                .font(.rubik(18))
+                                .font(.rubik(18, weight: .semibold))
                                 .foregroundStyle(theme.textColor)
                             Spacer(minLength: 8)
                             Button("Close") { model.closeSettingsIfAllowed() }
@@ -30,19 +30,15 @@ public struct SettingsWindowOverlay: View {
                             ShortcutHintChip(label: "Esc")
                                 .allowsHitTesting(false)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                        HStack(alignment: .top, spacing: 0) {
+                        HStack(alignment: .top, spacing: 24) {
                             nav
-                            Divider().overlay(theme.borderColor)
                             content
                         }
                     }
-                    .frame(
-                        width: min(640, max(0, geometry.size.width - 32)),
-                        height: min(620, max(0, geometry.size.height - 32))
-                    )
+                    .padding(OverlayPanelChrome.padding)
+                    .frame(width: min(640, max(0, geometry.size.width - 32)))
+                    .frame(maxHeight: geometry.size.height * 0.9)
+                    .fixedSize(horizontal: false, vertical: true)
                     .overlayPanelChrome()
                     .frame(maxWidth: .infinity, alignment: .top)
                     .padding(.top, geometry.size.height * 0.05)
@@ -78,9 +74,7 @@ public struct SettingsWindowOverlay: View {
                 }
                 .padding(.top, 4)
             }
-            Spacer(minLength: 0)
         }
-        .padding(20)
         .frame(width: 128, alignment: .leading)
     }
 
@@ -101,30 +95,27 @@ public struct SettingsWindowOverlay: View {
 
     @ViewBuilder
     private var content: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    if model.settingsStore.page == .billing {
-                        billingContent
-                    } else if model.settingsStore.page == .booking {
-                        SettingsBookingSectionView(model: model)
-                    } else {
-                        accountsContent
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                if model.settingsStore.page == .billing {
+                    billingContent
+                } else if model.settingsStore.page == .booking {
+                    SettingsBookingSectionView(model: model)
+                } else {
+                    accountsContent
+                    VStack(alignment: .leading, spacing: 12) {
+                        Divider().overlay(theme.borderColor)
+                        SettingsDataActionsSectionView(model: model)
                     }
+                    .padding(.top, 8)
                 }
-                .padding(16)
-            }
-            if model.settingsStore.page == .accounts {
-                Divider().overlay(theme.borderColor)
-                SettingsDataActionsSectionView(model: model)
-                    .padding(16)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var accountsContent: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 24) {
             SettingsTimezoneSectionView(
                 settingsStore: model.settingsStore,
                 viewStore: model.viewStore)
