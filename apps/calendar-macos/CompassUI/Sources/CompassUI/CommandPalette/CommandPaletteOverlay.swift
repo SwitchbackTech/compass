@@ -14,7 +14,7 @@ public struct CommandPaletteOverlay: View {
     public var model: NativeCalendarRootModel
     @Bindable private var paletteStore: CommandPaletteStore
     @FocusState private var searchFocused: Bool
-    @State private var resultsHeight: CGFloat = Self.resultsMaxHeight
+    @State private var resultsHeight: CGFloat = 360
 
     public init(model: NativeCalendarRootModel) {
         self.model = model
