@@ -239,9 +239,6 @@ public struct RootView: View {
             SidebarMonthPicker(
                 displayedMonth: Binding(get: { model.monthPickerMonth }, set: { model.browseMonth($0) }),
                 selectedDate: model.viewStore.anchorDate,
-                referenceNow: model.referenceNow,
-                viewRangeStart: model.startOfView,
-                viewRangeEnd: model.endOfView,
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
                 visibleDayCount: model.viewStore.visibleDayCount,

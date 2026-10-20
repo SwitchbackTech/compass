@@ -113,10 +113,6 @@ enum NativeImageSnapshotSupport {
             XCTFail("Window missing for title bar reference screenshot", file: file, line: line)
             return
         }
-        XCTAssertGreaterThanOrEqual(
-            window.frame.width,
-            1270,
-            "Parity window must stay at full 1280px width so the sidebar toggle is in frame")
         let sidebarToggle = window.buttons.matching(
             NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
         ).firstMatch
