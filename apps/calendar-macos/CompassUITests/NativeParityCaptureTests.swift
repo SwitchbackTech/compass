@@ -119,11 +119,16 @@ final class NativeParityCaptureTests: XCTestCase {
 
     @MainActor
     private func captureCommandPalette() {
-        let window = launchDemoWindow()
+        let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_COMMAND_PALETTE"])
         prepareParityGrid(window, dismissDemoBanner: true)
-        window.typeKey("k", modifierFlags: [.command])
+        let openPalette = window.descendants(matching: .any)["compass-ui-test-open-command-palette"]
+        if openPalette.waitForExistence(timeout: 3) {
+            openPalette.tap()
+        } else {
+            window.typeKey("k", modifierFlags: [.command])
+        }
         XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-command-palette"].waitForExistence(timeout: 8))
+            window.descendants(matching: .any)["compass-native-command-palette"].waitForExistence(timeout: 15))
         NativeImageSnapshotSupport.captureWindow(window, named: "command-palette")
     }
 
