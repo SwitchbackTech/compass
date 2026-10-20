@@ -1,7 +1,6 @@
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
-import { type FC, useCallback, useContext, useEffect, useRef } from "react";
+import { type FC, useCallback, useContext, useEffect } from "react";
 import { PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
-import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
 import { BANNER_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
@@ -9,43 +8,34 @@ import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
 import IconButton from "@web/components/IconButton/IconButton";
 import { localModeConnectPromptActions } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
 import { useLocalModeConnectPromptEligible } from "@web/components/LocalModeConnectPrompt/useLocalModeConnectPromptEligible";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  TOAST_PRIMARY_ACTION_KEY,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
-const LOCAL_MODE_CONNECT_PROMPT_ARIA_LABEL = "Connect Google";
+export const LOCAL_MODE_CONNECT_PROMPT_ARIA_LABEL = "Start your free trial";
 
 export const LOCAL_MODE_CONNECT_PROMPT_MESSAGE =
-  "Connect Google to sync your events and start your free trial.";
+  "Start your free trial to save this calendar on every device.";
 
-export const LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL = "Connect Google";
-
-const shouldDelegateEnterToConnect = (
-  active: Element | null,
-  connectRef: HTMLButtonElement | null,
-): boolean => {
-  if (!connectRef) return false;
-  if (active === connectRef) return true;
-  if (active instanceof HTMLElement && active.isContentEditable) return false;
-  const tag = active?.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return false;
-  return true;
-};
+export const LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL = "Start free trial";
 
 export const LocalModeConnectPrompt: FC = () => {
-  const { isOpen: isAuthModalOpen } = useContext(AuthModalContext);
+  const { isOpen: isAuthModalOpen, openModal } = useContext(AuthModalContext);
   const { isLive, writeCount } =
     useLocalModeConnectPromptEligible(isAuthModalOpen);
   const { closing, beginDismiss } = useDismissTransition(BANNER_DISMISS_MS);
-  const connectRef = useRef<HTMLButtonElement>(null);
-  const { startSignIn, isLoading } = useSignInProviders({ signupFlow: true });
 
   const dismiss = useCallback(() => {
     beginDismiss(() => localModeConnectPromptActions.dismiss(writeCount));
   }, [beginDismiss, writeCount]);
 
-  const connect = useCallback(() => {
+  const startTrial = useCallback(() => {
     localModeConnectPromptActions.connect(writeCount);
-    startSignIn("google");
-  }, [startSignIn, writeCount]);
+    openModal("signUp");
+  }, [openModal, writeCount]);
 
   useEffect(() => {
     localModeConnectPromptActions.syncFromStorage();
@@ -56,32 +46,15 @@ export const LocalModeConnectPrompt: FC = () => {
     localModeConnectPromptActions.markShown(writeCount);
   }, [isLive, writeCount]);
 
+  useNoticeActionShortcut(TOAST_PRIMARY_ACTION_KEY, startTrial, {
+    enabled: isLive && !closing,
+  });
+
   useAppShortcut("Escape", dismiss, {
     enabled: isLive && !closing,
     ignoreAppLock: true,
     preventDefault: true,
   });
-
-  useAppShortcut(
-    "Enter",
-    (event) => {
-      if (event.repeat) return;
-      if (
-        !shouldDelegateEnterToConnect(
-          document.activeElement,
-          connectRef.current,
-        )
-      ) {
-        return;
-      }
-      connect();
-    },
-    {
-      enabled: isLive && !closing,
-      ignoreAppLock: true,
-      preventDefault: true,
-    },
-  );
 
   if (!isLive) return null;
 
@@ -109,14 +82,12 @@ export const LocalModeConnectPrompt: FC = () => {
           </IconButton>
         </div>
         <button
-          className="c-button-compact c-button-primary inline-flex items-center justify-center self-start rounded-xs px-3 py-1.5 text-s data-busy:pointer-events-none data-busy:opacity-60"
-          data-busy={isLoading || undefined}
-          disabled={isLoading}
-          onClick={connect}
-          ref={connectRef}
+          className="c-button-compact c-button-primary inline-flex items-center justify-center gap-2 self-start rounded-xs px-3 py-1.5 text-s"
+          onClick={startTrial}
           type="button"
         >
           {LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL}
+          <ShortcutKeys keys={TOAST_PRIMARY_ACTION_KEY} />
         </button>
       </div>
     </aside>

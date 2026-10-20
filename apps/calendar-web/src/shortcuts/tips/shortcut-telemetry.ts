@@ -3,6 +3,7 @@ import {
   type RegisterableHotkey,
   rawHotkeyToParsedHotkey,
 } from "@tanstack/react-hotkeys";
+import { noteAnonymousShortcutEngagementIfEligible } from "@web/auth/posthog/note-anonymous-explorer-engagement";
 import { track } from "@web/auth/posthog/track";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getAppLockReasons } from "@web/shortcuts/app-lock";
@@ -145,6 +146,7 @@ export function recordHandledShortcutInvocation(
   } = options;
   const section = sectionForRegistryId(shortcutId);
   updateShortcutUsage(shortcutId, now);
+  noteAnonymousShortcutEngagementIfEligible();
   if (!emitEvent || !section) return;
 
   track("shortcut_invoked", {

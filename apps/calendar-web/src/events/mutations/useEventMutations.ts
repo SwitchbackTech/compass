@@ -109,10 +109,10 @@ import {
   isSkippedEventWrite,
   isSupersededByLaterEditWrite,
   markAnonymousEventWrite,
+  noteAnonymousWriteEngagementIfEligible,
   type PrecedingEventWrites,
   precedingCreateOk,
   precedingDeleteOk,
-  showAnonymousSaveToastIfEligible,
   skippedEventWrite,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
@@ -540,9 +540,9 @@ export function useEventMutations(
     [dependencies.repository, source],
   );
   const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
-  const showAnonymousSaveToast =
+  const noteAnonymousWriteEngagement =
     dependencies.markWrite === undefined
-      ? showAnonymousSaveToastIfEligible
+      ? noteAnonymousWriteEngagementIfEligible
       : undefined;
   const reportError = dependencies.reportError ?? handleError;
 
@@ -773,7 +773,7 @@ export function useEventMutations(
     const wrote = canWrite(preceding);
     if (wrote) await write();
     await markWrite();
-    if (wrote) await showAnonymousSaveToast?.();
+    if (wrote) await noteAnonymousWriteEngagement?.();
     return wrote;
   };
 

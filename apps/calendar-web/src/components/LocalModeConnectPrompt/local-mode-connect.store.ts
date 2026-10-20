@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import { readAnonymousCalendarWriteCount } from "@web/auth/posthog/anon-calendar-write-count.util";
 import {
-  ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT,
-  readAnonymousCalendarWriteCount,
-} from "@web/auth/posthog/anon-calendar-write-count.util";
+  isAnonymousExplorerEngaged,
+  readAnonymousShortcutEngagementCount,
+} from "@web/auth/posthog/anon-explorer-engagement.util";
 import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -10,11 +11,13 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 
 export type LocalModeConnectPromptState = {
   writeCount: number;
+  shortcutEngagementCount: number;
   isDismissed: boolean;
 };
 
 const snapshotFromStorage = (): LocalModeConnectPromptState => ({
   writeCount: readAnonymousCalendarWriteCount(),
+  shortcutEngagementCount: readAnonymousShortcutEngagementCount(),
   isDismissed:
     persistentBrowserStore.get(
       STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
@@ -72,6 +75,10 @@ export const selectLocalModeConnectPromptWriteCount = (
   state: LocalModeConnectPromptState,
 ): number => state.writeCount;
 
+export const selectLocalModeConnectPromptShortcutEngagementCount = (
+  state: LocalModeConnectPromptState,
+): number => state.shortcutEngagementCount;
+
 export const selectLocalModeConnectPromptDismissed = (
   state: LocalModeConnectPromptState,
 ): boolean => state.isDismissed;
@@ -80,23 +87,41 @@ export type LocalModeConnectPromptEligibility = {
   authenticated: boolean;
   hasUserEverAuthenticated: boolean;
   writeCount: number;
+  shortcutEngagementCount: number;
   isDismissed: boolean;
   storageAvailable: boolean;
   isAuthModalOpen: boolean;
   isShowcaseActive: boolean;
   isWelcomeBlocking: boolean;
   googleSignInAvailable: boolean;
+  firstEventPromptVisible: boolean;
+  firstEventCelebrating: boolean;
 };
 
 export const selectLocalModeConnectPromptEligible = (
   input: LocalModeConnectPromptEligibility,
-): boolean =>
-  !input.authenticated &&
-  !input.hasUserEverAuthenticated &&
-  input.storageAvailable &&
-  !input.isDismissed &&
-  input.writeCount >= ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT &&
-  !input.isAuthModalOpen &&
-  !input.isShowcaseActive &&
-  !input.isWelcomeBlocking &&
-  input.googleSignInAvailable;
+): boolean => {
+  if (
+    input.authenticated ||
+    input.hasUserEverAuthenticated ||
+    !input.storageAvailable ||
+    input.isDismissed ||
+    !isAnonymousExplorerEngaged(
+      input.writeCount,
+      input.shortcutEngagementCount,
+    ) ||
+    input.isAuthModalOpen ||
+    input.isShowcaseActive ||
+    input.isWelcomeBlocking ||
+    !input.googleSignInAvailable ||
+    input.firstEventCelebrating
+  ) {
+    return false;
+  }
+
+  if (input.firstEventPromptVisible && input.writeCount === 0) {
+    return false;
+  }
+
+  return true;
+};

@@ -4,8 +4,7 @@ import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,
 } from "@web/auth/compass/state/auth.state.util";
-import { maybeShowAnonymousSaveToast } from "@web/common/utils/toast/anonymous-save.toast";
-import { localModeConnectPromptActions } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
+import { noteAnonymousCalendarWriteEngagement } from "@web/auth/posthog/note-anonymous-explorer-engagement";
 import { eventMutationKeys } from "./event.mutation.keys";
 
 const ifAnonymousGuest = async (action: () => void): Promise<void> => {
@@ -17,11 +16,8 @@ const ifAnonymousGuest = async (action: () => void): Promise<void> => {
 export const markAnonymousEventWrite = () =>
   ifAnonymousGuest(markAnonymousCalendarChangeForSignUpPrompt);
 
-export const showAnonymousSaveToastIfEligible = () =>
-  ifAnonymousGuest(() => {
-    maybeShowAnonymousSaveToast();
-    localModeConnectPromptActions.syncFromStorage();
-  });
+export const noteAnonymousWriteEngagementIfEligible = () =>
+  ifAnonymousGuest(noteAnonymousCalendarWriteEngagement);
 
 type AnyMutation = Mutation<unknown, Error, unknown, unknown>;
 
