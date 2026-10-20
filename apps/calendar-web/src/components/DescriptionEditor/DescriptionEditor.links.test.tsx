@@ -2,19 +2,9 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import * as realEnvConstants from "@web/common/constants/env.constants";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
-
-const envConstantsSnapshot = { ...realEnvConstants };
+import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const copyTextMock = mock(() => Promise.resolve(true));
 
@@ -27,7 +17,7 @@ const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
   return call ? String(call[0]) : "";
 };
 
-async function renderDescriptionEditor(
+function renderDescriptionEditor(
   props: {
     value: string;
     resetKey: string;
@@ -35,15 +25,6 @@ async function renderDescriptionEditor(
   },
   options?: { withHotkeys?: boolean },
 ) {
-  mock.module("@web/common/constants/env.constants", () => ({
-    ...envConstantsSnapshot,
-    IS_EVENT_SIDEBAR_STAGING_UX: true,
-  }));
-  const moduleUrl = new URL(
-    `./DescriptionEditor.tsx?test=${Math.random().toString(36).slice(2)}`,
-    import.meta.url,
-  );
-  const { DescriptionEditor } = await import(moduleUrl.href);
   const onChange = props.onChange ?? mock();
   const editor = (
     <DescriptionEditor
@@ -60,21 +41,7 @@ async function renderDescriptionEditor(
   return render(editor);
 }
 
-afterAll(() => {
-  mock.module(
-    "@web/common/constants/env.constants",
-    () => envConstantsSnapshot,
-  );
-});
-
-describe("DescriptionEditor link staging UX", () => {
-  beforeAll(() => {
-    mock.module("@web/common/constants/env.constants", () => ({
-      ...envConstantsSnapshot,
-      IS_EVENT_SIDEBAR_STAGING_UX: true,
-    }));
-  });
-
+describe("DescriptionEditor link UX", () => {
   beforeEach(() => {
     document.body.removeAttribute("data-app-locked");
     copyTextMock.mockClear();
@@ -120,6 +87,71 @@ describe("DescriptionEditor link staging UX", () => {
     expect(
       lastToastMessage(mocks.toast as { mock: { calls: unknown[][] } }),
     ).toBe("Link copied");
+  });
+
+  it("keeps the copy control visible while the pointer moves onto it", async () => {
+    const user = userEvent.setup();
+    await renderDescriptionEditor({
+      value: `<p><a href="https://example.com/meet">https://example.com/meet</a></p>`,
+      resetKey: "hover-chrome",
+    });
+
+    await user.click(document.body);
+    const link = screen.getByRole("link", { name: "example.com" });
+    await user.hover(link);
+    const copyButton = await waitFor(() =>
+      screen.getByRole("button", { name: "Copy link" }),
+    );
+
+    await user.hover(copyButton);
+    await expect(copyButton).toBeVisible();
+    await user.click(copyButton);
+    expect(copyTextMock).toHaveBeenCalledWith("https://example.com/meet");
+  });
+
+  it("shows digit keycaps when the description is not focused", async () => {
+    await renderDescriptionEditor({
+      value: `<p><a href="https://one.example/a">https://one.example/a</a></p>`,
+      resetKey: "digit-hints",
+    });
+
+    expect(screen.getByText("1")).toBeTruthy();
+  });
+
+  it("opens the caret link with Mod+Shift+Enter and preserves html on blur", async () => {
+    const user = userEvent.setup();
+    const openSpy = mock();
+    const originalOpen = window.open;
+    window.open = openSpy as typeof window.open;
+    const onChange = mock();
+
+    const meetingUrl = "https://example.com/meeting-room";
+    await renderDescriptionEditor(
+      {
+        value: `<p>Join at <a href="${meetingUrl}">${meetingUrl}</a></p>`,
+        resetKey: "open-caret",
+        onChange,
+      },
+      { withHotkeys: true },
+    );
+
+    const description = screen.getByRole("textbox", { name: "Description" });
+    await user.click(description);
+    const link = screen.getByRole("link", { name: "example.com" });
+    await user.click(link);
+    const modKey = resolveModifier("Mod") === "Meta" ? "Meta" : "Control";
+    await user.keyboard(`{${modKey}>}{Shift>}{Enter}{/Shift}{/${modKey}}`);
+    expect(openSpy).toHaveBeenCalledWith(
+      meetingUrl,
+      "_blank",
+      expect.any(String),
+    );
+
+    onChange.mockClear();
+    await user.click(document.body);
+    expect(onChange).not.toHaveBeenCalled();
+
+    window.open = originalOpen;
   });
 
   it("still opens links on Mod+click without copying on a plain click", async () => {
