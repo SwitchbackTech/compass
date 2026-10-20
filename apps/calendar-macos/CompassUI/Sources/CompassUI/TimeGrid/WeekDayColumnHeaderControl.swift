@@ -24,6 +24,11 @@ final class WeekDayColumnHeaderControl: NSView {
         addSubview(numberField)
         addSubview(suffixField)
         addSubview(chipLabel)
+        numberField.setAccessibilityElement(false)
+        suffixField.setAccessibilityElement(false)
+        chipLabel.setAccessibilityElement(false)
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
     }
 
     @available(*, unavailable)
