@@ -35,8 +35,8 @@ enum ParityViewSnapshotExporter {
         guard let bitmap = NSBitmapImageRep(
             bitmapDataPlanes: nil,
             pixelsWide: pixelWidth,
-            bitsPerSample: 8,
             pixelsHigh: pixelHeight,
+            bitsPerSample: 8,
             samplesPerPixel: 4,
             hasAlpha: true,
             isPlanar: false,
