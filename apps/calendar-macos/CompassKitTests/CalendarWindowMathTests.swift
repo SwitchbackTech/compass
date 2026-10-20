@@ -25,6 +25,13 @@ final class CalendarWindowMathTests: XCTestCase {
         )
     }
 
+    func testSundayWeekViewStartMatchesWeb() throws {
+        let reference = try XCTUnwrap(
+            CompassDateParsing.parseInEffectiveTimeZone("2026-06-10T15:00:00.000Z"))
+        let weekStart = CalendarWindowMath.sundayWeekViewStart(containing: reference)
+        XCTAssertEqual(CompassDateParsing.formatCalendarDay(weekStart), "2026-06-07")
+    }
+
     func testDayEventQueryRangeUsesExclusiveEnd() throws {
         let anchor = try XCTUnwrap(
             CompassDateParsing.calendarDateInEffectiveTimeZone("2026-06-28")

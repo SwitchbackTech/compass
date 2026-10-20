@@ -7,4 +7,5 @@ final class ParityCaptureGeometryTests: XCTestCase {
         XCTAssertEqual(ParityCaptureGeometry.contentTrackWidth, 871, accuracy: 0.1)
         XCTAssertEqual(ParityCaptureGeometry.visibleDayCount, 5)
     }
+
 }
