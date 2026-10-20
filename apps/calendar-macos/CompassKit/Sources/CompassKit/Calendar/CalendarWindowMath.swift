@@ -3,6 +3,17 @@ import Foundation
 public enum CalendarWindowMath {
     public static let weekDayCount = 7
 
+    /// Web Day.js `startOf("week")`: Sunday 00:00 in the effective timezone.
+    public static func sundayWeekViewStart(containing date: Date) -> Date {
+        var calendar = EffectiveTimeZone.calendar
+        calendar.firstWeekday = 1
+        calendar.minimumDaysInFirstWeek = 1
+        let startOfDay = calendar.startOfDay(for: date)
+        let weekday = calendar.component(.weekday, from: startOfDay)
+        let daysFromSunday = (weekday - calendar.firstWeekday + 7) % 7
+        return calendar.date(byAdding: .day, value: -daysFromSunday, to: startOfDay) ?? startOfDay
+    }
+
     /// Seven local days from the anchor's start of day; `end` is exclusive next midnight.
     public static func weekEventsQueryWindow(anchor: Date) -> DateRange {
         let calendar = EffectiveTimeZone.calendar

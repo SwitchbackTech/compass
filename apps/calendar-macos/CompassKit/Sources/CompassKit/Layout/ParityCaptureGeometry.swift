@@ -21,15 +21,4 @@ public enum ParityCaptureGeometry {
             marginLeft: gridMarginLeft
         )
     }
-
-    /// Web week view uses Day.js `startOf("week")` (Sunday) in the demo timezone.
-    public static func weekViewStart(containing date: Date) -> Date {
-        var calendar = EffectiveTimeZone.calendar
-        calendar.firstWeekday = 1
-        calendar.minimumDaysInFirstWeek = 1
-        let startOfDay = calendar.startOfDay(for: date)
-        let weekday = calendar.component(.weekday, from: startOfDay)
-        let daysFromSunday = (weekday - calendar.firstWeekday + 7) % 7
-        return calendar.date(byAdding: .day, value: -daysFromSunday, to: startOfDay) ?? startOfDay
-    }
 }

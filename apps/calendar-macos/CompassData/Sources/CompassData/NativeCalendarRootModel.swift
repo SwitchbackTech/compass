@@ -174,7 +174,7 @@ public final class NativeCalendarRootModel {
 
         let anchor: Date = {
             let today = demoPresentation?.referenceNow ?? now()
-            return EffectiveTimeZone.calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+            return CalendarWindowMath.sundayWeekViewStart(containing: today)
         }()
         viewStore = ViewStore(
             view: .week,
@@ -372,7 +372,7 @@ public final class NativeCalendarRootModel {
         contentTrackWidth = CGFloat(ParityCaptureGeometry.contentTrackWidth)
         viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)
         let today = referenceNow
-        viewStore.setAnchorDate(ParityCaptureGeometry.weekViewStart(containing: today))
+        viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         monthPickerMonth = today
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
@@ -920,8 +920,7 @@ public final class NativeCalendarRootModel {
         if viewStore.visibleDayCount == 1 {
             viewStore.setAnchorDate(today)
         } else {
-            let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start ?? today
-            viewStore.setAnchorDate(weekStart)
+            viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         }
         monthPickerMonth = today
         rebuildPresentation()
