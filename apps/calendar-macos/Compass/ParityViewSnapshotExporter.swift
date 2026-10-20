@@ -1,6 +1,7 @@
 import AppKit
 import CompassData
 import CompassKit
+import CoreGraphics
 
 /// Renders the main window content at the canonical parity viewport (1280×820 px).
 enum ParityViewSnapshotExporter {
@@ -54,10 +55,18 @@ enum ParityViewSnapshotExporter {
         enableLayerBackedDrawing(contentView)
         contentView.cacheDisplay(in: captureRect, to: bitmap)
 
-        guard let png = bitmap.representation(using: .png, properties: [:]) else { return }
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let file = folder.appendingPathComponent("\(surface).png")
+
+        let pngData = bitmap.representation(using: .png, properties: [:])
+        if let pngData, pngData.count < 30_000, let windowPNG = windowListPNG(window: window) {
+            try windowPNG.write(to: file)
+            NativeAccessibilityProbes.publishParityExport(surface: surface, on: window)
+            return
+        }
+
+        guard let png = pngData else { return }
         try png.write(to: file)
         NativeAccessibilityProbes.publishParityExport(surface: surface, on: window)
     }
@@ -67,6 +76,28 @@ enum ParityViewSnapshotExporter {
         for subview in view.subviews {
             enableLayerBackedDrawing(subview)
         }
+    }
+
+    /// SwiftUI hosting views sometimes produce empty `cacheDisplay` bitmaps; fall back to the
+    /// composited window image (same pixels the user sees on screen).
+    private static func windowListPNG(window: NSWindow) -> Data? {
+        window.orderFrontRegardless()
+        window.displayIfNeeded()
+        let windowID = CGWindowID(window.windowNumber)
+        guard windowID != 0,
+              let cgImage = CGWindowListCreateImage(
+                  .null,
+                  .optionIncludingWindow,
+                  windowID,
+                  [.boundsIgnoreFraming, .bestResolution]
+              )
+        else { return nil }
+        let rep = NSBitmapImageRep(cgImage: cgImage)
+        rep.size = NSSize(
+            width: ParityCaptureGeometry.viewportWidth,
+            height: ParityCaptureGeometry.viewportHeight
+        )
+        return rep.representation(using: .png, properties: [:])
     }
 
     private static var parityOutputDirectory: String? {
