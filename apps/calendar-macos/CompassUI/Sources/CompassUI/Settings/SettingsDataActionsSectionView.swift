@@ -10,13 +10,16 @@ struct SettingsDataActionsSectionView: View {
             Button(model.isExportingLocalData ? "Exporting…" : "Export data") {
                 Task { await model.exportLocalData() }
             }
+            .buttonStyle(.bordered)
+            .tint(theme.borderColor)
             .accessibilityIdentifier("settings-export-data")
             .disabled(model.isExportingLocalData)
             Button("Delete account") {
                 model.requestDeleteAccount()
             }
+            .buttonStyle(.borderedProminent)
+            .tint(theme.errorColor)
             .accessibilityIdentifier("settings-delete-account")
-            .foregroundStyle(theme.errorColor)
             if model.isSignedIn {
                 Button("Log out") { model.requestLogout() }
                     .accessibilityIdentifier("settings-log-out")

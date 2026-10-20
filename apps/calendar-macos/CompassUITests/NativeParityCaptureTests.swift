@@ -196,6 +196,10 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
+        let dismissScrollHint = window.buttons["Dismiss"]
+        if dismissScrollHint.waitForExistence(timeout: 2) {
+            dismissScrollHint.tap()
+        }
         sleep(1)
     }
 

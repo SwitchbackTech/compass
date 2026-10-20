@@ -27,6 +27,8 @@ public struct SettingsWindowOverlay: View {
                                 .buttonStyle(.plain)
                                 .font(.rubik(14))
                                 .foregroundStyle(theme.textMutedColor)
+                            ShortcutHintChip(label: "Esc")
+                                .allowsHitTesting(false)
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
