@@ -121,9 +121,18 @@ enum NativeImageSnapshotSupport {
             sidebarToggle.frame.maxX,
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
-        if let url = URL(string: "compass://debug/parity-title-bar-export") {
+        let headerTitle = window.buttons["compass-native-header-title"]
+        XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            headerTitle.label.contains("2026"),
+            "Title bar reference should show demo month title, got: \(headerTitle.label)")
+        XCTAssertLessThan(
+            headerTitle.frame.minY,
+            window.frame.maxY - window.frame.height * 0.85,
+            "Month title should sit in the top band of the window screenshot")
+        if let url = URL(string: "compass://debug/parity-apply-capture-window") {
             NSWorkspace.shared.open(url)
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
         let png = window.screenshot().pngRepresentation

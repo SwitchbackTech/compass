@@ -141,10 +141,17 @@ public struct CommandPaletteOverlay: View {
             model.runPaletteCommand(id: item.id)
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: item.systemImage ?? "circle")
-                    .font(.system(size: 16, weight: .regular))
-                    .frame(width: 18, height: 18, alignment: .center)
-                    .opacity(item.systemImage == nil ? 0 : 1)
+                Group {
+                    if let phosphor = CommandPalettePhosphorIcon.icon(for: item) {
+                        PhosphorIconView(icon: phosphor, size: 16)
+                    } else if let systemImage = item.systemImage {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 16, weight: .regular))
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(width: 18, height: 18, alignment: .center)
                 // Web highlights only plain command labels, not event detail rows or go-to-date.
                 Group {
                     if isSearching, item.subtitle == nil, item.id != "go-to-date" {

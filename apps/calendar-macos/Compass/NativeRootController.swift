@@ -201,9 +201,9 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
                 }
                 return
             }
-            if case .parityTitleBarExport = command {
+            if case .parityApplyCaptureWindow = command {
                 Task { @MainActor in
-                    try? ParityViewSnapshotExporter.exportTitleBarReference(from: view.window)
+                    ParityViewSnapshotExporter.applyCaptureWindowSize(to: view.window)
                 }
                 return
             }

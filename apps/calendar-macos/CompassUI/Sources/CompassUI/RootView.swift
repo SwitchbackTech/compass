@@ -292,7 +292,6 @@ public struct RootView: View {
             ) {
                 model.toggleShortcutsLegend()
             }
-            Spacer(minLength: 0)
             sidebarActionButton(label: "Open settings", icon: .gear) {
                 model.settingsStore.open()
             }
