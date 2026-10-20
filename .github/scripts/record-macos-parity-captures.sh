@@ -32,6 +32,8 @@ xcodegen generate
 
 launchctl setenv PARITY_CAPTURE 1
 launchctl setenv PARITY_OUTPUT_DIR "$OUT"
+export PARITY_OUTPUT_DIR="$OUT"
+export PARITY_CAPTURE=1
 
 xcodebuild test \
   -project Compass.xcodeproj \
@@ -58,7 +60,8 @@ trap cleanup EXIT
 # Fallback: copy from xcresult attachments if view-level export did not write files.
 if ! python3 - "$OUT" "${SURFACES[@]}" <<'PY2' 2>/dev/null
 import os, sys
-out, *surfaces = sys.argv[1], sys.argv[2:]
+out = sys.argv[1]
+surfaces = sys.argv[2:]
 missing = [s for s in surfaces if not os.path.isfile(os.path.join(out, f"{s}.png"))]
 raise SystemExit(1 if missing else 0)
 PY2
@@ -71,7 +74,9 @@ import re
 import shutil
 import sys
 
-raw, out, *surfaces = sys.argv[1], sys.argv[2], *sys.argv[3:]
+raw = sys.argv[1]
+out = sys.argv[2]
+surfaces = sys.argv[3:]
 wanted = set(surfaces)
 
 with open(os.path.join(raw, "manifest.json")) as handle:
@@ -106,7 +111,8 @@ python3 - "$OUT" "${SURFACES[@]}" <<'PY'
 import os
 import sys
 
-out, *surfaces = sys.argv[1], sys.argv[2:]
+out = sys.argv[1]
+surfaces = sys.argv[2:]
 missing = [s for s in surfaces if not os.path.isfile(os.path.join(out, f"{s}.png"))]
 if missing:
     raise SystemExit(f"Missing parity PNGs: {', '.join(missing)}")
