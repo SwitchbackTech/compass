@@ -162,6 +162,7 @@ enum ParityViewSnapshotExporter {
         let sampleRows = min(8, cg.height / 16)
         var opaquePixels = 0
         var variedPixels = 0
+        var darkPixels = 0
         let width = cg.width
         let height = cg.height
         guard let context = CGContext(

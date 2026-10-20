@@ -172,7 +172,8 @@ enum NativeImageSnapshotSupport {
         guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
         let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
         let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
-        let cropRect = CGRect(x: 0, y: rep.pixelsHigh - cropPixels, width: rep.pixelsWide, height: cropPixels)
+        // XCUITest window screenshots use a top-left bitmap origin.
+        let cropRect = CGRect(x: 0, y: 0, width: rep.pixelsWide, height: cropPixels)
         guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
         let out = NSBitmapImageRep(cgImage: cropped)
         out.size = NSSize(width: rep.size.width, height: heightPoints)
