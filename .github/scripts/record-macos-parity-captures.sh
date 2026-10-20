@@ -20,6 +20,7 @@ SURFACES=(
   onboarding-welcome
 )
 mkdir -p "$OUT"
+python3 -m pip install --quiet Pillow
 cd "$ROOT/apps/calendar-macos"
 
 if ! command -v xcodegen >/dev/null 2>&1; then
@@ -140,47 +141,75 @@ import shutil
 import struct
 import sys
 
+from PIL import Image
+
 result = sys.argv[1]
 out = sys.argv[2]
 path = os.path.join(out, "mac-title-bar.png")
+TITLE_BAND_POINTS = 120
+CONTENT_HEIGHT_POINTS = 820
 
-def png_height(p: str) -> int:
-    with open(p, "rb") as handle:
-        handle.read(8)
-        handle.read(4)
-        handle.read(4)
-        handle.read(4)
-        _, height = struct.unpack(">II", handle.read(8))
-        return height
+def export_attachments(raw_dir: str) -> None:
+    os.makedirs(raw_dir, exist_ok=True)
+    os.system(
+        f'xcrun xcresulttool export attachments --path "{result}" --output-path "{raw_dir}" >/dev/null 2>&1'
+    )
 
-def needs_title_bar_fallback() -> bool:
-    if not os.path.isfile(path):
-        return True
-    try:
-        return png_height(path) < 100
-    except OSError:
-        return True
+def find_attachment(raw_dir: str, wanted_name: str) -> str | None:
+    manifest_path = os.path.join(raw_dir, "manifest.json")
+    if not os.path.isfile(manifest_path):
+        return None
+    with open(manifest_path) as handle:
+        manifest = json.load(handle)
+    for test in manifest:
+        for attachment in test.get("attachments", []):
+            if attachment.get("isAssociatedWithFailure"):
+                continue
+            name = attachment.get("suggestedHumanReadableName", attachment.get("exportedFileName", ""))
+            name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
+            if name != wanted_name:
+                continue
+            src = os.path.join(raw_dir, attachment["exportedFileName"])
+            if os.path.isfile(src):
+                return src
+    return None
 
-if needs_title_bar_fallback():
-    raw = os.path.join(out, "_title_bar_attachments")
-    os.makedirs(raw, exist_ok=True)
-    os.system(f'xcrun xcresulttool export attachments --path "{result}" --output-path "{raw}" >/dev/null 2>&1')
-    manifest_path = os.path.join(raw, "manifest.json")
-    if os.path.isfile(manifest_path):
-        with open(manifest_path) as handle:
-            manifest = json.load(handle)
-        for test in manifest:
-            for attachment in test.get("attachments", []):
-                if attachment.get("isAssociatedWithFailure"):
-                    continue
-                name = attachment.get("suggestedHumanReadableName", attachment.get("exportedFileName", ""))
-                name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
-                if name != "mac-title-bar":
-                    continue
-                src = os.path.join(raw, attachment["exportedFileName"])
-                if os.path.isfile(src):
-                    shutil.copyfile(src, path)
-                    break
+def crop_title_bar(full_png: str, dest: str) -> None:
+    image = Image.open(full_png).convert("RGBA")
+    width, height = image.size
+    # Window screenshot: take the top band (title bar + a slice of grid below).
+    crop_px = max(110, round(height * TITLE_BAND_POINTS / (CONTENT_HEIGHT_POINTS + TITLE_BAND_POINTS)))
+    crop_px = min(crop_px, height)
+    band = image.crop((0, 0, width, crop_px))
+    band.save(dest)
+
+def chrome_score(image: Image.Image) -> int:
+    px = image.load()
+    width, height = image.size
+    score = 0
+    for y in range(min(height, 80)):
+        for x in range(min(width, 220)):
+            r, g, b, a = px[x, y]
+            if a < 16:
+                continue
+            if r + g + b < 520:
+                score += 2
+            if max(r, g, b) - min(r, g, b) > 28:
+                score += 1
+    return score
+
+raw = os.path.join(out, "_title_bar_attachments")
+export_attachments(raw)
+full_window = find_attachment(raw, "mac-title-bar-full-window")
+if not full_window:
+    raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
+
+crop_title_bar(full_window, path)
+band = Image.open(path).convert("RGBA")
+if band.size[1] < 100 or chrome_score(band) < 12:
+    raise SystemExit(
+        "mac-title-bar.png crop looks empty; expected traffic lights and nav chrome in the top band"
+    )
 
 if not os.path.isfile(path):
     raise SystemExit("Missing mac-title-bar.png (title bar marketing reference)")

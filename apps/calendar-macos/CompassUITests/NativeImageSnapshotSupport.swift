@@ -1,5 +1,4 @@
 import AppKit
-import CompassKit
 import XCTest
 
 enum NativeImageSnapshotSupport {
@@ -102,7 +101,7 @@ enum NativeImageSnapshotSupport {
         return nil
     }
 
-    /// Full-window title bar PNG (traffic lights + nav); written by the app process during parity capture.
+    /// Attaches a full-window screenshot; `record-macos-parity-captures.sh` crops the title bar slice.
     @MainActor
     static func exportMacTitleBarReference(
         _ window: XCUIElement,
@@ -110,116 +109,17 @@ enum NativeImageSnapshotSupport {
         line: UInt = #line
     ) {
         guard parityCapture else { return }
-        let png = exportParityTitleBarSnapshot(window: window, file: file, line: line)
-            ?? titleBarFallbackFromWindowScreenshot(window, file: file, line: line)
-        guard let png else { return }
-        attachPNG(png, named: "mac-title-bar")
-    }
-
-    @MainActor
-    private static func exportParityTitleBarSnapshot(
-        window: XCUIElement,
-        file: StaticString,
-        line: UInt
-    ) -> Data? {
-        guard let outDir = parityOutputDirectory else {
-            XCTFail("PARITY_OUTPUT_DIR is required for title bar parity export", file: file, line: line)
-            return nil
+        guard window.waitForExistence(timeout: 10) else {
+            XCTFail("Window missing for title bar reference screenshot", file: file, line: line)
+            return
         }
-        guard let url = URL(string: "compass://debug/parity-title-bar-export") else {
-            XCTFail("Invalid parity title bar export URL", file: file, line: line)
-            return nil
-        }
-        NSWorkspace.shared.open(url)
-
-        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("mac-title-bar.png")
-        let exportedValue = "parity-exported:mac-title-bar"
-        let deadline = Date().addingTimeInterval(15)
-        while Date() < deadline {
-            if window.value as? String == exportedValue, FileManager.default.fileExists(atPath: fileURL.path) {
-                if let data = try? Data(contentsOf: fileURL), titleBarPNGMeetsMinimumSize(data) {
-                    return data
-                }
-                if window.value as? String == exportedValue {
-                    return nil
-                }
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
-        }
-        return nil
-    }
-
-    @MainActor
-    private static func titleBarFallbackFromWindowScreenshot(
-        _ window: XCUIElement,
-        file: StaticString,
-        line: UInt
-    ) -> Data? {
-        guard window.waitForExistence(timeout: 5) else {
-            XCTFail("Window missing for title bar screenshot fallback", file: file, line: line)
-            return nil
-        }
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
         let png = window.screenshot().pngRepresentation
-        let heightPoints = MacTitleBarChromeMetrics.referenceCaptureHeight
-        guard let cropped = cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: true),
-              titleBarPNGMeetsMinimumSize(cropped),
-              titleBarChromeScore(cropped) > 0
-        else {
-            XCTFail("Title bar screenshot fallback was empty or too small", file: file, line: line)
-            return nil
+        guard !png.isEmpty else {
+            XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
+            return
         }
-        return cropped
-    }
-
-    private static func titleBarPNGMeetsMinimumSize(_ png: Data) -> Bool {
-        guard let rep = NSBitmapImageRep(data: png) else { return false }
-        return rep.pixelsWide >= 400 && rep.pixelsHigh >= 100
-    }
-
-    private static func titleBarChromeScore(_ png: Data) -> Int {
-        guard let rep = NSBitmapImageRep(data: png), let cg = rep.cgImage else { return 0 }
-        let width = min(cg.width, 220)
-        let height = min(cg.height, 80)
-        guard let context = CGContext(
-            data: nil,
-            width: cg.width,
-            height: cg.height,
-            bitsPerComponent: 8,
-            bytesPerRow: cg.width * 4,
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else { return 0 }
-        context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
-        guard let data = context.data else { return 0 }
-        let bytes = data.bindMemory(to: UInt8.self, capacity: cg.width * cg.height * 4)
-        var score = 0
-        for y in 0 ..< height {
-            for x in 0 ..< width {
-                let offset = (y * cg.width + x) * 4
-                let r = bytes[offset]
-                let g = bytes[offset + 1]
-                let b = bytes[offset + 2]
-                if Int(r) + Int(g) + Int(b) < 520 { score += 2 }
-                if max(r, g, b) - min(r, g, b) > 30 { score += 1 }
-            }
-        }
-        return score
-    }
-
-    private static func cropTopBandFromPNG(
-        _ png: Data,
-        heightPoints: CGFloat,
-        fromTop: Bool
-    ) -> Data? {
-        guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
-        let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
-        let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
-        let y = fromTop ? 0 : rep.pixelsHigh - cropPixels
-        let cropRect = CGRect(x: 0, y: y, width: rep.pixelsWide, height: cropPixels)
-        guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
-        let out = NSBitmapImageRep(cgImage: cropped)
-        out.size = NSSize(width: rep.size.width, height: heightPoints)
-        return out.representation(using: .png, properties: [:])
+        attachPNG(png, named: "mac-title-bar-full-window")
     }
 
     @MainActor
