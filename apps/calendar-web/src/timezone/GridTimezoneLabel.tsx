@@ -16,7 +16,12 @@ const BROWSER_ZONE_POLL_MS = 60_000;
  * Week/Day grid-corner control showing the effective timezone abbreviation.
  * A blocked click teaches `z`; Enter/Space still opens the second-timezone picker.
  */
-export const GridTimezoneLabel = () => {
+export const GridTimezoneLabel = ({
+  abbreviationAt,
+}: {
+  /** When set, abbreviations follow this instant instead of real time. */
+  abbreviationAt?: Date;
+} = {}) => {
   const timeZone = useEffectiveTimeZone();
   const timeTravelZone = useTimeTravelZone();
   const now = useMinuteTick();
@@ -33,7 +38,7 @@ export const GridTimezoneLabel = () => {
     return () => clearInterval(id);
   }, []);
 
-  const clock = now.toDate();
+  const clock = abbreviationAt ?? now.toDate();
   const openTimeTravel = () => timezoneDialogActions.open("time-travel");
   const isTraveling = timeTravelZone !== null;
 

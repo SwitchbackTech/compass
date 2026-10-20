@@ -1,12 +1,16 @@
 import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
+import {
+  resetEffectiveTimeZoneStoreForTests,
+  setBrowserTimeZoneForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
 import { setTimeTravelZone } from "@web/timezone/time-travel.store";
 import {
   getAllDayEventPosition,
   getTimedEventPosition,
 } from "./event.position";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 const measurements = {
   allDayRow: null,
@@ -41,6 +45,10 @@ const weekVisibleDates = Array.from({ length: 7 }, (_, index) => {
 });
 
 describe("event position", () => {
+  afterEach(() => {
+    act(() => resetEffectiveTimeZoneStoreForTests());
+  });
+
   it("positions a timed event inside one visible date", () => {
     const position = getTimedEventPosition(
       {
@@ -340,6 +348,30 @@ describe("event position", () => {
     expect(utcTop).toBe(9 * 60);
     expect(chicagoTop).toBe(4 * 60);
     expect(chicagoTop).not.toBe(utcTop);
+  });
+
+  it("uses civil midnight when the browser zone differs from the pinned zone", () => {
+    act(() => {
+      setBrowserTimeZoneForTests("UTC");
+      setPinnedTimeZone("America/Denver");
+    });
+
+    const denverDay = dayjs.tz("2026-11-05T12:00", "America/Denver");
+    const position = getTimedEventPosition(
+      {
+        endDate: "2026-11-05T05:00:00-07:00",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-11-05T04:00:00-07:00",
+      } as never,
+      {
+        measurements,
+        visibleDates: [{ date: denverDay, key: "2026-11-05" }],
+        isDraft: false,
+      },
+    );
+
+    expect(position.top).toBe(4 * measurements.hourHeight);
   });
 
   it("shifts timed events right for the extra hour column without moving them in time", () => {
