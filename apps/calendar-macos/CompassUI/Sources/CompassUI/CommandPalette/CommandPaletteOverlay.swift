@@ -100,7 +100,13 @@ public struct CommandPaletteOverlay: View {
         Button {
             model.runPaletteCommand(id: item.id)
         } label: {
-            HStack {
+            HStack(spacing: 10) {
+                if let systemImage = item.systemImage {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(theme.textMutedColor)
+                        .frame(width: 18, alignment: .center)
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     CommandPaletteHighlightedLabel(label: item.label, query: query)
                     if let subtitle = item.subtitle {
