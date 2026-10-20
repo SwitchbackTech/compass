@@ -280,6 +280,8 @@ final class DescriptionTextView: NSTextView {
         let lineSeparator = "\u{2028}"
         let rangeText = (storage.string as NSString).substring(with: range)
         if rangeText.contains(lineSeparator) {
+            let preservedSelection = selection
+            storage.beginEditing()
             var searchStart = range.location
             let rangeEnd = NSMaxRange(range)
             while searchStart < rangeEnd {
@@ -288,11 +290,16 @@ final class DescriptionTextView: NSTextView {
                     range: NSRange(location: searchStart, length: rangeEnd - searchStart)
                 )
                 if found.location == NSNotFound { break }
-                guard shouldChangeText(in: found, replacementString: "\n") else { return }
+                guard shouldChangeText(in: found, replacementString: "\n") else {
+                    storage.endEditing()
+                    return
+                }
                 storage.replaceCharacters(in: found, with: "\n")
                 searchStart = found.location + 1
             }
-            selection = selectedRange()
+            storage.endEditing()
+            setSelectedRange(preservedSelection)
+            selection = preservedSelection
             range = paragraphRange(containing: selection)
         }
         let start = range.location
