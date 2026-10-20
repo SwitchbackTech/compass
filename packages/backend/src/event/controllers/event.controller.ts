@@ -51,7 +51,9 @@ import {
   eventMutationError,
   toEventMutationError,
 } from "@backend/event/event.error";
+import { resolveProviderForCalendarId } from "@backend/event/resolve-mutation-provider";
 import eventService from "@backend/event/services/event.service";
+import { UNKNOWN_CALENDAR_ID } from "@backend/servers/sse/sync-invalidation.to-server-message";
 
 const logger = Logger("app:event.controller");
 
@@ -379,7 +381,12 @@ const createFromSync = async (userId: string, input: CreateEventInput) => {
     await assertAttendeesSupported(client, userId, input.calendarId);
   }
   const { request, responseEvent } = toCreateSubmitRequest(input);
-  await submitCommandOrThrow(client, userId, request);
+  const provider = await resolveProviderForCalendarId(
+    client,
+    userId,
+    input.calendarId,
+  );
+  await submitCommandOrThrow(client, userId, request, { provider });
   if (!input.createConference) return responseEvent;
   return (
     (await rereadCreatedEvent(client, userId, input, responseEvent.id)) ??
@@ -410,8 +417,16 @@ const replaceFromSync = async (
     await assertAttendeesSupported(client, userId);
   }
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
+  const provider =
+    responseEvent.calendarId !== UNKNOWN_CALENDAR_ID
+      ? await resolveProviderForCalendarId(
+          client,
+          userId,
+          responseEvent.calendarId,
+        )
+      : undefined;
   for (const request of requests) {
-    await submitCommandOrThrow(client, userId, request);
+    await submitCommandOrThrow(client, userId, request, { provider });
   }
   return responseEvent;
 };

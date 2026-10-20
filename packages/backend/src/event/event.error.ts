@@ -5,6 +5,7 @@ import {
   type EventMutationError,
   type EventMutationErrorCodeSchema,
 } from "@core/types/event-command.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type SyncClientError } from "@backend/common/services/sync-service/sync-service.client";
 
 export type EventMutationErrorCode = z.infer<
@@ -68,6 +69,8 @@ export class EventMutationException extends BaseError {
     // defect, and the correlation id belongs in the log rather than in the
     // message, which PostHog groups issues by.
     public readonly syncError?: SyncClientError,
+    // Calendar provider for user-facing save-failure copy when known.
+    public readonly provider?: ProviderKind,
   ) {
     super(
       mutationCode,
@@ -83,8 +86,9 @@ export const eventMutationError = (
   code: EventMutationErrorCode,
   message: string,
   syncError?: SyncClientError,
+  provider?: ProviderKind,
 ): EventMutationException =>
-  new EventMutationException(code, message, syncError);
+  new EventMutationException(code, message, syncError, provider);
 
 /**
  * Maps any thrown error into the strict EventMutationError envelope (B5).
@@ -101,6 +105,7 @@ export const toEventMutationError = (
         code: e.mutationCode,
         message: e.message,
         retryable: RETRYABLE_BY_CODE[e.mutationCode],
+        ...(e.provider ? { provider: e.provider } : {}),
       },
     };
   }
