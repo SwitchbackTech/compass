@@ -11,30 +11,45 @@ struct EventFormTitleField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Title", text: $title)
-                .textFieldStyle(.plain)
-                .font(.rubik(NativeWebLayoutTokens.fontSizeXL, weight: .semibold))
-                .foregroundStyle(theme.textColor)
-                .padding(.horizontal, 8)
-                .frame(minHeight: 34, alignment: .leading)
-                .focused($focused)
-                .disabled(isReadOnly)
-                .accessibilityIdentifier("compass-event-form-title")
+            TextField(
+                "",
+                text: $title,
+                prompt: Text("Title").foregroundStyle(theme.textMutedColor)
+            )
+            .textFieldStyle(.plain)
+            .font(.rubik(NativeWebLayoutTokens.fontSizeXL, weight: .semibold))
+            .foregroundStyle(theme.textColor)
+            .padding(.horizontal, 8)
+            .frame(minHeight: 34, alignment: .leading)
+            .focused($focused)
+            .disabled(isReadOnly)
+            .accessibilityIdentifier("compass-event-form-title")
 
-            Rectangle()
-                .fill(underlineFill)
-                .frame(height: 2)
-                .frame(maxWidth: .infinity)
+            EventFormTitleUnderline(colorSlot: draft.color, expanded: focused)
         }
         .pageJumpChipAnchor(id: "form-title")
     }
+}
 
-    private var underlineFill: LinearGradient {
-        let base = BlockPartyColor.swiftUIColor(for: draft.color, theme: theme)
-        return LinearGradient(
-            colors: [base.opacity(0.85), base.opacity(0.35)],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
+/// Web `Focusable` + `Divider`: 2px gradient bar, width animates in on focus.
+private struct EventFormTitleUnderline: View {
+    @Environment(\.nativeWebTheme) private var theme
+    let colorSlot: EventColorSlot?
+    let expanded: Bool
+
+    var body: some View {
+        GeometryReader { geometry in
+            let base = colorSlot.map { BlockPartyColor.swiftUIColor(for: $0, theme: theme) }
+                ?? theme.accentColor
+            LinearGradient(
+                colors: [base.opacity(0.85), base.opacity(0.35)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: expanded ? geometry.size.width : 0, height: 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.easeOut(duration: 0.3), value: expanded)
+        }
+        .frame(height: 2)
     }
 }
