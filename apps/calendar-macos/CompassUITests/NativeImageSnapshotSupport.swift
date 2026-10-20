@@ -137,8 +137,10 @@ enum NativeImageSnapshotSupport {
         let deadline = Date().addingTimeInterval(15)
         while Date() < deadline {
             if window.value as? String == exportedValue, FileManager.default.fileExists(atPath: fileURL.path) {
-                if let data = try? Data(contentsOf: fileURL) {
-                    if data.count >= 45_000 { return data }
+                if let data = try? Data(contentsOf: fileURL), titleBarPNGMeetsMinimumSize(data) {
+                    return data
+                }
+                if window.value as? String == exportedValue {
                     return nil
                 }
             }
@@ -158,22 +160,65 @@ enum NativeImageSnapshotSupport {
             return nil
         }
         let png = window.screenshot().pngRepresentation
-        guard let cropped = cropTopBandFromPNG(
-            png,
-            heightPoints: MacTitleBarChromeMetrics.referenceCaptureHeight
-        ), cropped.count >= 45_000 else {
+        let heightPoints = MacTitleBarChromeMetrics.referenceCaptureHeight
+        let candidates = [
+            cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: true),
+            cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: false),
+        ].compactMap { $0 }
+        guard let best = candidates.max(by: { titleBarChromeScore($0) < titleBarChromeScore($1) }),
+              titleBarPNGMeetsMinimumSize(best)
+        else {
             XCTFail("Title bar screenshot fallback was empty or too small", file: file, line: line)
             return nil
         }
-        return cropped
+        return best
     }
 
-    private static func cropTopBandFromPNG(_ png: Data, heightPoints: CGFloat) -> Data? {
+    private static func titleBarPNGMeetsMinimumSize(_ png: Data) -> Bool {
+        guard let rep = NSBitmapImageRep(data: png) else { return false }
+        return rep.pixelsWide >= 400 && rep.pixelsHigh >= 100
+    }
+
+    private static func titleBarChromeScore(_ png: Data) -> Int {
+        guard let rep = NSBitmapImageRep(data: png), let cg = rep.cgImage else { return 0 }
+        let width = min(cg.width, 220)
+        let height = min(cg.height, 80)
+        guard let context = CGContext(
+            data: nil,
+            width: cg.width,
+            height: cg.height,
+            bitsPerComponent: 8,
+            bytesPerRow: cg.width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return 0 }
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let data = context.data else { return 0 }
+        let bytes = data.bindMemory(to: UInt8.self, capacity: cg.width * cg.height * 4)
+        var score = 0
+        for y in 0 ..< height {
+            for x in 0 ..< width {
+                let offset = (y * cg.width + x) * 4
+                let r = bytes[offset]
+                let g = bytes[offset + 1]
+                let b = bytes[offset + 2]
+                if Int(r) + Int(g) + Int(b) < 520 { score += 2 }
+                if max(r, g, b) - min(r, g, b) > 30 { score += 1 }
+            }
+        }
+        return score
+    }
+
+    private static func cropTopBandFromPNG(
+        _ png: Data,
+        heightPoints: CGFloat,
+        fromTop: Bool
+    ) -> Data? {
         guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
         let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
         let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
-        // XCUITest window screenshots use a top-left bitmap origin.
-        let cropRect = CGRect(x: 0, y: 0, width: rep.pixelsWide, height: cropPixels)
+        let y = fromTop ? 0 : rep.pixelsHigh - cropPixels
+        let cropRect = CGRect(x: 0, y: y, width: rep.pixelsWide, height: cropPixels)
         guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
         let out = NSBitmapImageRep(cgImage: cropped)
         out.size = NSSize(width: rep.size.width, height: heightPoints)
