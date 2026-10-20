@@ -30,7 +30,8 @@ struct EventFormTimeField: View {
                     .foregroundStyle(theme.textMutedColor)
             }
             .padding(.horizontal, 8)
-            .frame(width: 92, minHeight: 38)
+            .frame(width: 92)
+            .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay {

@@ -25,7 +25,8 @@ struct EventFormCompactDateField: View {
             .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
             .padding(.horizontal, 8)
-            .frame(minWidth: 96, maxWidth: 108, minHeight: 38)
+            .frame(minWidth: 96, maxWidth: 108)
+            .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay {
