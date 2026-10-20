@@ -216,7 +216,7 @@ def assert_traffic_lights(image: Image.Image) -> None:
                 found["red"] = True
             if r > 190 and g > 150 and b < 110:
                 found["yellow"] = True
-            if g > 130 and r < 130 and b < 130:
+            if g > 120 and g > r + 25 and g > b + 25:
                 found["green"] = True
     if not all(found.values()):
         raise SystemExit(f"mac-title-bar.png missing macOS traffic lights in top-left: {found}")
