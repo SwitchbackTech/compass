@@ -20,6 +20,7 @@ final class NativeParityCaptureTests: XCTestCase {
             throw XCTSkip("Set PARITY_CAPTURE=1 to export parity PNGs")
         }
 
+        captureWelcomeOnboarding()
         captureWeekGrid()
         captureWeekGridAllDay()
         captureDemoEventsBanner()
@@ -31,7 +32,6 @@ final class NativeParityCaptureTests: XCTestCase {
         captureEventFormTimePicker()
         captureCommandPalette()
         captureSettings()
-        captureWelcomeOnboarding()
     }
 
     @MainActor

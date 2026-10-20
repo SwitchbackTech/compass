@@ -49,8 +49,10 @@ enum ParityViewSnapshotExporter {
         defer { NSGraphicsContext.restoreGraphicsState() }
         guard let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return }
         NSGraphicsContext.current = context
+        let captureRect = NSRect(origin: .zero, size: contentSize)
         context.cgContext.clear(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
-        contentView.cacheDisplay(in: NSRect(origin: .zero, size: contentSize), to: bitmap)
+        enableLayerBackedDrawing(contentView)
+        contentView.cacheDisplay(in: captureRect, to: bitmap)
 
         guard let png = bitmap.representation(using: .png, properties: [:]) else { return }
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
@@ -58,6 +60,13 @@ enum ParityViewSnapshotExporter {
         let file = folder.appendingPathComponent("\(surface).png")
         try png.write(to: file)
         NativeAccessibilityProbes.publishParityExport(surface: surface, on: window)
+    }
+
+    private static func enableLayerBackedDrawing(_ view: NSView) {
+        view.wantsLayer = true
+        for subview in view.subviews {
+            enableLayerBackedDrawing(subview)
+        }
     }
 
     private static var parityOutputDirectory: String? {
