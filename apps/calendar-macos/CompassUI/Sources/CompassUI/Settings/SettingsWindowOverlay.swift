@@ -50,6 +50,18 @@ public struct SettingsWindowOverlay: View {
             if model.settingsHasBilling {
                 navButton("Billing", page: .billing)
             }
+            if !model.focusStore.pageJumpHintsVisible {
+                HStack(spacing: 4) {
+                    Text("Hold")
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                    ShortcutHintChip(label: "Mod")
+                    Text("to see shortcuts.")
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                }
+                .padding(.top, 4)
+            }
             Spacer()
             Button("Close") { model.closeSettingsIfAllowed() }
                 .buttonStyle(.plain)
