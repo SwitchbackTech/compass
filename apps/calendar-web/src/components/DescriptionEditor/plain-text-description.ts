@@ -24,14 +24,16 @@ const linkifyUrls = (text: string): string =>
     return `<a href="${url}">${url}</a>${suffix}`;
   });
 
-const paragraphToHtml = (block: string): string =>
-  block
-    .split("\n")
-    .map((line) => linkifyUrls(escapeHtml(line)))
-    .join("<br>");
-
 export const plainTextToDescriptionHtml = (value: string): string =>
   value
     .split(/\n\s*\n/)
-    .map((block) => `<p>${paragraphToHtml(block.trim())}</p>`)
+    .flatMap((block) => {
+      const trimmed = block.trim();
+      if (!trimmed) {
+        return [];
+      }
+      return trimmed
+        .split("\n")
+        .map((line) => `<p>${linkifyUrls(escapeHtml(line))}</p>`);
+    })
     .join("");

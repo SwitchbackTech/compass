@@ -2,6 +2,7 @@ import { ListBulletsIcon } from "@phosphor-icons/react/dist/csr/ListBullets";
 import { ListNumbersIcon } from "@phosphor-icons/react/dist/csr/ListNumbers";
 import { TextBIcon } from "@phosphor-icons/react/dist/csr/TextB";
 import { TextItalicIcon } from "@phosphor-icons/react/dist/csr/TextItalic";
+import { Extension } from "@tiptap/core";
 import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
@@ -30,6 +31,7 @@ import {
   looksLikeHtml,
   plainTextToDescriptionHtml,
 } from "@web/components/DescriptionEditor/plain-text-description";
+import { toggleDescriptionList } from "@web/components/DescriptionEditor/toggle-description-list";
 import { useDescriptionEditorCopyLinkShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorCopyLinkShortcut";
 import { Divider } from "@web/components/Divider/Divider";
 
@@ -93,6 +95,22 @@ interface DescriptionEditorProps {
 
 const TOOLBAR_BUTTON_CLASSNAME =
   "c-focus-ring flex size-6 items-center justify-center rounded text-text-muted hover:bg-border aria-pressed:bg-border aria-pressed:text-text";
+
+const DescriptionListSelectionExtension = Extension.create({
+  name: "descriptionListSelection",
+  addKeyboardShortcuts() {
+    return {
+      "Mod-Shift-8": () => {
+        toggleDescriptionList(this.editor, "bullet");
+        return true;
+      },
+      "Mod-Shift-7": () => {
+        toggleDescriptionList(this.editor, "ordered");
+        return true;
+      },
+    };
+  },
+});
 
 /** Keep the contenteditable focused so the next keystroke applies inside it. */
 const keepEditorFocusedOnToolbarPress = (
@@ -163,6 +181,7 @@ export const DescriptionEditor = ({
           },
         }),
         Placeholder.configure({ placeholder }),
+        DescriptionListSelectionExtension,
       ],
       content: initialContent,
       editable,
@@ -306,7 +325,7 @@ export const DescriptionEditor = ({
             aria-pressed={activeMarks.orderedList}
             className={TOOLBAR_BUTTON_CLASSNAME}
             onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            onClick={() => toggleDescriptionList(editor, "ordered")}
           >
             <ListNumbersIcon size={14} weight="bold" />
           </button>
@@ -316,7 +335,7 @@ export const DescriptionEditor = ({
             aria-pressed={activeMarks.bulletList}
             className={TOOLBAR_BUTTON_CLASSNAME}
             onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            onClick={() => toggleDescriptionList(editor, "bullet")}
           >
             <ListBulletsIcon size={14} weight="bold" />
           </button>
