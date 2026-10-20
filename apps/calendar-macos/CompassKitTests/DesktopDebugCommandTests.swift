@@ -53,6 +53,9 @@ final class DesktopDebugCommandTests: XCTestCase {
         XCTAssertEqual(
             DesktopDebugCommand.parse("compass://debug/parity-export?name=week-grid"),
             .parityExport(surface: "week-grid"))
+        XCTAssertEqual(
+            DesktopDebugCommand.parse("compass://debug/parity-title-bar-export"),
+            .parityTitleBarExport)
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/parity-export?name=not-a-surface"))
 
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/unknown"))

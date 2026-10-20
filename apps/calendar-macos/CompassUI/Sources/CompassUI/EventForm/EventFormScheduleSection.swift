@@ -72,7 +72,7 @@ struct EventFormScheduleSection: View {
         let endDay = calendar.startOfDay(for: draft.schedule.end)
         let spansMultipleDays = startDay != endDay
 
-        return HStack(alignment: .center, spacing: 8) {
+        return EventFormScheduleFlowLayout(spacing: 8) {
             EventFormCompactDateField(
                 date: Binding(
                     get: { draft.schedule.start },

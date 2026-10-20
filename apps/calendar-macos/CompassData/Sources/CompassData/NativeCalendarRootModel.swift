@@ -399,6 +399,7 @@ public final class NativeCalendarRootModel {
         let today = referenceNow
         viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         monthPickerMonth = today
+        levelsStore.pinShortcutTip(id: "focus-shift-hold")
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
@@ -685,7 +686,7 @@ public final class NativeCalendarRootModel {
 
     public func setPageJumpHintsVisible(_ visible: Bool) {
         focusStore.setPageJumpHintsVisible(visible)
-        applyFocusPresentation()
+        rebuildPresentation()
     }
 
     public func focusDayColumn(calendarId: String) {
@@ -914,6 +915,9 @@ public final class NativeCalendarRootModel {
         var scenario = timeGridState.scenario
         scenario.draftOverlay = draftOverlayForPresentation()
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
+        let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
+        let showDayJumpPrefixes =
+            !isEventFormVisible && (focusStore.pageJumpHintsVisible || eventJumpActive)
         timeGridState = TimeGridState(
             layoutMode: timeGridState.layoutMode,
             referenceNow: timeGridState.referenceNow,
@@ -926,6 +930,9 @@ public final class NativeCalendarRootModel {
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
+            showDayJumpPrefixes: showDayJumpPrefixes,
+            dayJumpUseShiftPrefix: !eventJumpSelection.modeActive,
+            eventJumpActiveDayKeys: eventJumpSelection.activeDayKeys,
             hasSecondaryTimeZone: hasSecondaryTimeZone,
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
@@ -1023,11 +1030,11 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    var startOfView: Date {
+    public var startOfView: Date {
         EffectiveTimeZone.calendar.startOfDay(for: viewStore.anchorDate)
     }
 
-    var endOfView: Date {
+    public var endOfView: Date {
         let calendar = EffectiveTimeZone.calendar
         return calendar.date(
             byAdding: .day,
@@ -1097,6 +1104,9 @@ public final class NativeCalendarRootModel {
         )
         scenario.draftOverlay = draftOverlayForPresentation()
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
+        let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
+        let showDayJumpPrefixes =
+            !isEventFormVisible && (focusStore.pageJumpHintsVisible || eventJumpActive)
         timeGridState = TimeGridState(
             layoutMode: layoutMode(),
             referenceNow: referenceNow,
@@ -1109,6 +1119,9 @@ public final class NativeCalendarRootModel {
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
+            showDayJumpPrefixes: showDayJumpPrefixes,
+            dayJumpUseShiftPrefix: !eventJumpSelection.modeActive,
+            eventJumpActiveDayKeys: eventJumpSelection.activeDayKeys,
             hasSecondaryTimeZone: hasSecondaryTimeZone,
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone

@@ -28,6 +28,7 @@ public enum DesktopDebugCommand: Equatable, Sendable {
     case goTo(date: String)
     case view(View)
     case parityExport(surface: String)
+    case parityTitleBarExport
 
     private static let prefix = "compass://debug/"
     private static let defaultMinutes = 60
@@ -73,6 +74,8 @@ public enum DesktopDebugCommand: Equatable, Sendable {
         case "parity-export":
             guard let name = query["name"], ParityCaptureSurface.isValid(name) else { return nil }
             return .parityExport(surface: name)
+        case "parity-title-bar-export":
+            return .parityTitleBarExport
         default:
             return nil
         }

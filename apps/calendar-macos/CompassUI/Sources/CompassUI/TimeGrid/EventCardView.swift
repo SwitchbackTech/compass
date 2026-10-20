@@ -112,6 +112,14 @@ final class EventCardView: NSView {
         let fill = EventCardColorParser.nsColor(hex: card.fillColorHex) ?? defaultEventFill(for: theme)
         layer?.backgroundColor = fill.cgColor
         layer?.opacity = card.isHiddenStrip ? 0.6 : 1
+        if card.isDraft {
+            layer?.shadowColor = NSColor.black.withAlphaComponent(0.28).cgColor
+            layer?.shadowOffset = CGSize(width: 0, height: -1)
+            layer?.shadowRadius = 2
+            layer?.shadowOpacity = 1
+        } else {
+            layer?.shadowOpacity = 0
+        }
         titleField.textColor = contrastText(on: fill, theme: theme)
         timeField.textColor = titleField.textColor
         accentLayer.backgroundColor = EventCardColorParser.nsColor(hex: card.calendarAccentColorHex)?.cgColor

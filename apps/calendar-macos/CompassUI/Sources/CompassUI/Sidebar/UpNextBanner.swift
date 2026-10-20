@@ -47,12 +47,19 @@ struct UpNextBanner: View {
                 } label: {
                     HStack(spacing: 6) {
                         Text(state.conferenceURL != nil ? "Join" : "Open")
+                            .font(.rubik(14, weight: .medium))
                         ShortcutHintChip(
-                            label: state.conferenceURL != nil ? "V" : "N")
+                            label: state.conferenceURL != nil ? "V" : "N",
+                            style: .onAccent
+                        )
                     }
+                    .foregroundStyle(theme.onAccentColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(theme.accentSecondaryColor)
+                    .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(theme.accentSecondaryColor)
+                .buttonStyle(.plain)
                 Button {
                     withAnimation {
                         isClosing = true
@@ -71,15 +78,16 @@ struct UpNextBanner: View {
                 .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(.ultraThinMaterial)
-            .background(theme.surfacePanelColor.opacity(0.85))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .background(theme.surfacePanelColor.opacity(0.8))
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
                     .stroke(theme.borderColor, lineWidth: 1))
+            .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
             .opacity(isClosing ? 0 : 1)
-            .frame(maxWidth: 320)
+            .frame(width: 288)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("compass-native-up-next-banner")
             .onAppear {
