@@ -37,6 +37,7 @@ public struct LevelUpToastSnapshot: Hashable, Sendable, Identifiable {
 public final class LevelsStore {
     public private(set) var levelSnapshot: ShortcutLevelSnapshot
     public private(set) var badgeHidden: Bool
+    public private(set) var tipsMuted: Bool
     public private(set) var badgePulsing = false
     public private(set) var currentTip: ShortcutTipSnapshot?
     public private(set) var pendingLevelUpToast: LevelUpToastSnapshot?
@@ -63,6 +64,7 @@ public final class LevelsStore {
         let initialUsedIds = ShortcutUsagePersistence.usedShortcutIds(from: profile)
         usedIds = initialUsedIds
         badgeHidden = defaults.bool(forKey: ShortcutUsageStorageKeys.levelHidden)
+        tipsMuted = defaults.bool(forKey: ShortcutUsageStorageKeys.tipsMuted)
         tipRotationIndex = defaults.integer(forKey: ShortcutUsageStorageKeys.tipRotationIndex)
         levelSnapshot = ShortcutLevelMath.compute(
             usedIds: initialUsedIds,
@@ -102,6 +104,17 @@ public final class LevelsStore {
             celebrateLevelUp()
         }
         advanceTipRotation()
+    }
+
+    public func setTipsMuted(_ muted: Bool) {
+        guard muted != tipsMuted else { return }
+        tipsMuted = muted
+        defaults.set(muted, forKey: ShortcutUsageStorageKeys.tipsMuted)
+        if muted {
+            currentTip = nil
+        } else {
+            refreshTip()
+        }
     }
 
     public func setBadgeHidden(_ hidden: Bool) {
@@ -176,7 +189,7 @@ public final class LevelsStore {
     }
 
     private func refreshTip() {
-        guard !badgeHidden else {
+        guard !tipsMuted, !badgeHidden else {
             currentTip = nil
             return
         }

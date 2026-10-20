@@ -10,7 +10,9 @@ public enum CommandPaletteCatalog {
         isSignedIn: Bool,
         isTrialing: Bool,
         eventHits: [CommandPaletteEventHit],
-        recentIds: [String]
+        recentIds: [String],
+        tipsMuted: Bool,
+        levelHidden: Bool
     ) -> [CommandPaletteSection] {
         var built: [CommandPaletteSection] = []
 
@@ -18,7 +20,10 @@ public enum CommandPaletteCatalog {
             built.append(CommandPaletteSection(id: "go-to-date", heading: "", items: [goToDate]))
         }
 
-        let navigation = navigationItems(view: view)
+        let navigation = navigationItems(
+            view: view,
+            tipsMuted: tipsMuted,
+            levelHidden: levelHidden)
         if !navigation.isEmpty {
             built.append(CommandPaletteSection(id: "navigation", heading: "Navigation", items: navigation))
         }
@@ -89,14 +94,17 @@ public enum CommandPaletteCatalog {
     }
 
     private static func navigationItems(
-        view: CalendarGridView
+        view: CalendarGridView,
+        tipsMuted: Bool,
+        levelHidden: Bool
     ) -> [CommandPaletteItem] {
         var items: [CommandPaletteItem] = [
             CommandPaletteItem(
                 id: "today",
                 label: "Go to Today",
                 shortcut: "t",
-                keywords: ["now", "current", "jump"]),
+                keywords: ["now", "current", "jump"],
+                systemImage: "arrow.uturn.backward"),
         ]
         if view != .day {
             items.append(
@@ -104,7 +112,8 @@ public enum CommandPaletteCatalog {
                     id: "go-to-day",
                     label: "Go to Day view",
                     shortcut: "d",
-                    keywords: ["day view", "daily"]))
+                    keywords: ["day view", "daily"],
+                    systemImage: "calendar"))
         }
         if view != .week {
             items.append(
@@ -112,7 +121,8 @@ public enum CommandPaletteCatalog {
                     id: "go-to-week",
                     label: "Go to Week view",
                     shortcut: "w",
-                    keywords: ["week view", "weekly"]))
+                    keywords: ["week view", "weekly"],
+                    systemImage: "calendar.day.timeline.left"))
         }
         if view != .life {
             items.append(
@@ -120,14 +130,50 @@ public enum CommandPaletteCatalog {
                     id: "go-to-life",
                     label: "Go to Life view",
                     shortcut: "l",
-                    keywords: ["life view", "years"]))
+                    keywords: ["life view", "years"],
+                    systemImage: "hourglass"))
         }
         items.append(
             CommandPaletteItem(
                 id: "show-shortcuts",
                 label: "Show shortcuts",
                 shortcut: "?",
-                keywords: ["keyboard", "legend", "help"]))
+                keywords: ["keyboard", "legend", "help"],
+                systemImage: "keyboard"))
+        items.append(
+            CommandPaletteItem(
+                id: "practice-shortcuts",
+                label: "Play Block Party (practice shortcuts)",
+                keywords: [
+                    "onboarding", "tour", "intro", "help", "tutorial", "coach", "sandbox",
+                    "practice", "shortcuts", "game", "play", "block party",
+                ],
+                systemImage: "safari"))
+        items.append(
+            CommandPaletteItem(
+                id: "show-welcome-guide",
+                label: "Show welcome guide",
+                keywords: ["onboarding", "tour", "intro", "help", "faq"],
+                systemImage: "safari"))
+        items.append(
+            CommandPaletteItem(
+                id: "toggle-shortcut-tips",
+                label: tipsMuted ? "Show shortcut tips" : "Hide shortcut tips",
+                keywords: ["sidebar", "hint", "tips", "teaching", "shortcuts", "keyboard"],
+                systemImage: tipsMuted ? "eye" : "eye.slash"))
+        items.append(
+            CommandPaletteItem(
+                id: "toggle-shortcut-level",
+                label: levelHidden ? "Show shortcut level" : "Hide shortcut level",
+                keywords: ["level", "progress", "badge", "shortcuts", "keyboard"],
+                systemImage: levelHidden ? "eye" : "eye.slash"))
+        items.append(
+            CommandPaletteItem(
+                id: "toggle-sidebar",
+                label: "Toggle sidebar",
+                shortcut: "]",
+                keywords: ["panel", "hide sidebar", "show sidebar"],
+                systemImage: "sidebar.left"))
         return items
     }
 
@@ -142,7 +188,8 @@ public enum CommandPaletteCatalog {
                 id: "recent-" + id,
                 label: item.label,
                 shortcut: item.shortcut,
-                keywords: item.keywords)
+                keywords: item.keywords,
+                systemImage: item.systemImage)
         }
     }
 
@@ -181,25 +228,16 @@ public enum CommandPaletteCatalog {
                 shortcut: "mod+shift+z",
                 keywords: ["repeat", "forward"]),
             CommandPaletteItem(
-                id: "show-welcome-guide",
-                label: "Show welcome guide",
-                keywords: ["onboarding", "tour", "intro", "help", "faq"]),
-            CommandPaletteItem(
-                id: "practice-shortcuts",
-                label: "Play Block Party (practice shortcuts)",
-                keywords: [
-                    "onboarding", "tour", "intro", "help", "tutorial", "coach", "sandbox",
-                    "practice", "shortcuts", "game", "play", "block party",
-                ]),
-            CommandPaletteItem(
                 id: "open-settings",
                 label: "Settings",
                 shortcut: ",",
-                keywords: ["preferences", "account"]),
+                keywords: ["preferences", "account"],
+                systemImage: "gearshape"),
             CommandPaletteItem(
                 id: "about",
                 label: "About Compass",
-                keywords: ["version", "info"]),
+                keywords: ["version", "info"],
+                systemImage: "info.circle"),
         ]
         if isTrialing {
             items.insert(
