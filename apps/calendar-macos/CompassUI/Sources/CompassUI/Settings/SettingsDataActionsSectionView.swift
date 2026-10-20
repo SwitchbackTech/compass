@@ -6,15 +6,21 @@ struct SettingsDataActionsSectionView: View {
     @Bindable var model: NativeCalendarRootModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        HStack(spacing: 12) {
             Button(model.isExportingLocalData ? "Exporting…" : "Export data") {
                 Task { await model.exportLocalData() }
             }
+            .buttonStyle(.bordered)
+            .tint(theme.borderColor)
             .accessibilityIdentifier("settings-export-data")
             .disabled(model.isExportingLocalData)
-            Text("Export user-created events stored on this Mac. Synced calendar caches and sample events are excluded.")
-                .font(.rubik(12))
-                .foregroundStyle(theme.textMutedColor)
+            Button("Delete account") {
+                model.requestDeleteAccount()
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(theme.errorColor)
+            .foregroundStyle(theme.onAccentColor)
+            .accessibilityIdentifier("settings-delete-account")
             if model.isSignedIn {
                 Button("Log out") { model.requestLogout() }
                     .accessibilityIdentifier("settings-log-out")
@@ -24,4 +30,3 @@ struct SettingsDataActionsSectionView: View {
         .accessibilityIdentifier("settings-section-data-actions")
     }
 }
-

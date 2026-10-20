@@ -3,13 +3,15 @@ import Foundation
 @MainActor
 @Observable
 public final class EventJumpSelectionStore {
+    /// Web `event-jump.store` `isActive`: bare `f` toggles jump mode for quick-time slots.
+    public private(set) var modeActive: Bool = false
     public private(set) var activeDayKeys: [String] = []
     public private(set) var announcement: String?
     /// Typed day-prefix buffer while resolving weekend Shift+S → U/A (web `matchDayJumpKeystroke`).
     public private(set) var dayJumpBuffer: String = ""
 
     public var isActive: Bool {
-        !activeDayKeys.isEmpty || announcement != nil || !dayJumpBuffer.isEmpty
+        modeActive || !activeDayKeys.isEmpty || announcement != nil || !dayJumpBuffer.isEmpty
     }
 
     public func selectDay(key: String, announcement: String, buffer: String) {
@@ -24,9 +26,16 @@ public final class EventJumpSelectionStore {
         dayJumpBuffer = "s"
     }
 
+    public func setModeActive(_ active: Bool) {
+        modeActive = active
+        if !active {
+            activeDayKeys = []
+            announcement = nil
+            dayJumpBuffer = ""
+        }
+    }
+
     public func clear() {
-        activeDayKeys = []
-        announcement = nil
-        dayJumpBuffer = ""
+        setModeActive(false)
     }
 }

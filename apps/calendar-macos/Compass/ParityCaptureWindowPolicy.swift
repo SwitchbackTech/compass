@@ -12,22 +12,27 @@ enum ParityCaptureWindowPolicy {
     @MainActor
     static func applyIfNeeded(to window: NSWindow?) {
         guard UITestLaunchPolicy.isParityCapture, let window else { return }
-        let visible = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
-        var target = contentSize
-        if let visible {
-            target.width = min(target.width, visible.width - 8)
-            target.height = min(target.height, visible.height - 8)
-        }
+        // Always use the canonical parity viewport so five day columns are not
+        // clipped when the host display is smaller than 1280×820.
+        let target = contentSize
         let contentRect = NSRect(origin: .zero, size: target)
         let frame = window.frameRect(forContentRect: contentRect)
-        if abs(window.frame.width - frame.width) > 2 || abs(window.frame.height - frame.height) > 2 {
+        window.minSize = frame.size
+        window.maxSize = frame.size
+        window.styleMask.remove(.resizable)
+        let visible = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
+        if abs(window.contentRect(forFrameRect: window.frame).width - target.width) > 2
+            || abs(window.contentRect(forFrameRect: window.frame).height - target.height) > 2
+        {
             var origin = frame.origin
             if let visible {
-                origin.x = visible.midX - frame.width / 2
-                origin.y = visible.midY - frame.height / 2
+                origin.x = max(visible.minX, min(visible.maxX - frame.width, visible.midX - frame.width / 2))
+                origin.y = max(visible.minY, visible.maxY - frame.height)
             }
-            window.setFrame(NSRect(origin: origin, size: frame.size), display: true)
+            window.setFrame(NSRect(origin: origin, size: frame.size), display: true, animate: false)
         }
+        window.setContentSize(target)
+        window.contentView?.setFrameSize(target)
     }
 
     @MainActor

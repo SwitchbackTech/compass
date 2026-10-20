@@ -142,17 +142,10 @@ public struct EventFormView: View {
                     HStack(spacing: 8) {
                         Text("Save")
                         Spacer(minLength: 8)
-                        Text(KeycapGlyphs.display(["Mod", "Enter"]))
-                            .font(.rubik(11, weight: .medium))
-                            .foregroundStyle(theme.onAccentColor.opacity(0.92))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(theme.onAccentColor.opacity(0.1))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .stroke(theme.onAccentColor.opacity(0.35), lineWidth: 1)
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        HStack(spacing: 4) {
+                            saveKeycap(KeycapGlyphs.display(["Mod"]))
+                            saveKeycap("Enter")
+                        }
                     }
                     .font(.rubik(14, weight: .medium))
                     .foregroundStyle(theme.onAccentColor)
@@ -187,5 +180,19 @@ public struct EventFormView: View {
 
     private func isLogisticsFieldFocused(_ field: EventFormField) -> Bool {
         field == .location || field == .conference || field == .attendees
+    }
+
+    private func saveKeycap(_ label: String) -> some View {
+        Text(label)
+            .font(.rubik(11, weight: .medium))
+            .foregroundStyle(theme.onAccentColor.opacity(0.92))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(theme.onAccentColor.opacity(0.1))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(theme.onAccentColor.opacity(0.35), lineWidth: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 }

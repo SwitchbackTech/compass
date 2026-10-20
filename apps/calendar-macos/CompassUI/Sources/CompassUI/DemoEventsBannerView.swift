@@ -1,3 +1,4 @@
+import CompassKit
 import SwiftUI
 
 public struct DemoEventsBannerView: View {
@@ -10,13 +11,23 @@ public struct DemoEventsBannerView: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            Text("Sample events to help you explore. Clear them from the command palette.")
-                .font(.rubik(12))
-                .foregroundStyle(theme.textMutedColor)
+            HStack(spacing: 6) {
+                Text("Sample events to help you explore. Clear them from the command palette")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textMutedColor)
+                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+                ShortcutHintChip(label: "K")
+            }
             Spacer(minLength: 8)
-            Text("Okay")
-                .font(.rubik(12))
-                .foregroundStyle(theme.textColor)
+            HStack(spacing: 6) {
+                Text("Okay")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textColor)
+                ShortcutHintChip(label: "O")
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Okay")
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

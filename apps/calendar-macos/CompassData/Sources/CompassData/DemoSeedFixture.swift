@@ -134,7 +134,7 @@ public struct DemoSeedFixture: Sendable {
         CompassCalendar(
             access: .owner,
             accountEmail: nil,
-            backgroundColor: "#3b82f6",
+            backgroundColor: "#ffffff",
             capabilities: CompassCalendarCapabilities(
                 canInviteAttendees: true,
                 canManage: true,
@@ -147,12 +147,12 @@ public struct DemoSeedFixture: Sendable {
             conference: nil,
             createsGoogleMeet: nil,
             description: "",
-            foregroundColor: "#ffffff",
+            foregroundColor: "#000000",
             id: calendarId,
             isActive: true,
             isPrimary: true,
             isVisible: true,
-            name: "Work",
+            name: "Compass",
             provider: "local",
             timeZone: IANATimeZone(rawValue: timeZone)
         )

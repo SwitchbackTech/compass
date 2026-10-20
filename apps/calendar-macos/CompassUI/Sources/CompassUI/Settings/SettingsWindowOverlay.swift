@@ -13,20 +13,39 @@ public struct SettingsWindowOverlay: View {
     public var body: some View {
         if model.settingsStore.isPresented {
             GeometryReader { geometry in
-                ZStack {
+                ZStack(alignment: .top) {
                     theme.panelBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { model.closeSettingsIfAllowed() }
-                    HStack(alignment: .top, spacing: 0) {
-                        nav
-                        Divider().overlay(theme.borderColor)
-                        content
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack(alignment: .center) {
+                            Text("Settings")
+                                .font(.rubik(18))
+                                .foregroundStyle(theme.textColor)
+                            Spacer(minLength: 8)
+                            Button("Close") { model.closeSettingsIfAllowed() }
+                                .buttonStyle(.plain)
+                                .font(.rubik(14))
+                                .foregroundStyle(theme.textMutedColor)
+                            ShortcutHintChip(label: "Esc")
+                                .allowsHitTesting(false)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                        HStack(alignment: .top, spacing: 0) {
+                            nav
+                            Divider().overlay(theme.borderColor)
+                            content
+                        }
                     }
                     .frame(
-                            width: min(640, max(0, geometry.size.width - 32)),
-                            height: min(620, max(0, geometry.size.height - 32))
-                        )
+                        width: min(640, max(0, geometry.size.width - 32)),
+                        height: min(620, max(0, geometry.size.height - 32))
+                    )
                     .overlayPanelChrome()
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.top, geometry.size.height * 0.05)
                 }
             }
             .accessibilityIdentifier("compass-native-settings")
@@ -40,9 +59,6 @@ public struct SettingsWindowOverlay: View {
 
     private var nav: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Settings")
-                .font(.rubik(18))
-                .foregroundStyle(theme.textColor)
             navButton("Accounts", page: .accounts)
             if model.settingsHasMeetings {
                 navButton("Meetings", page: .booking, attention: model.bookingStore.bookingNeedsAttention)
@@ -55,20 +71,17 @@ public struct SettingsWindowOverlay: View {
                     Text("Hold")
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
-                    ShortcutHintChip(label: "Mod")
+                    ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
                     Text("to see shortcuts.")
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
                 .padding(.top, 4)
             }
-            Spacer()
-            Button("Close") { model.closeSettingsIfAllowed() }
-                .buttonStyle(.plain)
-                .foregroundStyle(theme.textMutedColor)
+            Spacer(minLength: 0)
         }
         .padding(20)
-        .frame(width: 180, alignment: .leading)
+        .frame(width: 128, alignment: .leading)
     }
 
     private func navButton(_ title: String, page: SettingsPage, attention: Bool = false) -> some View {

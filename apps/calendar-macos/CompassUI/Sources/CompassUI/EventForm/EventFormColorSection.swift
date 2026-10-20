@@ -33,11 +33,11 @@ struct EventFormColorSection: View {
         return Button {
             model.updateDraftFromForm(color: .some(slot))
         } label: {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: 2)
                 .fill(swatchColor(slot))
                 .frame(width: 20, height: 20)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 2)
                         .stroke(selected ? theme.textColor : theme.borderColor, lineWidth: selected ? 2 : 1)
                 )
         }

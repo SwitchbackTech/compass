@@ -9,7 +9,6 @@ final class NativeGridKeyboardRouter {
     private let model: NativeCalendarRootModel
     private let modHold: ModHoldDetector
     private let formModHold: ModHoldDetector
-    private let eventJumpHold: HoldModifierDetector
     private let viewSwitchIds: Set<ShortcutId> = [.navDayView, .navWeekView, .navLifeView]
 
     init(model: NativeCalendarRootModel, registry: ShortcutRegistry) {
@@ -25,12 +24,6 @@ final class NativeGridKeyboardRouter {
                 model?.jumpEventFormField(digit: digit)
             }
         }
-        eventJumpHold = HoldModifierDetectorFactory.eventJumpHold { [weak model] digit in
-            Task { @MainActor in
-                model?.focusEventJump(digit: digit)
-            }
-        }
-
         let focusIds: Set<ShortcutId> = [
             .editFocusPrev,
             .editFocusNext,
@@ -119,6 +112,7 @@ final class NativeGridKeyboardRouter {
     func handleFlagsChanged(_ event: NSEvent) {
         let commandDown = event.modifierFlags.contains(.command)
         if model.settingsStore.isPresented || model.authStore.isModalPresented || model.pendingLogoutConfirmation
+            || model.pendingDeleteAccountConfirmation
             || model.invitationPrompt != nil || model.pendingRsvpChoice != nil {
             modHold.handleFlagsChanged(modifierDown: false)
             formModHold.handleFlagsChanged(modifierDown: false)
@@ -140,6 +134,8 @@ final class NativeGridKeyboardRouter {
         model.setPageJumpHintsVisible(modHold.phase == .hintsVisible)
         model.formFieldDigitHintsVisible = false
     }
+
+    func handleKeyUp(_: NSEvent) {}
 
     func handleKeyDown(_ event: NSEvent) -> Bool {
         if model.pendingLogoutConfirmation {
@@ -347,25 +343,9 @@ final class NativeGridKeyboardRouter {
             return false
         }
 
-        if case .character(let char) = keyEvent.key, char == "f", keyEvent.modifiers.isEmpty {
-            eventJumpHold.handleModifierDown(isRepeat: keyEvent.isRepeat)
-            if !keyEvent.isRepeat {
-                Task { @MainActor [weak self] in
-                    try? await Task.sleep(for: .milliseconds(280))
-                    self?.syncEventJumpHints()
-                }
-            }
-        }
-
-        if eventJumpHold.handleKeyDown(keyEvent) {
-            syncEventJumpHints()
-            return true
-        }
         if modHold.handleKeyDown(keyEvent) {
             return true
         }
-
-        syncEventJumpHints()
 
         if keyEvent.modifiers == .shift, case .character(let letter) = keyEvent.key {
             model.handleShiftDayJump(letter: letter)
@@ -534,6 +514,9 @@ final class NativeGridKeyboardRouter {
         }
 
         if keyEvent.modifiers.isEmpty, case .character(let digit) = keyEvent.key, digit.isNumber {
+            if model.eventJumpSelection.modeActive, model.focusEventJumpIfAvailable(digit: digit) {
+                return true
+            }
             model.handleQuickTimeDigit(digit)
             if !model.draftStore.quickTimeDigits.isEmpty {
                 return true
@@ -796,17 +779,6 @@ final class NativeGridKeyboardRouter {
             return false
         }
         return false
-    }
-
-    func handleKeyUp(_ event: NSEvent) {
-        if event.keyCode == 4 {
-            eventJumpHold.handleModifierUp()
-            model.setEventJumpHintsVisible(false)
-        }
-    }
-
-    private func syncEventJumpHints() {
-        model.setEventJumpHintsVisible(eventJumpHold.phase == .hintsVisible)
     }
 
     private func performUndo() {

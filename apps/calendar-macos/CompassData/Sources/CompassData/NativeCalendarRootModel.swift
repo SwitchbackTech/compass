@@ -114,7 +114,8 @@ public final class NativeCalendarRootModel {
     }
     private var refreshTask: Task<Void, Never>?
     private var focusLayoutCards: [FocusLayoutCard] = []
-    private var eventJumpHintLabels: [EventJumpChipHint] = []
+    var eventJumpHintLabels: [EventJumpChipHint] = []
+    var quickTimeSlotHintLabels: [QuickTimeSlotHint] = []
     public var focusedDayColumnCalendarId: String?
     public var pendingFocusDayColumnCalendarId: String?
     private var didApplyDemoFixtureScroll = false
@@ -367,6 +368,9 @@ public final class NativeCalendarRootModel {
         await refreshVisibleRange()
         await refreshSideband()
         applyParityCapturePresentationIfNeeded()
+        if UITestLaunchPolicy.showPageJumpHintsForUITest {
+            setPageJumpHintsVisible(true)
+        }
         if isSignedIn {
             startEventStream()
         }
@@ -412,6 +416,9 @@ public final class NativeCalendarRootModel {
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
+    public internal(set) var pendingDeleteAccountConfirmation = false
+    public internal(set) var isDeletingAccount = false
+    public internal(set) var deleteAccountError: String?
     public internal(set) var isLoggingOut = false
     public internal(set) var logoutError: String?
 
@@ -510,6 +517,13 @@ public final class NativeCalendarRootModel {
     public func updateContentTrackWidth(_ width: CGFloat) {
         if UITestLaunchPolicy.isParityCapture {
             applyParityCapturePresentationIfNeeded()
+            let resolved = max(width, CGFloat(ParityCaptureGeometry.contentTrackWidth))
+            if abs(resolved - contentTrackWidth) > 0.5 {
+                contentTrackWidth = resolved
+                viewStore.setVisibleDayCount(ParityCaptureGeometry.visibleDayCount)
+                rebuildPresentation()
+                scheduleRefreshVisibleRange()
+            }
             return
         }
         let resolved = max(UITestLaunchPolicy.pinnedWeekGridTrackWidth ?? width, 320)
@@ -623,6 +637,8 @@ public final class NativeCalendarRootModel {
             focusFirstCalendarEvent()
         case .focusNotice:
             focusNextNotice()
+        case .focusShiftHold:
+            toggleEventJumpMode()
         case .otherSubscribe:
             openUpgradeConfirmation()
         case .navGoToDate:
@@ -650,7 +666,7 @@ public final class NativeCalendarRootModel {
     public func setEventJumpHintsVisible(_ visible: Bool) {
         if visible {
             eventJumpHintLabels = buildEventJumpHints()
-        } else {
+        } else if !eventJumpSelection.modeActive {
             eventJumpHintLabels = []
         }
         applyFocusPresentation()
@@ -729,6 +745,15 @@ public final class NativeCalendarRootModel {
     public func focusEventJump(digit: Character) {
         guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else { return }
         focusEvent(eventId: hint.eventId)
+    }
+
+    @discardableResult
+    public func focusEventJumpIfAvailable(digit: Character) -> Bool {
+        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else {
+            return false
+        }
+        focusEvent(eventId: hint.eventId)
+        return true
     }
 
     public func consumePendingScroll() -> TimeGridScrollRequest? {
@@ -861,6 +886,7 @@ public final class NativeCalendarRootModel {
             focusedEventId: focusStore.focusedEventId?.rawValue,
             sidebarEditingEventId: sidebarEditingGridEventId(),
             eventJumpHints: eventJumpHintLabels,
+            quickTimeSlotHints: quickTimeSlotHintLabels,
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
@@ -1024,6 +1050,7 @@ public final class NativeCalendarRootModel {
             focusedEventId: focusStore.focusedEventId?.rawValue,
             sidebarEditingEventId: sidebarEditingGridEventId(),
             eventJumpHints: eventJumpHintLabels,
+            quickTimeSlotHints: quickTimeSlotHintLabels,
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
@@ -1031,6 +1058,10 @@ public final class NativeCalendarRootModel {
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
         )
+        if eventJumpSelection.modeActive {
+            quickTimeSlotHintLabels = buildQuickTimeSlotHints()
+            timeGridState.quickTimeSlotHints = quickTimeSlotHintLabels
+        }
         let snapshot = timeGridState.snapshot(colWidths: timeGridState.resolvedColumnWidths())
         syncFocusRegistry(from: snapshot.cards)
         focusLayoutCards = snapshot.cards.map { card in
@@ -1130,7 +1161,7 @@ public final class NativeCalendarRootModel {
         )
     }
 
-    private func buildEventJumpHints() -> [EventJumpChipHint] {
+    func buildEventJumpHints() -> [EventJumpChipHint] {
         let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
         let timed = focusLayoutCards.filter { !$0.isAllDay }.sorted { $0.frame.top < $1.frame.top }
         return timed.prefix(digits.count).enumerated().map { index, card in

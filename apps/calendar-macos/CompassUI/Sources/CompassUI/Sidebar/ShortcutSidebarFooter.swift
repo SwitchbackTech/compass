@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 struct ShortcutSidebarFooter: View {
@@ -26,34 +27,52 @@ struct ShortcutSidebarFooter: View {
 
             if isEventFormVisible, !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
                 eventFormSaveHint
-            } else if !levelsStore.badgeHidden, !suppressTips, !suppressForQuickTime,
-                let tip = levelsStore.currentTip
-            {
-                HStack(spacing: 8) {
-                    Text("Try \(tip.label)")
-                        .font(.rubik(11))
-                        .foregroundStyle(theme.textMutedColor)
-                        .lineLimit(2)
-                        .accessibilityIdentifier("compass-native-shortcut-tip")
-                    HStack(spacing: 3) {
-                        ForEach(Array(tip.keycaps.enumerated()), id: \.offset) { _, key in
-                            ShortcutHintChip(label: key)
-                        }
-                    }
-                }
+            } else if !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
+                calendarJumpHint
             }
         }
     }
 
+    private var calendarJumpHint: some View {
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 4) {
+                Text("Hold")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+                Text("to see jump targets")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+            }
+            .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("compass-native-shortcut-tip")
+            Button("Hide tips") {
+                levelsStore.setTipsMuted(true)
+            }
+            .buttonStyle(.plain)
+            .font(.rubik(11))
+            .foregroundStyle(theme.textMutedColor)
+        }
+    }
+
     private var eventFormSaveHint: some View {
-        HStack(spacing: 6) {
-            Text("Enter saves · hold")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
-            ShortcutHintChip(label: "Mod")
-            Text("to jump fields")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 6) {
+                Text("Enter saves · hold")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+                Text("to jump fields")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+            }
+            .frame(maxWidth: .infinity)
+            Button("Hide tips") {
+                levelsStore.setTipsMuted(true)
+            }
+            .buttonStyle(.plain)
+            .font(.rubik(11))
+            .foregroundStyle(theme.textMutedColor)
         }
         .accessibilityIdentifier("compass-native-shortcut-tip")
     }

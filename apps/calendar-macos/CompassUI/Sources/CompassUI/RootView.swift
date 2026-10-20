@@ -27,6 +27,11 @@ public struct RootView: View {
                     }
                     content
                         .padding(.leading, contentLeadingInset)
+                        .frame(
+                            minWidth: UITestLaunchPolicy.isParityCapture
+                                ? CGFloat(ParityCaptureGeometry.contentTrackWidth)
+                                : 0
+                        )
                 }
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.
@@ -123,6 +128,9 @@ public struct RootView: View {
         }
         .overlay {
             LogoutConfirmationDialogView(model: model)
+        }
+        .overlay {
+            DeleteAccountConfirmationDialogView(model: model)
         }
         .overlay {
             DiscardUnsavedDraftDialogView(
@@ -346,6 +354,11 @@ public struct RootView: View {
                         hints: model.timeGridState.eventJumpHints,
                         gridYOffset: gridChipYOffset,
                         visible: !model.timeGridState.eventJumpHints.isEmpty
+                    )
+                    QuickTimeSlotsOverlay(
+                        hints: model.timeGridState.quickTimeSlotHints,
+                        gridYOffset: gridChipYOffset,
+                        visible: model.eventJumpSelection.modeActive
                     )
                 }
                 .background(theme.backgroundColor)

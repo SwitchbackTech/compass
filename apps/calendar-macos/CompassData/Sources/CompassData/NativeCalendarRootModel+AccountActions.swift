@@ -48,4 +48,33 @@ extension NativeCalendarRootModel {
             logoutError = "Could not log out. Try again."
         }
     }
+
+    public func requestDeleteAccount() {
+        guard !isDeletingAccount else { return }
+        deleteAccountError = nil
+        pendingDeleteAccountConfirmation = true
+    }
+
+    public func cancelDeleteAccount() {
+        guard !isDeletingAccount else { return }
+        pendingDeleteAccountConfirmation = false
+    }
+
+    public func confirmDeleteAccount() async {
+        guard pendingDeleteAccountConfirmation, !isDeletingAccount else { return }
+        deleteAccountError = nil
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        guard isSignedIn else {
+            deleteAccountError = "Sign in to delete your Compass account."
+            return
+        }
+        do {
+            try await UserAPI(client: environment.apiClient).deleteAccount()
+            pendingDeleteAccountConfirmation = false
+            try await signOut()
+        } catch {
+            deleteAccountError = "Could not delete your account. Try again."
+        }
+    }
 }

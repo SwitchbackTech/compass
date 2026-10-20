@@ -13,7 +13,7 @@ struct EventFormScheduleSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle("All day", isOn: Binding(
+            Toggle("All day?", isOn: Binding(
                 get: { draft.schedule.kind == .allDay },
                 set: { model.setDraftAllDay($0) }
             ))
@@ -95,19 +95,14 @@ struct EventFormScheduleSection: View {
             .disabled(scheduleLocked)
             .pageJumpChipAnchor(id: pageJumpId)
 
-            DatePicker(
-                timeLabel,
-                selection: Binding(
+            EventFormTimeField(
+                date: Binding(
                     get: { date },
                     set: { update($0) }
                 ),
-                displayedComponents: [.hourAndMinute]
+                accessibilityIdentifier: timeAccessibilityIdentifier
             )
-            .labelsHidden()
-            .controlSize(.small)
-            .frame(minHeight: 38)
             .disabled(scheduleLocked)
-            .accessibilityIdentifier(timeAccessibilityIdentifier)
         }
     }
 

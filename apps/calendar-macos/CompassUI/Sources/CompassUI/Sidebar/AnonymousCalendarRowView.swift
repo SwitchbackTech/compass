@@ -11,7 +11,18 @@ struct AnonymousCalendarRowView: View {
         Button { showsInfo.toggle() } label: {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(EventCardColorParser.nsColor(hex: calendar.backgroundColor).map(Color.init(nsColor:)) ?? theme.textColor)
+                    .fill(
+                        EventCardColorParser.nsColor(hex: calendar.backgroundColor).map(Color.init(nsColor:))
+                            ?? theme.textColor
+                    )
+                    .overlay {
+                        Circle()
+                            .strokeBorder(
+                                EventCardColorParser.nsColor(hex: calendar.backgroundColor).map(Color.init(nsColor:))
+                                    ?? theme.textColor,
+                                lineWidth: 2
+                            )
+                    }
                     .frame(width: 14, height: 14)
                 Text("On this device only")
                     .font(.rubik(12))

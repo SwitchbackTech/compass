@@ -192,6 +192,12 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         // Shell-driven test commands: run in place without activating the app,
         // so `open -g "compass://debug/..."` never takes the user's focus.
         if let command = DesktopDebugCommand.parse(urlString) {
+            if case .parityExport(let surface) = command {
+                Task { @MainActor in
+                    try? ParityViewSnapshotExporter.export(surface: surface, from: view.window)
+                }
+                return
+            }
             if pendingDebugCommands != nil {
                 pendingDebugCommands?.append(command)
             } else {

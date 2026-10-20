@@ -38,16 +38,22 @@ struct UpNextBanner: View {
                     }
                 }
                 Spacer(minLength: 8)
-                Button(state.conferenceURL != nil ? "Join" : "Open") {
+                Button {
                     if state.conferenceURL != nil {
                         onJoin()
                     } else {
                         onOpen()
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(state.conferenceURL != nil ? "Join" : "Open")
+                        ShortcutHintChip(
+                            label: state.conferenceURL != nil ? "V" : "N")
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(theme.accentSecondaryColor)
-                Button("Dismiss") {
+                Button {
                     withAnimation {
                         isClosing = true
                     }
@@ -55,9 +61,13 @@ struct UpNextBanner: View {
                         dismissedEventId = upNext.id
                         isClosing = false
                     }
+                } label: {
+                    Text("×")
+                        .font(.rubik(16))
+                        .foregroundStyle(theme.textMutedColor)
+                        .padding(.horizontal, 4)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(theme.textMutedColor)
                 .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 12)

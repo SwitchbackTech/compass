@@ -58,17 +58,32 @@ export async function installParityWebEnvironment(
   }, localStorageSeed);
 }
 
+type PrepareParityDemoWeekOptions = {
+  dismissDemoBanner?: boolean;
+};
+
 /** Load demo-seed.json into IndexedDB after the app has opened compass-local. */
-export async function prepareParityDemoWeek(page: Page) {
+export async function prepareParityDemoWeek(
+  page: Page,
+  options: PrepareParityDemoWeekOptions = {},
+) {
+  const dismissDemoBanner = options.dismissDemoBanner ?? true;
   await page.goto("/week", { waitUntil: "domcontentloaded" });
   await page.locator("#timedColumns").waitFor({ timeout: 20_000 });
   await seedParityDemoEvents(page);
   await page.reload({ waitUntil: "domcontentloaded" });
   await expectDemoGrid(page);
+  if (dismissDemoBanner) {
+    const okay = page.getByRole("button", { name: "Okay" });
+    if (await okay.isVisible().catch(() => false)) {
+      await okay.click();
+    }
+  }
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("t");
   await page
-    .getByRole("button", { name: /Exercise/i })
+    .getByRole("button", { name: /Exercise|Morning standup/i })
+    .first()
     .waitFor({ timeout: 15_000 });
 }
 
