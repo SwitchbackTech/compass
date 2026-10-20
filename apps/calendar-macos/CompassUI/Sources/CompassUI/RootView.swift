@@ -27,6 +27,11 @@ public struct RootView: View {
                     }
                     content
                         .padding(.leading, contentLeadingInset)
+                        .frame(
+                            minWidth: UITestLaunchPolicy.isParityCapture
+                                ? CGFloat(ParityCaptureGeometry.contentTrackWidth)
+                                : 0
+                        )
                 }
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.

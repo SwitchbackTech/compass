@@ -1,3 +1,4 @@
+import CompassKit
 import SwiftUI
 
 public struct DemoEventsBannerView: View {
@@ -14,7 +15,7 @@ public struct DemoEventsBannerView: View {
                 Text("Sample events to help you explore. Clear them from the command palette")
                     .font(.rubik(12))
                     .foregroundStyle(theme.textMutedColor)
-                ShortcutHintChip(label: "⌘")
+                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
                 ShortcutHintChip(label: "K")
             }
             Spacer(minLength: 8)

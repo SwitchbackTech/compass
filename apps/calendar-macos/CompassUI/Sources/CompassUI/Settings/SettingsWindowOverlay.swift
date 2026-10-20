@@ -69,7 +69,7 @@ public struct SettingsWindowOverlay: View {
                     Text("Hold")
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
-                    ShortcutHintChip(label: "^")
+                    ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
                     Text("to see shortcuts.")
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)

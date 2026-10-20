@@ -11,11 +11,15 @@ const outputDir =
   process.env.PARITY_WEB_OUT ??
   join(process.cwd(), "build", "desktop-parity", "web");
 
+const macChromeUserAgent =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
 test.use({
   viewport: PARITY_VIEWPORT,
   storageState: { cookies: [], origins: [] },
   timezoneId: "UTC",
   colorScheme: "light",
+  userAgent: macChromeUserAgent,
 });
 
 test.describe("Desktop web parity captures", () => {

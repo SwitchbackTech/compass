@@ -63,11 +63,9 @@ public struct SidebarMonthPicker: View {
                     }
                     .frame(height: 32.333)
                     .background {
-                        if days.contains(where: { isInRange($0, from: selectedDate) })
-                            || (visibleDayCount > 1 && days.contains(where: { isInRange($0, from: focusedDate ?? selectedDate) }))
-                        {
+                        if rowContainsSelectedWeek(days) {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(theme.textMutedColor.opacity(0.15))
+                                .fill(theme.textMutedColor.opacity(0.12))
                         }
                     }
                     .overlay {
@@ -144,8 +142,9 @@ public struct SidebarMonthPicker: View {
         return formatter.string(from: displayedMonth)
     }
 
+    /// Web `MonthPicker`: Sunday-first columns for every view wider than a single day.
     private var weekStart: Int {
-        visibleDayCount == 1 ? 1 : EffectiveTimeZone.calendar.component(.weekday, from: selectedDate)
+        1
     }
 
     private var dayCells: [Date] {
@@ -167,6 +166,16 @@ public struct SidebarMonthPicker: View {
         let start = calendar.startOfDay(for: start)
         guard let end = calendar.date(byAdding: .day, value: max(1, visibleDayCount), to: start) else { return false }
         return date >= start && date < end
+    }
+
+    /// Matches web `react-datepicker__week--selected` for the week containing the anchor day.
+    private func rowContainsSelectedWeek(_ days: [Date]) -> Bool {
+        let calendar = EffectiveTimeZone.calendar
+        let anchor = calendar.startOfDay(for: selectedDate)
+        guard let rowStart = days.first.map({ calendar.startOfDay(for: $0) }),
+              let rowEnd = days.last.flatMap({ calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: $0)) })
+        else { return false }
+        return anchor >= rowStart && anchor < rowEnd
     }
 
     private func shiftMonth(_ offset: Int) {

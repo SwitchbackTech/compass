@@ -19,6 +19,7 @@ struct SettingsDataActionsSectionView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(theme.errorColor)
+            .foregroundStyle(theme.onAccentColor)
             .accessibilityIdentifier("settings-delete-account")
             if model.isSignedIn {
                 Button("Log out") { model.requestLogout() }

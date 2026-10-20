@@ -13,7 +13,7 @@ struct EventFormScheduleSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle("All day", isOn: Binding(
+            Toggle("All day?", isOn: Binding(
                 get: { draft.schedule.kind == .allDay },
                 set: { model.setDraftAllDay($0) }
             ))

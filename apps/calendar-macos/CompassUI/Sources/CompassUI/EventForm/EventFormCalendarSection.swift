@@ -23,7 +23,7 @@ struct EventFormCalendarSection: View {
                 )
             ) {
                 ForEach(model.writableEventCalendars, id: \.id) { calendar in
-                    Text(calendar.name).tag(calendar.id)
+                    Text(calendarLabel(calendar)).tag(calendar.id)
                 }
             }
             .labelsHidden()
@@ -34,4 +34,7 @@ struct EventFormCalendarSection: View {
         .eventFormSectionChrome(focused: focusField == .calendar)
     }
 
+    private func calendarLabel(_ calendar: CompassCalendar) -> String {
+        calendar.isPrimary ? "\(calendar.name) (primary)" : calendar.name
+    }
 }
