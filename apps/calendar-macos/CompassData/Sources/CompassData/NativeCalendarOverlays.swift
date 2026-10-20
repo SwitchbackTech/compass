@@ -30,7 +30,10 @@ extension NativeCalendarRootModel {
             isSignedIn: isSignedIn,
             isTrialing: billingStore.status?.subscriptionStatus == .trialing,
             eventHits: mergedHits,
-            recentIds: commandPaletteStore.recentCommandIds)
+            recentIds: commandPaletteStore.recentCommandIds,
+            tipsMuted: levelsStore.tipsMuted,
+            levelHidden: levelsStore.badgeHidden,
+            theme: settingsStore.theme)
     }
 
     public func filteredPaletteSections() -> [CommandPaletteSection] {
@@ -114,12 +117,22 @@ extension NativeCalendarRootModel {
             handleShortcut(.navLifeView)
         case "show-shortcuts":
             shortcutsLegendStore.open()
+        case "toggle-theme":
+            let next: CompassThemeName =
+                settingsStore.theme == .darkAbyss ? .lightBeach : .darkAbyss
+            settingsStore.setTheme(next)
         case "open-settings":
             handleShortcut(.otherSettings)
         case "practice-shortcuts":
             blockPartyStore.replayFromPalette()
         case "show-welcome-guide":
             onboardingStore.openWelcomeGuide()
+        case "toggle-shortcut-tips":
+            levelsStore.setTipsMuted(!levelsStore.tipsMuted)
+        case "toggle-shortcut-level":
+            levelsStore.setBadgeHidden(!levelsStore.badgeHidden)
+        case "toggle-sidebar":
+            handleShortcut(.otherSidebar)
         case "sign-up":
             authStore.openModal(.signUp)
         case "log-in":

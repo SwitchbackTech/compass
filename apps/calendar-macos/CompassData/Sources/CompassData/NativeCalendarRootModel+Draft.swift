@@ -6,7 +6,10 @@ extension NativeCalendarRootModel {
     func draftTargetDay() -> Date {
         let calendar = EffectiveTimeZone.calendar
         let now = referenceNow
+        let jumpColumnDay = QuickTime.quickTimeFocusedColumnDay(
+            activeDayKeys: eventJumpSelection.activeDayKeys)
         let focusedDay: Date? = {
+            if let jumpColumnDay { return jumpColumnDay }
             guard let focusedId = focusStore.focusedEventId?.rawValue,
                 let event = loadedEvents.first(where: { $0.id.rawValue == focusedId })
             else { return nil }

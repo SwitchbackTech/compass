@@ -160,7 +160,7 @@ struct WelcomeModalView: View {
 
     private func primaryButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Text(title)
                     .font(.rubik(14, weight: .medium))
                 ShortcutHintChip(label: hint)
@@ -176,7 +176,7 @@ struct WelcomeModalView: View {
 
     private func secondaryButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Text(title)
                     .font(.rubik(14, weight: .medium))
                 ShortcutHintChip(label: hint)
@@ -192,7 +192,7 @@ struct WelcomeModalView: View {
 
     private func pillButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Text(title)
                     .font(.rubik(12, weight: .medium))
                 ShortcutHintChip(label: hint)
