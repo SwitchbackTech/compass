@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { describe, expect, it, mock } from "bun:test";
@@ -103,6 +103,22 @@ describe("SignInProviderButtons", () => {
     expect(
       screen.getByRole("button", { name: "Connect Apple Calendar" }),
     ).toBeTruthy();
+  });
+
+  it("keeps shortcut chips mounted but invisible when showShortcutKeys is false", () => {
+    render(
+      <SignInProviderButtons
+        available={["google"]}
+        loadingKind={null}
+        onSignIn={mock()}
+        showShortcutKeys={false}
+      />,
+    );
+
+    const hint = within(
+      screen.getByRole("button", { name: "Continue with Google" }),
+    ).getByText("G");
+    expect(hint.className).toMatch(/\binvisible\b/);
   });
 
   it("hides shortcut chips when shortcutKeys is null", () => {

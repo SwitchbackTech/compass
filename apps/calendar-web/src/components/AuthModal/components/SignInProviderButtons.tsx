@@ -15,6 +15,8 @@ type SignInProviderButtonsProps = {
   fullWidth?: boolean;
   labels?: Record<ProviderKind, string>;
   shortcutKeys?: Record<ProviderKind, string> | null;
+  /** When false, letter chips stay mounted but hidden while typing in a field. */
+  showShortcutKeys?: boolean;
   busyLabel?: (kind: ProviderKind) => string;
 };
 
@@ -36,6 +38,7 @@ const renderProviderButton = (
     style,
     labels = CONTINUE_WITH_LABEL,
     shortcutKeys = SIGN_IN_SHORTCUT_KEY,
+    showShortcutKeys = true,
     busyLabel,
   } = props;
   const Button = SIGN_IN_BUTTONS[kind];
@@ -50,6 +53,7 @@ const renderProviderButton = (
       label={label}
       onClick={() => onSignIn(kind)}
       shortcutKey={shortcutKey}
+      showShortcutKey={showShortcutKeys}
       style={style}
     />
   );
@@ -62,6 +66,7 @@ export const SignInProviderButtons: FC<SignInProviderButtonsProps> = ({
   fullWidth = true,
   labels,
   shortcutKeys,
+  showShortcutKeys = true,
   busyLabel,
 }) => {
   if (available.length === 0) {
@@ -76,6 +81,7 @@ export const SignInProviderButtons: FC<SignInProviderButtonsProps> = ({
       style: buttonStyle,
       labels,
       shortcutKeys,
+      showShortcutKeys,
       busyLabel,
     }),
   );

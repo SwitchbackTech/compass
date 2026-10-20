@@ -17,6 +17,7 @@ import {
 } from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
+import { useIsEditableFocused } from "@web/common/hooks/useIsEditableFocused";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
   dismissErrorToast,
@@ -113,6 +114,8 @@ export const AuthModal: FC = () => {
   const emailInputRef = useRef<HTMLInputElement>(null);
   const pricingLinkRef = useRef<HTMLAnchorElement>(null);
   const isPrimaryAuthView = isLoginView || currentView === "signUp";
+  const editableFocused = useIsEditableFocused();
+  const showBareLetterShortcutHints = !editableFocused;
 
   useEffect(() => {
     if (!isOpen || currentView !== "signUp") return;
@@ -258,7 +261,10 @@ export const AuthModal: FC = () => {
             className="inline-flex shrink-0 items-center gap-2 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
           >
             {isLoginView ? "Sign up" : "Log in"}
-            <ShortcutHint className="shrink-0">
+            <ShortcutHint
+              className="shrink-0"
+              visible={showBareLetterShortcutHints}
+            >
               {isLoginView ? "U" : "i"}
             </ShortcutHint>
           </button>
@@ -332,6 +338,7 @@ export const AuthModal: FC = () => {
               available={available}
               loadingKind={isLoading ? loadingKind : null}
               onSignIn={handleProviderSignIn}
+              showShortcutKeys={showBareLetterShortcutHints}
             />
           </>
         ) : null}
@@ -364,7 +371,9 @@ export const AuthModal: FC = () => {
                 className="inline-flex items-center gap-1 text-text hover:underline"
               >
                 Pricing
-                <ShortcutHint>P</ShortcutHint>
+                <ShortcutHint visible={showBareLetterShortcutHints}>
+                  P
+                </ShortcutHint>
               </a>
               <DotIcon size={26} />
             </>

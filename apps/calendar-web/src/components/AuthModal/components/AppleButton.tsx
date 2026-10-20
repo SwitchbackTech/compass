@@ -9,6 +9,7 @@ export const AppleButton = ({
   busy,
   label = "Continue with Apple",
   shortcutKey,
+  showShortcutKey = true,
   style,
 }: {
   onClick: () => void;
@@ -16,6 +17,7 @@ export const AppleButton = ({
   busy?: boolean;
   label?: string;
   shortcutKey?: string;
+  showShortcutKey?: boolean;
   style?: React.CSSProperties;
 }) => {
   return (
@@ -40,7 +42,9 @@ export const AppleButton = ({
       <AppleLogo size={18} />
       <span>{label}</span>
       {shortcutKey ? (
-        <ShortcutHint className="shrink-0">{shortcutKey}</ShortcutHint>
+        <ShortcutHint className="shrink-0" visible={showShortcutKey}>
+          {shortcutKey}
+        </ShortcutHint>
       ) : null}
     </button>
   );

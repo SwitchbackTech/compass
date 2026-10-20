@@ -9,6 +9,7 @@ export const MicrosoftButton = ({
   busy,
   label = "Connect Microsoft",
   shortcutKey,
+  showShortcutKey = true,
   style,
 }: {
   onClick: () => void;
@@ -16,6 +17,7 @@ export const MicrosoftButton = ({
   busy?: boolean;
   label?: string;
   shortcutKey?: string;
+  showShortcutKey?: boolean;
   style?: React.CSSProperties;
 }) => {
   return (
@@ -39,7 +41,9 @@ export const MicrosoftButton = ({
       <MicrosoftLogo size={18} />
       <span>{label}</span>
       {shortcutKey ? (
-        <ShortcutHint className="shrink-0">{shortcutKey}</ShortcutHint>
+        <ShortcutHint className="shrink-0" visible={showShortcutKey}>
+          {shortcutKey}
+        </ShortcutHint>
       ) : null}
     </button>
   );
