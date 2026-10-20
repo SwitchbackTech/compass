@@ -43,8 +43,8 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         self.catalogController = catalogController
         super.init(rootView: ThemedRootView(webTheme: webTheme, model: model))
         model.onShowAbout = { CompassAboutPanel.present(from: nil) }
-        model.onShareFeedback = { [weak model] in
-            CompassFeedbackPanel.present(appView: model?.viewStore.view.rawValue ?? "week")
+        model.feedbackSender = { details, appView in
+            try await PostHogCapture.shared.submitFeedback(details: details, appView: appView)
         }
         model.onExportLocalData = { [weak self] data, filename in
             guard let window = self?.view.window else { return false }

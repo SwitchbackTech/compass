@@ -137,6 +137,9 @@ public struct RootView: View {
             DeleteAccountConfirmationDialogView(model: model)
         }
         .overlay {
+            FeedbackDialogView(model: model)
+        }
+        .overlay {
             DiscardUnsavedDraftDialogView(
                 isPresented: model.pendingDiscardDraftConfirmation,
                 onCancel: { model.cancelDiscardDraftConfirmation() },
