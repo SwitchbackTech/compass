@@ -7,6 +7,13 @@ final class QuickTimeTests: XCTestCase {
         EffectiveTimeZone.identifier = "UTC"
     }
 
+    func testFocusedColumnDayFromJumpSelection() {
+        let day = QuickTime.quickTimeFocusedColumnDay(activeDayKeys: ["2026-05-18"])
+        XCTAssertNotNil(day)
+        XCTAssertEqual(CompassDateParsing.formatCalendarDay(day!), "2026-05-18")
+        XCTAssertNil(QuickTime.quickTimeFocusedColumnDay(activeDayKeys: []))
+    }
+
     func testResolveNoonFromTwoDigits() {
         let day = CompassDateParsing.calendarDateInEffectiveTimeZone("2026-05-20")!
         let start = QuickTime.resolveQuickTimeStart(digits: "12", targetDay: day)

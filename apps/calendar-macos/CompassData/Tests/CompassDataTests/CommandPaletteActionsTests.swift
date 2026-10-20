@@ -107,6 +107,14 @@ final class CommandPaletteActionsTests: XCTestCase {
         let ids = Set(model.filteredPaletteSections().flatMap(\.items).map(\.id))
         XCTAssertTrue(ids.contains("undo"))
         XCTAssertTrue(ids.contains("redo"))
+        XCTAssertTrue(ids.contains("toggle-theme"))
+    }
+
+    func testToggleThemeFlipsStoredTheme() async throws {
+        let model = try await makeModel()
+        let initial = model.settingsStore.theme
+        model.runPaletteCommand(id: "toggle-theme")
+        XCTAssertNotEqual(model.settingsStore.theme, initial)
     }
 
     func testAboutInvokesNativePresentation() async throws {
