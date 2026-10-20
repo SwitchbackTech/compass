@@ -179,28 +179,39 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureCommandPalette() {
         let launch = launchDemoWindow()
-        prepareParityGrid(launch.window, dismissDemoBanner: true)
-        openCommandPaletteForCapture(launch.window, app: launch.app)
-        NativeImageSnapshotSupport.captureWindow(launch.window, named: "command-palette")
-    }
-
-    /// Avoid Cmd+K here: after parity grid setup it is flaky and can terminate the app in CI.
-    @MainActor
-    private func openCommandPaletteForCapture(_ window: XCUIElement, app: XCUIApplication) {
-        let palette = window.descendants(matching: .any)["compass-native-command-palette"]
-        let search = window.textFields["compass-native-command-palette-search"]
-        app.menuBars.menuBarItems["View"].click()
-        app.menuItems["Command Palette"].click()
-        if !palette.waitForExistence(timeout: 10) {
-            let sidebarPalette = window.buttons["Open command palette"]
-            if sidebarPalette.waitForExistence(timeout: 3), sidebarPalette.isHittable {
-                sidebarPalette.click()
-            }
+        prepareParityGridForCommandPalette(launch.window)
+        let palette = launch.window.descendants(matching: .any)["compass-native-command-palette"]
+        let search = launch.window.textFields["compass-native-command-palette-search"]
+        launch.window.typeKey("k", modifierFlags: [.command])
+        if !palette.waitForExistence(timeout: 8) {
+            launch.app.menuBars.menuBarItems["View"].click()
+            launch.app.menuItems["Command Palette"].click()
         }
         XCTAssertTrue(
             palette.waitForExistence(timeout: 15),
-            "Expected command palette after View menu or sidebar action")
+            "Expected command palette after keyboard or View menu shortcut")
         XCTAssertTrue(search.waitForExistence(timeout: 5))
+        NativeImageSnapshotSupport.captureWindow(launch.window, named: "command-palette")
+    }
+
+    /// Full `prepareParityGrid` (today jump, scroll-hint dismiss, long settle) breaks palette open in CI.
+    @MainActor
+    private func prepareParityGridForCommandPalette(_ window: XCUIElement) {
+        let okay = window.buttons["Okay"]
+        if okay.waitForExistence(timeout: 4) {
+            okay.tap()
+            let banner = window.descendants(matching: .any)["compass-native-demo-events-banner"]
+            let dismissDeadline = Date().addingTimeInterval(5)
+            while Date() < dismissDeadline, banner.exists {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+            }
+        }
+        XCTAssertTrue(
+            waitForGridColumnCount(window, atLeast: 5, timeout: 20),
+            "Expected five day columns before command palette capture")
+        XCTAssertTrue(
+            window.buttons["Morning standup"].waitForExistence(timeout: 20),
+            "Expected demo-seed timed event on the week grid")
     }
 
     @MainActor
