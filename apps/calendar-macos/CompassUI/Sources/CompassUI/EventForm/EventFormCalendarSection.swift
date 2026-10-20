@@ -16,7 +16,7 @@ struct EventFormCalendarSection: View {
             Menu {
                 ForEach(model.writableEventCalendars, id: \.id) { calendar in
                     Button(calendarLabel(calendar)) {
-                        model.updateDraftFromForm(calendarId: calendar.id)
+                        model.updateDraftFromForm(calendarId: CalendarId(rawValue: calendar.id))
                     }
                 }
             } label: {
@@ -53,7 +53,7 @@ struct EventFormCalendarSection: View {
 
     private var selectedCalendar: CompassCalendar? {
         guard let id = draft.calendarId else { return nil }
-        return model.writableEventCalendars.first { $0.id == id }
+        return model.writableEventCalendars.first { $0.id == id.rawValue }
     }
 
     private func calendarLabel(_ calendar: CompassCalendar) -> String {
