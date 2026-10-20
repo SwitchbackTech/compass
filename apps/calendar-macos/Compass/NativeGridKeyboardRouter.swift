@@ -1,6 +1,7 @@
 import AppKit
 import CompassData
 import CompassKit
+import CompassUI
 
 @MainActor
 final class NativeGridKeyboardRouter {
@@ -436,6 +437,29 @@ final class NativeGridKeyboardRouter {
         if matchesBinding(keyEvent, id: .editCopyDescriptionLink) {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
+        if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
+            guard NSApp.keyWindow?.firstResponder is DescriptionTextView else { return false }
+            let opened = NSApp.sendAction(
+                #selector(DescriptionTextView.openDescriptionLinkAtCaret(_:)),
+                to: nil,
+                from: nil
+            )
+            if opened { model.recordShortcut(.editOpenDescriptionLink) }
+            return opened
+        }
+        if keyEvent.modifiers.isEmpty,
+            case .character(let char) = keyEvent.key,
+            let digit = Int(String(char)),
+            (1...9).contains(digit),
+            !isEditableNonDescriptionTextInputFocused()
+        {
+            if let editor = DescriptionTextView.findInKeyWindow(),
+               editor.openDescriptionLink(at: digit - 1)
+            {
+                model.recordShortcut(.editOpenDescriptionLinkDigit)
+                return true
+            }
+        }
         if keyEvent.modifiers == [.command], keyEvent.key == .named(.enter) {
             Task { await model.saveDraft() }
             return true
@@ -486,6 +510,13 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    private func isEditableNonDescriptionTextInputFocused() -> Bool {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable else {
+            return false
+        }
+        return textView.accessibilityIdentifier() != "compass-event-form-description"
     }
 
     private func matchesBinding(_ keyEvent: KeyEvent, id: ShortcutId) -> Bool {

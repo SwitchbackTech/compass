@@ -116,6 +116,40 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertTrue(font.map { NSFontManager.shared.traits(of: $0).contains(.boldFontMask) } ?? false)
     }
 
+    func testBlurredPresentationShortensAutolinkLabelsWithoutChangingHTML() {
+        var html = "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>"
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
+        let editor = DescriptionTextView()
+        coordinator.textView = editor
+        editor.delegate = coordinator
+        coordinator.load(html: html, resetKey: "event")
+        coordinator.syncPresentation(isFocused: false, html: html, resetKey: "event")
+
+        XCTAssertEqual(editor.string, "example.com")
+        XCTAssertEqual(
+            editor.textStorage?.attribute(.toolTip, at: 0, effectiveRange: nil) as? String,
+            "https://example.com/path"
+        )
+
+        coordinator.syncPresentation(isFocused: true, html: html, resetKey: "event")
+        XCTAssertEqual(html, "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>")
+    }
+
+    func testOpenDescriptionLinkUsesDocumentOrder() {
+        let editor = DescriptionTextView()
+        editor.textStorage?.setAttributedString(
+            NSAttributedString(string: "ab", attributes: [
+                .link: URL(string: "https://one.example/a")!,
+            ])
+        )
+        editor.textStorage?.append(
+            NSAttributedString(string: "cd", attributes: [
+                .link: URL(string: "https://two.example/b")!,
+            ])
+        )
+        XCTAssertTrue(editor.openDescriptionLink(at: 1))
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))

@@ -48,6 +48,7 @@ struct DescriptionEditorView: NSViewRepresentable {
         if context.coordinator.resetKey != resetKey {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
+        context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
@@ -94,10 +95,25 @@ struct DescriptionEditorView: NSViewRepresentable {
             suppressDelegate = false
         }
 
+        private var presentationShowsHosts = false
+
+        func syncPresentation(isFocused: Bool, html: String, resetKey: String) {
+            if isFocused {
+                if presentationShowsHosts {
+                    load(html: html, resetKey: resetKey)
+                    presentationShowsHosts = false
+                }
+            } else if !presentationShowsHosts {
+                textView?.applyHostLinkPresentation()
+                presentationShowsHosts = true
+            }
+        }
+
         func textDidChange(_ notification: Notification) {
             guard !suppressDelegate, let textView else { return }
             let edited = HTMLFragmentAppKit.document(from: textView.attributedString())
             html.wrappedValue = edited.serialize()
+            presentationShowsHosts = false
             container?.updateControls()
         }
 
@@ -107,13 +123,89 @@ struct DescriptionEditorView: NSViewRepresentable {
     }
 }
 
-final class DescriptionTextView: NSTextView {
+public final class DescriptionTextView: NSTextView {
     var onFormattingChange: (() -> Void)?
 
     var onLinkCopied: (() -> Void)?
 
     @objc func copyDescriptionLink(_ sender: Any?) {
         _ = copyDescriptionLink(to: .general)
+    }
+
+    @objc func openDescriptionLinkAtCaret(_ sender: Any?) {
+        _ = openDescriptionLinkAtCaret()
+    }
+
+    @objc func openDescriptionLinkDigit(_ sender: Any?) {
+        guard let index = (sender as? NSNumber)?.intValue else { return }
+        _ = openDescriptionLink(at: index)
+    }
+
+    @discardableResult
+    func openDescriptionLinkAtCaret() -> Bool {
+        guard let href = descriptionLinkToCopy(), let url = URL(string: href) else { return false }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+
+    @discardableResult
+    func openDescriptionLink(at index: Int) -> Bool {
+        guard index >= 0, index < orderedLinkHrefs().count,
+              let url = URL(string: orderedLinkHrefs()[index])
+        else { return false }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+
+    func orderedLinkHrefs() -> [String] {
+        guard let storage = textStorage, storage.length > 0 else { return [] }
+        var hrefs: [String] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
+            let href = (value as? URL)?.absoluteString ?? value as? String
+            if let href, !href.isEmpty { hrefs.append(href) }
+        }
+        return hrefs
+    }
+
+    func applyHostLinkPresentation() {
+        guard let storage = textStorage, storage.length > 0 else { return }
+        let fullString = storage.string as NSString
+        var replacements: [(range: NSRange, href: String, host: String)] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+            let href = (value as? URL)?.absoluteString ?? value as? String ?? ""
+            guard !href.isEmpty else { return }
+            let visible = fullString.substring(with: range)
+            guard DescriptionLinkPresentation.shouldShortenVisibleLabel(text: visible, href: href) else { return }
+            let host = DescriptionLinkPresentation.displayHost(for: href)
+            guard visible != host else { return }
+            replacements.append((range, href, host))
+        }
+        guard !replacements.isEmpty else { return }
+        storage.beginEditing()
+        for entry in replacements.sorted(by: { $0.range.location > $1.range.location }) {
+            storage.replaceCharacters(in: entry.range, with: entry.host)
+            let newRange = NSRange(location: entry.range.location, length: (entry.host as NSString).length)
+            storage.addAttribute(.link, value: URL(string: entry.href) ?? entry.href, range: newRange)
+            storage.addAttribute(.toolTip, value: entry.href, range: newRange)
+        }
+        storage.endEditing()
+    }
+
+    static func findInKeyWindow() -> DescriptionTextView? {
+        find(in: NSApp.keyWindow?.contentView)
+    }
+
+    private static func find(in root: NSView?) -> DescriptionTextView? {
+        guard let root else { return nil }
+        if let editor = root as? DescriptionTextView,
+           editor.accessibilityIdentifier() == "compass-event-form-description"
+        {
+            return editor
+        }
+        for subview in root.subviews {
+            if let found = find(in: subview) { return found }
+        }
+        return nil
     }
 
     @discardableResult
