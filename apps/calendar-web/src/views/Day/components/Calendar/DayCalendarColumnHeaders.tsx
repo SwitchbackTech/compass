@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
 import {
@@ -17,13 +18,22 @@ export const DayCalendarColumnHeaders = ({
   focusedColumnKey,
   onColumnFocusChange,
   pageJumpDigitByCalendarId,
+  viewDay,
 }: {
   calendars: Calendar[];
   focusedColumnKey?: string | null;
   onColumnFocusChange?: (calendarId: string | null) => void;
   pageJumpDigitByCalendarId?: ReadonlyMap<string, string>;
+  viewDay?: Dayjs | string;
 }) => {
   const marginLeft = useGridMarginLeft();
+  const abbreviationAt = useMemo(
+    () =>
+      viewDay
+        ? dayjs(viewDay).hour(12).minute(0).second(0).millisecond(0).toDate()
+        : undefined,
+    [viewDay],
+  );
   const columnGridStyle = dayCalendarColumnCountStyle(calendars.length);
   const displayNames = useMemo(
     () =>
@@ -36,7 +46,7 @@ export const DayCalendarColumnHeaders = ({
         className="flex shrink-0 items-center justify-center"
         style={{ width: marginLeft }}
       >
-        <GridTimezoneLabel />
+        <GridTimezoneLabel abbreviationAt={abbreviationAt} />
       </div>
       {calendars.length > 0 ? (
         <section

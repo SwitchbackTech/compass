@@ -1,7 +1,10 @@
 import cn from "classnames";
-import { type FC, type ReactNode, type RefCallback } from "react";
+import { type FC, type ReactNode, type RefCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { civilHourSlotCount } from "@core/util/date/civil-day";
+import {
+  civilHourSlotCount,
+  maxCivilHourSlotCount,
+} from "@core/util/date/civil-day";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import {
@@ -59,11 +62,21 @@ export const TimedGrid: FC<TimedGridProps> = ({
     date.isSame(today, "day") ? [index] : [],
   );
   const effectiveTimeZone = useEffectiveTimeZone();
-  const labelDay =
-    visibleDates.find(({ date }) => date.isSame(today, "day"))?.date ??
-    visibleDates[0]?.date ??
-    today;
-  const civilHourSlots = civilHourSlotCount(labelDay, effectiveTimeZone);
+  const visibleDayDates = useMemo(
+    () => visibleDates.map(({ date }) => date),
+    [visibleDates],
+  );
+  const civilHourSlots = useMemo(
+    () => maxCivilHourSlotCount(visibleDayDates, effectiveTimeZone),
+    [effectiveTimeZone, visibleDayDates],
+  );
+  const labelDay = useMemo(() => {
+    const fallback = visibleDates[0]?.date ?? today;
+    const longestDay = visibleDayDates.find(
+      (date) => civilHourSlotCount(date, effectiveTimeZone) === civilHourSlots,
+    );
+    return longestDay ?? fallback;
+  }, [civilHourSlots, effectiveTimeZone, today, visibleDates, visibleDayDates]);
   const hourRowLabels = getHourLabels(true, labelDay, effectiveTimeZone);
 
   return (

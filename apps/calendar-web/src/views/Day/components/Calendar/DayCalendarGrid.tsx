@@ -451,6 +451,7 @@ export function DayCalendarGrid() {
             focusedColumnKey={focusedColumnKey}
             onColumnFocusChange={setFocusedColumnKey}
             pageJumpDigitByCalendarId={pageJumpDigitByCalendarId}
+            viewDay={startDate}
           />
           <EventGrid
             allDayEventsLayer={allDayEventsLayer}

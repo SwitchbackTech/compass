@@ -15,6 +15,7 @@ import {
 import { getTimedEventPosition } from "@web/grid/layout/event.position";
 import {
   resetEffectiveTimeZoneStoreForTests,
+  setBrowserTimeZoneForTests,
   setPinnedTimeZone,
 } from "@web/timezone/effective-timezone.store";
 import { mappedHourLabels } from "@web/timezone/mapped-hour-labels";
@@ -26,9 +27,14 @@ import { timedIntentAt } from "@web/views/Week/pointer-intent/grid-pointer-targe
 import { afterEach, describe, expect, it, setSystemTime } from "bun:test";
 
 const denver = "America/Denver";
+const london = "Europe/London";
 const newYork = "America/New_York";
 const fallBackDenver = "2026-11-01";
 const springForwardDenver = "2027-03-14";
+
+const visibleDenverDates = (dayKey: string) => [
+  { date: dayjs.tz(`${dayKey}T12:00`, denver), key: dayKey },
+];
 
 const measurements = {
   allDayRow: null,
@@ -67,10 +73,6 @@ describe("US DST civil day length", () => {
 });
 
 describe("event positioning on DST days", () => {
-  const visibleDates = (dayKey: string) => [
-    { date: dayjs.tz(`${dayKey}T12:00`, denver), key: dayKey },
-  ];
-
   it("keeps 9 AM on the same row before and after fall-back", () => {
     act(() => setPinnedTimeZone(denver));
 
@@ -83,7 +85,7 @@ describe("event positioning on DST days", () => {
       } as never,
       {
         measurements,
-        visibleDates: visibleDates("2026-10-29"),
+        visibleDates: visibleDenverDates("2026-10-29"),
         isDraft: false,
       },
     ).top;
@@ -97,7 +99,7 @@ describe("event positioning on DST days", () => {
       } as never,
       {
         measurements,
-        visibleDates: visibleDates("2026-11-05"),
+        visibleDates: visibleDenverDates("2026-11-05"),
         isDraft: false,
       },
     ).top;
@@ -109,25 +111,21 @@ describe("event positioning on DST days", () => {
   it("preserves duration in minutes across spring-forward week", () => {
     act(() => setPinnedTimeZone(denver));
 
-    const start = dayjs.tz("2027-03-14T09:00:00", denver);
-    const end = start.add(1, "hour");
-
     const position = getTimedEventPosition(
       {
-        endDate: end.format(),
+        endDate: "2027-03-14T10:00:00-06:00",
         isAllDay: false,
         position: { widthMultiplier: 1 },
-        startDate: start.format(),
+        startDate: "2027-03-14T09:00:00-06:00",
       } as never,
       {
         measurements,
-        visibleDates: visibleDates("2027-03-14"),
+        visibleDates: visibleDenverDates("2027-03-14"),
         isDraft: false,
       },
     );
 
-    const minutesFromMidnight = start.diff(start.startOf("day"), "minute");
-    expect(position.top).toBe(minutesFromMidnight);
+    expect(position.top).toBe(9 * measurements.hourHeight);
     expect(position.height).toBeGreaterThan(0);
     expect(position.height).toBe(60 - 3);
   });
@@ -220,6 +218,90 @@ describe("schedule display offsets", () => {
       denver,
     );
     expect(formatted).toBe("2026-11-05T09:00:00-07:00");
+  });
+});
+
+describe("pinned calendar timezone with a mismatched browser zone", () => {
+  it("places Denver wall-clock times on the correct row when the browser is UTC", () => {
+    act(() => {
+      setBrowserTimeZoneForTests("UTC");
+      setPinnedTimeZone(denver);
+    });
+
+    const wakeTop = getTimedEventPosition(
+      {
+        endDate: "2026-11-05T05:00:00-07:00",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-11-05T04:00:00-07:00",
+      } as never,
+      {
+        measurements,
+        visibleDates: visibleDenverDates("2026-11-05"),
+        isDraft: false,
+      },
+    ).top;
+
+    const sundayWakeTop = getTimedEventPosition(
+      {
+        endDate: "2026-11-01T05:00:00-06:00",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-11-01T04:00:00-06:00",
+      } as never,
+      {
+        measurements,
+        visibleDates: visibleDenverDates("2026-11-01"),
+        isDraft: false,
+      },
+    ).top;
+
+    expect(wakeTop).toBe(4 * measurements.hourHeight);
+    expect(sundayWakeTop).toBe(4 * measurements.hourHeight);
+  });
+});
+
+describe("Europe/London DST weeks", () => {
+  const visibleLondon = (dayKey: string) => [
+    { date: dayjs.tz(`${dayKey}T12:00`, london), key: dayKey },
+  ];
+
+  it("aligns 9 AM on fall-back and spring-forward weeks", () => {
+    act(() => {
+      setBrowserTimeZoneForTests("UTC");
+      setPinnedTimeZone(london);
+    });
+
+    const fallBackTop = getTimedEventPosition(
+      {
+        endDate: "2026-10-26T10:00:00+00:00",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-10-26T09:00:00+00:00",
+      } as never,
+      {
+        measurements,
+        visibleDates: visibleLondon("2026-10-26"),
+        isDraft: false,
+      },
+    ).top;
+
+    const springForwardTop = getTimedEventPosition(
+      {
+        endDate: "2027-03-29T10:00:00+01:00",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2027-03-29T09:00:00+01:00",
+      } as never,
+      {
+        measurements,
+        visibleDates: visibleLondon("2027-03-29"),
+        isDraft: false,
+      },
+    ).top;
+
+    expect(fallBackTop).toBe(9 * measurements.hourHeight);
+    expect(springForwardTop).toBe(9 * measurements.hourHeight);
   });
 });
 

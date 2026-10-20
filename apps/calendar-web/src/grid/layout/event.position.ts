@@ -1,4 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { gridMinutesFromCivilMidnight } from "@core/util/date/civil-day";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -15,6 +16,7 @@ import {
   type GridMeasurements,
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import {
   calendarDateInEffectiveTimeZone,
   inEffectiveTimeZone,
@@ -41,7 +43,8 @@ export const getTimedEventPosition = (
 
   const columnLeft = sumWidthsBefore(input.measurements.colWidths, dateIndex);
   const columnWidth = input.measurements.colWidths[dateIndex] ?? 0;
-  const minutesFromStartOfDay = start.diff(start.startOf("day"), "minute");
+  const timeZone = getEffectiveTimeZone();
+  const minutesFromStartOfDay = gridMinutesFromCivilMidnight(start, timeZone);
   const durationMinutes = Math.max(15, end.diff(start, "minute"));
   const widthMultiplier = input.isDraft
     ? 1
@@ -92,7 +95,8 @@ export const getBusyPeriodPosition = (
 
   const columnLeft = sumWidthsBefore(input.measurements.colWidths, dateIndex);
   const columnWidth = input.measurements.colWidths[dateIndex] ?? 0;
-  const minutesFromStartOfDay = start.diff(start.startOf("day"), "minute");
+  const timeZone = getEffectiveTimeZone();
+  const minutesFromStartOfDay = gridMinutesFromCivilMidnight(start, timeZone);
   const durationMinutes = Math.max(1, end.diff(start, "minute"));
 
   return {
