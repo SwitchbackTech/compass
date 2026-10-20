@@ -266,7 +266,25 @@ public final class TimeGridView: NSView {
     }
 
     private func syncPinnedHeaderScrollX() {
+        guard state.layoutMode == .day else {
+            pinnedHeaderView.setBoundsOrigin(.zero)
+            return
+        }
         pinnedHeaderView.setBoundsOrigin(NSPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
+    }
+
+    /// Week view keeps the timezone header and hour gutter pinned at x=0.
+    private func resetWeekHorizontalScrollIfNeeded() {
+        guard state.layoutMode == .week else { return }
+        var origin = scrollView.contentView.bounds.origin
+        guard origin.x != 0 else {
+            pinnedHeaderView.setBoundsOrigin(.zero)
+            return
+        }
+        origin.x = 0
+        scrollView.contentView.scroll(to: origin)
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        pinnedHeaderView.setBoundsOrigin(.zero)
     }
 
     private func relayout() {
@@ -308,6 +326,8 @@ public final class TimeGridView: NSView {
         renderTimedGrid(snapshot: snapshot, hourHeight: hourHeight, gridHeight: gridHeight)
         renderCards(snapshot: snapshot)
         updateNowLine()
+        resetWeekHorizontalScrollIfNeeded()
+        syncPinnedHeaderScrollX()
     }
 
     private func renderHourGutter(

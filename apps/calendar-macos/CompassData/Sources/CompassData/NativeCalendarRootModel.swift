@@ -219,7 +219,11 @@ public final class NativeCalendarRootModel {
         overlayStores.legend.onOpenChanged = { [weak self] open in
             self?.onShortcutsLegendAccessibilityProbeChanged?(open)
         }
-        rebuildPresentation()
+        if UITestLaunchPolicy.isParityCapture {
+            applyParityCapturePresentationIfNeeded()
+        } else {
+            rebuildPresentation()
+        }
     }
 
     public func closeSettingsIfAllowed() {
@@ -919,13 +923,20 @@ public final class NativeCalendarRootModel {
         let calendar = EffectiveTimeZone.calendar
         if viewStore.visibleDayCount == 1 {
             viewStore.setAnchorDate(today)
-        } else {
+        } else if !isReferenceDayInVisibleWindow(today) {
             viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         }
         monthPickerMonth = today
         rebuildPresentation()
         scheduleRefreshVisibleRange()
         pendingScroll = .scrollToNowOrPulse
+    }
+
+    /// Matches web `useWeek` `isCurrentWeek` before `goToToday` moves the anchor.
+    private func isReferenceDayInVisibleWindow(_ day: Date) -> Bool {
+        let calendar = EffectiveTimeZone.calendar
+        let dayStart = calendar.startOfDay(for: day)
+        return dayStart >= startOfView && dayStart <= endOfView
     }
 
     private func shiftMonth(by months: Int) {
