@@ -92,7 +92,9 @@ final class EventCardView: NSView {
         )
         frame = layoutRectInParent
         showsInlineTitleEditor = card.showsInlineTitleEditor
-        titleField.stringValue = card.showsInlineTitleEditor && card.label == "Untitled event"
+        // Web prints the raw title, so an untitled draft shows only its time;
+        // the accessibility label still says "Untitled event".
+        titleField.stringValue = (card.showsInlineTitleEditor || card.isDraft) && card.label == "Untitled event"
             ? ""
             : card.label
         titleField.placeholderString = card.showsInlineTitleEditor ? "Untitled event" : nil
