@@ -112,9 +112,11 @@ final class NativeParityCaptureTests: XCTestCase {
         let window = launchDemoWindow()
         prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
-        let startTime = window.descendants(matching: .any)["compass-event-form-start"]
+        let form = window.descendants(matching: .any)["compass-event-form"]
+        XCTAssertTrue(form.waitForExistence(timeout: 8))
+        let startTime = form.descendants(matching: .any)["compass-event-form-start"]
         XCTAssertTrue(startTime.waitForExistence(timeout: 8))
-        startTime.click()
+        tapWhenHittable(startTime, in: form, timeout: 10)
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-time-picker")
     }
 
@@ -202,6 +204,21 @@ final class NativeParityCaptureTests: XCTestCase {
             dismissScrollHint.tap()
         }
         sleep(1)
+    }
+
+    @MainActor
+    private func tapWhenHittable(_ element: XCUIElement, in scrollHost: XCUIElement, timeout: TimeInterval) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if element.isHittable {
+                element.click()
+                return
+            }
+            scrollHost.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        }
+        XCTAssertTrue(element.isHittable, "Expected \(element) to become hittable")
+        element.click()
     }
 
     @MainActor
