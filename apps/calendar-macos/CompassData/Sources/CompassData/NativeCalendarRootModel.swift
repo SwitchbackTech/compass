@@ -397,7 +397,9 @@ public final class NativeCalendarRootModel {
     public func dismissDemoEventsBanner() {
         try? DemoEventsBannerState.dismiss(repository: environment.userMetadataRepository)
         if UITestLaunchPolicy.openCommandPaletteForUITest, !commandPaletteStore.isOpen {
-            toggleCommandPalette()
+            Task { @MainActor in
+                toggleCommandPalette()
+            }
         }
     }
 
