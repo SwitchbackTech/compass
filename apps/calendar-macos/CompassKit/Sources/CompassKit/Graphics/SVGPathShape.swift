@@ -20,7 +20,7 @@ public struct SVGPathShape: Shape {
 }
 
 enum SVGPathParser {
-    private struct Point {
+    fileprivate struct Point {
         var x: Double
         var y: Double
     }
