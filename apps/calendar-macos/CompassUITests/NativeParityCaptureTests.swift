@@ -109,14 +109,11 @@ final class NativeParityCaptureTests: XCTestCase {
 
     @MainActor
     private func captureEventFormTimePicker() {
-        let window = launchDemoWindow()
+        let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_EVENT_FORM_TIME_PICKER"])
         prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
-        let form = window.descendants(matching: .any)["compass-event-form"]
-        XCTAssertTrue(form.waitForExistence(timeout: 8))
-        let startTime = form.descendants(matching: .any)["compass-event-form-start"]
-        XCTAssertTrue(startTime.waitForExistence(timeout: 8))
-        tapWhenHittable(startTime, in: form, timeout: 10)
+        let startTimeMenu = window.descendants(matching: .any)["compass-event-form-start-menu"]
+        XCTAssertTrue(startTimeMenu.waitForExistence(timeout: 12))
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-time-picker")
     }
 
@@ -204,21 +201,6 @@ final class NativeParityCaptureTests: XCTestCase {
             dismissScrollHint.tap()
         }
         sleep(1)
-    }
-
-    @MainActor
-    private func tapWhenHittable(_ element: XCUIElement, in scrollHost: XCUIElement, timeout: TimeInterval) {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            if element.isHittable {
-                element.click()
-                return
-            }
-            scrollHost.swipeUp()
-            RunLoop.current.run(until: Date().addingTimeInterval(0.2))
-        }
-        XCTAssertTrue(element.isHittable, "Expected \(element) to become hittable")
-        element.click()
     }
 
     @MainActor

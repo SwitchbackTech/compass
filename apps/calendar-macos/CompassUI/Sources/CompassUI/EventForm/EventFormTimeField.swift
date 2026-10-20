@@ -1,3 +1,4 @@
+import CompassData
 import CompassKit
 import SwiftUI
 
@@ -5,7 +6,15 @@ struct EventFormTimeField: View {
     @Environment(\.nativeWebTheme) private var theme
     @Binding var date: Date
     let accessibilityIdentifier: String
-    @State private var showsMenu = false
+    @State private var showsMenu: Bool
+
+    init(date: Binding<Date>, accessibilityIdentifier: String) {
+        _date = date
+        self.accessibilityIdentifier = accessibilityIdentifier
+        let openPicker = UITestLaunchPolicy.openEventFormTimePickerForUITest
+            && accessibilityIdentifier == "compass-event-form-start"
+        _showsMenu = State(initialValue: openPicker)
+    }
 
     var body: some View {
         Button {

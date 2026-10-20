@@ -65,6 +65,11 @@ public enum UITestLaunchPolicy {
         ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_EVENT_FORM_DATE_PICKER")
     }
 
+    /// Opens the start-time menu when the event form appears (parity PNG capture).
+    public static var openEventFormTimePickerForUITest: Bool {
+        ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_EVENT_FORM_TIME_PICKER")
+    }
+
     /// Desktop ↔ web screenshot capture (`NativeParityCaptureTests`).
     public static var isParityCapture: Bool {
         ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
