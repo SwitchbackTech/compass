@@ -111,7 +111,7 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-day",
-                    label: "Go to Day view",
+                    label: "Go to Day",
                     shortcut: "d",
                     keywords: ["day view", "daily"],
                     systemImage: "calendar"))
@@ -120,7 +120,7 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-week",
-                    label: "Go to Week view",
+                    label: "Go to Week",
                     shortcut: "w",
                     keywords: ["week view", "weekly"],
                     systemImage: "calendar.day.timeline.left"))
@@ -129,7 +129,7 @@ public enum CommandPaletteCatalog {
             items.append(
                 CommandPaletteItem(
                     id: "go-to-life",
-                    label: "Go to Life view",
+                    label: "Go to Life",
                     shortcut: "l",
                     keywords: ["life view", "years"],
                     systemImage: "hourglass"))

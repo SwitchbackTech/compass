@@ -85,11 +85,25 @@ public struct SettingsWindowOverlay: View {
     }
 
     private func navButton(_ title: String, page: SettingsPage, attention: Bool = false) -> some View {
+        let isCurrent = model.settingsStore.page == page
         return Button(title) { model.settingsStore.page = page }
             .buttonStyle(.plain)
-            .font(.rubik(14))
-            .foregroundStyle(model.settingsStore.page == page ? theme.textColor : theme.textMutedColor)
+            .font(.rubik(14, weight: isCurrent ? .medium : .regular))
+            .foregroundStyle(isCurrent ? theme.textColor : theme.textMutedColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if isCurrent {
+                    RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                        .fill(theme.surfaceOverlayColor)
+                        .overlay(alignment: .leading) {
+                            Rectangle()
+                                .fill(theme.accentColor)
+                                .frame(width: 2)
+                        }
+                }
+            }
             .overlay(alignment: .trailing) {
                 if attention {
                     Circle()
