@@ -17,10 +17,13 @@ struct SettingsAccountsSectionView: View {
     @State private var applePassword = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Accounts")
-                .font(.rubik(15))
-                .foregroundStyle(theme.textColor)
+        // Web `AccountsSection`: no heading, an empty line when nothing is connected.
+        VStack(alignment: .leading, spacing: 12) {
+            if syncStore.connections.isEmpty {
+                Text("No accounts connected yet.")
+                    .font(.rubik(14))
+                    .foregroundStyle(theme.textMutedColor)
+            }
             ForEach(syncStore.connections, id: \.id) { connection in
                 accountRow(connection)
             }

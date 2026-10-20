@@ -189,6 +189,10 @@ final class NativeGridKeyboardRouter {
                     model.requestLogout()
                     return true
                 }
+                if letter == "d" {
+                    model.requestDeleteAccount()
+                    return true
+                }
             }
             if key.key == .named(.escape), key.modifiers.isEmpty {
                 if model.settingsStore.timezoneDialogPurpose != nil {
