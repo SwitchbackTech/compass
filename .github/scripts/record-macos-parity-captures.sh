@@ -42,7 +42,7 @@ xcodebuild test \
   -derivedDataPath build/DerivedData \
   -clonedSourcePackagesDirPath build/SourcePackages \
   -resultBundlePath build/ParityCapture.xcresult \
-  -only-testing:CompassUITests/NativeParityCaptureTests/testExportParitySurfaces
+  -only-testing:CompassUITests/NativeParityCaptureTests
 
 if [ ! -d "$RESULT" ]; then
   echo "Missing result bundle at ${RESULT}" >&2

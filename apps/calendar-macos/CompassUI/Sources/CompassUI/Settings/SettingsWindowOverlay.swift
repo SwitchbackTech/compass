@@ -91,13 +91,16 @@ public struct SettingsWindowOverlay: View {
                 if isCurrent {
                     RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
                         .fill(theme.surfaceOverlayColor)
-                        .overlay(alignment: .leading) {
-                            Rectangle()
-                                .fill(theme.accentColor)
-                                .frame(width: 2)
-                        }
                 }
             }
+            .overlay(alignment: .leading) {
+                if isCurrent {
+                    Rectangle()
+                        .fill(theme.accentColor)
+                        .frame(width: 2)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay(alignment: .trailing) {
                 if attention {
                     Circle()

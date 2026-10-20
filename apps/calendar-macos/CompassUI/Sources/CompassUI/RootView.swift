@@ -207,7 +207,7 @@ public struct RootView: View {
             ShortcutSidebarFooter(
                 levelsStore: model.levelsStore,
                 isEventFormVisible: model.isEventFormVisible,
-                suppressTips: model.eventJumpStatusText != nil,
+                suppressTips: model.eventJumpStatusText != nil || model.focusStore.pageJumpHintsVisible,
                 suppressForQuickTime: !model.draftStore.quickTimeDigits.isEmpty)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -235,6 +235,9 @@ public struct RootView: View {
             SidebarMonthPicker(
                 displayedMonth: Binding(get: { model.monthPickerMonth }, set: { model.browseMonth($0) }),
                 selectedDate: model.viewStore.anchorDate,
+                referenceNow: model.referenceNow,
+                viewRangeStart: model.startOfView,
+                viewRangeEnd: model.endOfView,
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
                 visibleDayCount: model.viewStore.visibleDayCount,

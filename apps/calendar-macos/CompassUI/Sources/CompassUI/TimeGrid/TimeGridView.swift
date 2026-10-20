@@ -457,27 +457,60 @@ public final class TimeGridView: NSView {
 
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
         let viewStartMonth = snapshot.columns.first.map { String($0.key.prefix(7)) }
+        let headerPalette = (
+            text: palette.text,
+            textMuted: palette.textMuted,
+            accent: themeAccentColor,
+            surfacePanel: palette.surfaceRaised,
+            border: palette.border,
+            background: palette.background
+        )
         for column in snapshot.columns {
-            let header = NSTextField(
-                labelWithAttributedString: weekDayLabel(
+            if state.showDayJumpPrefixes {
+                let header = WeekDayColumnHeaderControl(
+                    frame: NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
+                )
+                header.apply(
                     dayKey: column.key,
                     viewStartMonth: viewStartMonth,
-                    color: column.key == todayKey ? themeAccentColor : palette.textMuted
+                    isToday: column.key == todayKey,
+                    isJumpDay: state.eventJumpActiveDayKeys.contains(column.key),
+                    showDayJumpPrefixes: true,
+                    dayJumpUseShiftPrefix: state.dayJumpUseShiftPrefix,
+                    palette: headerPalette
                 )
-            )
-            header.identifier = NSUserInterfaceItemIdentifier(column.key)
-            header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
-            header.alignment = .center
-            header.setAccessibilityIdentifier(column.accessibilityIdentifier)
-            if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
-                let formatter = DateFormatter()
-                formatter.locale = Locale(identifier: "en_US_POSIX")
-                formatter.calendar = EffectiveTimeZone.calendar
-                formatter.timeZone = EffectiveTimeZone.timeZone
-                formatter.dateFormat = "d EEE"
-                header.setAccessibilityLabel(formatter.string(from: date))
+                header.setAccessibilityIdentifier(column.accessibilityIdentifier)
+                if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
+                    let formatter = DateFormatter()
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.calendar = EffectiveTimeZone.calendar
+                    formatter.timeZone = EffectiveTimeZone.timeZone
+                    formatter.dateFormat = "d EEE"
+                    header.setAccessibilityLabel(formatter.string(from: date))
+                }
+                headerRowView.addSubview(header)
+            } else {
+                let header = NSTextField(
+                    labelWithAttributedString: weekDayLabel(
+                        dayKey: column.key,
+                        viewStartMonth: viewStartMonth,
+                        color: column.key == todayKey ? themeAccentColor : palette.textMuted
+                    )
+                )
+                header.identifier = NSUserInterfaceItemIdentifier(column.key)
+                header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
+                header.alignment = .center
+                header.setAccessibilityIdentifier(column.accessibilityIdentifier)
+                if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
+                    let formatter = DateFormatter()
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.calendar = EffectiveTimeZone.calendar
+                    formatter.timeZone = EffectiveTimeZone.timeZone
+                    formatter.dateFormat = "d EEE"
+                    header.setAccessibilityLabel(formatter.string(from: date))
+                }
+                headerRowView.addSubview(header)
             }
-            headerRowView.addSubview(header)
         }
     }
 
@@ -614,7 +647,7 @@ public final class TimeGridView: NSView {
             let view = cardPool[card.eventId] ?? EventCardView(frame: .zero)
             cardPool[card.eventId] = view
 
-            let isFocused = state.focusedEventId == card.eventId
+            let isFocused = state.focusedEventId == card.eventId && !state.pageJumpHintsVisible
             let isSidebarEditing = state.sidebarEditingEventId == card.eventId
             view.apply(
                 card: card,

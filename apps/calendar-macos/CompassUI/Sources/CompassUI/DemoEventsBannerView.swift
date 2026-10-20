@@ -13,7 +13,7 @@ public struct DemoEventsBannerView: View {
         HStack(spacing: 12) {
             HStack(spacing: 6) {
                 Text("Sample events to help you explore. Clear them from the command palette")
-                    .font(.rubik(12))
+                    .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
                 ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
                 ShortcutHintChip(label: "K")
@@ -21,7 +21,8 @@ public struct DemoEventsBannerView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 8) {
                 Text("Okay")
-                    .font(.rubik(12))
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textColor)
                     .foregroundStyle(theme.textColor)
                 ShortcutHintChip(label: "O")
             }

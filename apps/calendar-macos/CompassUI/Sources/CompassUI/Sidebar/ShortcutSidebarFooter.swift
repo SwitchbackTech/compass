@@ -28,31 +28,62 @@ struct ShortcutSidebarFooter: View {
             if isEventFormVisible, !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
                 eventFormSaveHint
             } else if !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
-                calendarJumpHint
+                idleShortcutTip
             }
         }
     }
 
-    private var calendarJumpHint: some View {
+    @ViewBuilder
+    private var idleShortcutTip: some View {
         VStack(alignment: .center, spacing: 2) {
-            HStack(spacing: 4) {
-                Text("Hold")
-                    .font(.rubik(11))
-                    .foregroundStyle(theme.textMutedColor)
-                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
-                Text("to see jump targets")
-                    .font(.rubik(11))
-                    .foregroundStyle(theme.textMutedColor)
+            if let tip = levelsStore.currentTip, tip.shortcutId == "focus-shift-hold" {
+                HStack(spacing: 4) {
+                    Text("F shows event and open-time shortcuts")
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                    ShortcutHintChip(label: "F")
+                }
+                .frame(maxWidth: .infinity)
+            } else if let tip = levelsStore.currentTip, tip.shortcutId == "focus-page-jump" {
+                pageJumpHint
+            } else if levelsStore.currentTip == nil {
+                pageJumpHint
+            } else if let tip = levelsStore.currentTip {
+                HStack(spacing: 4) {
+                    Text(tip.label)
+                        .font(.rubik(11))
+                        .foregroundStyle(theme.textMutedColor)
+                    ForEach(tip.keycaps, id: \.self) { key in
+                        ShortcutHintChip(label: KeycapGlyphs.display([key]))
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
-            .accessibilityIdentifier("compass-native-shortcut-tip")
-            Button("Hide tips") {
-                levelsStore.setTipsMuted(true)
-            }
-            .buttonStyle(.plain)
-            .font(.rubik(11))
-            .foregroundStyle(theme.textMutedColor)
+            hideTipsButton
         }
+        .accessibilityIdentifier("compass-native-shortcut-tip")
+    }
+
+    private var pageJumpHint: some View {
+        HStack(spacing: 4) {
+            Text("Hold")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+            ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+            Text("to see jump targets")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var hideTipsButton: some View {
+        Button("Hide tips") {
+            levelsStore.setTipsMuted(true)
+        }
+        .buttonStyle(.plain)
+        .font(.rubik(11))
+        .foregroundStyle(theme.textMutedColor)
     }
 
     private var eventFormSaveHint: some View {

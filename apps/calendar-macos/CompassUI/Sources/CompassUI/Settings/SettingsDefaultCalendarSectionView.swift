@@ -19,6 +19,14 @@ struct SettingsDefaultCalendarSectionView: View {
             hasConnectedAccount: hasConnectedAccount)
     }
 
+    private var selectedCalendarLabel: String {
+        let selectedId = settingsStore.defaultCalendarId ?? resolvedDefault?.id
+        if let selectedId, let match = writable.first(where: { $0.id == selectedId }) {
+            return match.name
+        }
+        return resolvedDefault?.name ?? writable.first?.name ?? "Calendar"
+    }
+
     var body: some View {
         if writable.isEmpty {
             EmptyView()
@@ -27,17 +35,35 @@ struct SettingsDefaultCalendarSectionView: View {
                 Text("Default Calendar")
                     .font(.rubik(15))
                     .foregroundStyle(theme.textColor)
-                Picker(
-                    "Default Calendar",
-                    selection: Binding(
-                        get: { settingsStore.defaultCalendarId ?? resolvedDefault?.id ?? "" },
-                        set: { settingsStore.setDefaultCalendarId($0.isEmpty ? nil : $0) })
-                ) {
+                Menu {
                     ForEach(writable, id: \.id) { calendar in
-                        Text(calendar.name).tag(calendar.id)
+                        Button(calendar.name) {
+                            settingsStore.setDefaultCalendarId(calendar.id)
+                        }
                     }
+                } label: {
+                    HStack {
+                        Text(selectedCalendarLabel)
+                            .lineLimit(1)
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(theme.textMutedColor)
+                    }
+                    .font(.rubik(14))
+                    .foregroundStyle(theme.textColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(theme.surfaceOverlayColor)
+                    .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                            .stroke(theme.borderColor, lineWidth: 1)
+                    )
                 }
-                .labelsHidden()
+                .menuStyle(.borderlessButton)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .accessibilityIdentifier("settings-section-default-calendar")
         }

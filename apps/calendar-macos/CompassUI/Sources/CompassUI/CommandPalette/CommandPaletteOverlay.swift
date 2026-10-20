@@ -29,7 +29,7 @@ public struct CommandPaletteOverlay: View {
             GeometryReader { geometry in
                 let resultsMaxHeight = geometry.size.height * Self.resultsMaxViewportFraction
                 ZStack {
-                    theme.overlayBackdropColor
+                    paletteBackdrop
                         .ignoresSafeArea()
                         .onTapGesture { paletteStore.close() }
 
@@ -131,6 +131,16 @@ public struct CommandPaletteOverlay: View {
                 }
             }
             .focusOnAppear($searchFocused)
+        }
+    }
+
+    /// NSVisualEffectView backdrops crash some macOS CI hosts when the palette opens under parity capture.
+    @ViewBuilder
+    private var paletteBackdrop: some View {
+        if UITestLaunchPolicy.isParityCapture {
+            theme.overlayBackdropColor
+        } else {
+            PanelBackdropView()
         }
     }
 
