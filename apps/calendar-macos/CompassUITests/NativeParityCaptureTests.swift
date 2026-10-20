@@ -97,6 +97,11 @@ final class NativeParityCaptureTests: XCTestCase {
     private func captureWeekGrid() {
         let window = launchDemoWindow().window
         prepareParityGrid(window, dismissDemoBanner: true)
+        let headerTitle = window.buttons["compass-native-header-title"]
+        XCTAssertTrue(headerTitle.waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            headerTitle.label.contains("2026"),
+            "Title bar reference should use demo parity calendar date, got: \(headerTitle.label)")
         NativeImageSnapshotSupport.exportMacTitleBarReference(window)
         NativeImageSnapshotSupport.captureWindow(window, named: "week-grid")
     }

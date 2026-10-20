@@ -9,4 +9,6 @@ public enum MacTitleBarChromeMetrics {
     public static let contentBandHeight: CGFloat = 52
     /// Padding before demo banner / grid content below the unified title bar.
     public static var mainContentTopInset: CGFloat { contentBandHeight }
+    /// Marketing / Tyler reference: title bar plus a slice of grid chrome below.
+    public static let referenceCaptureHeight: CGFloat = 120
 }

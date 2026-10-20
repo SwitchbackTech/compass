@@ -87,41 +87,111 @@ enum ParityViewSnapshotExporter {
 
         ParityCaptureWindowPolicy.applyIfNeeded(to: window)
         window.orderFrontRegardless()
+        window.makeKeyAndOrderFront(nil)
+        window.contentView?.layoutSubtreeIfNeeded()
         window.displayIfNeeded()
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.25))
 
-        let windowID = CGWindowID(window.windowNumber)
-        guard windowID != 0,
-              let cgImage = CGWindowListCreateImage(
-                  .null,
-                  .optionIncludingWindow,
-                  windowID,
-                  [.bestResolution]
-              )
-        else { return }
-
-        let scale = CGFloat(cgImage.height) / max(window.frame.height, 1)
-        let cropPixels = min(
-            cgImage.height,
-            max(1, Int((MacTitleBarChromeMetrics.contentBandHeight * scale).rounded(.up)))
-        )
-        let cropRect = CGRect(
-            x: 0,
-            y: cgImage.height - cropPixels,
-            width: cgImage.width,
-            height: cropPixels
-        )
-        guard let cropped = cgImage.cropping(to: cropRect) else { return }
-
-        let rep = NSBitmapImageRep(cgImage: cropped)
-        rep.size = NSSize(width: window.frame.width, height: MacTitleBarChromeMetrics.contentBandHeight)
-        guard let png = rep.representation(using: .png, properties: [:]) else { return }
+        let captureHeight = MacTitleBarChromeMetrics.referenceCaptureHeight
+        guard let png = captureTitleBarPNG(window: window, captureHeightPoints: captureHeight) else { return }
 
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let file = folder.appendingPathComponent("mac-title-bar.png")
         try png.write(to: file)
         NativeAccessibilityProbes.publishParityExport(surface: "mac-title-bar", on: window)
+    }
+
+    /// Top slice of the on-screen window (traffic lights + unified chrome + grid header).
+    @MainActor
+    private static func captureTitleBarPNG(window: NSWindow, captureHeightPoints: CGFloat) -> Data? {
+        let windowID = CGWindowID(window.windowNumber)
+        guard windowID != 0 else { return nil }
+
+        let frame = window.frame
+        for delay in [0.0, 0.15, 0.35] {
+            if delay > 0 {
+                RunLoop.current.run(until: Date(timeIntervalSinceNow: delay))
+            }
+            window.displayIfNeeded()
+            guard let cgImage = CGWindowListCreateImage(
+                frame,
+                .optionIncludingWindow,
+                windowID,
+                [.bestResolution]
+            ) else { continue }
+
+            guard let cropped = cropTopBand(from: cgImage, frameHeight: frame.height, bandPoints: captureHeightPoints)
+            else { continue }
+
+            let rep = NSBitmapImageRep(cgImage: cropped)
+            rep.size = NSSize(width: frame.width, height: captureHeightPoints)
+            guard let png = rep.representation(using: .png, properties: [:]),
+                  titleBarPNGHasChrome(png)
+            else { continue }
+            return png
+        }
+        return nil
+    }
+
+    private static func cropTopBand(
+        from image: CGImage,
+        frameHeight: CGFloat,
+        bandPoints: CGFloat
+    ) -> CGImage? {
+        let scale = CGFloat(image.height) / max(frameHeight, 1)
+        let cropPixels = min(
+            image.height,
+            max(1, Int((bandPoints * scale).rounded(.up)))
+        )
+        let cropRect = CGRect(
+            x: 0,
+            y: image.height - cropPixels,
+            width: image.width,
+            height: cropPixels
+        )
+        return image.cropping(to: cropRect)
+    }
+
+    /// Reject empty captures and shadow-only strips (parity CI has no human eyeball).
+    private static func titleBarPNGHasChrome(_ png: Data) -> Bool {
+        guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide >= 400, rep.pixelsHigh >= 80 else {
+            return false
+        }
+        guard let cg = rep.cgImage else { return false }
+        let sampleRows = min(8, cg.height / 16)
+        var opaquePixels = 0
+        var variedPixels = 0
+        let width = cg.width
+        let height = cg.height
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return false }
+        context.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let data = context.data else { return false }
+        let bytes = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+        for row in 0 ..< sampleRows {
+            let y = height - 1 - (row * max(1, height / sampleRows))
+            for x in stride(from: 0, to: width, by: max(1, width / 40)) {
+                let offset = (y * width + x) * 4
+                let r = bytes[offset]
+                let g = bytes[offset + 1]
+                let b = bytes[offset + 2]
+                let a = bytes[offset + 3]
+                if a < 16 { continue }
+                opaquePixels += 1
+                if max(r, g, b) - min(r, g, b) > 24 || max(r, g, b) < 240 {
+                    variedPixels += 1
+                }
+            }
+        }
+        return opaquePixels > 40 && variedPixels > 12
     }
 
     private static func windowListPNG(window: NSWindow) -> Data? {
