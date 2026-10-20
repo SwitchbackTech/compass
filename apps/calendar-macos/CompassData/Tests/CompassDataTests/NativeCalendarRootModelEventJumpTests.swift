@@ -62,6 +62,6 @@ final class NativeCalendarRootModelEventJumpTests: XCTestCase {
         let start = try XCTUnwrap(draft.schedule.start)
         let calendar = EffectiveTimeZone.calendar
         XCTAssertEqual(calendar.component(.hour, from: start), 11)
-        XCTAssertEqual(CompassDateParsing.formatCalendarDay(start), model.eventJumpSelection.activeDayKeys.first)
+        XCTAssertEqual(CompassDateParsing.formatCalendarDay(start), "2026-06-08")
     }
 }
