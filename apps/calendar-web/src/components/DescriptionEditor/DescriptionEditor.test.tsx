@@ -204,14 +204,14 @@ describe("DescriptionEditor", () => {
     expect(region.getByText(/^Cancel:/)).toBeTruthy();
     expect(region.getByText(/^Reschedule:/)).toBeTruthy();
     expect((textbox.innerHTML.match(/<p>/g) ?? []).length).toBe(3);
-    expect(screen.getByRole("link", { name: cancelUrl })).toHaveAttribute(
-      "href",
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
       cancelUrl,
-    );
-    expect(screen.getByRole("link", { name: rescheduleUrl })).toHaveAttribute(
-      "href",
       rescheduleUrl,
-    );
+    ]);
+    expect(
+      links.every((link) => link.getAttribute("title") === link.href),
+    ).toBe(true);
   });
 
   it("leaves existing HTML descriptions untouched", () => {
