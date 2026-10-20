@@ -255,7 +255,7 @@ public struct RootView: View {
         .padding(.bottom, 20)
     }
 
-    /// Web `SidebarActions`: shortcuts on the left, settings and palette on the right.
+    /// Web `SidebarActions`: one leading group (shortcuts, refresh, settings, palette).
     private var sidebarActions: some View {
         HStack(spacing: 8) {
             sidebarActionButton(
@@ -265,7 +265,6 @@ public struct RootView: View {
                 model.toggleShortcutsLegend()
             }
             SidebarRefreshButton(model: model)
-            Spacer()
             sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
                 model.settingsStore.open()
             }
@@ -273,6 +272,7 @@ public struct RootView: View {
                 model.toggleCommandPalette()
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .frame(height: 48)
         .overlay(alignment: .top) {

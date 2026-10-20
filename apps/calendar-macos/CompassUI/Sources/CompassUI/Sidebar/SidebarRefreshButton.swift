@@ -21,7 +21,7 @@ struct SidebarRefreshButton: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Reload for the latest calendar")
+                .help("Reload for the latest version")
             }
         }
     }

@@ -91,4 +91,23 @@ describe("SidebarActions", () => {
       screen.queryByRole("button", { name: /^Shortcut level/ }),
     ).not.toBeInTheDocument();
   });
+
+  it("groups footer controls in one leading row for tab order", () => {
+    const { wrapper } = createStoreWrapper();
+    const { container } = render(<SidebarActions />, { wrapper });
+
+    const footer = container.firstElementChild;
+    expect(footer?.childElementCount).toBe(3);
+    expect(footer?.className).not.toContain("justify-between");
+
+    expect(
+      screen.getByRole("button", { name: "Open shortcuts" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open settings" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open command palette" }),
+    ).toBeInTheDocument();
+  });
 });
