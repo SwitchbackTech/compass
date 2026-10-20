@@ -321,7 +321,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
-| 2026-10-20 | #4611 parity capture geometry on `main`; #4612 Sunday week + UTC labels queued; #4613 palette nav/icons; #4614 sidebar tips + Up Next + theme row |
+| 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
 
 ---
 
@@ -331,7 +331,7 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 
 | Surface | Web CI | macOS CI | Match | Diff notes (compare run 39331068008 on `main` post-#4607) |
 | --- | --- | --- | --- | --- |
-| Week grid | ✅ | ✅ | 🟡 | Capture uses macOS day view vs web week; demo events only on web shot; sidebar lacks web “Hold Mod jump targets” tip line |
+| Week grid | ✅ | ✅ | 🟡 | Post-#4612/#4619: expect Sun–Thu + UTC gutter; re-run compare after merge queue lands |
 | Mini-calendar | ✅ | ✅ | 🟡 | Selected-day ring OK; web shows selected-week wash + denser header type |
 | Event form | ✅ | ✅ | 🟡 | Logistics card grouped (#4607); dates still locale steppers vs MM.DD.YY; save bar / Enter hint gaps |
 | Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
