@@ -359,7 +359,6 @@ public struct RootView: View {
                     .onChange(of: geometry.size.width) { _, width in
                         model.updateContentTrackWidth(width)
                     }
-                    .modifier(ParityLayoutProbe(model: model))
             }
         }
     }
