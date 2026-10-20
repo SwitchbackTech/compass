@@ -143,8 +143,6 @@ final class NativeParityCaptureTests: XCTestCase {
         app.launchArguments += [
             "-\(OnboardingStorageKeys.hasSeenWelcome)", "false",
             "-compass.theme", "light-beach",
-            "-COMPASS_UI_TEST_PARITY_CAPTURE",
-            "-PARITY_CAPTURE",
         ]
         app.launchEnvironment["PARITY_CAPTURE"] = "1"
         if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {
