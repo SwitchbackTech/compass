@@ -3,6 +3,7 @@ import Foundation
 enum ShortcutUsageStorageKeys {
     static let personalization = "compass.shortcuts.personalization"
     static let levelHidden = "compass.shortcuts.level-hidden"
+    static let tipsMuted = "compass.shortcuts.tips-muted"
     static let levelCelebrated = "compass.shortcuts.level-celebrated"
     static let tipRotationIndex = "compass.shortcuts.tip-rotation-index"
 }
