@@ -134,7 +134,7 @@ public struct SettingsWindowOverlay: View {
                     .padding(16)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var accountsContent: some View {

@@ -179,6 +179,11 @@ final class NativeParityCaptureTests: XCTestCase {
         let okay = window.buttons["Okay"]
         if dismissDemoBanner, okay.waitForExistence(timeout: 4) {
             okay.tap()
+            let banner = window.descendants(matching: .any)["compass-native-demo-events-banner"]
+            let dismissDeadline = Date().addingTimeInterval(5)
+            while Date() < dismissDeadline, banner.exists {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+            }
         }
         let wednesdayHeader = window.staticTexts.matching(
             NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
