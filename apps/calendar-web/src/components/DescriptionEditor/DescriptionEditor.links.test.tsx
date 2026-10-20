@@ -2,19 +2,9 @@ import { HotkeysProvider, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import * as realEnvConstants from "@web/common/constants/env.constants";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
-
-const envConstantsSnapshot = { ...realEnvConstants };
+import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const copyTextMock = mock(() => Promise.resolve(true));
 
@@ -27,7 +17,7 @@ const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
   return call ? String(call[0]) : "";
 };
 
-async function renderDescriptionEditor(
+function renderDescriptionEditor(
   props: {
     value: string;
     resetKey: string;
@@ -35,15 +25,6 @@ async function renderDescriptionEditor(
   },
   options?: { withHotkeys?: boolean },
 ) {
-  mock.module("@web/common/constants/env.constants", () => ({
-    ...envConstantsSnapshot,
-    IS_EVENT_SIDEBAR_STAGING_UX: true,
-  }));
-  const moduleUrl = new URL(
-    `./DescriptionEditor.tsx?test=${Math.random().toString(36).slice(2)}`,
-    import.meta.url,
-  );
-  const { DescriptionEditor } = await import(moduleUrl.href);
   const onChange = props.onChange ?? mock();
   const editor = (
     <DescriptionEditor
@@ -60,21 +41,7 @@ async function renderDescriptionEditor(
   return render(editor);
 }
 
-afterAll(() => {
-  mock.module(
-    "@web/common/constants/env.constants",
-    () => envConstantsSnapshot,
-  );
-});
-
-describe("DescriptionEditor link staging UX", () => {
-  beforeAll(() => {
-    mock.module("@web/common/constants/env.constants", () => ({
-      ...envConstantsSnapshot,
-      IS_EVENT_SIDEBAR_STAGING_UX: true,
-    }));
-  });
-
+describe("DescriptionEditor link UX", () => {
   beforeEach(() => {
     document.body.removeAttribute("data-app-locked");
     copyTextMock.mockClear();

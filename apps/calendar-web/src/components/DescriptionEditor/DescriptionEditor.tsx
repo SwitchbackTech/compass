@@ -16,7 +16,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { IS_EVENT_SIDEBAR_STAGING_UX } from "@web/common/constants/env.constants";
 import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
 import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
 import { DescriptionEditorLinkHints } from "@web/components/DescriptionEditor/DescriptionEditorLinkHints";
@@ -228,20 +227,11 @@ export const DescriptionEditor = ({
   const editorRoot =
     editor?.view.dom instanceof HTMLElement ? editor.view.dom : null;
 
-  const linkUxEnabled = IS_EVENT_SIDEBAR_STAGING_UX;
-  useDescriptionEditorCopyLinkShortcut(
-    editor,
-    editorRoot,
-    linkUxEnabled && editable,
-  );
-  useDescriptionEditorOpenLinkAtCaretShortcut(
-    editor,
-    editorRoot,
-    linkUxEnabled && editable,
-  );
-  useDescriptionLinkDigitShortcut(editorRoot, linkUxEnabled && !isFocused);
+  useDescriptionEditorCopyLinkShortcut(editor, editorRoot, editable);
+  useDescriptionEditorOpenLinkAtCaretShortcut(editor, editorRoot, editable);
+  useDescriptionLinkDigitShortcut(editorRoot, !isFocused);
 
-  useDescriptionLinkPresentation(editor, editorRoot, linkUxEnabled, isFocused);
+  useDescriptionLinkPresentation(editor, editorRoot, true, isFocused);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
@@ -264,7 +254,7 @@ export const DescriptionEditor = ({
 
   const handleDescriptionKeyDown = (event: KeyboardEvent) => {
     onKeyDown?.(event);
-    if (!linkUxEnabled || !editorRoot || event.defaultPrevented) return;
+    if (!editorRoot || event.defaultPrevented) return;
 
     const link = findLinkElement(editorRoot, event.target);
     if (!link) return;
@@ -360,15 +350,11 @@ export const DescriptionEditor = ({
         )}
         onKeyDown={handleDescriptionKeyDown}
       />
-      {linkUxEnabled && (
-        <>
-          <DescriptionEditorLinkHints
-            editorRoot={editorRoot}
-            visible={!isFocused}
-          />
-          <DescriptionEditorLinkChrome editorRoot={editorRoot} />
-        </>
-      )}
+      <DescriptionEditorLinkHints
+        editorRoot={editorRoot}
+        visible={!isFocused}
+      />
+      <DescriptionEditorLinkChrome editorRoot={editorRoot} />
       <Divider color={underlineColor} toggled={isFocused} />
     </div>
   );
