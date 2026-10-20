@@ -20,7 +20,9 @@ SURFACES=(
   onboarding-welcome
 )
 mkdir -p "$OUT"
-python3 -m pip install --user --quiet Pillow
+if ! python3 -c "import PIL" 2>/dev/null; then
+  python3 -m pip install --break-system-packages --quiet Pillow
+fi
 cd "$ROOT/apps/calendar-macos"
 
 if ! command -v xcodegen >/dev/null 2>&1; then
