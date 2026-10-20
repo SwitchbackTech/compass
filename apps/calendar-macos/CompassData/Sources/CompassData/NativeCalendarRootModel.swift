@@ -158,8 +158,12 @@ public final class NativeCalendarRootModel {
         self.demoPresentation = demoPresentation
         self.now = now
         self.overlayStores = overlayStores
-        let pinnedTimeZone = demoPresentation?.timeZone ?? CompassDevicePreferences.readPinnedTimeZone()
-        EffectiveTimeZone.identifier = pinnedTimeZone ?? TimeZone.current.identifier
+        // Demo matches web parity: effective UTC via browser timezone, not a pinned override.
+        let demoTimeZone = demoPresentation?.timeZone
+        let pinnedTimeZone =
+            demoPresentation == nil ? CompassDevicePreferences.readPinnedTimeZone() : nil
+        EffectiveTimeZone.identifier =
+            demoTimeZone ?? pinnedTimeZone ?? TimeZone.current.identifier
         eventsStore = environment.eventsStore
         hiddenEventsStore = environment.hiddenEventsStore
         calendarVisibilityStore = CalendarVisibilityStore()
@@ -180,7 +184,8 @@ public final class NativeCalendarRootModel {
             view: .week,
             anchorDate: anchor,
             visibleDayCount: CalendarWindowMath.weekDayCount,
-            pinnedTimeZone: pinnedTimeZone
+            pinnedTimeZone: pinnedTimeZone,
+            browserTimeZone: demoTimeZone ?? TimeZone.current.identifier
         )
         if demoPresentation == nil {
             viewStore.setTimeTravelTimeZone(CompassDevicePreferences.readTimeTravelTimeZone())

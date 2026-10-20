@@ -32,7 +32,7 @@ struct WelcomeModalView: View {
     }
 
     private var panel: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: 20) {
             headerRow
             stepContent
             stepDots
@@ -40,7 +40,7 @@ struct WelcomeModalView: View {
                 WelcomeLinksView()
             }
         }
-        .padding(32)
+        .padding(28)
         .frame(width: 480)
         .background(theme.surfacePanelColor)
         .clipShape(RoundedRectangle(cornerRadius: 12))
