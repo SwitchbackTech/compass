@@ -211,20 +211,15 @@ const isContentEditableElement = (target: HTMLElement) =>
       target.closest("[contenteditable='true'], [contenteditable='']"),
   );
 
-export const isEditableKeyboardTarget = (
-  keyboardEvent: Pick<KeyboardEvent, "target">,
-) => {
-  if (isComboboxInteraction(keyboardEvent)) return true;
+export const isEditableFocusTarget = (element: Element | null): boolean => {
+  if (!(element instanceof HTMLElement)) return false;
+  if (isComboboxInteraction({ target: element })) return true;
+  if (isContentEditableElement(element)) return true;
 
-  const target = getKeyboardTarget(keyboardEvent);
-  if (!target) return false;
-
-  if (isContentEditableElement(target)) return true;
-
-  const tagName = target.tagName.toLowerCase();
+  const tagName = element.tagName.toLowerCase();
   if (tagName === "textarea" || tagName === "select") return true;
   if (tagName !== "input") return false;
-  const type = (target as HTMLInputElement).type || "text";
+  const type = (element as HTMLInputElement).type || "text";
   return (
     type !== "checkbox" &&
     type !== "radio" &&
@@ -232,6 +227,15 @@ export const isEditableKeyboardTarget = (
     type !== "submit" &&
     type !== "reset"
   );
+};
+
+export const isEditableKeyboardTarget = (
+  keyboardEvent: Pick<KeyboardEvent, "target">,
+) => {
+  if (isComboboxInteraction(keyboardEvent)) return true;
+
+  const target = getKeyboardTarget(keyboardEvent);
+  return isEditableFocusTarget(target);
 };
 
 /**

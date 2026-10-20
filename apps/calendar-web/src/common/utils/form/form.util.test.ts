@@ -5,6 +5,7 @@ import {
   getEventFormFieldAnchor,
   getEventFormFieldElement,
   isComboboxInteraction,
+  isEditableFocusTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
   resolveFormControlJumpIds,
@@ -49,6 +50,18 @@ describe("form.util", () => {
 
     it("returns false when target is null", () => {
       expect(isComboboxInteraction(createEvent(null))).toBe(false);
+    });
+  });
+
+  describe("isEditableFocusTarget", () => {
+    it("matches isEditableKeyboardTarget for the same element", () => {
+      const input = document.createElement("input");
+      input.type = "email";
+
+      expect(isEditableFocusTarget(input)).toBe(true);
+      expect(
+        isEditableKeyboardTarget({ target: input } as unknown as KeyboardEvent),
+      ).toBe(true);
     });
   });
 
