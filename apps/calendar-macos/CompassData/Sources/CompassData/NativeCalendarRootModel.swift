@@ -105,6 +105,11 @@ public final class NativeCalendarRootModel {
     private let demoPresentation: DemoSeedFixture?
     private let now: () -> Date
     private var cachedDemoEventIds: Set<String> = []
+    /// Web `TIMEZONE_MISMATCH_SNOOZED_BROWSER`: the device zone "Keep" was chosen for.
+    var timezoneMismatchSnoozedFor = UserDefaults.standard.string(
+        forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+    /// Observed copy of `DemoEventsBannerState` so dismissing re-renders.
+    private var isDemoEventsBannerDismissed = false
     private let analyticsIdentity: AnalyticsIdentityCoordinator
     private var eventStream: ServerEventStream?
     /// Every reload (saves, drafts, deletes, undo) also refreshes Up next, so a
@@ -131,6 +136,9 @@ public final class NativeCalendarRootModel {
         demoPresentation?.referenceNow ?? now()
     }
 
+    /// `-COMPASS_FIXTURE demo`: onboarding nudges stay out of the way like `showCalendarOnboarding`.
+    var isDemoFixture: Bool { demoPresentation != nil }
+
     var demoEventIds: Set<String> {
         cachedDemoEventIds.union(demoPresentation?.demoEventIds ?? [])
     }
@@ -145,8 +153,7 @@ public final class NativeCalendarRootModel {
     }
 
     public var showsDemoEventsBanner: Bool {
-        !demoEventIds.isEmpty && !DemoEventsBannerState.isDismissed(
-            repository: environment.userMetadataRepository)
+        !demoEventIds.isEmpty && !isDemoEventsBannerDismissed
     }
 
     public init(
@@ -209,6 +216,9 @@ public final class NativeCalendarRootModel {
         )
         settingsStore.onDevicePreferencesChanged = { [weak self] in
             self?.rebuildPresentation()
+        }
+        eventsStore.onWriteLanded = { [weak self] isNewCreate in
+            self?.noteEventWriteLanded(isNewCreate: isNewCreate)
         }
         authStore.onAuthenticated = { [weak self] in
             await self?.handleAuthenticated()
@@ -342,7 +352,7 @@ public final class NativeCalendarRootModel {
             guestMeetingSetupActive: settingsStore.guestMeetingSetupActive,
             shortcutShowcaseActive: blockPartyStore.isActive,
             connectCalendarEligible: connectEligible,
-            firstEventEligible: firstEventEligible,
+            firstEventEligible: firstEventEligible && !onboardingStore.defersFirstEventPromptForSignUpNudge,
             pointerHintVisible: pointerHintStore.isVisible,
             pointerHintDismissedPermanently: OnboardingGating.pointerHintDismissedPermanently(),
             isLifeView: viewStore.view == .life)
@@ -363,6 +373,8 @@ public final class NativeCalendarRootModel {
             metadata: environment.userMetadataRepository,
             fixture: demoPresentation)
         cachedDemoEventIds = (try? environment.localEventRepository.demoEventIds()) ?? []
+        isDemoEventsBannerDismissed = DemoEventsBannerState.isDismissed(
+            repository: environment.userMetadataRepository)
         try? await hiddenEventsStore.load()
         await reloadCalendars()
         await refreshVisibleRange()
@@ -396,6 +408,7 @@ public final class NativeCalendarRootModel {
 
     public func dismissDemoEventsBanner() {
         try? DemoEventsBannerState.dismiss(repository: environment.userMetadataRepository)
+        isDemoEventsBannerDismissed = true
     }
 
     var hasSampleEvents: Bool { !cachedDemoEventIds.isEmpty }
@@ -560,6 +573,7 @@ public final class NativeCalendarRootModel {
     func recordShortcut(_ id: ShortcutId) {
         guard let section = ShortcutTelemetrySection.section(for: id) else { return }
         levelsStore.recordShortcutInvocation(id, section: section)
+        noteShortcutEngagementIfAnonymous()
     }
 
     public func handleShortcut(_ id: ShortcutId) {

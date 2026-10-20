@@ -18,11 +18,26 @@ public struct RootView: View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
+                    if let banner = model.connectionBanner {
+                        CalendarConnectionBannerView(banner: banner) {
+                            model.runConnectionBannerAction()
+                        }
+                        .noticeFocusRing(model.focusedNotice == .connectionBanner)
+                        .padding(.leading, contentLeadingInset)
+                    }
+                    if let copy = model.timezoneMismatchCopy {
+                        TimezoneMismatchBannerView(
+                            copy: copy,
+                            onSwitch: { model.switchToDeviceTimeZone() },
+                            onKeep: { model.keepPinnedTimeZone() })
+                        .padding(.leading, contentLeadingInset)
+                    }
                     if model.viewStore.view != .life, model.showsDemoEventsBanner {
                         DemoEventsBannerView {
                             model.dismissDemoEventsBanner()
                         }
                         .noticeFocusRing(model.focusedNotice == .demoEvents)
+                        .padding(.leading, contentLeadingInset)
                     }
                     content
                         .padding(.leading, contentLeadingInset)
@@ -94,6 +109,11 @@ public struct RootView: View {
         }
         .overlay {
             OnboardingOverlay(model: model)
+        }
+        .overlay {
+            if model.showsLocalModeConnectPrompt {
+                LocalModeConnectPromptView(model: model)
+            }
         }
         .overlay {
             BlockPartyOverlay(model: model)
@@ -253,6 +273,9 @@ public struct RootView: View {
             .pageJumpChipAnchor(id: "month-picker")
             UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
             CalendarListView(model: model)
+            if model.showsMeetingPageNudge {
+                MeetingPageNudgeView(model: model)
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)

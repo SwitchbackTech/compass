@@ -29,6 +29,9 @@ public final class EventsStore {
     private let eventsAPI: EventsAPIProtocol
     private let systemCalendarConnector: SystemCalendarConnector
     public private(set) var source: EventRepositorySource
+    /// Runs once a create, replace, or delete has landed (web `writeAfterPreceding`
+    /// reporting `wrote`). `isNewCreate` is false for undo restores.
+    public var onWriteLanded: ((_ isNewCreate: Bool) -> Void)?
 
     public init(
         repository: EventRepository,
@@ -161,6 +164,7 @@ public final class EventsStore {
         if source == .local {
             let record = LocalEventRecord(id: optimisticEvent.id, event: optimisticEvent, isDemo: false)
             try localEvents.put(record)
+            onWriteLanded?(true)
             return
         }
         try repository.upsert(events: [optimisticEvent], isLocal: false)
@@ -186,6 +190,7 @@ public final class EventsStore {
         do {
             let response = try await eventsAPI.create(input)
             guard revision == remoteSessionRevision else { return }
+            onWriteLanded?(input.restore != true)
             let settled = try EventMapping.event(from: response)
             try repository.upsert(events: [settled], isLocal: false)
         } catch {}
@@ -205,9 +210,11 @@ public final class EventsStore {
     ) async throws {
         beginMutation()
         defer { endMutation() }
+        let isNewCreate = input.restore != true
         if source == .local {
             let record = LocalEventRecord(id: optimisticEvent.id, event: optimisticEvent, isDemo: false)
             try localEvents.put(record)
+            onWriteLanded?(isNewCreate)
             return
         }
         try repository.upsert(events: [optimisticEvent], isLocal: false)
@@ -215,6 +222,7 @@ public final class EventsStore {
         do {
             let response = try await eventsAPI.create(input)
             guard revision == remoteSessionRevision else { return }
+            onWriteLanded?(isNewCreate)
             let settled = try EventMapping.event(from: response)
             try repository.upsert(events: [settled], isLocal: false)
         } catch {
@@ -230,13 +238,15 @@ public final class EventsStore {
         beginMutation()
         defer { endMutation() }
         if source == .local {
-            if try localEvents.replaceOccurrence(id: id, input: input, edited: optimisticEvent) { return }
-            let snapshot = try localRecurringReplaceSnapshot(targetId: id)
-            try applyLocalReplaceCacheUpdate(
-                input: input,
-                edited: optimisticEvent,
-                snapshot: snapshot
-            )
+            if try !localEvents.replaceOccurrence(id: id, input: input, edited: optimisticEvent) {
+                let snapshot = try localRecurringReplaceSnapshot(targetId: id)
+                try applyLocalReplaceCacheUpdate(
+                    input: input,
+                    edited: optimisticEvent,
+                    snapshot: snapshot
+                )
+            }
+            onWriteLanded?(false)
             return
         }
         let snapshot = try recurringReplaceSnapshot(targetId: id)
@@ -247,22 +257,27 @@ public final class EventsStore {
         )
         // Replace returns a command acknowledgement, not an authoritative event.
         // Preserve the optimistic projection until the invalidated range is read.
-        _ = try? await eventsAPI.replace(id: id, input: input)
+        if (try? await eventsAPI.replace(id: id, input: input)) != nil {
+            onWriteLanded?(false)
+        }
     }
 
     public func deleteOptimistic(id: EventId, scope: EventDeleteScope) async throws {
         beginMutation()
         defer { endMutation() }
         if source == .local {
-            if try localEvents.deleteOccurrence(id: id, scope: scope) { return }
-            let snapshot = try localRecurringDeleteSnapshot(targetId: id)
-            try applyLocalDeleteCacheUpdate(id: id, scope: scope, snapshot: snapshot)
+            if try !localEvents.deleteOccurrence(id: id, scope: scope) {
+                let snapshot = try localRecurringDeleteSnapshot(targetId: id)
+                try applyLocalDeleteCacheUpdate(id: id, scope: scope, snapshot: snapshot)
+            }
+            onWriteLanded?(false)
             return
         }
         let snapshot = try recurringDeleteSnapshot(targetId: id)
         try applyDeleteCacheUpdate(id: id, scope: scope, snapshot: snapshot)
         do {
             try await eventsAPI.delete(id: id, scope: scope)
+            onWriteLanded?(false)
         } catch {}
     }
 
