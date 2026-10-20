@@ -94,7 +94,14 @@ struct EventFormRecurrenceSection: View {
 
             }
         }
-        .eventFormSectionChrome(focused: focusField == .recurrence)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay {
+            if focusField == .recurrence {
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                    .stroke(theme.accentColor, lineWidth: 1)
+                    .padding(-4)
+            }
+        }
         .onAppear { reloadFromDraft() }
         .onChange(of: draft.recurrence) { _, _ in reloadFromDraft() }
         .onChange(of: draft.schedule.start) { _, _ in syncDraftRecurrence() }
