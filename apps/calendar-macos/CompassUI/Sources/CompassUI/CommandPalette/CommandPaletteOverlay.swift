@@ -106,8 +106,13 @@ public struct CommandPaletteOverlay: View {
                                 Spacer(minLength: 0)
                                 paletteFooterHints
                             }
-                            .padding(.horizontal, 12)
-                            .padding(.bottom, 10)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                            .overlay(alignment: .top) {
+                                Rectangle()
+                                    .fill(theme.borderColor)
+                                    .frame(height: 1)
+                            }
                             .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
                         }
                         .frame(width: Self.panelWidth)
@@ -193,20 +198,19 @@ public struct CommandPaletteOverlay: View {
     }
 
     private var paletteFooterHints: some View {
+        HStack(spacing: 16) {
+            footerHintGroup(keys: ["↑", "↓"], label: "Navigate")
+            footerHintGroup(keys: ["Enter"], label: "Select")
+            footerHintGroup(keys: ["Esc"], label: "Close")
+        }
+        .font(.rubik(12))
+        .foregroundStyle(theme.textMutedColor)
+    }
+
+    private func footerHintGroup(keys: [String], label: String) -> some View {
         HStack(spacing: 6) {
-            footerKeycap("↑")
-            footerKeycap("↓")
-            Text("Navigate")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
-            footerKeycap("Enter")
-            Text("Select")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
-            footerKeycap("Esc")
-            Text("Close")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
+            ForEach(keys, id: \.self) { footerKeycap($0) }
+            Text(label)
         }
     }
 

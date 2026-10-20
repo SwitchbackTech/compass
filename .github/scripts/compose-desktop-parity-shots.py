@@ -64,7 +64,19 @@ MODAL_REGION_SURFACES = frozenset(
         "onboarding-welcome",
     }
 )
-MODAL_CROP = (300, 48, 980, 772)
+MODAL_PANEL_WIDTH_BY_SURFACE = {
+    "command-palette": 640,
+    "settings": 480,
+    "onboarding-welcome": 480,
+}
+MODAL_TOP_INSET = int(VIEWPORT_HEIGHT * 0.12)
+
+
+def modal_crop(surface: str) -> tuple[int, int, int, int]:
+    width = MODAL_PANEL_WIDTH_BY_SURFACE.get(surface, 480)
+    left = (VIEWPORT_WIDTH - width) // 2
+    top = MODAL_TOP_INSET
+    return (left, top, left + width, min(VIEWPORT_HEIGHT - 16, top + 540))
 
 LABEL_HEIGHT = 36
 GUTTER = 8
@@ -122,7 +134,7 @@ def regional_outputs(surface: str) -> Iterable[tuple[str, tuple[int, int, int, i
     if surface in SIDEBAR_REGION_SURFACES:
         yield ("sidebar", SIDEBAR_CROP)
     if surface in MODAL_REGION_SURFACES:
-        yield ("modal", MODAL_CROP)
+        yield ("modal", modal_crop(surface))
 
 
 def main() -> None:

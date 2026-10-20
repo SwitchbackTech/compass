@@ -70,24 +70,26 @@ struct WelcomeModalView: View {
     private var stepContent: some View {
         switch step {
         case 1:
-            VStack(alignment: .leading, spacing: 8) {
-                heading("The Keyboard Calendar")
-                Text(
-                    "Rediscover the joy of shortcuts as you build your perfect schedule. "
-                        + "Click any button here, or use Enter and the key hints beside each action.")
-                    .font(.rubik(16))
-                    .foregroundStyle(theme.textMutedColor)
-                Text(
-                    "Compass is a faster, simpler, open-source calendar for busy professionals "
-                        + "who live at their keyboard.")
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textMutedColor)
-            }
-            VStack(spacing: 12) {
-                primaryButton(title: "Get started for free", hint: "Enter") { model.welcomePrimaryAction() }
-                Text("No account needed.")
-                    .font(.rubik(12))
-                    .foregroundStyle(theme.textMutedColor)
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    heading("The Keyboard Calendar")
+                    Text(
+                        "Rediscover the joy of shortcuts as you build your perfect schedule. "
+                            + "Click any button here, or use Enter and the key hints beside each action.")
+                        .font(.rubik(16))
+                        .foregroundStyle(theme.textMutedColor)
+                    Text(
+                        "Compass is a faster, simpler, open-source calendar for busy professionals "
+                            + "who live at their keyboard.")
+                        .font(.rubik(14))
+                        .foregroundStyle(theme.textMutedColor)
+                }
+                VStack(spacing: 12) {
+                    primaryButton(title: "Get started for free", hint: "Enter") { model.welcomePrimaryAction() }
+                    Text("No account needed.")
+                        .font(.rubik(12))
+                        .foregroundStyle(theme.textMutedColor)
+                }
             }
         case 2:
             VStack(alignment: .leading, spacing: 8) {
