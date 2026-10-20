@@ -13,11 +13,21 @@ struct EventFormRecurrenceSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Toggle("Repeat", isOn: Binding(
-                get: { hasRecurrence },
-                set: { toggleRecurrence($0) }
-            ))
-            .toggleStyle(.switch)
+            Button {
+                toggleRecurrence(!hasRecurrence)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "repeat")
+                        .font(.system(size: 18, weight: .regular))
+                    Text("Repeat")
+                        .font(.rubik(NativeWebLayoutTokens.fontSizeM))
+                }
+                .foregroundStyle(theme.textMutedColor.opacity(hasRecurrence ? 1 : 0.85))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(hasRecurrence ? "Repeat" : "Edit recurrence")
             .accessibilityIdentifier("compass-event-form-recurrence-toggle")
 
             if hasRecurrence {

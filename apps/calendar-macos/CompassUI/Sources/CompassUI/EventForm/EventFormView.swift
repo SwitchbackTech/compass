@@ -30,25 +30,23 @@ public struct EventFormView: View {
 
     private func formPanel(draft: GridEventDraft) -> some View {
         let isReadOnly = model.isEventFormReadOnly(for: draft)
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 12) {
             EventFormToolbarView(model: model, draft: draft)
             .pageJumpChipAnchor(id: "form-actions")
 
-            TextField("Title", text: Binding(
-                get: { draft.title },
-                set: { model.updateDraftFromForm(title: $0) }
-            ))
-            .textFieldStyle(.plain)
-            .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
-            .foregroundStyle(theme.textColor)
-            .focused($titleFocused)
-            .disabled(isReadOnly)
-            .accessibilityIdentifier("compass-event-form-title")
-            .pageJumpChipAnchor(id: "form-title")
+            EventFormTitleField(
+                draft: draft,
+                title: Binding(
+                    get: { draft.title },
+                    set: { model.updateDraftFromForm(title: $0) }
+                ),
+                focused: $titleFocused,
+                isReadOnly: isReadOnly
+            )
 
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 12) {
                         EventFormCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 EventFormScheduleSection(
@@ -150,7 +148,7 @@ public struct EventFormView: View {
                     .font(.rubik(14, weight: .medium))
                     .foregroundStyle(theme.onAccentColor)
                     .padding(.horizontal, 20)
-                    .frame(maxWidth: .infinity, minHeight: 36, maxHeight: 36)
+                    .frame(maxWidth: .infinity, minHeight: 40, maxHeight: 40)
                     .background(theme.accentColor)
                     .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
                 }
@@ -161,8 +159,8 @@ public struct EventFormView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
         .tint(theme.accentColor)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
