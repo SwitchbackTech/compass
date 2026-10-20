@@ -11,6 +11,8 @@ final class NoticeEngagementTests: XCTestCase {
         OnboardingStorageKeys.anonymousShortcutEngagementCount,
         OnboardingStorageKeys.hasDismissedLocalModeConnectPrompt,
         OnboardingStorageKeys.hasDismissedMeetingPageNudge,
+        CompassStorageKeys.timezoneMismatchSnoozedBrowser,
+        CompassStorageKeys.defaultTimeZone,
     ]
 
     override func setUp() async throws {
@@ -63,6 +65,28 @@ final class NoticeEngagementTests: XCTestCase {
         model.onboardingStore.dismissFirstEventPrompt()
         XCTAssertFalse(model.showsMeetingPageNudge)
         XCTAssertFalse(model.handleNoticeActionKey(KeyEvent(character: "m"), editSequenceArmed: false))
+    }
+
+    func testTimezoneMismatchOffersSwitchAndKeep() async throws {
+        let model = try await makeModel()
+        let device = model.viewStore.browserTimeZone
+        let other = device == "Europe/Paris" ? "Asia/Tokyo" : "Europe/Paris"
+        XCTAssertNil(model.timezoneMismatchCopy)
+        model.settingsStore.setPinnedTimeZone(other)
+        XCTAssertNotNil(model.timezoneMismatchCopy)
+        model.keepPinnedTimeZone()
+        XCTAssertNil(model.timezoneMismatchCopy)
+        XCTAssertEqual(model.viewStore.pinnedTimeZone, other)
+        model.timezoneMismatchSnoozedFor = nil
+        model.switchToDeviceTimeZone()
+        XCTAssertEqual(model.viewStore.pinnedTimeZone, device)
+        XCTAssertNil(model.timezoneMismatchCopy)
+    }
+
+    func testConnectionBannerStaysHiddenWhileSignedOut() async throws {
+        let model = try await makeModel()
+        XCTAssertNil(model.connectionBanner)
+        XCTAssertFalse(model.handleNoticeActionKey(KeyEvent(character: "g"), editSequenceArmed: false))
     }
 
     private func makeModel(fixture: Bool = false) async throws -> NativeCalendarRootModel {

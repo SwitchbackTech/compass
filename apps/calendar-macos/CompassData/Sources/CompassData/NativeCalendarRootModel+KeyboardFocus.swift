@@ -4,6 +4,7 @@ import Foundation
 /// Banners the `p` shortcut can focus, top of the window first.
 public enum NativeNotice: String, Sendable, CaseIterable {
     case billingPastDue
+    case connectionBanner
     case demoEvents
     case updateReady
     case meetingPageNudge
@@ -64,6 +65,7 @@ extension NativeCalendarRootModel {
         if case let .server(server) = billingStore.appAccess, server.status == .pastDue {
             notices.append(.billingPastDue)
         }
+        if connectionBanner != nil { notices.append(.connectionBanner) }
         if showsDemoEventsBanner { notices.append(.demoEvents) }
         if desktopUpdateReadyVersion != nil { notices.append(.updateReady) }
         if showsMeetingPageNudge { notices.append(.meetingPageNudge) }
@@ -97,6 +99,8 @@ extension NativeCalendarRootModel {
             dismissDemoEventsBanner()
         case .updateReady:
             onDesktopRestartToUpdate?()
+        case .connectionBanner:
+            runConnectionBannerAction()
         case .meetingPageNudge:
             openBookingSettings()
         case .localModeConnectPrompt:

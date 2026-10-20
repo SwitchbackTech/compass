@@ -160,8 +160,9 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Billing past due | ✅ | |
 | Demo events, update ready | ✅ | |
 | Meeting nudge, connect prompts, first-event | ✅ | Sidebar meeting-page nudge (`M`), local-mode trial card (`S`, Esc), first-event card completes on first create |
+| Connection + timezone banners | ✅ | Reconnect / Retry / Refresh / Learn more (`G`); timezone mismatch Switch / Keep; Auto zone follows the Mac each minute |
 | Status toasts | 🟡 | `StatusToastOverlay` vs web toast stack |
-| Focus latest notice **`p`** | 🟡 | Includes meeting nudge and trial card; connection banner still web-only |
+| Focus latest notice **`p`** | ✅ | Connection banner, sample events, meeting nudge, trial card, update, past due |
 
 ### 2.10 Command palette
 
@@ -321,7 +322,6 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
-| 2026-10-20 | Notices: meeting nudge, local-mode trial card, notice letter keys, first-event completion |
 | 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
 
 ---

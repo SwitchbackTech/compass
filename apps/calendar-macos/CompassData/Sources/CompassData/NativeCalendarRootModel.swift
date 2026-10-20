@@ -105,6 +105,9 @@ public final class NativeCalendarRootModel {
     private let demoPresentation: DemoSeedFixture?
     private let now: () -> Date
     private var cachedDemoEventIds: Set<String> = []
+    /// Web `TIMEZONE_MISMATCH_SNOOZED_BROWSER`: the device zone "Keep" was chosen for.
+    var timezoneMismatchSnoozedFor = UserDefaults.standard.string(
+        forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
     /// Observed copy of `DemoEventsBannerState` so dismissing re-renders.
     private var isDemoEventsBannerDismissed = false
     private let analyticsIdentity: AnalyticsIdentityCoordinator

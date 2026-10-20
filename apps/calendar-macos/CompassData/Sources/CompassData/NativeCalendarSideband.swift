@@ -47,7 +47,12 @@ extension NativeCalendarRootModel {
     }
 
     public func refreshSideband() async {
-        // The minute refresh advances the calendar's saved clock snapshot too.
+        // The minute refresh advances the calendar's saved clock snapshot too,
+        // and follows a device timezone change like web's 60s browser-zone poll.
+        if !isDemoFixture {
+            NSTimeZone.resetSystemTimeZone()
+            viewStore.refreshBrowserTimeZone()
+        }
         rebuildPresentation()
         let revision = sessionRevision
         guard isSignedIn || eventsStore.source == .local else {

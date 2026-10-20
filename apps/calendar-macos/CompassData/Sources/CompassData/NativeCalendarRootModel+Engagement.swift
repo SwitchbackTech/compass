@@ -1,4 +1,5 @@
 import CompassKit
+import Foundation
 
 /// Web anonymous-explorer engagement, the local-mode sign-up card, the sidebar
 /// meeting-page nudge, and notice CTA letters (`useNoticeActionShortcut`).
@@ -51,6 +52,45 @@ extension NativeCalendarRootModel {
             && bookingStore.serverPage != nil && !bookingStore.isLive
     }
 
+    /// Web `CalendarConnectionBannerGate`: the account that most needs help.
+    public var connectionBanner: CalendarConnectionBanner? {
+        guard isSignedIn, viewStore.view != .life else { return nil }
+        return CalendarConnectionBanner.pick(syncConnectionsStore.connections)
+    }
+
+    public func runConnectionBannerAction() {
+        guard let banner = connectionBanner else { return }
+        switch banner.kind {
+        case .reconnect:
+            Task { await syncConnectionsStore.reconnect(connection: banner.connection) }
+        case .consentRequired:
+            openExternalURLHandler?(CalendarConnectionBanner.consentHelpURL)
+        case .importFailed, .delayed:
+            Task { await syncConnectionsStore.refresh() }
+        }
+    }
+
+    /// Web `TimezoneMismatchBannerGate`.
+    public var timezoneMismatchCopy: TimezoneMismatch.Copy? {
+        guard viewStore.view != .life,
+              TimezoneMismatch.shouldShow(
+                pinned: viewStore.pinnedTimeZone,
+                device: viewStore.browserTimeZone,
+                snoozedFor: timezoneMismatchSnoozedFor),
+              let pinned = viewStore.pinnedTimeZone
+        else { return nil }
+        return TimezoneMismatch.copy(device: viewStore.browserTimeZone, calendar: pinned, at: referenceNow)
+    }
+
+    public func switchToDeviceTimeZone() {
+        settingsStore.setPinnedTimeZone(viewStore.browserTimeZone)
+    }
+
+    public func keepPinnedTimeZone() {
+        UserDefaults.standard.set(viewStore.browserTimeZone, forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+        timezoneMismatchSnoozedFor = viewStore.browserTimeZone
+    }
+
     /// Web `useNoticeActionShortcut`: a visible notice's CTA runs from its bare
     /// letter, standing down while event jump or an `e` sequence owns letters.
     public func handleNoticeActionKey(_ event: KeyEvent, editSequenceArmed: Bool) -> Bool {
@@ -62,6 +102,8 @@ extension NativeCalendarRootModel {
         }
         guard case .character(let raw) = event.key else { return false }
         switch Character(String(raw).lowercased()) {
+        case "g" where connectionBanner != nil:
+            runConnectionBannerAction()
         case "o" where showsDemoEventsBanner && viewStore.view != .life:
             dismissDemoEventsBanner()
         case "m" where showsMeetingPageNudge:
