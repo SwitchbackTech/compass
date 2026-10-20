@@ -70,11 +70,6 @@ public enum UITestLaunchPolicy {
         ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_EVENT_FORM_TIME_PICKER")
     }
 
-    /// Opens the command palette from a hidden probe after the parity grid is ready.
-    public static var openCommandPaletteForUITest: Bool {
-        ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_COMMAND_PALETTE")
-    }
-
     /// Desktop ↔ web screenshot capture (`NativeParityCaptureTests`).
     public static var isParityCapture: Bool {
         ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"

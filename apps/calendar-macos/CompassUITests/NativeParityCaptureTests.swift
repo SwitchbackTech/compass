@@ -15,22 +15,81 @@ final class NativeParityCaptureTests: XCTestCase {
     ]
 
     @MainActor
-    func testExportParitySurfaces() throws {
+    private func requireParityCapture() throws {
         guard NativeImageSnapshotSupport.parityCapture else {
             throw XCTSkip("Set PARITY_CAPTURE=1 to export parity PNGs")
         }
+    }
 
+    @MainActor
+    func testExportParitySurface_onboardingWelcome() throws {
+        try requireParityCapture()
         captureWelcomeOnboarding()
+    }
+
+    @MainActor
+    func testExportParitySurface_weekGrid() throws {
+        try requireParityCapture()
         captureWeekGrid()
+    }
+
+    @MainActor
+    func testExportParitySurface_weekGridAllDay() throws {
+        try requireParityCapture()
         captureWeekGridAllDay()
+    }
+
+    @MainActor
+    func testExportParitySurface_demoEventsBanner() throws {
+        try requireParityCapture()
         captureDemoEventsBanner()
+    }
+
+    @MainActor
+    func testExportParitySurface_modHoldOverlay() throws {
+        try requireParityCapture()
         captureModHoldOverlay()
+    }
+
+    @MainActor
+    func testExportParitySurface_upNextBanner() throws {
+        try requireParityCapture()
         captureUpNextBanner()
+    }
+
+    @MainActor
+    func testExportParitySurface_miniCalendar() throws {
+        try requireParityCapture()
         captureMiniCalendar()
+    }
+
+    @MainActor
+    func testExportParitySurface_eventForm() throws {
+        try requireParityCapture()
         captureEventForm()
+    }
+
+    @MainActor
+    func testExportParitySurface_eventFormDatePicker() throws {
+        try requireParityCapture()
         captureEventFormDatePicker()
+    }
+
+    @MainActor
+    func testExportParitySurface_eventFormTimePicker() throws {
+        try requireParityCapture()
         captureEventFormTimePicker()
+    }
+
+    @MainActor
+    func testExportParitySurface_commandPalette() throws {
+        try requireParityCapture()
         captureCommandPalette()
+    }
+
+    @MainActor
+    func testExportParitySurface_settings() throws {
+        try requireParityCapture()
         captureSettings()
     }
 
@@ -119,17 +178,11 @@ final class NativeParityCaptureTests: XCTestCase {
 
     @MainActor
     private func captureCommandPalette() {
-        let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_COMMAND_PALETTE"])
+        let window = launchDemoWindow()
         prepareParityGrid(window, dismissDemoBanner: true)
-        sleep(1)
-        let search = window.textFields["compass-native-command-palette-search"]
-        let openPalette = window.descendants(matching: .any)["compass-ui-test-open-command-palette"]
-        XCTAssertTrue(openPalette.waitForExistence(timeout: 5))
-        openPalette.tap()
-        if !search.waitForExistence(timeout: 8) {
-            window.typeKey("k", modifierFlags: [.command])
-        }
-        XCTAssertTrue(search.waitForExistence(timeout: 30))
+        window.typeKey("k", modifierFlags: [.command])
+        XCTAssertTrue(
+            window.textFields["compass-native-command-palette-search"].waitForExistence(timeout: 15))
         NativeImageSnapshotSupport.captureWindow(window, named: "command-palette")
     }
 

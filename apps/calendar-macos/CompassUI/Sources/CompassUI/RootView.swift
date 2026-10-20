@@ -108,19 +108,6 @@ public struct RootView: View {
         .overlay {
             CommandPaletteOverlay(model: model)
         }
-        .overlay(alignment: .topLeading) {
-            if UITestLaunchPolicy.openCommandPaletteForUITest {
-                Button("Open command palette") {
-                    if !model.commandPaletteStore.isOpen {
-                        model.toggleCommandPalette()
-                    }
-                }
-                .buttonStyle(.plain)
-                .frame(width: 1, height: 1)
-                .opacity(0.01)
-                .accessibilityIdentifier("compass-ui-test-open-command-palette")
-            }
-        }
         .overlay {
             ShortcutsLegendOverlay(model: model)
         }
