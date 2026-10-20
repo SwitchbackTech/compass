@@ -181,7 +181,7 @@ final class NativeParityCaptureTests: XCTestCase {
         let launch = launchDemoWindow()
         prepareParityGrid(launch.window, dismissDemoBanner: true)
         openCommandPaletteForCapture(launch.window, app: launch.app)
-        NativeImageSnapshotSupport.captureWindow(window, named: "command-palette")
+        NativeImageSnapshotSupport.captureWindow(launch.window, named: "command-palette")
     }
 
     /// Cmd+K is flaky after parity grid setup in CI; fall back to sidebar and menu actions.
