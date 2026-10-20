@@ -32,6 +32,7 @@ import {
   ConnectionRefreshResponseSchema,
   ForegroundRefreshRequestSchema,
   GoogleConnectionAdoptionRequestSchema,
+  type OAuthStateFailure,
   type ProviderCalendar,
   ProviderCalendarSchema,
   type ProviderConnection,
@@ -72,7 +73,6 @@ import {
   HORIZON_PAST_MONTHS,
 } from "@sync/domain/horizon";
 import {
-  type OAuthStateFailure,
   peekOAuthStatePayload,
   signOAuthState,
   verifyOAuthState,
