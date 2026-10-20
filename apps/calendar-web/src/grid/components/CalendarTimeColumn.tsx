@@ -37,7 +37,7 @@ export function CalendarTimeColumn({ at }: { at: Date }) {
   return (
     <div
       aria-hidden="true"
-      className="absolute top-[calc(100%/var(--calendar-visible-hours)-5px)] z-1 h-full"
+      className="absolute top-0 z-1 h-full"
       style={
         {
           width: marginLeft,
