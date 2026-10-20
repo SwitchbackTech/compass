@@ -11,12 +11,14 @@ final class GuestEmailSubmissionTests: XCTestCase {
         app.launch()
         let window = app.windows["Compass"]
         window.typeKey("c", modifierFlags: [])
-        let title = window.descendants(matching: .any)["compass-event-form-title"]
+        let form = window.descendants(matching: .any)["compass-event-form"].firstMatch
+        XCTAssertTrue(form.waitForExistence(timeout: 8))
+        let title = form.descendants(matching: .any)["compass-event-form-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 8))
         title.click()
         title.typeKey("a", modifierFlags: [.command])
         title.typeText("Guest input regression")
-        let calendar = window.descendants(matching: .any)["compass-event-form-calendar"]
+        let calendar = form.descendants(matching: .any)["compass-event-form-calendar"]
         XCTAssertTrue(calendar.waitForExistence(timeout: 8))
         for _ in 0..<6 where !calendar.isHittable {
             window.typeKey(.pageDown, modifierFlags: [])
@@ -24,16 +26,16 @@ final class GuestEmailSubmissionTests: XCTestCase {
         calendar.click()
         app.menuItems["Work"].click()
         window.typeKey("8", modifierFlags: [.command])
-        let guest = window.descendants(matching: .any)["Add guest email"]
+        let guest = form.descendants(matching: .any)["Add guest email"]
         XCTAssertTrue(guest.waitForExistence(timeout: 8))
         guest.click()
         guest.typeText("guest@example.invalid")
         guest.typeKey(.return, modifierFlags: [])
-        XCTAssertTrue(window.staticTexts["guest@example.invalid"].waitForExistence(timeout: 8))
-        XCTAssertTrue(window.buttons["compass-event-form-save"].exists)
+        XCTAssertTrue(form.staticTexts["guest@example.invalid"].waitForExistence(timeout: 8))
+        XCTAssertTrue(form.buttons["compass-event-form-save"].exists)
         XCTAssertFalse(window.staticTexts["Send invitation emails?"].exists)
         guest.typeKey(.return, modifierFlags: [])
-        XCTAssertTrue(window.buttons["compass-event-form-save"].exists)
+        XCTAssertTrue(form.buttons["compass-event-form-save"].exists)
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Guest added without saving the form"
         evidence.lifetime = .keepAlways
