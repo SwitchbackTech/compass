@@ -18,8 +18,8 @@ public struct DemoEventsBannerView: View {
                 ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
                 ShortcutHintChip(label: "K")
             }
-            Spacer(minLength: 8)
-            HStack(spacing: 6) {
+            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 8) {
                 Text("Okay")
                     .font(.rubik(12))
                     .foregroundStyle(theme.textColor)
@@ -29,6 +29,7 @@ public struct DemoEventsBannerView: View {
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel("Okay")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(theme.surfacePanelColor)
