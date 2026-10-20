@@ -97,6 +97,7 @@ final class NativeParityCaptureTests: XCTestCase {
     private func captureWeekGrid() {
         let window = launchDemoWindow().window
         prepareParityGrid(window, dismissDemoBanner: true)
+        NativeImageSnapshotSupport.exportMacTitleBarReference(window)
         NativeImageSnapshotSupport.captureWindow(window, named: "week-grid")
     }
 

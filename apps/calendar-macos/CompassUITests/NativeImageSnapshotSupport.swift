@@ -1,4 +1,5 @@
 import AppKit
+import CompassKit
 import XCTest
 
 enum NativeImageSnapshotSupport {
@@ -99,6 +100,46 @@ enum NativeImageSnapshotSupport {
         }
         XCTFail("Timed out waiting for parity export \(name) at \(fileURL.path)", file: file, line: line)
         return nil
+    }
+
+    /// Full-window screenshot crop for marketing (includes traffic lights in unified title bar).
+    @MainActor
+    static func exportMacTitleBarReference(
+        _ window: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard parityCapture, let outDir = parityOutputDirectory else { return }
+        guard window.waitForExistence(timeout: 15) else {
+            XCTFail("Window missing for mac title bar reference", file: file, line: line)
+            return
+        }
+        let screenshot = window.screenshot()
+        let bandHeight = MacTitleBarChromeMetrics.contentBandHeight
+        guard let cropped = cropTopBand(from: screenshot.pngRepresentation, heightPoints: bandHeight) else {
+            XCTFail("Failed to crop mac title bar reference", file: file, line: line)
+            return
+        }
+        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("mac-title-bar.png")
+        do {
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try cropped.write(to: fileURL)
+        } catch {
+            XCTFail("Failed to write mac-title-bar.png: \(error)", file: file, line: line)
+            return
+        }
+        attachPNG(cropped, named: "mac-title-bar")
+    }
+
+    private static func cropTopBand(from png: Data, heightPoints: CGFloat) -> Data? {
+        guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
+        let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
+        let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
+        let cropRect = CGRect(x: 0, y: rep.pixelsHigh - cropPixels, width: rep.pixelsWide, height: cropPixels)
+        guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
+        let out = NSBitmapImageRep(cgImage: cropped)
+        out.size = NSSize(width: rep.size.width, height: heightPoints)
+        return out.representation(using: .png, properties: [:])
     }
 
     @MainActor
