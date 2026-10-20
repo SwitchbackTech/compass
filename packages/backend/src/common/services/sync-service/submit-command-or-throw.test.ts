@@ -46,6 +46,7 @@ describe("submitCommandOrThrow", () => {
       ["versionConflict", "RECURRENCE_CONFLICT"],
       ["authorizationRevoked", "CONNECTION_REVOKED"],
       ["unsupportedCapability", "UNSUPPORTED_OPERATION"],
+      ["providerRejectedChange", "PROVIDER_REJECTED"],
       ["permanentProviderError", "PROVIDER_FAILURE"],
     ] as const;
 

@@ -11,7 +11,7 @@ struct SettingsQuickAddHotkeySectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Global quick add")
-                .font(.rubik(15))
+                .font(.rubik(14))
                 .foregroundStyle(theme.textColor)
             Text("Opens a floating panel from any app. Uses a system hotkey, not Accessibility.")
                 .font(.rubik(12))

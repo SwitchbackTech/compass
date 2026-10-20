@@ -141,7 +141,7 @@ describe("RemoteEventRepository", () => {
 
       const result = await repository.replace(event.id, baseInput);
 
-      expect(api.replace).toHaveBeenCalledWith(event.id, baseInput);
+      expect(api.replace).toHaveBeenCalledWith(event.id, baseInput, undefined);
       expect(result).toEqual(event);
     });
 

@@ -14,6 +14,7 @@ import {
   stopCommand,
 } from "@sync/domain/provider-command.internal";
 import { commitProviderOccurrenceOverride } from "@sync/domain/provider-command.occurrence";
+import { providerLabelPatchFields } from "@sync/domain/provider-patch-fields";
 import { runProviderWrite } from "@sync/domain/provider-write-ladder";
 import { reprojectMaster } from "@sync/domain/series-exception";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -158,6 +159,7 @@ export async function executeProviderRsvp(
         accessToken,
         calendarId: calendar.providerCalendarId,
         providerEventId: current.providerEventId,
+        ...providerLabelPatchFields(current),
         // Unconditional on purpose: another guest's concurrent RSVP bumps
         // the provider version, and RSVP drift must never block an RSVP.
         expectedVersion: null,

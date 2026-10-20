@@ -20,11 +20,12 @@ final class SidebarMonthPickerTests: XCTestCase {
         picker.buttons["Previous month"].click()
         XCTAssertEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
 
-        picker.buttons["Current month"].click()
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMM yyyy"
-        XCTAssertTrue(picker.staticTexts[formatter.string(from: Date())].exists)
+        picker.buttons["Next month"].click()
+        XCTAssertNotEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
+        let goToThisMonth = picker.buttons["Go to this month"]
+        XCTAssertTrue(goToThisMonth.waitForExistence(timeout: 2))
+        goToThisMonth.click()
+        XCTAssertEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
         XCTAssertEqual(title.label, originalTitle)
     }
     @MainActor

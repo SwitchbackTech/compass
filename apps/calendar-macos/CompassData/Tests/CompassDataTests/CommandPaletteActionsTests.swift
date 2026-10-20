@@ -101,13 +101,61 @@ final class CommandPaletteActionsTests: XCTestCase {
         XCTAssertFalse(model.commandPaletteStore.recentCommandIds.contains("recent-today"))
     }
 
-    func testMoreSectionIncludesUndoAndRedoRows() async throws {
+    func testSectionsFollowWebOrderAndHeadings() async throws {
         let model = try await makeModel()
         model.commandPaletteStore.open()
-        let ids = Set(model.filteredPaletteSections().flatMap(\.items).map(\.id))
-        XCTAssertTrue(ids.contains("undo"))
-        XCTAssertTrue(ids.contains("redo"))
-        XCTAssertTrue(ids.contains("toggle-theme"))
+        let sections = model.filteredPaletteSections()
+        XCTAssertEqual(
+            sections.map(\.heading),
+            ["Navigation", "Common Actions", "Appearance", "Settings", "More"])
+        let ids = Set(sections.flatMap(\.items).map(\.id))
+        for id in [
+            "undo-last-change", "redo-last-change", "toggle-theme", "focus-month-picker",
+            "open-up-next", "join-up-next-meeting", "change-default-timezone", "time-travel",
+            "sign-up", "log-in", "share-feedback", "book-personal-onboarding", "about",
+        ] {
+            XCTAssertTrue(ids.contains(id), id)
+        }
+        XCTAssertFalse(ids.contains("log-out"))
+    }
+
+    func testDisabledRowsAreSkippedAndCannotRun() async throws {
+        let model = try await makeModel()
+        model.commandPaletteStore.open()
+        let undo = try XCTUnwrap(model.filteredPaletteSections().flatMap(\.items).first { $0.id == "undo-last-change" })
+        XCTAssertTrue(undo.isDisabled)
+        model.commandPaletteStore.query = "undo last"
+        XCTAssertNotEqual(model.selectedPaletteItemId, "undo-last-change")
+        model.runPaletteCommand(id: "undo-last-change")
+        XCTAssertTrue(model.commandPaletteStore.isOpen)
+    }
+
+    func testRecentRowsAreCappedAndHiddenWhileSearching() async throws {
+        let model = try await makeModel()
+        for id in ["today", "about", "toggle-theme", "open-settings"] {
+            model.commandPaletteStore.recordSelection(commandId: id)
+        }
+        model.commandPaletteStore.open()
+        let recent = model.filteredPaletteSections().first { $0.id == "recent" }
+        XCTAssertEqual(recent?.items.count, 3)
+        model.commandPaletteStore.query = "about"
+        XCTAssertNil(model.filteredPaletteSections().first { $0.id == "recent" })
+    }
+
+    func testOnboardingRowOpensExternalURL() async throws {
+        let model = try await makeModel()
+        var opened: URL?
+        model.openExternalURLHandler = { opened = $0 }
+        model.runPaletteCommand(id: "book-personal-onboarding")
+        XCTAssertEqual(opened, CommandPaletteCatalog.personalOnboardingURL)
+    }
+
+    func testClearSampleEventsRemovesDemoRows() async throws {
+        let model = try await makeModel()
+        XCTAssertTrue(model.hasSampleEvents)
+        await model.clearSampleEvents()
+        XCTAssertFalse(model.hasSampleEvents)
+        XCTAssertTrue(try model.environment.localEventRepository.demoEventIds().isEmpty)
     }
 
     func testToggleThemeFlipsStoredTheme() async throws {

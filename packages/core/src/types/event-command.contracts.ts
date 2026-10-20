@@ -21,6 +21,7 @@ import {
   uniqueAttendeeEmails,
 } from "@core/types/event-attendance.contracts";
 import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
+import { ProviderKindSchema } from "@core/types/sync/identity.contracts";
 
 // Whether saving (or deleting) this event should have the provider email
 // attendees about it. Same vocabulary as sync's InvitationIntentSchema, which
@@ -230,6 +231,9 @@ export const EventMutationErrorCodeSchema = z.enum([
   // is neither INVALID_INPUT nor PROVIDER_FAILURE; retrying can never
   // succeed.
   "UNSUPPORTED_OPERATION",
+  // A well-formed write the provider rejected with a generic badRequest (not
+  // an event-type restriction). Retry may succeed after provider state catches up.
+  "PROVIDER_REJECTED",
   // The request body failed contract validation (e.g. an unrecognized key on
   // a strict schema). Always a client-side mistake, never retryable.
   "INVALID_INPUT",
@@ -250,5 +254,7 @@ export const EventMutationErrorSchema = z.strictObject({
   message: z.string().min(1),
   retryable: z.boolean(),
   connectionId: z.string().optional(),
+  // Which calendar provider rejected or never received the write, when known.
+  provider: ProviderKindSchema.optional(),
 });
 export type EventMutationError = z.infer<typeof EventMutationErrorSchema>;

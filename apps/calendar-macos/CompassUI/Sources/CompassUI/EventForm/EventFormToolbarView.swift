@@ -11,18 +11,18 @@ struct EventFormToolbarView: View {
         HStack(spacing: 4) {
             Spacer(minLength: 0)
             if draft.kind == .edit {
-                toolbarButton(label: "Duplicate", systemImage: "square.on.square") {
+                toolbarButton(label: "Duplicate", icon: .copy) {
                     Task { await model.duplicateFocusedOrFormEvent() }
                 }
                 if model.hasBookedMeetingActions {
                     BookingEventActionsView(model: model)
                 } else if !model.isEventFormReadOnly(for: draft) {
-                    toolbarButton(label: "Delete", systemImage: "trash") {
+                    toolbarButton(label: "Delete", icon: .trash) {
                         Task { await model.deleteFormEvent() }
                     }
                 }
             }
-            toolbarButton(label: "Close", systemImage: "xmark") {
+            toolbarButton(label: "Close", icon: .x) {
                 model.requestCloseEventForm()
             }
         }
@@ -31,13 +31,11 @@ struct EventFormToolbarView: View {
 
     private func toolbarButton(
         label: String,
-        systemImage: String,
+        icon: PhosphorIcon,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 18, weight: .regular))
-                .foregroundStyle(theme.textMutedColor)
+            PhosphorIconView(icon: icon, size: 18)
                 .frame(width: 32, height: 32)
                 .contentShape(Rectangle())
         }

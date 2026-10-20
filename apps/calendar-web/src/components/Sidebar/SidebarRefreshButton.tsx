@@ -9,6 +9,9 @@ import { useSseDegradedSince } from "@web/sse/hooks/useSseDegraded";
 // a reload is the recovery that always works.
 export const REFRESH_AFTER_DEGRADED_MS = 30_000;
 
+/** Tooltip for the sidebar Refresh control (SSE recovery and app updates). */
+export const SIDEBAR_RELOAD_DESCRIPTION = "Reload for the latest version";
+
 const useRefreshDue = (degradedSinceMs: number | null): boolean => {
   const [due, setDue] = useState(false);
 
@@ -44,9 +47,7 @@ export const SidebarRefreshButton: FC = () => {
 
   if (!refreshDue && !isUpdateAvailable) return null;
 
-  const description = refreshDue
-    ? "Reload for the latest calendar"
-    : "Get latest version";
+  const description = SIDEBAR_RELOAD_DESCRIPTION;
 
   return (
     <div aria-live="polite" className="flex shrink-0 items-center">

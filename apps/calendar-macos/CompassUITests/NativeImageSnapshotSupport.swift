@@ -101,6 +101,39 @@ enum NativeImageSnapshotSupport {
         return nil
     }
 
+    /// Attaches a full-window screenshot; `record-macos-parity-captures.sh` crops the title bar slice.
+    @MainActor
+    static func exportMacTitleBarReference(
+        _ window: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard parityCapture else { return }
+        guard window.waitForExistence(timeout: 10) else {
+            XCTFail("Window missing for title bar reference screenshot", file: file, line: line)
+            return
+        }
+        let sidebarToggle = window.buttons.matching(
+            NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
+        ).firstMatch
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        XCTAssertLessThan(
+            sidebarToggle.frame.maxX,
+            window.frame.maxX - 2,
+            "Sidebar toggle should sit inside the captured window width")
+        if let url = URL(string: "compass://debug/parity-title-bar-export") {
+            NSWorkspace.shared.open(url)
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        }
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
+        let png = window.screenshot().pngRepresentation
+        guard !png.isEmpty else {
+            XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
+            return
+        }
+        attachPNG(png, named: "mac-title-bar-full-window")
+    }
+
     @MainActor
     private static func attachPNG(_ data: Data, named name: String) {
         let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")

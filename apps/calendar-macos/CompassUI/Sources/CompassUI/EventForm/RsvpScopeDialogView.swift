@@ -18,22 +18,22 @@ public struct RsvpScopeDialogView: View {
 
     public var body: some View {
         if isPresented {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 ModalDialogTitle("Respond for")
                 VStack(alignment: .leading, spacing: 8) {
                     scopeRow("single", label: "This Event")
                     scopeRow("all", label: "All Events")
                 }
-                HStack {
+                HStack(spacing: 12) {
                     Spacer()
-                    Button("Cancel", action: onCancel)
+                    OverlayPanelActionButton("Cancel", action: onCancel)
                         .keyboardShortcut(.cancelAction)
-                    Button("Ok") { onConfirm(selectedScope) }
+                    OverlayPanelActionButton("Ok", variant: .primary) { onConfirm(selectedScope) }
                         .keyboardShortcut(.defaultAction)
                 }
             }
             .modalDialogChrome(
-                maxWidth: 360,
+                maxWidth: 400,
                 identifier: "compass-rsvp-scope-dialog"
             )
         }

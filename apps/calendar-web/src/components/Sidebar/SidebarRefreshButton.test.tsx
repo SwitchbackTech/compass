@@ -86,7 +86,7 @@ describe("SidebarRefreshButton", () => {
     await user.hover(refresh);
     const tooltip = await screen.findByRole("tooltip");
     expect(
-      within(tooltip).getByText("Reload for the latest calendar"),
+      within(tooltip).getByText("Reload for the latest version"),
     ).toBeInTheDocument();
     expect(within(tooltip).getByText("R")).toBeInTheDocument();
 
@@ -130,7 +130,9 @@ describe("SidebarRefreshButton", () => {
 
     await user.hover(screen.getByRole("button", { name: "Refresh" }));
     const tooltip = await screen.findByRole("tooltip");
-    expect(within(tooltip).getByText("Get latest version")).toBeInTheDocument();
+    expect(
+      within(tooltip).getByText("Reload for the latest version"),
+    ).toBeInTheDocument();
     expect(within(tooltip).getByText("R")).toBeInTheDocument();
   });
 

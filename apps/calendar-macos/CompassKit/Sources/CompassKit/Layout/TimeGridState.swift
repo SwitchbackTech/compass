@@ -13,9 +13,15 @@ public struct TimeGridState: Sendable {
     public var focusedDayColumnCalendarId: String?
     public var pageJumpHintsVisible: Bool
     public var pageJumpDigitByCalendarId: [String: String]
+    /// Web `DayLabels` ⇧SU chips while Mod is held (or bare prefix in event-jump mode).
+    public var showDayJumpPrefixes: Bool
+    public var dayJumpUseShiftPrefix: Bool
+    public var eventJumpActiveDayKeys: [String]
     public var hasSecondaryTimeZone: Bool
     public var effectiveTimeZone: String
     public var timeTravelTimeZone: String?
+    /// Web dashed card outline: sample events and invites awaiting or tentative.
+    public var unsettledEventIds: Set<String> = []
 
     public init(
         layoutMode: GridLayoutMode = .week,
@@ -29,6 +35,9 @@ public struct TimeGridState: Sendable {
         focusedDayColumnCalendarId: String? = nil,
         pageJumpHintsVisible: Bool = false,
         pageJumpDigitByCalendarId: [String: String] = [:],
+        showDayJumpPrefixes: Bool = false,
+        dayJumpUseShiftPrefix: Bool = true,
+        eventJumpActiveDayKeys: [String] = [],
         hasSecondaryTimeZone: Bool = false,
         effectiveTimeZone: String = EffectiveTimeZone.identifier,
         timeTravelTimeZone: String? = nil
@@ -44,6 +53,9 @@ public struct TimeGridState: Sendable {
         self.focusedDayColumnCalendarId = focusedDayColumnCalendarId
         self.pageJumpHintsVisible = pageJumpHintsVisible
         self.pageJumpDigitByCalendarId = pageJumpDigitByCalendarId
+        self.showDayJumpPrefixes = showDayJumpPrefixes
+        self.dayJumpUseShiftPrefix = dayJumpUseShiftPrefix
+        self.eventJumpActiveDayKeys = eventJumpActiveDayKeys
         self.hasSecondaryTimeZone = hasSecondaryTimeZone
         self.effectiveTimeZone = effectiveTimeZone
         self.timeTravelTimeZone = timeTravelTimeZone

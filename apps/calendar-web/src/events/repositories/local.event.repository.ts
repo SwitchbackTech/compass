@@ -221,7 +221,11 @@ export class LocalEventRepository implements EventRepository {
     return event;
   }
 
-  async replace(id: EventId, input: ReplaceEventInput): Promise<Event> {
+  async replace(
+    id: EventId,
+    input: ReplaceEventInput,
+    _signal?: AbortSignal,
+  ): Promise<Event> {
     await this.ensureStoreReady();
     if (input.scope !== "this") {
       const series = await this.findSeriesRecord(id);

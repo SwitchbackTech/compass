@@ -4,8 +4,11 @@ import Foundation
 /// Banners the `p` shortcut can focus, top of the window first.
 public enum NativeNotice: String, Sendable, CaseIterable {
     case billingPastDue
+    case connectionBanner
     case demoEvents
     case updateReady
+    case meetingPageNudge
+    case localModeConnectPrompt
 }
 
 /// Keyboard focus for the sidebar month picker (`i`) and banners (`p`).
@@ -62,8 +65,11 @@ extension NativeCalendarRootModel {
         if case let .server(server) = billingStore.appAccess, server.status == .pastDue {
             notices.append(.billingPastDue)
         }
+        if connectionBanner != nil { notices.append(.connectionBanner) }
         if showsDemoEventsBanner { notices.append(.demoEvents) }
         if desktopUpdateReadyVersion != nil { notices.append(.updateReady) }
+        if showsMeetingPageNudge { notices.append(.meetingPageNudge) }
+        if showsLocalModeConnectPrompt { notices.append(.localModeConnectPrompt) }
         return notices
     }
 
@@ -93,6 +99,12 @@ extension NativeCalendarRootModel {
             dismissDemoEventsBanner()
         case .updateReady:
             onDesktopRestartToUpdate?()
+        case .connectionBanner:
+            runConnectionBannerAction()
+        case .meetingPageNudge:
+            openBookingSettings()
+        case .localModeConnectPrompt:
+            startTrialFromLocalModePrompt()
         }
     }
 

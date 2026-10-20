@@ -28,7 +28,11 @@ import {
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
-import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
+import {
+  getApiErrorCode,
+  isAbortError,
+  isApiError,
+} from "@web/api/util/api.util";
 import { track } from "@web/auth/posthog/track";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
@@ -57,6 +61,7 @@ import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/firs
 import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import { eventSchedulesEqual } from "@web/events/mutations/event-schedule-equal";
+import { resolveMutationProvider } from "@web/events/mutations/mutation-provider.util";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -104,6 +109,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  claimCoalescedReplaceSignal,
   completedEventWrite,
   hasOtherPendingWriteForKey,
   isSkippedEventWrite,
@@ -113,6 +119,7 @@ import {
   type PrecedingEventWrites,
   precedingCreateOk,
   precedingDeleteOk,
+  releaseCoalescedReplaceSignal,
   skippedEventWrite,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
@@ -544,7 +551,26 @@ export function useEventMutations(
     dependencies.markWrite === undefined
       ? noteAnonymousWriteEngagementIfEligible
       : undefined;
-  const reportError = dependencies.reportError ?? handleError;
+  const baseReportError = dependencies.reportError ?? handleError;
+  const reportError = (
+    error: Error,
+    onRetry?: () => void,
+    variables?: EventWriteVariables,
+  ) => {
+    const provider = variables
+      ? resolveMutationProvider(queryClient, {
+          writeKey: variables.writeKey,
+          calendarId:
+            "input" in variables &&
+            typeof variables.input === "object" &&
+            variables.input !== null &&
+            "calendarId" in variables.input
+              ? (variables.input as CreateEventInput).calendarId
+              : undefined,
+        })
+      : undefined;
+    baseReportError(error, onRetry, { provider });
+  };
 
   // Re-dispatch seams for the "Try again" toast, filled in below once the
   // mutations exist. onError can't reach its own mutation object, and going
@@ -682,12 +708,15 @@ export function useEventMutations(
           queryKey: billingQueryKeys.status,
         });
       }
-      reportError(error, () =>
-        // A fresh object, not the original: the write-serialization queue
-        // identifies a mutation by its variables *reference*, so replaying
-        // the same one resolves back to this failed mutation and the retry
-        // is skipped as superseded by itself.
-        redispatch.current[operation]?.({ ...variables } as never),
+      reportError(
+        error,
+        () =>
+          // A fresh object, not the original: the write-serialization queue
+          // identifies a mutation by its variables *reference*, so replaying
+          // the same one resolves back to this failed mutation and the retry
+          // is skipped as superseded by itself.
+          redispatch.current[operation]?.({ ...variables } as never),
+        variables,
       );
       const { opportunityId } = variables;
       if (opportunityId) {
@@ -760,18 +789,32 @@ export function useEventMutations(
       writeKey,
       variables,
     );
+    const superseded = () =>
+      coalesce &&
+      isSupersededByLaterEditWrite(queryClient, writeKey, variables);
     // A newer edit for this event is already queued and will persist the final
     // state, so this write is redundant — skip the network call but still mark
     // the write (anon-change tracking) so a burst collapses to one request.
-    if (
-      coalesce &&
-      isSupersededByLaterEditWrite(queryClient, writeKey, variables)
-    ) {
+    if (superseded()) {
       await markWrite();
       return false;
     }
-    const wrote = canWrite(preceding);
-    if (wrote) await write();
+    let wrote = canWrite(preceding);
+    if (wrote) {
+      try {
+        await write();
+      } catch (error) {
+        if (isAbortError(error)) {
+          wrote = false;
+        } else {
+          throw error;
+        }
+      }
+    }
+    if (superseded()) {
+      await markWrite();
+      return false;
+    }
     await markWrite();
     if (wrote) await noteAnonymousWriteEngagement?.();
     return wrote;
@@ -868,11 +911,21 @@ export function useEventMutations(
           variables,
           precedingCreateOk,
           // Same wire-boundary strip as create, see its comment above.
-          () =>
-            repository.replace(variables.id, {
-              ...input,
-              content: editableContent(input.content),
-            }),
+          () => {
+            const signal = claimCoalescedReplaceSignal(variables.writeKey);
+            return repository
+              .replace(
+                variables.id,
+                {
+                  ...input,
+                  content: editableContent(input.content),
+                },
+                signal,
+              )
+              .finally(() =>
+                releaseCoalescedReplaceSignal(variables.writeKey, signal),
+              );
+          },
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
           // shares its occurrence write key. Undo/redo restores must also

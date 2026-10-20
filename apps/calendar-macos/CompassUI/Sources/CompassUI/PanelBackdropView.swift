@@ -37,8 +37,7 @@ struct PanelBackdropView: NSViewRepresentable {
     }
 
     func updateNSView(_ container: NSView, context: Context) {
-        context.coordinator.tintView?.layer?.backgroundColor = NSColor(theme.backgroundColor)
-            .withAlphaComponent(0.55).cgColor
+        context.coordinator.tintView?.layer?.backgroundColor = NSColor(theme.overlayBackdropColor).cgColor
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }

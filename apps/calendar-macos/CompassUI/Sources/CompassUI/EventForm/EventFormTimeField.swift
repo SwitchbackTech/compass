@@ -25,12 +25,10 @@ struct EventFormTimeField: View {
                     .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
                     .foregroundStyle(theme.textColor)
                     .lineLimit(1)
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(theme.textMutedColor)
+                PhosphorIconView(icon: .caretUpDown, size: 12)
             }
             .padding(.horizontal, 8)
-            .frame(width: 92)
+            .frame(minWidth: 72, idealWidth: 76, maxWidth: 88)
             .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
@@ -70,6 +68,9 @@ struct EventFormTimeField: View {
                 }
             }
             .frame(width: 120, height: 220)
+            .background(theme.surfacePanelColor)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+            .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("\(accessibilityIdentifier)-menu")
         }

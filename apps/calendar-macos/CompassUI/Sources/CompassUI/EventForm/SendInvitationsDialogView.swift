@@ -22,15 +22,15 @@ public struct SendInvitationsDialogView: View {
 
     public var body: some View {
         if let prompt {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 ModalDialogTitle("Send invitation emails?")
                 Text("\(prompt.hostLabel) will email the affected guests about this event.")
-                    .font(.rubik(13))
-                    .foregroundStyle(theme.textMutedColor)
-                HStack {
+                    .font(.rubik(16))
+                    .foregroundStyle(theme.textColor)
+                HStack(spacing: 12) {
                     Spacer()
-                    Button("Don't send", action: onDontSend)
-                    Button("Send", action: onSend)
+                    OverlayPanelActionButton("Don't send", action: onDontSend)
+                    OverlayPanelActionButton("Send", variant: .primary, shortcut: ["Enter"], action: onSend)
                         .keyboardShortcut(.defaultAction)
                 }
             }

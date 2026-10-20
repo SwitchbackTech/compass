@@ -20,10 +20,15 @@ public final class OnboardingStore {
     public private(set) var isFirstEventCelebrating = false
     public private(set) var isConnectCalendarSnoozed: Bool
     public private(set) var userMetadataLoaded = false
+    public private(set) var anonymousWriteCount: Int
+    public private(set) var anonymousShortcutCount: Int
+    public private(set) var isLocalModeConnectPromptDismissed: Bool
+    public private(set) var isMeetingPageNudgeDismissed: Bool
 
     private let defaults: UserDefaults
     private let analytics: ProductAnalyticsClient
     private var hasTrackedFirstEventShown = false
+    private var hasTrackedLocalModeConnectPromptShown = false
 
     public init(
         defaults: UserDefaults = .standard,
@@ -33,6 +38,10 @@ public final class OnboardingStore {
         self.analytics = analytics
         isConnectCalendarSnoozed = OnboardingGating.isConnectCalendarPromptSnoozed(defaults: defaults)
         isFirstEventDone = OnboardingGating.firstEventDoneReason(defaults: defaults) != nil
+        anonymousWriteCount = defaults.integer(forKey: OnboardingStorageKeys.anonymousCalendarWriteCount)
+        anonymousShortcutCount = defaults.integer(forKey: OnboardingStorageKeys.anonymousShortcutEngagementCount)
+        isLocalModeConnectPromptDismissed = defaults.bool(forKey: OnboardingStorageKeys.hasDismissedLocalModeConnectPrompt)
+        isMeetingPageNudgeDismissed = defaults.bool(forKey: OnboardingStorageKeys.hasDismissedMeetingPageNudge)
     }
 
     public var hasSeenWelcome: Bool {
@@ -101,6 +110,50 @@ public final class OnboardingStore {
         markFirstEventDone(.completed)
         analytics.track(ProductEvent.firstEventPromptCompleted, properties: [:])
         isFirstEventCelebrating = true
+    }
+
+    /// Web `noteAnonymousCalendarWriteEngagement`.
+    public func noteAnonymousCalendarWrite() {
+        anonymousWriteCount += 1
+        defaults.set(anonymousWriteCount, forKey: OnboardingStorageKeys.anonymousCalendarWriteCount)
+    }
+
+    /// Web `noteAnonymousShortcutEngagementIfEligible`; the caller checks auth history.
+    public func noteAnonymousShortcut() {
+        anonymousShortcutCount += 1
+        defaults.set(anonymousShortcutCount, forKey: OnboardingStorageKeys.anonymousShortcutEngagementCount)
+    }
+
+    public var defersFirstEventPromptForSignUpNudge: Bool {
+        AnonymousExplorerEngagement.shouldDeferFirstEventPrompt(
+            writeCount: anonymousWriteCount, shortcutCount: anonymousShortcutCount)
+    }
+
+    public func dismissLocalModeConnectPrompt() {
+        analytics.track(
+            ProductEvent.connectPromptDismissed,
+            properties: ["events_created_count": .int(anonymousWriteCount), "provider": .string("google")])
+        defaults.set(true, forKey: OnboardingStorageKeys.hasDismissedLocalModeConnectPrompt)
+        isLocalModeConnectPromptDismissed = true
+    }
+
+    public func trackLocalModeConnectPromptShownOnce() {
+        guard !hasTrackedLocalModeConnectPromptShown else { return }
+        hasTrackedLocalModeConnectPromptShown = true
+        analytics.track(
+            ProductEvent.connectPromptShown,
+            properties: ["events_created_count": .int(anonymousWriteCount), "provider": .string("google")])
+    }
+
+    public func trackLocalModeConnectPromptClicked() {
+        analytics.track(
+            ProductEvent.connectPromptClicked,
+            properties: ["events_created_count": .int(anonymousWriteCount), "provider": .string("google")])
+    }
+
+    public func dismissMeetingPageNudge() {
+        defaults.set(true, forKey: OnboardingStorageKeys.hasDismissedMeetingPageNudge)
+        isMeetingPageNudgeDismissed = true
     }
 
     public func finalizeFirstEventCelebration() {

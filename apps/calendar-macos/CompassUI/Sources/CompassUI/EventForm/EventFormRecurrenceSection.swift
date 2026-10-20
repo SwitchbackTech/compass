@@ -17,8 +17,7 @@ struct EventFormRecurrenceSection: View {
                 toggleRecurrence(!hasRecurrence)
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "repeat")
-                        .font(.system(size: 18, weight: .regular))
+                    PhosphorIconView(icon: .repeatIcon, size: 18)
                     Text("Repeat")
                         .font(.rubik(NativeWebLayoutTokens.fontSizeM))
                 }
@@ -94,7 +93,14 @@ struct EventFormRecurrenceSection: View {
 
             }
         }
-        .eventFormSectionChrome(focused: focusField == .recurrence)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay {
+            if focusField == .recurrence {
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                    .stroke(theme.accentColor, lineWidth: 1)
+                    .padding(-4)
+            }
+        }
         .onAppear { reloadFromDraft() }
         .onChange(of: draft.recurrence) { _, _ in reloadFromDraft() }
         .onChange(of: draft.schedule.start) { _, _ in syncDraftRecurrence() }

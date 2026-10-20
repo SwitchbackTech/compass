@@ -81,7 +81,7 @@ public struct EventFormView: View {
                         .id(EventFormField.calendar)
                         EventFormCard(highlighted: isLogisticsFieldFocused(model.eventFormFocusedField)) {
                             VStack(alignment: .leading, spacing: 10) {
-                                EventFormIconRow(systemImage: "mappin.and.ellipse") {
+                                EventFormIconRow(icon: .mapPin) {
                                     EventFormLocationField(
                                         model: model,
                                         draft: draft,
@@ -93,7 +93,7 @@ public struct EventFormView: View {
                                     model: model,
                                     draft: draft
                                 )
-                                EventFormIconRow(systemImage: "person.2", alignTop: true) {
+                                EventFormIconRow(icon: .users, alignTop: true) {
                                     EventFormAttendeesSection(
                                         model: model,
                                         draft: draft,
