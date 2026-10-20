@@ -26,6 +26,8 @@ export const PHOSPHOR_ICON_NAMES = [
   "Plus",
   "Repeat",
   "CaretUpDown",
+  "CaretLeft",
+  "CaretRight",
   "SidebarSimple",
   "Sun",
   "Trash",
