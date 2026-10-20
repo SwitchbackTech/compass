@@ -128,7 +128,11 @@ extension NativeCalendarRootModel {
         let slots = QuickTime.buildQuickTimeSlots(busy: busy, targetDay: targetDay)
         let visibleDates = GridVisibleDate.fromKeys(timeGridState.scenario.visibleDateKeys)
         let colWidths = timeGridState.resolvedColumnWidths()
-        let metrics = timeGridState.snapshot(colWidths: colWidths).metrics
+        let snapshotMetrics = timeGridState.snapshot(colWidths: colWidths).metrics
+        let gridMetrics = GridMetrics(
+            colWidths: snapshotMetrics.colWidths,
+            hourHeight: snapshotMetrics.hourHeight
+        )
         let columnIndex: Int? = {
             let key = CompassDateParsing.formatCalendarDay(targetDay)
             return visibleDates.firstIndex(where: { $0.key == key })
@@ -137,7 +141,7 @@ extension NativeCalendarRootModel {
             let frame = EventPositionCalculator.getBusyPeriodPosition(
                 segmentStart: slot.start,
                 segmentEnd: slot.end,
-                measurements: metrics,
+                measurements: gridMetrics,
                 visibleDates: visibleDates,
                 columnIndex: columnIndex,
                 hasSecondaryTimeZone: timeGridState.hasSecondaryTimeZone
