@@ -1,9 +1,6 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 
-/** Founder decision (Trial v2 WP-03): nudge after this many anonymous calendar writes. */
-export const ANONYMOUS_CALENDAR_WRITE_NUDGE_COUNT = 3;
-
 export function readAnonymousCalendarWriteCount(): number {
   if (!persistentBrowserStore.isAvailable()) return 0;
   const raw = persistentBrowserStore.get(

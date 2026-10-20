@@ -4,8 +4,15 @@ import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.uti
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
+  selectFirstEventCelebrating,
+  selectFirstEventDone,
+  selectFirstEventPromptSurfaceEligible,
+  useFirstEventPromptStore,
+} from "@web/components/FirstEventPrompt/first-event.store";
+import {
   selectLocalModeConnectPromptDismissed,
   selectLocalModeConnectPromptEligible,
+  selectLocalModeConnectPromptShortcutEngagementCount,
   selectLocalModeConnectPromptWriteCount,
   useLocalModeConnectPromptStore,
 } from "@web/components/LocalModeConnectPrompt/local-mode-connect.store";
@@ -18,6 +25,15 @@ import {
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
 import { hasSeenWelcome } from "@web/components/WelcomeModal/welcome.modal.util";
+import {
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
+  selectIsAboutOpen,
+  selectIsSettingsOpen,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 
 export function useLocalModeConnectPromptEligible(isAuthModalOpen: boolean): {
   isLive: boolean;
@@ -27,6 +43,9 @@ export function useLocalModeConnectPromptEligible(isAuthModalOpen: boolean): {
   const writeCount = useLocalModeConnectPromptStore(
     selectLocalModeConnectPromptWriteCount,
   );
+  const shortcutEngagementCount = useLocalModeConnectPromptStore(
+    selectLocalModeConnectPromptShortcutEngagementCount,
+  );
   const isDismissed = useLocalModeConnectPromptStore(
     selectLocalModeConnectPromptDismissed,
   );
@@ -35,18 +54,38 @@ export function useLocalModeConnectPromptEligible(isAuthModalOpen: boolean): {
     selectWelcomeFirstVisitOpen,
   );
   const googleSignInAvailable = useIsProviderAvailable("google", "signIn");
+  const isFirstEventDone = useFirstEventPromptStore(selectFirstEventDone);
+  const isFirstEventCelebrating = useFirstEventPromptStore(
+    selectFirstEventCelebrating,
+  );
+  const isSettingsOpen = useSettingsStore(selectIsSettingsOpen);
+  const isAboutOpen = useSettingsStore(selectIsAboutOpen);
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
+
+  const firstEventPromptVisible = selectFirstEventPromptSurfaceEligible({
+    isAuthModalOpen,
+    isSettingsOpen,
+    isAboutOpen,
+    isFormOpen,
+    isDone: isFirstEventDone,
+    storageAvailable: persistentBrowserStore.isAvailable(),
+    showcaseActive: isShowcaseActive,
+  });
 
   return {
     isLive: selectLocalModeConnectPromptEligible({
       authenticated,
       hasUserEverAuthenticated: hasUserEverAuthenticated(),
       writeCount,
+      shortcutEngagementCount,
       isDismissed,
       storageAvailable: persistentBrowserStore.isAvailable(),
       isAuthModalOpen,
       isShowcaseActive,
       isWelcomeBlocking: !hasSeenWelcome() || isWelcomeFirstVisitOpen,
       googleSignInAvailable,
+      firstEventPromptVisible,
+      firstEventCelebrating: isFirstEventCelebrating,
     }),
     writeCount,
   };

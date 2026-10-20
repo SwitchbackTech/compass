@@ -4,7 +4,7 @@ import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1600, height: 900 } });
 
-test("shows a Google connect prompt after three anonymous writes and dismisses permanently", async ({
+test("shows a trial nudge after one anonymous write and dismisses permanently", async ({
   page,
 }, testInfo) => {
   await page.route("**/api/config", async (route) => {
@@ -26,7 +26,7 @@ test("shows a Google connect prompt after three anonymous writes and dismisses p
     (keys) => {
       localStorage.setItem(keys.hasSeenWelcome, "true");
       localStorage.setItem(keys.firstEventDone, "completed");
-      localStorage.setItem(keys.writeCount, "3");
+      localStorage.setItem(keys.writeCount, "1");
       localStorage.removeItem(keys.dismissed);
     },
     {
@@ -39,11 +39,16 @@ test("shows a Google connect prompt after three anonymous writes and dismisses p
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });
 
-  const prompt = page.getByRole("complementary", { name: "Connect Google" });
+  const prompt = page.getByRole("complementary", {
+    name: "Start your free trial",
+  });
   await expect(prompt).toBeVisible();
   await expect(prompt).toContainText(
-    "Connect Google to sync your events and start your free trial.",
+    "Start your free trial to save this calendar on every device.",
   );
+  await expect(
+    prompt.getByRole("button", { name: "Start free trial" }),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("local-mode-connect-prompt-demo.png"),
   });
