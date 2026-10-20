@@ -11,27 +11,29 @@ final class GuestEmailSubmissionTests: XCTestCase {
         app.launch()
         let window = app.windows["Compass"]
         window.typeKey("c", modifierFlags: [])
-        let form = window.groups["compass-event-form"]
-        let title = form.textFields["compass-event-form-title"]
+        let title = window.descendants(matching: .any)["compass-event-form-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 8))
         title.click()
         title.typeKey("a", modifierFlags: [.command])
         title.typeText("Guest input regression")
-        let calendar = form.buttons["compass-event-form-calendar"]
+        let calendar = window.descendants(matching: .any)["compass-event-form-calendar"]
         XCTAssertTrue(calendar.waitForExistence(timeout: 8))
+        for _ in 0..<6 where !calendar.isHittable {
+            window.typeKey(.pageDown, modifierFlags: [])
+        }
         calendar.click()
         app.menuItems["Work"].click()
         window.typeKey("8", modifierFlags: [.command])
-        let guest = form.textFields["Add guest email"]
+        let guest = window.descendants(matching: .any)["Add guest email"]
         XCTAssertTrue(guest.waitForExistence(timeout: 8))
         guest.click()
         guest.typeText("guest@example.invalid")
         guest.typeKey(.return, modifierFlags: [])
-        XCTAssertTrue(form.staticTexts["guest@example.invalid"].waitForExistence(timeout: 8))
-        XCTAssertTrue(form.buttons["compass-event-form-save"].exists)
+        XCTAssertTrue(window.staticTexts["guest@example.invalid"].waitForExistence(timeout: 8))
+        XCTAssertTrue(window.buttons["compass-event-form-save"].exists)
         XCTAssertFalse(window.staticTexts["Send invitation emails?"].exists)
         guest.typeKey(.return, modifierFlags: [])
-        XCTAssertTrue(form.buttons["compass-event-form-save"].exists)
+        XCTAssertTrue(window.buttons["compass-event-form-save"].exists)
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Guest added without saving the form"
         evidence.lifetime = .keepAlways
