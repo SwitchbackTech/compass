@@ -19,6 +19,14 @@ enum NativeAccessibilityProbes {
     }
 
     @MainActor
+    static func publishParityExport(surface: String, on window: NSWindow?) {
+        window?.setAccessibilityValue("parity-exported:\(surface)")
+        if let window {
+            NSAccessibility.post(element: window, notification: .valueChanged)
+        }
+    }
+
+    @MainActor
     static func publishNativeGridFocusedEventTitle(_ title: String?, on window: NSWindow?) {
         guard let window else { return }
         window.setAccessibilityIdentifier("Compass")

@@ -31,6 +31,7 @@ bash "$ROOT/.github/scripts/render-macos-icon.sh"
 xcodegen generate
 
 launchctl setenv PARITY_CAPTURE 1
+launchctl setenv PARITY_OUTPUT_DIR "$OUT"
 
 xcodebuild test \
   -project Compass.xcodeproj \
@@ -50,11 +51,20 @@ RAW="$(mktemp -d)"
 cleanup() {
   rm -rf "$RAW"
   launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
+  launchctl unsetenv PARITY_OUTPUT_DIR 2>/dev/null || true
 }
 trap cleanup EXIT
-xcrun xcresulttool export attachments --path "$RESULT" --output-path "$RAW" >/dev/null
 
-python3 - "$RAW" "$OUT" "${SURFACES[@]}" <<'PY'
+# Fallback: copy from xcresult attachments if view-level export did not write files.
+if ! python3 - "$OUT" "${SURFACES[@]}" <<'PY2' 2>/dev/null
+import os, sys
+out, *surfaces = sys.argv[1], sys.argv[2:]
+missing = [s for s in surfaces if not os.path.isfile(os.path.join(out, f"{s}.png"))]
+raise SystemExit(1 if missing else 0)
+PY2
+then
+  xcrun xcresulttool export attachments --path "$RESULT" --output-path "$RAW" >/dev/null
+  python3 - "$RAW" "$OUT" "${SURFACES[@]}" <<'PY'
 import json
 import os
 import re
@@ -88,7 +98,30 @@ if missing:
 for surface, src in found.items():
     shutil.copyfile(src, os.path.join(out, f"{surface}.png"))
 
-print(f"Parity PNGs written to {out} ({len(found)} files)")
+print(f"Parity PNGs copied from xcresult to {out} ({len(found)} files)")
 PY
+fi
 
-launchctl unsetenv PARITY_CAPTURE 2>/dev/null || true
+python3 - "$OUT" "${SURFACES[@]}" <<'PY'
+import os
+import sys
+
+out, *surfaces = sys.argv[1], sys.argv[2:]
+missing = [s for s in surfaces if not os.path.isfile(os.path.join(out, f"{s}.png"))]
+if missing:
+    raise SystemExit(f"Missing parity PNGs: {', '.join(missing)}")
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+for surface in surfaces:
+    path = os.path.join(out, f"{surface}.png")
+    if Image is not None:
+        width, height = Image.open(path).size
+        if width != 1280:
+            raise SystemExit(f"{surface}.png width {width}, expected 1280")
+
+print(f"Parity PNGs written to {out} ({len(surfaces)} files)")
+PY

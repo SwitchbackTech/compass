@@ -50,6 +50,11 @@ final class DesktopDebugCommandTests: XCTestCase {
 
     func testOtherLinksAreNotDebugCommands() {
         XCTAssertNil(DesktopDebugCommand.parse("compass://day/2026-06-10"))
+        XCTAssertEqual(
+            DesktopDebugCommand.parse("compass://debug/parity-export?name=week-grid"),
+            .parityExport(surface: "week-grid"))
+        XCTAssertNil(DesktopDebugCommand.parse("compass://debug/parity-export?name=not-a-surface"))
+
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/unknown"))
         XCTAssertNil(DesktopDebugCommand.parse("https://debug/undo"))
     }

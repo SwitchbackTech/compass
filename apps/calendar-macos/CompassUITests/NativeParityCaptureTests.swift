@@ -154,6 +154,9 @@ final class NativeParityCaptureTests: XCTestCase {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += Self.demoLaunchArgs + extraLaunchArgs
         app.launchEnvironment["PARITY_CAPTURE"] = "1"
+        if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {
+            app.launchEnvironment["PARITY_OUTPUT_DIR"] = outDir
+        }
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
