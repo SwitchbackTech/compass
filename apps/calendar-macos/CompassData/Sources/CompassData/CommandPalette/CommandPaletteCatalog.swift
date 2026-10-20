@@ -105,7 +105,7 @@ public enum CommandPaletteCatalog {
                 label: "Go to Today",
                 shortcut: "t",
                 keywords: ["now", "current", "jump"],
-                systemImage: "arrow.uturn.backward"),
+                icon: .arrowUDownLeft),
         ]
         if view != .day {
             items.append(
@@ -114,7 +114,7 @@ public enum CommandPaletteCatalog {
                     label: "Go to Day",
                     shortcut: "d",
                     keywords: ["day view", "daily"],
-                    systemImage: "calendar"))
+                    icon: .calendarDots))
         }
         if view != .week {
             items.append(
@@ -123,7 +123,7 @@ public enum CommandPaletteCatalog {
                     label: "Go to Week",
                     shortcut: "w",
                     keywords: ["week view", "weekly"],
-                    systemImage: "calendar.day.timeline.left"))
+                    icon: .calendar))
         }
         if view != .life {
             items.append(
@@ -132,7 +132,7 @@ public enum CommandPaletteCatalog {
                     label: "Go to Life",
                     shortcut: "l",
                     keywords: ["life view", "years"],
-                    systemImage: "hourglass"))
+                    icon: .hourglassSimple))
         }
         items.append(
             CommandPaletteItem(
@@ -140,7 +140,7 @@ public enum CommandPaletteCatalog {
                 label: "Show shortcuts",
                 shortcut: "?",
                 keywords: ["keyboard", "legend", "help"],
-                systemImage: "keyboard"))
+                icon: .keyboard))
         items.append(
             CommandPaletteItem(
                 id: "practice-shortcuts",
@@ -149,32 +149,32 @@ public enum CommandPaletteCatalog {
                     "onboarding", "tour", "intro", "help", "tutorial", "coach", "sandbox",
                     "practice", "shortcuts", "game", "play", "block party",
                 ],
-                systemImage: "safari"))
+                icon: .compass))
         items.append(
             CommandPaletteItem(
                 id: "show-welcome-guide",
                 label: "Show welcome guide",
                 keywords: ["onboarding", "tour", "intro", "help", "faq"],
-                systemImage: "safari"))
+                icon: .compass))
         items.append(
             CommandPaletteItem(
                 id: "toggle-shortcut-tips",
                 label: tipsMuted ? "Show shortcut tips" : "Hide shortcut tips",
                 keywords: ["sidebar", "hint", "tips", "teaching", "shortcuts", "keyboard"],
-                systemImage: tipsMuted ? "eye" : "eye.slash"))
+                icon: tipsMuted ? .eye : .eyeSlash))
         items.append(
             CommandPaletteItem(
                 id: "toggle-shortcut-level",
                 label: levelHidden ? "Show shortcut level" : "Hide shortcut level",
                 keywords: ["level", "progress", "badge", "shortcuts", "keyboard"],
-                systemImage: levelHidden ? "eye" : "eye.slash"))
+                icon: levelHidden ? .eye : .eyeSlash))
         items.append(
             CommandPaletteItem(
                 id: "toggle-sidebar",
                 label: "Toggle sidebar",
                 shortcut: "]",
                 keywords: ["panel", "hide sidebar", "show sidebar"],
-                systemImage: "sidebar.left"))
+                icon: .sidebarSimple))
         return items
     }
 
@@ -190,7 +190,7 @@ public enum CommandPaletteCatalog {
                 label: item.label,
                 shortcut: item.shortcut,
                 keywords: item.keywords,
-                systemImage: item.systemImage)
+                icon: item.icon)
         }
     }
 
@@ -204,12 +204,14 @@ public enum CommandPaletteCatalog {
                         id: "create-event",
                         label: "Create event",
                         shortcut: "c",
-                        keywords: ["new event", "schedule"]),
+                        keywords: ["new event", "schedule"],
+                        icon: .plus),
                     CommandPaletteItem(
                         id: "create-allday-event",
                         label: "Create all-day event",
                         shortcut: "shift+c",
-                        keywords: ["all day"]),
+                        keywords: ["all day"],
+                        icon: .plus),
                 ]),
         ]
     }
@@ -224,28 +226,30 @@ public enum CommandPaletteCatalog {
                 id: "undo",
                 label: "Undo",
                 shortcut: "mod+z",
-                keywords: ["revert", "back"]),
+                keywords: ["revert", "back"],
+                icon: .arrowCounterClockwise),
             CommandPaletteItem(
                 id: "redo",
                 label: "Redo",
                 shortcut: "mod+shift+z",
-                keywords: ["repeat", "forward"]),
+                keywords: ["repeat", "forward"],
+                icon: .arrowClockwise),
             CommandPaletteItem(
                 id: "toggle-theme",
                 label: isDark ? "Switch to light theme" : "Switch to dark theme",
                 keywords: ["theme", "dark mode", "light mode", "appearance"],
-                systemImage: isDark ? "sun.max" : "moon.stars"),
+                icon: isDark ? .sun : .moonStars),
             CommandPaletteItem(
                 id: "open-settings",
                 label: "Settings",
                 shortcut: ",",
                 keywords: ["preferences", "account"],
-                systemImage: "gearshape"),
+                icon: .gear),
             CommandPaletteItem(
                 id: "about",
                 label: "About Compass",
                 keywords: ["version", "info"],
-                systemImage: "info.circle"),
+                icon: .info),
         ]
         if isTrialing {
             items.insert(

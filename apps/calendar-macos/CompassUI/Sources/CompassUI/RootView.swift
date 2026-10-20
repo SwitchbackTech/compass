@@ -260,16 +260,16 @@ public struct RootView: View {
         HStack(spacing: 8) {
             sidebarActionButton(
                 label: model.shortcutsLegendStore.isOpen ? "Close shortcuts" : "Open shortcuts",
-                systemImage: "keyboard"
+                icon: .keyboard
             ) {
                 model.toggleShortcutsLegend()
             }
             SidebarRefreshButton(model: model)
             Spacer()
-            sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
+            sidebarActionButton(label: "Open settings", icon: .gear) {
                 model.settingsStore.open()
             }
-            sidebarActionButton(label: "Open command palette", systemImage: "command") {
+            sidebarActionButton(label: "Open command palette", icon: .command) {
                 model.toggleCommandPalette()
             }
         }
@@ -284,13 +284,11 @@ public struct RootView: View {
 
     private func sidebarActionButton(
         label: String,
-        systemImage: String,
+        icon: PhosphorIcon,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14))
-                .foregroundStyle(theme.textMutedColor)
+            PhosphorIconView(icon: icon, size: 16)
                 .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }

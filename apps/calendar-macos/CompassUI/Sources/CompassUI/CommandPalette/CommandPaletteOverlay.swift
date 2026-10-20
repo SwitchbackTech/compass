@@ -140,10 +140,8 @@ public struct CommandPaletteOverlay: View {
             model.runPaletteCommand(id: item.id)
         } label: {
             HStack(spacing: 12) {
-                if let systemImage = item.systemImage {
-                    Image(systemName: systemImage)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(theme.textMutedColor)
+                if let icon = item.icon {
+                    PhosphorIconView(icon: icon, size: 18)
                         .frame(width: 18, alignment: .center)
                 }
                 VStack(alignment: .leading, spacing: 2) {
@@ -156,9 +154,7 @@ public struct CommandPaletteOverlay: View {
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 if let shortcut = item.shortcut {
-                    Text(paletteShortcutLabel(shortcut))
-                        .font(.rubik(11))
-                        .foregroundStyle(theme.textMutedColor)
+                    PaletteShortcutKeys(shortcut: shortcut)
                 }
             }
             .padding(.vertical, 8)
@@ -178,23 +174,6 @@ public struct CommandPaletteOverlay: View {
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
-    }
-
-    private func paletteShortcutLabel(_ shortcut: String) -> String {
-        let normalized = shortcut
-            .replacingOccurrences(of: "mod+", with: "Mod+")
-            .replacingOccurrences(of: "shift+", with: "Shift+")
-            .replacingOccurrences(of: "alt+", with: "Alt+")
-        let parts = normalized.split(separator: "+").map { part -> String in
-            let token = String(part)
-            switch token.lowercased() {
-            case "mod": return "Mod"
-            case "shift": return "Shift"
-            case "alt": return "Alt"
-            default: return token.count == 1 ? token.uppercased() : token
-            }
-        }
-        return KeycapGlyphs.display(parts)
     }
 
     private var paletteFooterHints: some View {

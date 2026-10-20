@@ -150,11 +150,9 @@ public final class TimeGridView: NSView {
         clampWeekHorizontalScrollOrigin()
         guard let snapshot, let nowLine = snapshot.nowLine else { return }
         // The scroll document is the timed grid alone; the header is pinned above it.
-        let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
-            referenceNow: state.referenceNow,
-            hourHeight: snapshot.metrics.hourHeight,
-            allDayOffset: 0
-        ))
+        let targetY = clampedScrollY(
+            max(0, nowLine.top - GridScrollMath.scrollToNowBufferPx)
+        )
         let viewport = scrollView.contentView.bounds
         let nowLineVisible = nowLine.top >= viewport.minY && nowLine.top <= viewport.maxY
         var origin = scrollView.contentView.bounds.origin
