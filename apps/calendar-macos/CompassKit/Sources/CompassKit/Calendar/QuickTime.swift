@@ -8,6 +8,15 @@ public enum QuickTime {
         digits.count < maxDigits
     }
 
+    /// Jump-selected or parked-click day column (web `quickTimeFocusedColumnDay`).
+    public static func quickTimeFocusedColumnDay(activeDayKeys: [String]) -> Date? {
+        guard activeDayKeys.count == 1,
+            let key = activeDayKeys.first,
+            let date = CompassDateParsing.calendarDateInEffectiveTimeZone(key)
+        else { return nil }
+        return EffectiveTimeZone.calendar.startOfDay(for: date)
+    }
+
     public static func quickTimeTargetDay(
         startOfView: Date,
         endOfView: Date,

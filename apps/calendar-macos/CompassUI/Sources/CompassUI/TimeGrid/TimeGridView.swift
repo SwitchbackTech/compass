@@ -338,6 +338,7 @@ public final class TimeGridView: NSView {
         let palette = themePalette
         hourGutterView.layer?.backgroundColor = palette.background.cgColor
         let columnWidth = GridMetrics.gridTimeColumnWidth
+        let currentHour = EffectiveTimeZone.calendar.component(.hour, from: state.hourLabelDate)
 
         if state.hasSecondaryTimeZone, let travelZone = state.timeTravelTimeZone {
             let mapped = MappedHourLabels.labels(
@@ -349,7 +350,8 @@ public final class TimeGridView: NSView {
                 xOffset: 0,
                 width: columnWidth,
                 hourHeight: hourHeight,
-                palette: palette)
+                palette: palette,
+                currentHour: currentHour)
         }
 
         let primaryLabels = MappedHourLabels.labels(
@@ -362,7 +364,8 @@ public final class TimeGridView: NSView {
             xOffset: primaryX,
             width: columnWidth,
             hourHeight: hourHeight,
-            palette: palette)
+            palette: palette,
+            currentHour: currentHour)
     }
 
     private func renderHourColumn(
@@ -370,13 +373,15 @@ public final class TimeGridView: NSView {
         xOffset: Double,
         width: Double,
         hourHeight: Double,
-        palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor)
+        palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
+        currentHour: Int
     ) {
         for hour in 0 ..< Int(ceil(state.civilDayHours)) {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
             label.font = CompassFont.nsFont(size: 10)
-            label.textColor = palette.textMuted
+            let isCurrentHour = hour > 0 && hour == currentHour
+            label.textColor = isCurrentHour ? themeAccentColor : palette.textMuted
             label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,

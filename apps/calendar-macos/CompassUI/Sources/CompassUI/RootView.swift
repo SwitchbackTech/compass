@@ -187,13 +187,20 @@ public struct RootView: View {
             } else {
                 sidebarBody
             }
+            QuickTimeStatusLine(model: model)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 2)
             EventJumpStatusLine(model: model)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 2)
             SidebarSyncStatusLine(model: model)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
-            ShortcutSidebarFooter(levelsStore: model.levelsStore)
+            ShortcutSidebarFooter(
+                levelsStore: model.levelsStore,
+                isEventFormVisible: model.isEventFormVisible,
+                suppressTips: model.eventJumpStatusText != nil,
+                suppressForQuickTime: !model.draftStore.quickTimeDigits.isEmpty)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             sidebarActions

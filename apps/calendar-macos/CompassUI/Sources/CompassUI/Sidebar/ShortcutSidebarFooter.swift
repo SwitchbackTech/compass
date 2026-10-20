@@ -4,6 +4,9 @@ import SwiftUI
 struct ShortcutSidebarFooter: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var levelsStore: LevelsStore
+    var isEventFormVisible: Bool = false
+    var suppressTips: Bool = false
+    var suppressForQuickTime: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -21,7 +24,11 @@ struct ShortcutSidebarFooter: View {
                     }
             }
 
-            if !levelsStore.badgeHidden, let tip = levelsStore.currentTip {
+            if isEventFormVisible, !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
+                eventFormSaveHint
+            } else if !levelsStore.badgeHidden, !suppressTips, !suppressForQuickTime,
+                let tip = levelsStore.currentTip
+            {
                 HStack(spacing: 8) {
                     Text("Try \(tip.label)")
                         .font(.rubik(11))
@@ -36,5 +43,18 @@ struct ShortcutSidebarFooter: View {
                 }
             }
         }
+    }
+
+    private var eventFormSaveHint: some View {
+        HStack(spacing: 6) {
+            Text("Enter saves · hold")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+            ShortcutHintChip(label: "Mod")
+            Text("to jump fields")
+                .font(.rubik(11))
+                .foregroundStyle(theme.textMutedColor)
+        }
+        .accessibilityIdentifier("compass-native-shortcut-tip")
     }
 }
