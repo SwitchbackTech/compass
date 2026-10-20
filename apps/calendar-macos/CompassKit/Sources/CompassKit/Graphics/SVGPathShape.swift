@@ -37,6 +37,7 @@ enum SVGPathParser {
         let path = CGMutablePath()
 
         func readDouble() -> Double {
+            guard index < tokens.count else { return 0 }
             let token = tokens[index]
             index += 1
             return Double(token) ?? 0
