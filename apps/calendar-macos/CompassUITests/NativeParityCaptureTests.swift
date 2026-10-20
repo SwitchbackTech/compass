@@ -182,11 +182,8 @@ final class NativeParityCaptureTests: XCTestCase {
         prepareParityGridForCommandPalette(launch.window)
         let palette = launch.window.descendants(matching: .any)["compass-native-command-palette"]
         let search = launch.window.textFields["compass-native-command-palette-search"]
-        launch.window.typeKey("k", modifierFlags: [.command])
-        if !palette.waitForExistence(timeout: 8) {
-            launch.app.menuBars.menuBarItems["View"].click()
-            launch.app.menuItems["Command Palette"].click()
-        }
+        launch.app.menuBars.menuBarItems["View"].click()
+        launch.app.menuItems["Command Palette"].click()
         XCTAssertTrue(
             palette.waitForExistence(timeout: 15),
             "Expected command palette after keyboard or View menu shortcut")
