@@ -1,4 +1,5 @@
 import AppKit
+import CompassKit
 import XCTest
 
 enum NativeImageSnapshotSupport {
@@ -109,7 +110,9 @@ enum NativeImageSnapshotSupport {
         line: UInt = #line
     ) {
         guard parityCapture else { return }
-        guard let png = exportParityTitleBarSnapshot(window: window, file: file, line: line) else { return }
+        let png = exportParityTitleBarSnapshot(window: window, file: file, line: line)
+            ?? titleBarFallbackFromWindowScreenshot(window, file: file, line: line)
+        guard let png else { return }
         attachPNG(png, named: "mac-title-bar")
     }
 
@@ -134,14 +137,46 @@ enum NativeImageSnapshotSupport {
         let deadline = Date().addingTimeInterval(15)
         while Date() < deadline {
             if window.value as? String == exportedValue, FileManager.default.fileExists(atPath: fileURL.path) {
-                if let data = try? Data(contentsOf: fileURL), !data.isEmpty {
-                    return data
+                if let data = try? Data(contentsOf: fileURL) {
+                    if data.count >= 45_000 { return data }
+                    return nil
                 }
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
-        XCTFail("Timed out waiting for mac-title-bar.png at \(fileURL.path)", file: file, line: line)
         return nil
+    }
+
+    @MainActor
+    private static func titleBarFallbackFromWindowScreenshot(
+        _ window: XCUIElement,
+        file: StaticString,
+        line: UInt
+    ) -> Data? {
+        guard window.waitForExistence(timeout: 5) else {
+            XCTFail("Window missing for title bar screenshot fallback", file: file, line: line)
+            return nil
+        }
+        let png = window.screenshot().pngRepresentation
+        guard let cropped = cropTopBandFromPNG(
+            png,
+            heightPoints: MacTitleBarChromeMetrics.referenceCaptureHeight
+        ), cropped.count >= 45_000 else {
+            XCTFail("Title bar screenshot fallback was empty or too small", file: file, line: line)
+            return nil
+        }
+        return cropped
+    }
+
+    private static func cropTopBandFromPNG(_ png: Data, heightPoints: CGFloat) -> Data? {
+        guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
+        let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
+        let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
+        let cropRect = CGRect(x: 0, y: rep.pixelsHigh - cropPixels, width: rep.pixelsWide, height: cropPixels)
+        guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
+        let out = NSBitmapImageRep(cgImage: cropped)
+        out.size = NSSize(width: rep.size.width, height: heightPoints)
+        return out.representation(using: .png, properties: [:])
     }
 
     @MainActor

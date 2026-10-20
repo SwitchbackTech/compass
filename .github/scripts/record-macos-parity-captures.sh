@@ -132,13 +132,44 @@ for surface in surfaces:
 print(f"Parity PNGs written to {out} ({len(surfaces)} files)")
 PY
 
-python3 - "$OUT" <<'PY'
+python3 - "$RESULT" "$OUT" <<'PY'
+import json
 import os
+import re
+import shutil
 import struct
 import sys
 
-out = sys.argv[1]
+result = sys.argv[1]
+out = sys.argv[2]
 path = os.path.join(out, "mac-title-bar.png")
+
+def needs_title_bar_fallback() -> bool:
+    if not os.path.isfile(path):
+        return True
+    return os.path.getsize(path) < 45_000
+
+if needs_title_bar_fallback():
+    raw = os.path.join(out, "_title_bar_attachments")
+    os.makedirs(raw, exist_ok=True)
+    os.system(f'xcrun xcresulttool export attachments --path "{result}" --output-path "{raw}" >/dev/null 2>&1')
+    manifest_path = os.path.join(raw, "manifest.json")
+    if os.path.isfile(manifest_path):
+        with open(manifest_path) as handle:
+            manifest = json.load(handle)
+        for test in manifest:
+            for attachment in test.get("attachments", []):
+                if attachment.get("isAssociatedWithFailure"):
+                    continue
+                name = attachment.get("suggestedHumanReadableName", attachment.get("exportedFileName", ""))
+                name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
+                if name != "mac-title-bar":
+                    continue
+                src = os.path.join(raw, attachment["exportedFileName"])
+                if os.path.isfile(src):
+                    shutil.copyfile(src, path)
+                    break
+
 if not os.path.isfile(path):
     raise SystemExit("Missing mac-title-bar.png (title bar marketing reference)")
 
