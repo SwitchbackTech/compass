@@ -28,7 +28,11 @@ import {
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
-import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
+import {
+  getApiErrorCode,
+  isAbortError,
+  isApiError,
+} from "@web/api/util/api.util";
 import { track } from "@web/auth/posthog/track";
 import { connectionProviderKind } from "@web/auth/providers/connection-provider.util";
 import { isCalendarReconnectRequired } from "@web/auth/providers/reconnect.calendar";
@@ -105,6 +109,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  claimCoalescedReplaceSignal,
   completedEventWrite,
   hasOtherPendingWriteForKey,
   isSkippedEventWrite,
@@ -114,6 +119,7 @@ import {
   type PrecedingEventWrites,
   precedingCreateOk,
   precedingDeleteOk,
+  releaseCoalescedReplaceSignal,
   skippedEventWrite,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
@@ -783,18 +789,32 @@ export function useEventMutations(
       writeKey,
       variables,
     );
+    const superseded = () =>
+      coalesce &&
+      isSupersededByLaterEditWrite(queryClient, writeKey, variables);
     // A newer edit for this event is already queued and will persist the final
     // state, so this write is redundant — skip the network call but still mark
     // the write (anon-change tracking) so a burst collapses to one request.
-    if (
-      coalesce &&
-      isSupersededByLaterEditWrite(queryClient, writeKey, variables)
-    ) {
+    if (superseded()) {
       await markWrite();
       return false;
     }
-    const wrote = canWrite(preceding);
-    if (wrote) await write();
+    let wrote = canWrite(preceding);
+    if (wrote) {
+      try {
+        await write();
+      } catch (error) {
+        if (isAbortError(error)) {
+          wrote = false;
+        } else {
+          throw error;
+        }
+      }
+    }
+    if (superseded()) {
+      await markWrite();
+      return false;
+    }
     await markWrite();
     if (wrote) await noteAnonymousWriteEngagement?.();
     return wrote;
@@ -891,11 +911,21 @@ export function useEventMutations(
           variables,
           precedingCreateOk,
           // Same wire-boundary strip as create, see its comment above.
-          () =>
-            repository.replace(variables.id, {
-              ...input,
-              content: editableContent(input.content),
-            }),
+          () => {
+            const signal = claimCoalescedReplaceSignal(variables.writeKey);
+            return repository
+              .replace(
+                variables.id,
+                {
+                  ...input,
+                  content: editableContent(input.content),
+                },
+                signal,
+              )
+              .finally(() =>
+                releaseCoalescedReplaceSignal(variables.writeKey, signal),
+              );
+          },
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
           // shares its occurrence write key. Undo/redo restores must also

@@ -25,6 +25,7 @@ import {
   resolveLinkedProviderUpdate,
   stopCommand,
 } from "@sync/domain/provider-command.internal";
+import { providerLabelPatchFields } from "@sync/domain/provider-patch-fields";
 import { runProviderWrite } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -195,6 +196,7 @@ async function executeProviderManagedUpdate(
   const patchResult = await runProviderWrite(() =>
     deps.writer.patchEvent({
       ...location,
+      ...providerLabelPatchFields(current),
       expectedVersion: patchExpectedVersion(
         command,
         current,

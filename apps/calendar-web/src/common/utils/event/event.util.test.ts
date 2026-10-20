@@ -259,6 +259,29 @@ describe("handleError", () => {
     );
   });
 
+  it("shows Google rejected copy for PROVIDER_REJECTED with retry", () => {
+    const onRetry = mock(() => {});
+    const error = createServerError(502);
+    error.response = {
+      status: 502,
+      data: {
+        code: "PROVIDER_REJECTED",
+        message: "Sync command failed (providerRejectedChange)",
+        retryable: true,
+        provider: "google",
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error, onRetry);
+
+    const [content, options] = mocks.error.mock.calls[0] ?? [];
+    expect(options).toMatchObject({ toastId: EVENT_SAVE_RETRYABLE_TOAST_ID });
+    const props = (content as { props: { message: string } }).props;
+    expect(props.message).toBe(
+      "Google rejected this change. Your edit wasn't saved. Try again.",
+    );
+  });
+
   it("explains a brief sync outage instead of the catch-all", () => {
     // The 503 a Sync restart produces. It used to land on "Something went
     // wrong behind the scenes", which reads as a crash rather than the

@@ -23,3 +23,8 @@ export function providerSaveFailureMessage(
   }
   return "Couldn't save that change, the calendar service had a problem. Your edit was not applied.";
 }
+
+/** When Google returns a generic badRequest for an otherwise valid edit. */
+export function googleProviderRejectedChangeMessage(): string {
+  return "Google rejected this change. Your edit wasn't saved. Try again.";
+}

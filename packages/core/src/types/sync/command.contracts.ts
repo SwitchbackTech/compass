@@ -170,6 +170,9 @@ export const SyncCommandFailureReasonSchema = z.enum([
   "versionConflict",
   "readOnlyCalendar",
   "unsupportedCapability",
+  // Google (or another provider) returned a generic 400 badRequest for a
+  // well-formed write — distinct from an event-type capability refusal.
+  "providerRejectedChange",
   "permanentProviderError",
   "authorizationRevoked",
 ]);

@@ -2,7 +2,10 @@ import { createElement } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
-import { providerSaveFailureMessage } from "@core/event/event-mutation-user-message";
+import {
+  googleProviderRejectedChangeMessage,
+  providerSaveFailureMessage,
+} from "@core/event/event-mutation-user-message";
 import {
   type BaseEvent,
   type CompassEvent,
@@ -253,6 +256,7 @@ const MUTATION_ERROR_TOAST_MESSAGES: Partial<
 > = {
   UNSUPPORTED_OPERATION:
     "Google doesn't allow this change for this event (for example events created from an email, birthdays, or holidays). Delete it or manage it in your calendar.",
+  PROVIDER_REJECTED: googleProviderRejectedChangeMessage(),
   CALENDAR_READ_ONLY:
     "This calendar is read-only, so its events can't be changed from Compass.",
   RECURRENCE_CONFLICT:
@@ -282,6 +286,9 @@ const mutationToastMessage = (
   const provider = mutationError.provider ?? providerHint;
   if (mutationError.code === "PROVIDER_FAILURE") {
     return providerSaveFailureMessage(provider);
+  }
+  if (mutationError.code === "PROVIDER_REJECTED" && provider === "google") {
+    return googleProviderRejectedChangeMessage();
   }
   return (
     MUTATION_ERROR_TOAST_MESSAGES[mutationError.code] ?? CATCHALL_TOAST_MESSAGE
