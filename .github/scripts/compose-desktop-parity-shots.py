@@ -14,8 +14,14 @@ except ImportError:
 
 SURFACES = (
     "week-grid",
+    "week-grid-allday",
+    "demo-events-banner",
+    "mod-hold-overlay",
+    "up-next-banner",
     "mini-calendar",
     "event-form",
+    "event-form-date-picker",
+    "event-form-time-picker",
     "command-palette",
     "settings",
     "onboarding-welcome",

@@ -33,6 +33,38 @@ test.describe("Desktop web parity captures", () => {
     await page.screenshot({ path: join(outputDir, "week-grid.png") });
   });
 
+  test("week-grid-allday", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await page.locator("#allDayRow").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(outputDir, "week-grid-allday.png") });
+  });
+
+  test("demo-events-banner", async ({ page }) => {
+    await prepareParityDemoWeek(page, { dismissDemoBanner: false });
+    const banner = page
+      .getByRole("status")
+      .filter({ hasText: "Sample events to help you explore" });
+    await expect(banner).toBeVisible({ timeout: 10_000 });
+    await page.screenshot({ path: join(outputDir, "demo-events-banner.png") });
+  });
+
+  test("mod-hold-overlay", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await page.locator("#mainGrid").focus();
+    await page.keyboard.down("Control");
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: join(outputDir, "mod-hold-overlay.png") });
+    await page.keyboard.up("Control");
+  });
+
+  test("up-next-banner", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await expect(page.getByRole("region", { name: /up next/i })).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.screenshot({ path: join(outputDir, "up-next-banner.png") });
+  });
+
   test("mini-calendar", async ({ page }) => {
     await prepareParityDemoWeek(page);
     await page.keyboard.press("i");
@@ -50,6 +82,29 @@ test.describe("Desktop web parity captures", () => {
       timeout: 10_000,
     });
     await page.screenshot({ path: join(outputDir, "event-form.png") });
+  });
+
+  test("event-form-date-picker", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await page.locator("#mainGrid").focus();
+    await page.keyboard.press("c");
+    await page.locator("#eventFormStartDate").click();
+    await expect(page.locator(".react-datepicker")).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.screenshot({
+      path: join(outputDir, "event-form-date-picker.png"),
+    });
+  });
+
+  test("event-form-time-picker", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await page.locator("#mainGrid").focus();
+    await page.keyboard.press("c");
+    await page.locator("#startTimePicker").click();
+    await page.screenshot({
+      path: join(outputDir, "event-form-time-picker.png"),
+    });
   });
 
   test("command-palette", async ({ page }) => {

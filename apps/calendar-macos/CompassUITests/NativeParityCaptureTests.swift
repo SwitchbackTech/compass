@@ -20,8 +20,14 @@ final class NativeParityCaptureTests: XCTestCase {
         }
 
         captureWeekGrid()
+        captureWeekGridAllDay()
+        captureDemoEventsBanner()
+        captureModHoldOverlay()
+        captureUpNextBanner()
         captureMiniCalendar()
         captureEventForm()
+        captureEventFormDatePicker()
+        captureEventFormTimePicker()
         captureCommandPalette()
         captureSettings()
         captureWelcomeOnboarding()
@@ -30,14 +36,50 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureWeekGrid() {
         let window = launchDemoWindow()
-        prepareParityGrid(window)
+        prepareParityGrid(window, dismissDemoBanner: true)
         NativeImageSnapshotSupport.captureWindow(window, named: "week-grid")
+    }
+
+    @MainActor
+    private func captureWeekGridAllDay() {
+        let window = launchDemoWindow()
+        prepareParityGrid(window, dismissDemoBanner: true)
+        let allDay = window.descendants(matching: .any)["compass-grid-allday"]
+        XCTAssertTrue(allDay.waitForExistence(timeout: 10))
+        NativeImageSnapshotSupport.captureWindow(window, named: "week-grid-allday")
+    }
+
+    @MainActor
+    private func captureDemoEventsBanner() {
+        let window = launchDemoWindow()
+        prepareParityGrid(window, dismissDemoBanner: false)
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-native-demo-events-banner"].waitForExistence(timeout: 10))
+        NativeImageSnapshotSupport.captureWindow(window, named: "demo-events-banner")
+    }
+
+    @MainActor
+    private func captureModHoldOverlay() {
+        let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_SHOW_PAGE_JUMP_HINTS"])
+        prepareParityGrid(window, dismissDemoBanner: true)
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-mod-hold-chips"].waitForExistence(timeout: 10))
+        NativeImageSnapshotSupport.captureWindow(window, named: "mod-hold-overlay")
+    }
+
+    @MainActor
+    private func captureUpNextBanner() {
+        let window = launchDemoWindow()
+        prepareParityGrid(window, dismissDemoBanner: true)
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-native-up-next-banner"].waitForExistence(timeout: 15))
+        NativeImageSnapshotSupport.captureWindow(window, named: "up-next-banner")
     }
 
     @MainActor
     private func captureMiniCalendar() {
         let window = launchDemoWindow()
-        prepareParityGrid(window)
+        prepareParityGrid(window, dismissDemoBanner: true)
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-month-picker"].waitForExistence(timeout: 10))
         window.typeKey("i", modifierFlags: [])
@@ -47,7 +89,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureEventForm() {
         let window = launchDemoWindow()
-        prepareParityGrid(window)
+        prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-event-form"].waitForExistence(timeout: 8))
@@ -55,9 +97,33 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
+    private func captureEventFormDatePicker() {
+        let window = launchDemoWindow()
+        prepareParityGrid(window, dismissDemoBanner: true)
+        window.typeKey("c", modifierFlags: [])
+        let startDate = window.descendants(matching: .any)["compass-event-form-start-date"]
+        XCTAssertTrue(startDate.waitForExistence(timeout: 8))
+        startDate.doubleTap()
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-event-form-date-picker"].waitForExistence(timeout: 8))
+        NativeImageSnapshotSupport.captureWindow(window, named: "event-form-date-picker")
+    }
+
+    @MainActor
+    private func captureEventFormTimePicker() {
+        let window = launchDemoWindow()
+        prepareParityGrid(window, dismissDemoBanner: true)
+        window.typeKey("c", modifierFlags: [])
+        let startTime = window.descendants(matching: .any)["compass-event-form-start"]
+        XCTAssertTrue(startTime.waitForExistence(timeout: 8))
+        startTime.click()
+        NativeImageSnapshotSupport.captureWindow(window, named: "event-form-time-picker")
+    }
+
+    @MainActor
     private func captureCommandPalette() {
         let window = launchDemoWindow()
-        prepareParityGrid(window)
+        prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("k", modifierFlags: [.command])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-command-palette"].waitForExistence(timeout: 8))
@@ -67,7 +133,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureSettings() {
         let window = launchDemoWindow()
-        prepareParityGrid(window)
+        prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey(",", modifierFlags: [.command])
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-settings"].waitForExistence(timeout: 8))
@@ -87,9 +153,9 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
-    private func launchDemoWindow() -> XCUIElement {
+    private func launchDemoWindow(extraLaunchArgs: [String] = []) -> XCUIElement {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += Self.demoLaunchArgs
+        app.launchArguments += Self.demoLaunchArgs + extraLaunchArgs
         app.launchEnvironment["PARITY_CAPTURE"] = "1"
         app.launch()
         let window = app.windows["Compass"]
@@ -99,9 +165,9 @@ final class NativeParityCaptureTests: XCTestCase {
 
     /// Dismiss demo chrome and wait for the shared demo-seed grid event (web parity uses the same fixture).
     @MainActor
-    private func prepareParityGrid(_ window: XCUIElement) {
+    private func prepareParityGrid(_ window: XCUIElement, dismissDemoBanner: Bool) {
         let okay = window.buttons["Okay"]
-        if okay.waitForExistence(timeout: 4) {
+        if dismissDemoBanner, okay.waitForExistence(timeout: 4) {
             okay.tap()
         }
         let wednesdayHeader = window.staticTexts.matching(

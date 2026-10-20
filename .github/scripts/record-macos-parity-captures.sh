@@ -5,7 +5,20 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 OUT="${PARITY_OUTPUT_DIR:-$ROOT/build/desktop-parity/macos}"
 RESULT="$ROOT/apps/calendar-macos/build/ParityCapture.xcresult"
-SURFACES=(week-grid mini-calendar event-form command-palette settings onboarding-welcome)
+SURFACES=(
+  week-grid
+  week-grid-allday
+  demo-events-banner
+  mod-hold-overlay
+  up-next-banner
+  mini-calendar
+  event-form
+  event-form-date-picker
+  event-form-time-picker
+  command-palette
+  settings
+  onboarding-welcome
+)
 mkdir -p "$OUT"
 cd "$ROOT/apps/calendar-macos"
 
