@@ -81,22 +81,26 @@ public struct EventFormView: View {
                         .id(EventFormField.calendar)
                         EventFormCard(highlighted: isLogisticsFieldFocused(model.eventFormFocusedField)) {
                             VStack(alignment: .leading, spacing: 10) {
-                                EventFormLocationField(
-                                    model: model,
-                                    draft: draft,
-                                    focusField: model.eventFormFocusedField
-                                )
-                                .disabled(isReadOnly)
+                                EventFormIconRow(systemImage: "mappin.and.ellipse") {
+                                    EventFormLocationField(
+                                        model: model,
+                                        draft: draft,
+                                        focusField: model.eventFormFocusedField
+                                    )
+                                    .disabled(isReadOnly)
+                                }
                                 EventFormConferenceSection(
                                     model: model,
                                     draft: draft
                                 )
-                                EventFormAttendeesSection(
-                                    model: model,
-                                    draft: draft,
-                                    focusField: model.eventFormFocusedField
-                                )
-                                .id(EventFormField.attendees)
+                                EventFormIconRow(systemImage: "person.2", alignTop: true) {
+                                    EventFormAttendeesSection(
+                                        model: model,
+                                        draft: draft,
+                                        focusField: model.eventFormFocusedField
+                                    )
+                                    .id(EventFormField.attendees)
+                                }
                             }
                         }
                         .id(EventFormField.location)
