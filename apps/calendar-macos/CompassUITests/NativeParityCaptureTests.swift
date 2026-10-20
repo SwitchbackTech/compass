@@ -11,6 +11,7 @@ final class NativeParityCaptureTests: XCTestCase {
         "-COMPASS_UI_TEST_PARITY_CAPTURE",
         "-PARITY_CAPTURE",
         "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+        "-\(OnboardingStorageKeys.pointerHintDismissedPermanently)", "true",
     ]
 
     @MainActor
@@ -19,6 +20,7 @@ final class NativeParityCaptureTests: XCTestCase {
             throw XCTSkip("Set PARITY_CAPTURE=1 to export parity PNGs")
         }
 
+        captureWelcomeOnboarding()
         captureWeekGrid()
         captureWeekGridAllDay()
         captureDemoEventsBanner()
@@ -30,7 +32,6 @@ final class NativeParityCaptureTests: XCTestCase {
         captureEventFormTimePicker()
         captureCommandPalette()
         captureSettings()
-        captureWelcomeOnboarding()
     }
 
     @MainActor
@@ -139,12 +140,22 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureWelcomeOnboarding() {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false", "-compass.theme", "light-beach"]
+        app.launchArguments += [
+            "-\(OnboardingStorageKeys.hasSeenWelcome)", "false",
+            "-compass.theme", "light-beach",
+            "-COMPASS_UI_TEST_PARITY_CAPTURE",
+            "-PARITY_CAPTURE",
+        ]
+        app.launchEnvironment["PARITY_CAPTURE"] = "1"
+        if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {
+            app.launchEnvironment["PARITY_OUTPUT_DIR"] = outDir
+        }
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 10))
+            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 15))
+        sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
     }
 
@@ -168,6 +179,11 @@ final class NativeParityCaptureTests: XCTestCase {
         let okay = window.buttons["Okay"]
         if dismissDemoBanner, okay.waitForExistence(timeout: 4) {
             okay.tap()
+            let banner = window.descendants(matching: .any)["compass-native-demo-events-banner"]
+            let dismissDeadline = Date().addingTimeInterval(5)
+            while Date() < dismissDeadline, banner.exists {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+            }
         }
         let wednesdayHeader = window.staticTexts.matching(
             NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
@@ -178,10 +194,6 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             waitForGridColumnCount(window, atLeast: 5, timeout: 20),
             "Expected five day columns in parity week grid")
-        let timedGrid = window.descendants(matching: .any)["compass-grid-timed"]
-        if timedGrid.waitForExistence(timeout: 5) {
-            timedGrid.click()
-        }
         window.typeKey("t", modifierFlags: [])
         let sundayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-07"]
         XCTAssertTrue(

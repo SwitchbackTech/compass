@@ -5,12 +5,25 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import Iterable
 
 try:
     from PIL import Image, ImageDraw, ImageFont
 except ImportError:
     print("Pillow is required: pip install Pillow", file=sys.stderr)
     raise
+
+# Keep in sync with ParityCaptureGeometry.swift and e2e/parity/seed-demo-fixture.util.ts
+VIEWPORT_WIDTH = 1280
+VIEWPORT_HEIGHT = 820
+CONTENT_LEADING_INSET = 32
+SIDEBAR_DIVIDER_WIDTH = 32
+SIDEBAR_WIDTH = 345
+CONTENT_TRACK_WIDTH = (
+    VIEWPORT_WIDTH - CONTENT_LEADING_INSET - SIDEBAR_DIVIDER_WIDTH - SIDEBAR_WIDTH
+)
+GRID_CROP = (0, 0, CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, VIEWPORT_HEIGHT)
+SIDEBAR_CROP = (CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
 
 SURFACES = (
     "week-grid",
@@ -27,6 +40,24 @@ SURFACES = (
     "onboarding-welcome",
 )
 
+GRID_REGION_SURFACES = frozenset(
+    {
+        "week-grid",
+        "week-grid-allday",
+        "demo-events-banner",
+        "mod-hold-overlay",
+        "up-next-banner",
+    }
+)
+SIDEBAR_REGION_SURFACES = frozenset(
+    {
+        "mini-calendar",
+        "event-form",
+        "event-form-date-picker",
+        "event-form-time-picker",
+    }
+)
+
 LABEL_HEIGHT = 36
 GUTTER = 8
 TARGET_WIDTH = 1280
@@ -41,6 +72,15 @@ def load_rgb(path: Path) -> Image.Image:
             Image.Resampling.LANCZOS,
         )
     return image
+
+
+def crop_box(image: Image.Image, box: tuple[int, int, int, int]) -> Image.Image:
+    left, top, right, bottom = box
+    left = max(0, min(left, image.width))
+    right = max(left + 1, min(right, image.width))
+    top = max(0, min(top, image.height))
+    bottom = max(top + 1, min(bottom, image.height))
+    return image.crop((left, top, right, bottom))
 
 
 def stack_pair(macos: Path, web: Path, title: str, out: Path) -> None:
@@ -68,6 +108,13 @@ def stack_pair(macos: Path, web: Path, title: str, out: Path) -> None:
     print(out)
 
 
+def regional_outputs(surface: str) -> Iterable[tuple[str, tuple[int, int, int, int]]]:
+    if surface in GRID_REGION_SURFACES:
+        yield ("grid", GRID_CROP)
+    if surface in SIDEBAR_REGION_SURFACES:
+        yield ("sidebar", SIDEBAR_CROP)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--macos-dir", type=Path, required=True)
@@ -90,6 +137,19 @@ def main() -> None:
             surface,
             args.out_dir / f"{surface}-compare.png",
         )
+        macos_full = load_rgb(macos_path)
+        web_full = load_rgb(web_path)
+        for region_name, box in regional_outputs(surface):
+            macos_crop = args.macos_dir / f"{surface}-{region_name}.png"
+            web_crop = args.web_dir / f"{surface}-{region_name}.png"
+            crop_box(macos_full, box).save(macos_crop, format="PNG", optimize=True)
+            crop_box(web_full, box).save(web_crop, format="PNG", optimize=True)
+            stack_pair(
+                macos_crop,
+                web_crop,
+                f"{surface} ({region_name})",
+                args.out_dir / f"{surface}-{region_name}-compare.png",
+            )
 
 
 if __name__ == "__main__":

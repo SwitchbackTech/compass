@@ -76,8 +76,11 @@ public struct CommandPaletteOverlay: View {
                             if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
                         }
                     }
-                    paletteFooterHints
-                        .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
+                    HStack {
+                        Spacer(minLength: 0)
+                        paletteFooterHints
+                    }
+                    .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
                 }
                 .padding(16)
                 .frame(maxWidth: 520)
