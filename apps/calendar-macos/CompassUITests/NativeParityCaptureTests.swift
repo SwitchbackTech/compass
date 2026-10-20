@@ -141,9 +141,7 @@ final class NativeParityCaptureTests: XCTestCase {
     private func captureWelcomeOnboarding() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += [
-            "-COMPASS_FIXTURE", "demo",
             "-\(OnboardingStorageKeys.hasSeenWelcome)", "false",
-            "-\(OnboardingStorageKeys.pointerHintDismissedPermanently)", "true",
             "-compass.theme", "light-beach",
             "-COMPASS_UI_TEST_PARITY_CAPTURE",
             "-PARITY_CAPTURE",
