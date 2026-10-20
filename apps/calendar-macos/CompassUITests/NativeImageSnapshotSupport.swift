@@ -161,12 +161,9 @@ enum NativeImageSnapshotSupport {
         }
         let png = window.screenshot().pngRepresentation
         let heightPoints = MacTitleBarChromeMetrics.referenceCaptureHeight
-        let candidates = [
-            cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: true),
-            cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: false),
-        ].compactMap { $0 }
-        guard let best = candidates.max(by: { titleBarChromeScore($0) < titleBarChromeScore($1) }),
-              titleBarPNGMeetsMinimumSize(best)
+        guard let cropped = cropTopBandFromPNG(png, heightPoints: heightPoints, fromTop: true),
+              titleBarPNGMeetsMinimumSize(cropped),
+              titleBarChromeScore(cropped) > 0
         else {
             XCTFail("Title bar screenshot fallback was empty or too small", file: file, line: line)
             return nil
