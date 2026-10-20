@@ -55,5 +55,6 @@ final class NativeCalendarRootModelParityPresentationTests: XCTestCase {
         model.handleShortcut(.navToday)
 
         XCTAssertEqual(model.viewStore.anchorDate, anchorBefore)
+        XCTAssertEqual(model.consumePendingScroll(), .scrollToNowOrPulse)
     }
 }

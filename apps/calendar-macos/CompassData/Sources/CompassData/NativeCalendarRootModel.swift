@@ -921,14 +921,22 @@ public final class NativeCalendarRootModel {
     private func goToToday() {
         let today = referenceNow
         let calendar = EffectiveTimeZone.calendar
+        var anchorChanged = false
         if viewStore.visibleDayCount == 1 {
-            viewStore.setAnchorDate(today)
+            if !calendar.isDate(viewStore.anchorDate, inSameDayAs: today) {
+                viewStore.setAnchorDate(today)
+                anchorChanged = true
+            }
         } else if !isReferenceDayInVisibleWindow(today) {
             viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
+            anchorChanged = true
         }
         monthPickerMonth = today
-        rebuildPresentation()
-        scheduleRefreshVisibleRange()
+        if anchorChanged {
+            rebuildPresentation()
+            scheduleRefreshVisibleRange()
+        }
+        // Web `goToTodayInWeek` always runs scroll-to-now / now-cue even when the anchor is unchanged.
         pendingScroll = .scrollToNowOrPulse
     }
 
