@@ -188,12 +188,17 @@ def infer_scale(width: int) -> int:
 def crop_title_bar(full_png: str, dest: str) -> None:
     image = Image.open(full_png).convert("RGBA")
     width, height = image.size
-    scale = infer_scale(width)
-    crop_px = min(height, TITLE_BAND_POINTS * scale)
-    band = image.crop((0, 0, width, crop_px))
-    if scale > 1:
+    if height <= TITLE_BAND_POINTS * 2 + 40:
+        band = image
+    else:
+        scale = infer_scale(width)
+        crop_px = min(height, TITLE_BAND_POINTS * scale)
+        band = image.crop((0, 0, width, crop_px))
+    scale = infer_scale(band.size[0])
+    if scale > 1 or band.size[0] != ParityCaptureGeometry.viewportWidth:
+        target_h = max(TITLE_BAND_POINTS, int(band.size[1] / scale))
         band = band.resize(
-            (ParityCaptureGeometry.viewportWidth, TITLE_BAND_POINTS),
+            (ParityCaptureGeometry.viewportWidth, target_h),
             Image.Resampling.LANCZOS,
         )
     band.save(dest)
@@ -295,9 +300,15 @@ ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
 full_window = find_attachment(raw, "mac-title-bar-full-window")
+window_top = os.path.join(out, "parity-window-top.png")
 window_id_path = os.path.join(out, "parity-window-id.txt")
 screencap_path = os.path.join(out, "_parity_window_screencap.png")
-if os.path.isfile(window_id_path):
+metrics_path = os.path.join(out, "parity-window-metrics.txt")
+if os.path.isfile(metrics_path):
+    print(open(metrics_path).read(), file=sys.stderr)
+if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
+    full_window = window_top
+elif os.path.isfile(window_id_path):
     with open(window_id_path) as handle:
         window_id = handle.read().strip()
     if window_id.isdigit():
