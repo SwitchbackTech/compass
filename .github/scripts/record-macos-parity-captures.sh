@@ -177,29 +177,96 @@ def find_attachment(raw_dir: str, wanted_name: str) -> str | None:
                 return src
     return None
 
+def infer_scale(width: int) -> int:
+    if width >= 2400:
+        return 2
+    if width >= 1800:
+        return 2
+    return 1
+
+
 def crop_title_bar(full_png: str, dest: str) -> None:
     image = Image.open(full_png).convert("RGBA")
     width, height = image.size
-    # Window screenshot: take the top band (title bar + a slice of grid below).
-    crop_px = max(TITLE_BAND_POINTS, round(height * TITLE_BAND_POINTS / (CONTENT_HEIGHT_POINTS + TITLE_BAND_POINTS)))
-    crop_px = min(crop_px, height)
+    scale = infer_scale(width)
+    crop_px = min(height, TITLE_BAND_POINTS * scale)
     band = image.crop((0, 0, width, crop_px))
+    if scale > 1:
+        band = band.resize(
+            (ParityCaptureGeometry.viewportWidth, TITLE_BAND_POINTS),
+            Image.Resampling.LANCZOS,
+        )
     band.save(dest)
 
-def chrome_score(image: Image.Image) -> int:
+
+def close_rgb(a, b, tol=40):
+    return all(abs(int(a[i]) - int(b[i])) <= tol for i in range(3))
+
+
+def assert_traffic_lights(image: Image.Image) -> None:
     px = image.load()
     width, height = image.size
-    score = 0
-    for y in range(min(height, 80)):
-        for x in range(min(width, 220)):
+    scale = max(1, width // 1280)
+    samples = [
+        (14 * scale, 22 * scale, (255, 82, 85)),
+        (34 * scale, 22 * scale, (250, 200, 0)),
+        (54 * scale, 22 * scale, (50, 180, 70)),
+    ]
+    for x, y, target in samples:
+        if y >= height or x >= width:
+            raise SystemExit(f"mac-title-bar.png too small for traffic light probe at ({x},{y})")
+        r, g, b, a = px[x, y]
+        if a < 128 or not close_rgb((r, g, b), target, tol=55):
+            raise SystemExit(
+                f"mac-title-bar.png missing traffic light at ({x},{y}); got rgba=({r},{g},{b},{a})"
+            )
+
+
+def assert_month_title_band(image: Image.Image) -> None:
+    px = image.load()
+    width, height = image.size
+    scale = max(1, width // 1280)
+    y0, y1 = 12 * scale, min(height, 52 * scale)
+    x0, x1 = 90 * scale, min(width, 420 * scale)
+    dark = 0
+    for y in range(y0, y1):
+        for x in range(x0, x1):
             r, g, b, a = px[x, y]
-            if a < 16:
+            if a < 128:
                 continue
-            if r + g + b < 520:
-                score += 2
-            if max(r, g, b) - min(r, g, b) > 28:
-                score += 1
-    return score
+            if r + g + b < 460:
+                dark += 1
+    if dark < 60 * scale:
+        raise SystemExit(
+            "mac-title-bar.png nav title band lacks text (expected June 2026 beside traffic lights)"
+        )
+
+
+def reject_bottom_of_window(image: Image.Image) -> None:
+    px = image.load()
+    width, height = image.size
+    if height < 80:
+        return
+
+    def dark_fraction(y_start: int, y_end: int) -> float:
+        dark = 0
+        total = 0
+        for y in range(y_start, y_end):
+            for x in range(0, width, max(1, width // 80)):
+                r, g, b, a = px[x, y]
+                if a < 128:
+                    continue
+                total += 1
+                if r + g + b < 500:
+                    dark += 1
+        return dark / max(total, 1)
+
+    top = dark_fraction(0, max(1, height // 3))
+    bottom = dark_fraction(max(0, height - height // 3), height)
+    if bottom > top * 1.35 and bottom > 0.08:
+        raise SystemExit(
+            "mac-title-bar.png looks like a bottom-of-window crop (grid/footer), not the title bar"
+        )
 
 
 def sidebar_toggle_score(image: Image.Image) -> int:
@@ -218,29 +285,25 @@ def sidebar_toggle_score(image: Image.Image) -> int:
                 score += 1
     return score
 
+ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280})
+
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
 full_window = find_attachment(raw, "mac-title-bar-full-window")
 if not full_window:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
-app_export = path if os.path.isfile(path) else None
-if app_export:
-    band = Image.open(app_export).convert("RGBA")
-    if band.size[0] < MIN_TITLE_BAR_WIDTH or sidebar_toggle_score(band) < 8:
-        app_export = None
-
-if not app_export:
-    crop_title_bar(full_window, path)
+if os.path.isfile(path):
+    os.remove(path)
+crop_title_bar(full_window, path)
 
 band = Image.open(path).convert("RGBA")
-if band.size[1] < 100 or chrome_score(band) < 12:
-    raise SystemExit(
-        "mac-title-bar.png crop looks empty; expected traffic lights and nav chrome in the top band"
-    )
+assert_traffic_lights(band)
+assert_month_title_band(band)
+reject_bottom_of_window(band)
 if band.size[0] < MIN_TITLE_BAR_WIDTH:
     raise SystemExit(
-        f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px for sidebar toggle"
+        f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
     )
 if sidebar_toggle_score(band) < 8:
     raise SystemExit(
@@ -261,7 +324,9 @@ with open(path, "rb") as handle:
     width, height = struct.unpack(">II", handle.read(8))
 
 if height < 110:
-    raise SystemExit(f"mac-title-bar.png height {height}, expected at least 110px")
+    raise SystemExit(f"mac-title-bar.png height {height}, expected at least 110px (120px title band)")
+if width == 1280 and height < 118:
+    raise SystemExit(f"mac-title-bar.png height {height}, expected 120px title band at 1280 width")
 if width < MIN_TITLE_BAR_WIDTH:
     raise SystemExit(f"mac-title-bar.png width {width}, expected at least {MIN_TITLE_BAR_WIDTH}px")
 
