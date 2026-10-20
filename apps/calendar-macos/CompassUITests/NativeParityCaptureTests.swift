@@ -94,29 +94,22 @@ final class NativeParityCaptureTests: XCTestCase {
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
-        XCTAssertTrue(
-            waitForParityWindowSize(window, timeout: 10),
-            "Expected Compass window at web parity size (1280×820 content)")
         return window
-    }
-
-    @MainActor
-    private func waitForParityWindowSize(_ window: XCUIElement, timeout: TimeInterval) -> Bool {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            let frame = window.frame
-            if frame.width >= 1260, frame.height >= 780 {
-                return true
-            }
-            RunLoop.current.run(until: Date().addingTimeInterval(0.15))
-        }
-        let frame = window.frame
-        return frame.width >= 1260 && frame.height >= 780
     }
 
     /// Dismiss demo chrome and wait for the shared demo-seed grid event (web parity uses the same fixture).
     @MainActor
     private func prepareParityGrid(_ window: XCUIElement) {
+        let layoutProbe = window.descendants(matching: .any)["compass-parity-layout-probe"]
+        XCTAssertTrue(
+            layoutProbe.waitForExistence(timeout: 20),
+            "Expected parity layout probe in demo grid")
+        let expectedLayout = "\(Int(ParityCaptureGeometry.contentTrackWidth))-\(ParityCaptureGeometry.visibleDayCount)"
+        XCTAssertEqual(
+            layoutProbe.value as? String,
+            expectedLayout,
+            "Expected pinned parity week grid geometry")
+
         let okay = window.buttons["Okay"]
         if okay.waitForExistence(timeout: 4) {
             okay.tap()
