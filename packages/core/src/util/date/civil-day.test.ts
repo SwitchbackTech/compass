@@ -3,6 +3,8 @@ import {
   civilHourLineInstants,
   civilHourSlotCount,
   formatInstantInTimeZone,
+  gridMinutesFromCivilMidnight,
+  maxCivilHourSlotCount,
   minutesFromCivilMidnight,
 } from "./civil-day";
 import { describe, expect, it } from "bun:test";
@@ -28,6 +30,32 @@ describe("civilDayLengthMinutes", () => {
 
   it("counts 1440 minutes on a non-transition day", () => {
     expect(civilDayLengthMinutes("2026-08-20", denver)).toBe(1440);
+  });
+});
+
+describe("maxCivilHourSlotCount", () => {
+  it("uses 25 slots when a US fall-back day is in the range", () => {
+    const days = ["2026-10-31", "2026-11-01", "2026-11-02"];
+    expect(maxCivilHourSlotCount(days, denver)).toBe(25);
+  });
+
+  it("returns 23 for a spring-forward day and 25 for a fall-back day", () => {
+    expect(maxCivilHourSlotCount(["2027-03-14"], denver)).toBe(23);
+    expect(maxCivilHourSlotCount(["2026-11-01"], denver)).toBe(25);
+  });
+});
+
+describe("gridMinutesFromCivilMidnight", () => {
+  it("matches hour labels on spring-forward and fall-back days", () => {
+    expect(
+      gridMinutesFromCivilMidnight("2027-03-14T09:00:00-06:00", denver),
+    ).toBe(540);
+    expect(
+      gridMinutesFromCivilMidnight("2026-11-01T01:30:00-06:00", denver),
+    ).toBe(90);
+    expect(
+      gridMinutesFromCivilMidnight("2026-11-01T01:30:00-07:00", denver),
+    ).toBe(150);
   });
 });
 

@@ -25,9 +25,9 @@ describe("plainTextToDescriptionHtml", () => {
     );
   });
 
-  it("turns a single newline into a line break inside one paragraph", () => {
+  it("turns a single newline into separate paragraphs", () => {
     expect(plainTextToDescriptionHtml("line one\nline two")).toBe(
-      "<p>line one<br>line two</p>",
+      "<p>line one</p><p>line two</p>",
     );
   });
 

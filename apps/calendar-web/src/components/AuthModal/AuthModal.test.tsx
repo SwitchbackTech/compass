@@ -926,7 +926,8 @@ describe("AuthModal", () => {
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await waitForAuthModal();
 
-      screen.getByRole("dialog").focus();
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
       await user.keyboard("m");
 
       expect(mockMicrosoftStart).toHaveBeenCalled();
@@ -1224,6 +1225,51 @@ describe("Shortcut hints", () => {
     installAuthModalTestSeams();
   });
 
+  const blurAuthFields = async () => {
+    await act(async () => {
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) {
+        active.blur();
+      }
+    });
+  };
+
+  const expectBareLetterHintVisible = (
+    buttonName: RegExp | string,
+    letter: string,
+    visible: boolean,
+  ) => {
+    const hint = within(
+      screen.getByRole("button", { name: buttonName }),
+    ).getByText(letter);
+    if (visible) {
+      expect(hint.className).not.toMatch(/\binvisible\b/);
+    } else {
+      expect(hint.className).toMatch(/\binvisible\b/);
+    }
+  };
+
+  it("hides bare-letter chips while email is focused but keeps Enter visible", async () => {
+    await renderWithProviders(<div />, "/?auth=login");
+    await waitForAuthModal();
+
+    expect(screen.getByLabelText(/email/i)).toHaveFocus();
+    expectBareLetterHintVisible(/^sign up$/i, "U", false);
+    expectBareLetterHintVisible("Continue with Google", "G", false);
+    expectBareLetterHintVisible(/^log in$/i, "Enter", true);
+  });
+
+  it("shows bare-letter chips when focus leaves text fields", async () => {
+    await renderWithProviders(<div />, "/?auth=login");
+    await waitForAuthModal();
+
+    await blurAuthFields();
+    await waitFor(() => {
+      expectBareLetterHintVisible(/^sign up$/i, "U", true);
+    });
+    expectBareLetterHintVisible("Continue with Google", "G", true);
+  });
+
   it("shows U, G, and Enter chips on login and switches to signup with U", async () => {
     const user = userEvent.setup();
     await renderWithProviders(<ModalTrigger />);
@@ -1231,21 +1277,13 @@ describe("Shortcut hints", () => {
     await user.click(screen.getByRole("button", { name: /open modal/i }));
     await waitForAuthModal();
 
-    expect(
-      within(screen.getByRole("button", { name: /^sign up$/i })).getByText("U"),
-    ).toBeTruthy();
-    expect(
-      within(
-        screen.getByRole("button", { name: "Continue with Google" }),
-      ).getByText("G"),
-    ).toBeTruthy();
-    expect(
-      within(screen.getByRole("button", { name: /^log in$/i })).getByText(
-        "Enter",
-      ),
-    ).toBeTruthy();
+    await blurAuthFields();
+    await waitFor(() => {
+      expectBareLetterHintVisible(/^sign up$/i, "U", true);
+    });
+    expectBareLetterHintVisible("Continue with Google", "G", true);
+    expectBareLetterHintVisible(/^log in$/i, "Enter", true);
 
-    screen.getByRole("dialog").focus();
     await user.keyboard("u");
 
     await waitFor(() => {
@@ -1276,11 +1314,12 @@ describe("Shortcut hints", () => {
     await renderWithProviders(<div />, "/?auth=signup");
     await waitForAuthModal(/nice to meet you/i);
 
-    expect(
-      within(screen.getByRole("button", { name: /^log in$/i })).getByText("i"),
-    ).toBeTruthy();
+    expectBareLetterHintVisible(/^log in$/i, "i", false);
 
-    screen.getByRole("dialog").focus();
+    await blurAuthFields();
+    await waitFor(() => {
+      expectBareLetterHintVisible(/^log in$/i, "i", true);
+    });
     await user.keyboard("i");
 
     await waitFor(() => {
@@ -1296,7 +1335,7 @@ describe("Shortcut hints", () => {
     await user.click(screen.getByRole("button", { name: /open modal/i }));
     await waitForAuthModal();
 
-    screen.getByRole("dialog").focus();
+    await blurAuthFields();
     await user.keyboard("g");
 
     expect(mockGoogleLogin).toHaveBeenCalled();

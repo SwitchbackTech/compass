@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { DATA_TIMED_GRID_ROW } from "@web/common/constants/web.constants";
 import {
@@ -7,6 +8,7 @@ import {
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
 import { ALL_DAY_COLUMN_TINT_PERCENT } from "@web/grid/utils/allDayColumnTint.util";
+import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
 import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 import { TimedGrid } from "./TimedGrid";
@@ -115,6 +117,29 @@ describe("TimedGrid", () => {
 
     expect(labelSlot).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
     expect(hourRow).toHaveClass(TIMED_HOUR_SLOT_HEIGHT_CLASS);
+  });
+
+  it("uses the longest civil day in the visible week for hour-slot count", () => {
+    act(() => setPinnedTimeZone("America/Denver"));
+    const fallBackSunday = dayjs.tz("2026-11-01T12:00", "America/Denver");
+    const weekDays = Array.from({ length: 7 }, (_, index) => {
+      const date = fallBackSunday.add(index, "day");
+      return { date, key: date.format("YYYY-MM-DD") };
+    });
+    const today = dayjs.tz("2026-10-15T12:00", "America/Denver");
+
+    render(
+      <TimedGrid
+        eventsLayer={null}
+        timedColumnsRef={() => {}}
+        timedGridRef={() => {}}
+        today={today}
+        visibleDates={weekDays}
+      />,
+    );
+
+    const grid = screen.getByRole("region", { name: "Timed events grid" });
+    expect(grid.style.getPropertyValue("--calendar-day-hour-slots")).toBe("25");
   });
 
   it("sets grid geometry CSS variables once on the scroll region", () => {

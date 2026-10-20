@@ -80,7 +80,15 @@ export const DayLabels: FC<Props> = ({
         className="absolute inset-y-0 left-0 z-1 flex items-end justify-center pb-0.5"
         style={{ width: marginLeft }}
       >
-        <GridTimezoneLabel />
+        <GridTimezoneLabel
+          abbreviationAt={weekDays
+            .at(-1)
+            ?.hour(12)
+            .minute(0)
+            .second(0)
+            .millisecond(0)
+            .toDate()}
+        />
       </div>
       <div
         className="absolute top-0 grid h-full items-end"

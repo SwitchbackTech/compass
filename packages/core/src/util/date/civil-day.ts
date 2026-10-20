@@ -28,6 +28,17 @@ export function civilHourSlotCount(
   return civilDayLengthMinutes(day, timeZone) / 60;
 }
 
+/** Longest civil day among `days` (25 on a US fall-back week, 23 on spring-forward). */
+export function maxCivilHourSlotCount(
+  days: readonly (Dayjs | Date | string)[],
+  timeZone: string,
+): number {
+  if (days.length === 0) {
+    return 24;
+  }
+  return Math.max(...days.map((day) => civilHourSlotCount(day, timeZone)));
+}
+
 /** Minutes from civil midnight for `instant` in `timeZone`. */
 export function minutesFromCivilMidnight(
   instant: Dayjs | Date | string,
@@ -35,6 +46,34 @@ export function minutesFromCivilMidnight(
 ): number {
   const zoned = dayjs(instant).tz(timeZone);
   return zoned.diff(startOfCivilDay(zoned, timeZone), "minute");
+}
+
+/**
+ * Minutes from civil midnight for timed grid layout (hour labels and events).
+ * Matches {@link civilHourLineInstants} on spring-forward days; keeps elapsed
+ * minutes through the repeated hour on fall-back days.
+ */
+export function gridMinutesFromCivilMidnight(
+  instant: Dayjs | Date | string,
+  timeZone: string,
+): number {
+  const zoned = dayjs(instant).tz(timeZone);
+  const start = startOfCivilDay(zoned, timeZone);
+  const byElapsed = zoned.diff(start, "minute");
+  const byWallClock = zoned.hour() * 60 + zoned.minute();
+  if (byElapsed === byWallClock) {
+    return byElapsed;
+  }
+
+  const slots = civilHourSlotCount(zoned, timeZone);
+  if (slots === 23) {
+    return byWallClock;
+  }
+  if (slots === 25) {
+    return byElapsed;
+  }
+
+  return byElapsed;
 }
 
 /**

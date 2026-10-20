@@ -1,3 +1,4 @@
+import { shouldDeferFirstEventPromptForSignUpNudge } from "@web/auth/posthog/anon-explorer-engagement.util";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   selectFirstEventDone,
@@ -32,13 +33,15 @@ export function useFirstEventPromptSurfaceEligible(
   const isAboutOpen = useSettingsStore(selectIsAboutOpen);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
 
-  return selectFirstEventPromptSurfaceEligible({
-    isAuthModalOpen,
-    isSettingsOpen,
-    isAboutOpen,
-    isFormOpen,
-    isDone,
-    storageAvailable: persistentBrowserStore.isAvailable(),
-    showcaseActive: isShowcaseActive,
-  });
+  return (
+    selectFirstEventPromptSurfaceEligible({
+      isAuthModalOpen,
+      isSettingsOpen,
+      isAboutOpen,
+      isFormOpen,
+      isDone,
+      storageAvailable: persistentBrowserStore.isAvailable(),
+      showcaseActive: isShowcaseActive,
+    }) && !shouldDeferFirstEventPromptForSignUpNudge()
+  );
 }
