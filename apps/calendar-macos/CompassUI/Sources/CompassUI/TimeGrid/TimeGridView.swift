@@ -713,7 +713,8 @@ public final class TimeGridView: NSView {
             width: state.hasSecondaryTimeZone ? columnWidth : snapshot.metrics.marginLeft,
             headerHeight: headerHeight,
             palette: palette,
-            accessibilityLabel: "Calendar timezone: \(effectiveAbbrev)")
+            accessibilityLabel: "Calendar timezone: \(effectiveAbbrev)",
+            accessibilityIdentifier: "compass-grid-timezone-effective")
     }
 
     private func addTimezoneButton(
@@ -722,7 +723,8 @@ public final class TimeGridView: NSView {
         width: Double,
         headerHeight: Double,
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
-        accessibilityLabel: String
+        accessibilityLabel: String,
+        accessibilityIdentifier: String? = nil
     ) {
         let button = NSButton(title: title, target: self, action: #selector(openTimeTravel(_:)))
         button.isBordered = false
@@ -730,6 +732,9 @@ public final class TimeGridView: NSView {
         button.contentTintColor = palette.textMuted
         button.frame = NSRect(x: x, y: 4, width: width, height: headerHeight - 8)
         button.setAccessibilityLabel(accessibilityLabel)
+        if let accessibilityIdentifier {
+            button.setAccessibilityIdentifier(accessibilityIdentifier)
+        }
         headerRowView.addSubview(button)
     }
 

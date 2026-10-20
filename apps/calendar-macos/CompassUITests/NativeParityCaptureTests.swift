@@ -122,10 +122,13 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             sundayColumn.waitForExistence(timeout: 20),
             "Expected Sunday demo week column (2026-06-07) after nav today")
+        let timezoneHeader = window.descendants(matching: .any)["compass-grid-timezone-effective"]
         XCTAssertTrue(
-            window.staticTexts["Calendar timezone: UTC"].waitForExistence(timeout: 5)
-                || window.buttons["Calendar timezone: UTC"].waitForExistence(timeout: 5),
+            timezoneHeader.waitForExistence(timeout: 10),
             "Expected UTC timezone header on parity week grid")
+        XCTAssertTrue(
+            timezoneHeader.label.contains("UTC"),
+            "Expected effective timezone label to include UTC, got: \(timezoneHeader.label)")
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
