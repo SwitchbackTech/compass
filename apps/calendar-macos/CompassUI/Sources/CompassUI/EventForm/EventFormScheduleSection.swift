@@ -117,6 +117,7 @@ struct EventFormScheduleSection: View {
             .disabled(scheduleLocked)
             .pageJumpChipAnchor(id: "form-end")
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func mergeCalendarDay(into scheduleDate: Date, day: Date) -> Date {
