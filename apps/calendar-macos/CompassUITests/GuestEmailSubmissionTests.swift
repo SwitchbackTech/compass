@@ -24,7 +24,7 @@ final class GuestEmailSubmissionTests: XCTestCase {
             window.typeKey(.pageDown, modifierFlags: [])
         }
         calendar.click()
-        app.menuItems["Work"].click()
+        app.menuItems["Compass (primary)"].click()
         window.typeKey("8", modifierFlags: [.command])
         let guest = form.descendants(matching: .any)["Add guest email"]
         XCTAssertTrue(guest.waitForExistence(timeout: 8))
