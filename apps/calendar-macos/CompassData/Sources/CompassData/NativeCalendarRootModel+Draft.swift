@@ -118,6 +118,7 @@ extension NativeCalendarRootModel {
 
     public func handleQuickTimeDigit(_ digit: Character) {
         guard viewStore.view != .life, draftStore.gridDraft == nil else { return }
+        guard eventJumpSelection.modeActive || eventJumpSelection.isActive else { return }
         guard digit.isNumber else { return }
 
         let next = draftStore.quickTimeDigits + String(digit)
@@ -150,6 +151,7 @@ extension NativeCalendarRootModel {
             calendarId: defaultTargetCalendarId()
         )
         draftStore.startGridDraft(activity: .keyboardPlace, draft: draft)
+        clearEventJumpSelection()
         rebuildPresentation()
         focusDraftCard()
     }

@@ -1,5 +1,27 @@
 import Foundation
 
+public struct QuickTimeBusyInterval: Hashable, Sendable {
+    public var startMs: TimeInterval
+    public var endMs: TimeInterval
+
+    public init(startMs: TimeInterval, endMs: TimeInterval) {
+        self.startMs = startMs
+        self.endMs = endMs
+    }
+}
+
+public struct QuickTimeSlot: Hashable, Sendable {
+    public var start: String
+    public var end: String
+    public var sequence: String
+
+    public init(start: String, end: String, sequence: String) {
+        self.start = start
+        self.end = end
+        self.sequence = sequence
+    }
+}
+
 /// Mirrors `apps/calendar-web/src/shortcuts/quick-time/quick-time.util.ts`.
 public enum QuickTime {
     public static let maxDigits = 4
@@ -31,6 +53,53 @@ public enum QuickTime {
             return calendar.startOfDay(for: now)
         }
         return calendar.startOfDay(for: startOfView)
+    }
+
+    public static func quickTimeSequenceForHour(_ hour: Int) -> String? {
+        guard hour != 0 else { return nil }
+        return String(format: "%02d00", hour)
+    }
+
+    public static func timedEventsToBusyIntervals(
+        startDates: [Date],
+        endDates: [Date]
+    ) -> [QuickTimeBusyInterval] {
+        zip(startDates, endDates).map { start, end in
+            QuickTimeBusyInterval(startMs: start.timeIntervalSince1970, endMs: end.timeIntervalSince1970)
+        }
+    }
+
+    public static func buildQuickTimeSlots(
+        busy: [QuickTimeBusyInterval],
+        targetDay: Date
+    ) -> [QuickTimeSlot] {
+        let calendar = EffectiveTimeZone.calendar
+        let dayStart = calendar.startOfDay(for: targetDay)
+        var slots: [QuickTimeSlot] = []
+
+        for hour in 1 ..< 24 {
+            guard let sequence = quickTimeSequenceForHour(hour),
+                let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: dayStart),
+                let end = calendar.date(byAdding: .hour, value: 1, to: start)
+            else { continue }
+
+            let startMs = start.timeIntervalSince1970
+            let endMs = end.timeIntervalSince1970
+            let isTaken = busy.contains { period in
+                period.startMs < endMs && period.endMs > startMs
+            }
+            if isTaken { continue }
+
+            slots.append(
+                QuickTimeSlot(
+                    start: CompassDateParsing.formatLikeDayjs(start),
+                    end: CompassDateParsing.formatLikeDayjs(end),
+                    sequence: sequence
+                )
+            )
+        }
+
+        return slots
     }
 
     public static func resolveQuickTimeStart(digits: String, targetDay: Date) -> Date? {
