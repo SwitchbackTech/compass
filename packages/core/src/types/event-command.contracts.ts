@@ -21,6 +21,7 @@ import {
   uniqueAttendeeEmails,
 } from "@core/types/event-attendance.contracts";
 import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
+import { ProviderKindSchema } from "@core/types/sync/identity.contracts";
 
 // Whether saving (or deleting) this event should have the provider email
 // attendees about it. Same vocabulary as sync's InvitationIntentSchema, which
@@ -250,5 +251,7 @@ export const EventMutationErrorSchema = z.strictObject({
   message: z.string().min(1),
   retryable: z.boolean(),
   connectionId: z.string().optional(),
+  // Which calendar provider rejected or never received the write, when known.
+  provider: ProviderKindSchema.optional(),
 });
 export type EventMutationError = z.infer<typeof EventMutationErrorSchema>;

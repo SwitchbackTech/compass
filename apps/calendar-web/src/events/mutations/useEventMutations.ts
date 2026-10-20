@@ -57,6 +57,7 @@ import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/firs
 import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import { eventSchedulesEqual } from "@web/events/mutations/event-schedule-equal";
+import { resolveMutationProvider } from "@web/events/mutations/mutation-provider.util";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -544,7 +545,26 @@ export function useEventMutations(
     dependencies.markWrite === undefined
       ? showAnonymousSaveToastIfEligible
       : undefined;
-  const reportError = dependencies.reportError ?? handleError;
+  const baseReportError = dependencies.reportError ?? handleError;
+  const reportError = (
+    error: Error,
+    onRetry?: () => void,
+    variables?: EventWriteVariables,
+  ) => {
+    const provider = variables
+      ? resolveMutationProvider(queryClient, {
+          writeKey: variables.writeKey,
+          calendarId:
+            "input" in variables &&
+            typeof variables.input === "object" &&
+            variables.input !== null &&
+            "calendarId" in variables.input
+              ? (variables.input as CreateEventInput).calendarId
+              : undefined,
+        })
+      : undefined;
+    baseReportError(error, onRetry, { provider });
+  };
 
   // Re-dispatch seams for the "Try again" toast, filled in below once the
   // mutations exist. onError can't reach its own mutation object, and going
@@ -682,12 +702,15 @@ export function useEventMutations(
           queryKey: billingQueryKeys.status,
         });
       }
-      reportError(error, () =>
-        // A fresh object, not the original: the write-serialization queue
-        // identifies a mutation by its variables *reference*, so replaying
-        // the same one resolves back to this failed mutation and the retry
-        // is skipped as superseded by itself.
-        redispatch.current[operation]?.({ ...variables } as never),
+      reportError(
+        error,
+        () =>
+          // A fresh object, not the original: the write-serialization queue
+          // identifies a mutation by its variables *reference*, so replaying
+          // the same one resolves back to this failed mutation and the retry
+          // is skipped as superseded by itself.
+          redispatch.current[operation]?.({ ...variables } as never),
+        variables,
       );
       const { opportunityId } = variables;
       if (opportunityId) {
