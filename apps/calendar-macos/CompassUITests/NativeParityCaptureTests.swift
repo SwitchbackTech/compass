@@ -62,7 +62,7 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureModHoldOverlay() {
         let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_SHOW_PAGE_JUMP_HINTS"])
-        prepareParityGrid(window, dismissDemoBanner: true)
+        prepareParityGrid(window, dismissDemoBanner: true, pageJumpHintsPinned: true)
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-mod-hold-chips"].waitForExistence(timeout: 10))
         NativeImageSnapshotSupport.captureWindow(window, named: "mod-hold-overlay")
@@ -175,7 +175,11 @@ final class NativeParityCaptureTests: XCTestCase {
 
     /// Dismiss demo chrome and wait for the shared demo-seed grid event (web parity uses the same fixture).
     @MainActor
-    private func prepareParityGrid(_ window: XCUIElement, dismissDemoBanner: Bool) {
+    private func prepareParityGrid(
+        _ window: XCUIElement,
+        dismissDemoBanner: Bool,
+        pageJumpHintsPinned: Bool = false
+    ) {
         let okay = window.buttons["Okay"]
         if dismissDemoBanner, okay.waitForExistence(timeout: 4) {
             okay.tap()
@@ -185,12 +189,19 @@ final class NativeParityCaptureTests: XCTestCase {
                 RunLoop.current.run(until: Date().addingTimeInterval(0.1))
             }
         }
-        let wednesdayHeader = window.staticTexts.matching(
-            NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
-        ).firstMatch
-        XCTAssertTrue(
-            wednesdayHeader.waitForExistence(timeout: 20),
-            "Expected Wednesday column in parity week grid")
+        if pageJumpHintsPinned {
+            let wednesdayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-10"]
+            XCTAssertTrue(
+                wednesdayColumn.waitForExistence(timeout: 20),
+                "Expected Wednesday demo week column while page-jump hints are pinned")
+        } else {
+            let wednesdayHeader = window.staticTexts.matching(
+                NSPredicate(format: "label ENDSWITH[c] %@", " Wed")
+            ).firstMatch
+            XCTAssertTrue(
+                wednesdayHeader.waitForExistence(timeout: 20),
+                "Expected Wednesday column in parity week grid")
+        }
         XCTAssertTrue(
             waitForGridColumnCount(window, atLeast: 5, timeout: 20),
             "Expected five day columns in parity week grid")
