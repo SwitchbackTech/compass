@@ -5,6 +5,7 @@ import Foundation
 /// boot track math (1280×820, sidebar open @ 345px, content pl-8).
 public enum ParityCaptureGeometry {
     public static let viewportWidth: Double = 1280
+    public static let viewportHeight: Double = 820
     public static let contentLeadingInset: Double = 32
     public static let sidebarDividerWidth: Double = 32
     public static let defaultSidebarWidth: Double = 345

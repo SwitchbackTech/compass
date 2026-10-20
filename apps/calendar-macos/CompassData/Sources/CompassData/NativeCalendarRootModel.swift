@@ -386,6 +386,7 @@ public final class NativeCalendarRootModel {
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
+        onParityCapturePresentationApplied?()
     }
 
     public func dismissDemoEventsBanner() {
@@ -406,6 +407,7 @@ public final class NativeCalendarRootModel {
         await syncConnectionsStore.reloadFromMetadata()
     }
 
+    public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
