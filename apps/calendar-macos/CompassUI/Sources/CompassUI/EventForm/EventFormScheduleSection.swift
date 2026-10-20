@@ -12,7 +12,13 @@ struct EventFormScheduleSection: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            if draft.schedule.kind == .timed {
+                timedRangeRow
+            } else {
+                allDayDateRow
+            }
+
             Toggle("All day?", isOn: Binding(
                 get: { draft.schedule.kind == .allDay },
                 set: { model.setDraftAllDay($0) }
@@ -20,48 +26,6 @@ struct EventFormScheduleSection: View {
             .toggleStyle(.checkbox)
             .disabled(scheduleLocked)
             .accessibilityIdentifier("compass-event-form-allday")
-
-            if draft.schedule.kind == .timed {
-                timedRow(
-                    date: draft.schedule.start,
-                    dateAccessibilityIdentifier: "compass-event-form-start-date",
-                    timeLabel: "Start time",
-                    timeAccessibilityIdentifier: "compass-event-form-start",
-                    pageJumpId: "form-start",
-                    update: updateStart
-                )
-                timedRow(
-                    date: draft.schedule.end,
-                    dateAccessibilityIdentifier: "compass-event-form-end-date",
-                    timeLabel: "End time",
-                    timeAccessibilityIdentifier: "compass-event-form-end",
-                    pageJumpId: "form-end",
-                    update: updateEnd
-                )
-            } else {
-                EventFormCompactDateField(
-                    date: Binding(
-                        get: { draft.schedule.start },
-                        set: { model.updateAllDayDraftStart($0) }
-                    ),
-                    accessibilityIdentifier: "compass-event-form-start"
-                )
-                .disabled(scheduleLocked)
-                .pageJumpChipAnchor(id: "form-start")
-
-                EventFormCompactDateField(
-                    date: Binding(
-                        get: {
-                            EffectiveTimeZone.calendar.date(byAdding: .day, value: -1, to: draft.schedule.end)
-                                ?? draft.schedule.start
-                        },
-                        set: { model.updateAllDayDraftEnd($0) }
-                    ),
-                    accessibilityIdentifier: "compass-event-form-end"
-                )
-                .disabled(scheduleLocked)
-                .pageJumpChipAnchor(id: "form-end")
-            }
 
             if scheduleLocked {
                 Text(
@@ -75,34 +39,83 @@ struct EventFormScheduleSection: View {
         }
     }
 
-    @ViewBuilder
-    private func timedRow(
-        date: Date,
-        dateAccessibilityIdentifier: String,
-        timeLabel: String,
-        timeAccessibilityIdentifier: String,
-        pageJumpId: String,
-        update: @escaping (Date) -> Void
-    ) -> some View {
+    private var allDayDateRow: some View {
         HStack(spacing: 8) {
             EventFormCompactDateField(
                 date: Binding(
-                    get: { date },
-                    set: { update(mergeCalendarDay(into: date, day: $0)) }
+                    get: { draft.schedule.start },
+                    set: { model.updateAllDayDraftStart($0) }
                 ),
-                accessibilityIdentifier: dateAccessibilityIdentifier
+                accessibilityIdentifier: "compass-event-form-start"
             )
             .disabled(scheduleLocked)
-            .pageJumpChipAnchor(id: pageJumpId)
+            .pageJumpChipAnchor(id: "form-start")
+
+            EventFormCompactDateField(
+                date: Binding(
+                    get: {
+                        EffectiveTimeZone.calendar.date(byAdding: .day, value: -1, to: draft.schedule.end)
+                            ?? draft.schedule.start
+                    },
+                    set: { model.updateAllDayDraftEnd($0) }
+                ),
+                accessibilityIdentifier: "compass-event-form-end"
+            )
+            .disabled(scheduleLocked)
+            .pageJumpChipAnchor(id: "form-end")
+        }
+    }
+
+    private var timedRangeRow: some View {
+        let calendar = EffectiveTimeZone.calendar
+        let startDay = calendar.startOfDay(for: draft.schedule.start)
+        let endDay = calendar.startOfDay(for: draft.schedule.end)
+        let spansMultipleDays = startDay != endDay
+
+        return HStack(alignment: .center, spacing: 8) {
+            EventFormCompactDateField(
+                date: Binding(
+                    get: { draft.schedule.start },
+                    set: { updateStart(mergeCalendarDay(into: draft.schedule.start, day: $0)) }
+                ),
+                accessibilityIdentifier: "compass-event-form-start-date"
+            )
+            .disabled(scheduleLocked)
+            .pageJumpChipAnchor(id: "form-start")
 
             EventFormTimeField(
                 date: Binding(
-                    get: { date },
-                    set: { update($0) }
+                    get: { draft.schedule.start },
+                    set: { updateStart($0) }
                 ),
-                accessibilityIdentifier: timeAccessibilityIdentifier
+                accessibilityIdentifier: "compass-event-form-start"
             )
             .disabled(scheduleLocked)
+
+            Text("-")
+                .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
+                .foregroundStyle(theme.textMutedColor)
+
+            if spansMultipleDays {
+                EventFormCompactDateField(
+                    date: Binding(
+                        get: { draft.schedule.end },
+                        set: { updateEnd(mergeCalendarDay(into: draft.schedule.end, day: $0)) }
+                    ),
+                    accessibilityIdentifier: "compass-event-form-end-date"
+                )
+                .disabled(scheduleLocked)
+            }
+
+            EventFormTimeField(
+                date: Binding(
+                    get: { draft.schedule.end },
+                    set: { updateEnd($0) }
+                ),
+                accessibilityIdentifier: "compass-event-form-end"
+            )
+            .disabled(scheduleLocked)
+            .pageJumpChipAnchor(id: "form-end")
         }
     }
 
