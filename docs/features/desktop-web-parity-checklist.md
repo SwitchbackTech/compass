@@ -321,7 +321,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
-| 2026-10-20 | #4611 parity capture geometry on `main`; #4612 Sunday week + UTC labels queued; #4613 palette nav/icons; #4614 sidebar tips + Up Next + theme row |
+| 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
 
 ---
 
