@@ -461,7 +461,7 @@ public final class TimeGridView: NSView {
             text: palette.text,
             textMuted: palette.textMuted,
             accent: themeAccentColor,
-            surfacePanel: palette.surfacePanel,
+            surfacePanel: palette.surfaceRaised,
             border: palette.border,
             background: palette.background
         )
