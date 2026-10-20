@@ -26,9 +26,14 @@ struct SettingsTimezoneSectionView: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(8)
-            .background(theme.surfacePanelColor)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(theme.borderColor))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(theme.surfaceOverlayColor)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+            .overlay(
+                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                    .stroke(theme.borderColor, lineWidth: 1)
+            )
             .foregroundStyle(theme.textColor)
             .font(.rubik(13))
         }

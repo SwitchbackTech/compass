@@ -992,11 +992,11 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    var startOfView: Date {
+    public var startOfView: Date {
         EffectiveTimeZone.calendar.startOfDay(for: viewStore.anchorDate)
     }
 
-    var endOfView: Date {
+    public var endOfView: Date {
         let calendar = EffectiveTimeZone.calendar
         return calendar.date(
             byAdding: .day,
