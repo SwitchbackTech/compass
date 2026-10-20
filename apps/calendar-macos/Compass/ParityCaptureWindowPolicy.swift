@@ -15,6 +15,10 @@ enum ParityCaptureWindowPolicy {
         // Always use the canonical parity viewport so five day columns are not
         // clipped when the host display is smaller than 1280×820.
         let target = contentSize
+        window.minSize = target
+        window.maxSize = target
+        window.contentResizeIncrements = target
+        window.styleMask.remove(.resizable)
         let visible = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
         let contentRect = NSRect(origin: .zero, size: target)
         let frame = window.frameRect(forContentRect: contentRect)
@@ -22,10 +26,11 @@ enum ParityCaptureWindowPolicy {
             var origin = frame.origin
             if let visible {
                 origin.x = visible.midX - frame.width / 2
-                origin.y = visible.midY - frame.height / 2
+                origin.y = visible.maxY - frame.height
             }
             window.setFrame(NSRect(origin: origin, size: frame.size), display: true)
         }
+        window.setContentSize(target)
     }
 
     @MainActor

@@ -11,6 +11,7 @@ final class NativeParityCaptureTests: XCTestCase {
         "-COMPASS_UI_TEST_PARITY_CAPTURE",
         "-PARITY_CAPTURE",
         "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+        "-\(OnboardingStorageKeys.pointerHintDismissedPermanently)", "true",
     ]
 
     @MainActor
