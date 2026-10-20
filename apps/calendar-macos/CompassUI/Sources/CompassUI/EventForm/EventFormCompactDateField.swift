@@ -1,3 +1,4 @@
+import CompassData
 import CompassKit
 import SwiftUI
 
@@ -13,6 +14,9 @@ struct EventFormCompactDateField: View {
         _date = date
         self.accessibilityIdentifier = accessibilityIdentifier
         _text = State(initialValue: EventFormDateFormat.formatLabel(for: date.wrappedValue))
+        let openPicker = UITestLaunchPolicy.openEventFormDatePickerForUITest
+            && accessibilityIdentifier == "compass-event-form-start-date"
+        _showsCalendar = State(initialValue: openPicker)
     }
 
     var body: some View {
@@ -56,6 +60,7 @@ struct EventFormCompactDateField: View {
                 .datePickerStyle(.graphical)
                 .labelsHidden()
                 .padding(12)
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-event-form-date-picker")
             }
     }

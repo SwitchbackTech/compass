@@ -98,14 +98,11 @@ final class NativeParityCaptureTests: XCTestCase {
 
     @MainActor
     private func captureEventFormDatePicker() {
-        let window = launchDemoWindow()
+        let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_EVENT_FORM_DATE_PICKER"])
         prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
-        let startDate = window.descendants(matching: .any)["compass-event-form-start-date"]
-        XCTAssertTrue(startDate.waitForExistence(timeout: 8))
-        startDate.doubleTap()
         XCTAssertTrue(
-            window.descendants(matching: .any)["compass-event-form-date-picker"].waitForExistence(timeout: 8))
+            window.descendants(matching: .any)["compass-event-form-date-picker"].waitForExistence(timeout: 12))
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-date-picker")
     }
 

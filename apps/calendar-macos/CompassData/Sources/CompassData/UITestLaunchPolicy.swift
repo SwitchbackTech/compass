@@ -60,6 +60,11 @@ public enum UITestLaunchPolicy {
         ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_SHOW_PAGE_JUMP_HINTS")
     }
 
+    /// Opens the start-date popover when the event form appears (parity PNG capture).
+    public static var openEventFormDatePickerForUITest: Bool {
+        ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_OPEN_EVENT_FORM_DATE_PICKER")
+    }
+
     /// Desktop ↔ web screenshot capture (`NativeParityCaptureTests`).
     public static var isParityCapture: Bool {
         ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"
