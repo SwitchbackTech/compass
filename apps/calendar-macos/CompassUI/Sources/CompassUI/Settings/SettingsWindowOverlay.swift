@@ -80,7 +80,7 @@ public struct SettingsWindowOverlay: View {
 
     private func navButton(_ title: String, page: SettingsPage, attention: Bool = false) -> some View {
         let isCurrent = model.settingsStore.page == page
-        Button(title) { model.settingsStore.page = page }
+        return Button(title) { model.settingsStore.page = page }
             .buttonStyle(.plain)
             .font(.rubik(14, weight: isCurrent ? .medium : .regular))
             .foregroundStyle(isCurrent ? theme.textColor : theme.textMutedColor)
