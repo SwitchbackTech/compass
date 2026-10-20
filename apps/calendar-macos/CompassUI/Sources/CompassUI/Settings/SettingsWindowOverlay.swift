@@ -14,7 +14,7 @@ public struct SettingsWindowOverlay: View {
         if model.settingsStore.isPresented {
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
-                    theme.panelBackdropColor
+                    PanelBackdropView()
                         .ignoresSafeArea()
                         .onTapGesture { model.closeSettingsIfAllowed() }
                     VStack(alignment: .leading, spacing: 24) {

@@ -14,7 +14,7 @@ struct WelcomeModalView: View {
 
     var body: some View {
         ZStack {
-            theme.panelBackdropColor
+            PanelBackdropView()
                 .ignoresSafeArea()
             ScrollView {
                 panel

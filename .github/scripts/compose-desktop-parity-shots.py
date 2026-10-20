@@ -57,6 +57,14 @@ SIDEBAR_REGION_SURFACES = frozenset(
         "event-form-time-picker",
     }
 )
+MODAL_REGION_SURFACES = frozenset(
+    {
+        "command-palette",
+        "settings",
+        "onboarding-welcome",
+    }
+)
+MODAL_CROP = (300, 48, 980, 772)
 
 LABEL_HEIGHT = 36
 GUTTER = 8
@@ -113,6 +121,8 @@ def regional_outputs(surface: str) -> Iterable[tuple[str, tuple[int, int, int, i
         yield ("grid", GRID_CROP)
     if surface in SIDEBAR_REGION_SURFACES:
         yield ("sidebar", SIDEBAR_CROP)
+    if surface in MODAL_REGION_SURFACES:
+        yield ("modal", MODAL_CROP)
 
 
 def main() -> None:
