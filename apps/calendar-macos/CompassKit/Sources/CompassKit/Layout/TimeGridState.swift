@@ -9,6 +9,7 @@ public struct TimeGridState: Sendable {
     /// Grid card whose event is open in the sidebar form (keyboard focus may be elsewhere).
     public var sidebarEditingEventId: String?
     public var eventJumpHints: [EventJumpChipHint]
+    public var quickTimeSlotHints: [QuickTimeSlotHint]
     public var focusedDayColumnCalendarId: String?
     public var pageJumpHintsVisible: Bool
     public var pageJumpDigitByCalendarId: [String: String]
@@ -24,6 +25,7 @@ public struct TimeGridState: Sendable {
         focusedEventId: String? = nil,
         sidebarEditingEventId: String? = nil,
         eventJumpHints: [EventJumpChipHint] = [],
+        quickTimeSlotHints: [QuickTimeSlotHint] = [],
         focusedDayColumnCalendarId: String? = nil,
         pageJumpHintsVisible: Bool = false,
         pageJumpDigitByCalendarId: [String: String] = [:],
@@ -38,6 +40,7 @@ public struct TimeGridState: Sendable {
         self.focusedEventId = focusedEventId
         self.sidebarEditingEventId = sidebarEditingEventId
         self.eventJumpHints = eventJumpHints
+        self.quickTimeSlotHints = quickTimeSlotHints
         self.focusedDayColumnCalendarId = focusedDayColumnCalendarId
         self.pageJumpHintsVisible = pageJumpHintsVisible
         self.pageJumpDigitByCalendarId = pageJumpDigitByCalendarId

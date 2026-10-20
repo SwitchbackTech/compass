@@ -6,6 +6,13 @@ extension NativeCalendarRootModel {
 
     public var eventJumpStatusText: String? {
         guard eventJumpSelection.isActive else { return nil }
+        if eventJumpSelection.modeActive,
+            eventJumpSelection.activeDayKeys.isEmpty,
+            eventJumpSelection.dayJumpBuffer.isEmpty,
+            eventJumpSelection.announcement == nil
+        {
+            return "Event jump on · Esc"
+        }
         if eventJumpSelection.dayJumpBuffer == "s", eventJumpSelection.activeDayKeys.isEmpty {
             return "Shift+U Sunday · Shift+A Saturday · Esc"
         }
@@ -18,8 +25,33 @@ extension NativeCalendarRootModel {
         return "Event jump · Esc"
     }
 
+    public func toggleEventJumpMode() {
+        if eventJumpSelection.modeActive {
+            clearEventJumpSelection()
+            draftStore.setQuickTimeDigits("")
+            return
+        }
+        eventJumpSelection.setModeActive(true)
+        recordShortcut(.focusShiftHold)
+        refreshEventJumpPresentation()
+    }
+
+    func refreshEventJumpPresentation() {
+        if eventJumpSelection.modeActive {
+            eventJumpHintLabels = buildEventJumpHints()
+            quickTimeSlotHintLabels = buildQuickTimeSlotHints()
+        } else {
+            eventJumpHintLabels = []
+            quickTimeSlotHintLabels = []
+        }
+        applyFocusPresentation()
+    }
+
     public func handleShiftDayJump(letter: Character) {
         guard viewStore.view == .week || viewStore.view == .day else { return }
+        if !eventJumpSelection.modeActive {
+            eventJumpSelection.setModeActive(true)
+        }
         let lower = String(letter).lowercased()
 
         if eventJumpSelection.dayJumpBuffer == "s" {
@@ -36,7 +68,7 @@ extension NativeCalendarRootModel {
         if lower == "s" {
             eventJumpSelection.setWeekendDisambiguation(announcement: "Weekend")
             recordShortcut(.focusWeekDay)
-            applyFocusPresentation()
+            refreshEventJumpPresentation()
             return
         }
 
@@ -62,14 +94,57 @@ extension NativeCalendarRootModel {
             }) {
                 focusEvent(eventId: first.id.rawValue)
             }
-            applyFocusPresentation()
+            refreshEventJumpPresentation()
             return
         }
     }
 
     public func clearEventJumpSelection() {
         eventJumpSelection.clear()
+        eventJumpHintLabels = []
+        quickTimeSlotHintLabels = []
         applyFocusPresentation()
+    }
+
+    func buildQuickTimeSlotHints() -> [QuickTimeSlotHint] {
+        guard eventJumpSelection.modeActive else { return [] }
+        let focusedDay = QuickTime.quickTimeFocusedColumnDay(
+            activeDayKeys: eventJumpSelection.activeDayKeys)
+        let targetDay = QuickTime.quickTimeTargetDay(
+            startOfView: startOfView,
+            endOfView: endOfView,
+            now: referenceNow,
+            focusedDay: focusedDay
+        )
+        let timedStarts: [Date] = loadedEvents.compactMap { event in
+            guard case .timed(let timed) = event.schedule else { return nil }
+            return CompassDateParsing.parseInEffectiveTimeZone(timed.start.rawValue)
+        }
+        let timedEnds: [Date] = loadedEvents.compactMap { event in
+            guard case .timed(let timed) = event.schedule else { return nil }
+            return CompassDateParsing.parseInEffectiveTimeZone(timed.end.rawValue)
+        }
+        let busy = QuickTime.timedEventsToBusyIntervals(startDates: timedStarts, endDates: timedEnds)
+        let slots = QuickTime.buildQuickTimeSlots(busy: busy, targetDay: targetDay)
+        let visibleDates = GridVisibleDate.fromKeys(timeGridState.scenario.visibleDateKeys)
+        let colWidths = timeGridState.resolvedColumnWidths()
+        let metrics = timeGridState.snapshot(colWidths: colWidths).metrics
+        let columnIndex: Int? = {
+            let key = CompassDateParsing.formatCalendarDay(targetDay)
+            return visibleDates.firstIndex(where: { $0.key == key })
+        }()
+        return slots.compactMap { slot in
+            let frame = EventPositionCalculator.getBusyPeriodPosition(
+                segmentStart: slot.start,
+                segmentEnd: slot.end,
+                measurements: metrics,
+                visibleDates: visibleDates,
+                columnIndex: columnIndex,
+                hasSecondaryTimeZone: timeGridState.hasSecondaryTimeZone
+            )
+            guard frame.width > 0, frame.height > 0 else { return nil }
+            return QuickTimeSlotHint(sequence: slot.sequence, frame: frame)
+        }
     }
 
     private func eventJumpDayKey(for event: Event) -> String {

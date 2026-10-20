@@ -31,4 +31,15 @@ final class QuickTimeTests: XCTestCase {
         XCTAssertEqual(calendar.component(.hour, from: start!), 11)
         XCTAssertEqual(calendar.component(.minute, from: start!), 30)
     }
+
+    func testBuildQuickTimeSlotsSkipsBusyHour() {
+        let day = CompassDateParsing.calendarDateInEffectiveTimeZone("2026-05-20")!
+        let calendar = EffectiveTimeZone.calendar
+        let busyStart = calendar.date(bySettingHour: 11, minute: 0, second: 0, of: day)!
+        let busyEnd = calendar.date(byAdding: .hour, value: 1, to: busyStart)!
+        let busy = QuickTime.timedEventsToBusyIntervals(startDates: [busyStart], endDates: [busyEnd])
+        let slots = QuickTime.buildQuickTimeSlots(busy: busy, targetDay: day)
+        XCTAssertFalse(slots.contains(where: { $0.sequence == "1100" }))
+        XCTAssertTrue(slots.contains(where: { $0.sequence == "1200" }))
+    }
 }

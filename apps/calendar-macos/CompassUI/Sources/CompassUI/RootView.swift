@@ -347,6 +347,11 @@ public struct RootView: View {
                         gridYOffset: gridChipYOffset,
                         visible: !model.timeGridState.eventJumpHints.isEmpty
                     )
+                    QuickTimeSlotsOverlay(
+                        hints: model.timeGridState.quickTimeSlotHints,
+                        gridYOffset: gridChipYOffset,
+                        visible: model.eventJumpSelection.modeActive
+                    )
                 }
                 .background(theme.backgroundColor)
                 .accessibilityIdentifier("compass-native-content")
