@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 struct DeleteAccountConfirmationDialogView: View {
