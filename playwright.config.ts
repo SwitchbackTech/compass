@@ -53,7 +53,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-desktop",
-      testIgnore: "**/event-sidebar-staging.spec.ts",
+      testIgnore: [
+        "**/event-sidebar-staging.spec.ts",
+        "**/event-description-links.spec.ts",
+      ],
       use: {
         ...devices["Desktop Chrome"],
         storageState: onboardingStorageState(`http://localhost:${TEST_PORT}`),
@@ -61,7 +64,10 @@ export default defineConfig({
     },
     {
       name: "chromium-staging-sidebar",
-      testMatch: "**/event-sidebar-staging.spec.ts",
+      testMatch: [
+        "**/event-sidebar-staging.spec.ts",
+        "**/event-description-links.spec.ts",
+      ],
       use: {
         ...devices["Desktop Chrome"],
         baseURL: `http://localhost:${STAGING_SIDEBAR_PORT}`,

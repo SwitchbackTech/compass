@@ -64,7 +64,10 @@ const DescriptionEditorLinkHintChip = ({
       style={floatingStyles}
       aria-hidden="true"
     >
-      <ShortcutKeys keys={digit} />
+      <ShortcutKeys
+        keys={digit}
+        className="inline-flex pointer-coarse:inline-flex"
+      />
     </span>
   );
 };
