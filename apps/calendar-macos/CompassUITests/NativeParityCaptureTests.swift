@@ -140,12 +140,22 @@ final class NativeParityCaptureTests: XCTestCase {
     @MainActor
     private func captureWelcomeOnboarding() {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false", "-compass.theme", "light-beach"]
+        app.launchArguments += [
+            "-\(OnboardingStorageKeys.hasSeenWelcome)", "false",
+            "-compass.theme", "light-beach",
+            "-COMPASS_UI_TEST_PARITY_CAPTURE",
+            "-PARITY_CAPTURE",
+        ]
+        app.launchEnvironment["PARITY_CAPTURE"] = "1"
+        if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {
+            app.launchEnvironment["PARITY_OUTPUT_DIR"] = outDir
+        }
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 10))
+        sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
     }
 
@@ -179,10 +189,6 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             waitForGridColumnCount(window, atLeast: 5, timeout: 20),
             "Expected five day columns in parity week grid")
-        let timedGrid = window.descendants(matching: .any)["compass-grid-timed"]
-        if timedGrid.waitForExistence(timeout: 5) {
-            timedGrid.click()
-        }
         window.typeKey("t", modifierFlags: [])
         let sundayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-07"]
         XCTAssertTrue(

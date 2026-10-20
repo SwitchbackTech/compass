@@ -17,6 +17,9 @@ enum ParityViewSnapshotExporter {
         ParityCaptureWindowPolicy.applyIfNeeded(to: window)
         window.displayIfNeeded()
         contentView.layoutSubtreeIfNeeded()
+        contentView.wantsLayer = true
+        contentView.layer?.displayIfNeeded()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
 
         let contentSize = NSSize(
             width: ParityCaptureGeometry.viewportWidth,
