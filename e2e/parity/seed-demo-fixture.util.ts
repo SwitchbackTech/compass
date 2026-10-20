@@ -85,6 +85,8 @@ export async function prepareParityDemoWeek(
   }
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("t");
+  // Web scroll-to-now uses smooth scrolling; wait for parity PNG alignment with macOS.
+  await page.waitForTimeout(800);
   await page
     .getByRole("button", { name: /Exercise|Morning standup/i })
     .first()
