@@ -15,4 +15,12 @@ public enum OnboardingStorageKeys {
         "compass.onboarding.shortcut-showcase-outcome"
     public static let shortcutShowcaseStep =
         "compass.onboarding.shortcut-showcase-step"
+    public static let anonymousCalendarWriteCount =
+        "compass.onboarding.anonymous-calendar-write-count"
+    public static let anonymousShortcutEngagementCount =
+        "compass.onboarding.anonymous-shortcut-engagement-count"
+    public static let hasDismissedLocalModeConnectPrompt =
+        "compass.onboarding.has-dismissed-local-mode-connect-prompt"
+    public static let hasDismissedMeetingPageNudge =
+        "compass.onboarding.has-dismissed-meeting-page-nudge"
 }

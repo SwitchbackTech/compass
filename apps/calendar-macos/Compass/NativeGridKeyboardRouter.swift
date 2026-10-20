@@ -335,6 +335,12 @@ final class NativeGridKeyboardRouter {
             return true
         }
 
+        if model.handleNoticeActionKey(
+            keyEvent, editSequenceArmed: dispatcher.leaderEngine.phase != .idle)
+        {
+            return true
+        }
+
         if handleDraftKeys(keyEvent) {
             return true
         }

@@ -92,6 +92,11 @@ public struct RootView: View {
             OnboardingOverlay(model: model)
         }
         .overlay {
+            if model.showsLocalModeConnectPrompt {
+                LocalModeConnectPromptView(model: model)
+            }
+        }
+        .overlay {
             BlockPartyOverlay(model: model)
         }
         .overlay {
@@ -248,6 +253,9 @@ public struct RootView: View {
             .pageJumpChipAnchor(id: "month-picker")
             UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
             CalendarListView(model: model)
+            if model.showsMeetingPageNudge {
+                MeetingPageNudgeView(model: model)
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
