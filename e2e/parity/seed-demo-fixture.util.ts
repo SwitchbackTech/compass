@@ -21,6 +21,7 @@ const DEMO_SEED_PATH = join(
 
 type DemoSeedFixture = {
   referenceNow: string;
+  timeZone: string;
   calendarId: string;
   events: unknown[];
 };
@@ -45,6 +46,7 @@ export async function installParityWebEnvironment(
     "compass.localCalendarId": demoFixture.calendarId,
     "compass.view.sidebar-open": "true",
     "compass.sidebar.width": String(PARITY_SIDEBAR_WIDTH),
+    "compass.timezone.default": demoFixture.timeZone,
   };
   if (dismissOnboarding) {
     localStorageSeed["compass.onboarding.has-seen-welcome"] = "true";
