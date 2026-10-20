@@ -19,6 +19,7 @@ import {
 import { IS_EVENT_SIDEBAR_STAGING_UX } from "@web/common/constants/env.constants";
 import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
 import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
+import { DescriptionEditorLinkHints } from "@web/components/DescriptionEditor/DescriptionEditorLinkHints";
 import {
   DESCRIPTION_HTML_ALLOWED_ATTR,
   DESCRIPTION_HTML_ALLOWED_TAGS,
@@ -33,6 +34,11 @@ import {
 } from "@web/components/DescriptionEditor/plain-text-description";
 import { toggleDescriptionList } from "@web/components/DescriptionEditor/toggle-description-list";
 import { useDescriptionEditorCopyLinkShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorCopyLinkShortcut";
+import {
+  useDescriptionEditorOpenLinkAtCaretShortcut,
+  useDescriptionEditorOpenLinkDigitShortcuts,
+} from "@web/components/DescriptionEditor/useDescriptionEditorOpenLinkShortcuts";
+import { useDescriptionLinkPresentation } from "@web/components/DescriptionEditor/useDescriptionLinkPresentation";
 import { Divider } from "@web/components/Divider/Divider";
 
 // The allowlist is shared with the desktop export (description-html.policy),
@@ -177,7 +183,6 @@ export const DescriptionEditor = ({
             target: "_blank",
             rel: "noopener noreferrer nofollow",
             class: "text-accent underline",
-            title: "Mod+click to open",
           },
         }),
         Placeholder.configure({ placeholder }),
@@ -231,6 +236,17 @@ export const DescriptionEditor = ({
     editorRoot,
     linkUxEnabled && editable,
   );
+  useDescriptionEditorOpenLinkAtCaretShortcut(
+    editor,
+    editorRoot,
+    linkUxEnabled && editable,
+  );
+  useDescriptionEditorOpenLinkDigitShortcuts(
+    editorRoot,
+    linkUxEnabled && !isFocused,
+  );
+
+  useDescriptionLinkPresentation(editor, editorRoot, linkUxEnabled, isFocused);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
@@ -349,7 +365,15 @@ export const DescriptionEditor = ({
         )}
         onKeyDown={handleDescriptionKeyDown}
       />
-      {linkUxEnabled && <DescriptionEditorLinkChrome editorRoot={editorRoot} />}
+      {linkUxEnabled && (
+        <>
+          <DescriptionEditorLinkHints
+            editorRoot={editorRoot}
+            visible={!isFocused}
+          />
+          <DescriptionEditorLinkChrome editorRoot={editorRoot} />
+        </>
+      )}
       <Divider color={underlineColor} toggled={isFocused} />
     </div>
   );

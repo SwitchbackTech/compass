@@ -6,7 +6,7 @@ import {
   useFloating,
 } from "@floating-ui/react";
 import { Copy } from "@phosphor-icons/react/dist/csr/Copy";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import {
   copyDescriptionLinkUrl,
@@ -14,9 +14,11 @@ import {
   listDescriptionLinks,
 } from "@web/components/DescriptionEditor/description-link.util";
 import IconButton from "@web/components/IconButton/IconButton";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 const COPY_ICON_SIZE = 14;
+const HOVER_CLOSE_DELAY_MS = 150;
 
 interface DescriptionEditorLinkChromeProps {
   editorRoot: HTMLElement | null;
@@ -26,11 +28,25 @@ export const DescriptionEditorLinkChrome = ({
   editorRoot,
 }: DescriptionEditorLinkChromeProps) => {
   const [activeLink, setActiveLink] = useState<HTMLAnchorElement | null>(null);
-  const [hoveredLink, setHoveredLink] = useState<HTMLAnchorElement | null>(
-    null,
-  );
+  const [pinnedLink, setPinnedLink] = useState<HTMLAnchorElement | null>(null);
+  const clearHoverTimeoutRef = useRef<number | null>(null);
+  const floatingRef = useRef<HTMLDivElement | null>(null);
 
-  const chromeLink = activeLink ?? hoveredLink;
+  const chromeLink = activeLink ?? pinnedLink;
+
+  const cancelClearHover = useCallback(() => {
+    if (clearHoverTimeoutRef.current !== null) {
+      window.clearTimeout(clearHoverTimeoutRef.current);
+      clearHoverTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleClearHover = useCallback(() => {
+    cancelClearHover();
+    clearHoverTimeoutRef.current = window.setTimeout(() => {
+      setPinnedLink(null);
+    }, HOVER_CLOSE_DELAY_MS);
+  }, [cancelClearHover]);
 
   useEffect(() => {
     if (!editorRoot) return;
@@ -38,6 +54,7 @@ export const DescriptionEditorLinkChrome = ({
     const syncTabIndex = () => {
       for (const link of listDescriptionLinks(editorRoot)) {
         link.tabIndex = 0;
+        link.title = link.href;
         link.classList.add("c-focus-ring", "rounded-xs");
       }
     };
@@ -58,11 +75,28 @@ export const DescriptionEditorLinkChrome = ({
     };
 
     const onPointerOver = (event: PointerEvent) => {
-      setHoveredLink(findLinkElement(editorRoot, event.target));
+      const link = findLinkElement(editorRoot, event.target);
+      if (!link) return;
+      cancelClearHover();
+      setPinnedLink(link);
     };
 
     const onPointerOut = (event: PointerEvent) => {
-      setHoveredLink(linkAfterLeave(event.relatedTarget));
+      const nextLink = linkAfterLeave(event.relatedTarget);
+      if (nextLink) {
+        cancelClearHover();
+        setPinnedLink(nextLink);
+        return;
+      }
+
+      if (
+        event.relatedTarget instanceof Node &&
+        floatingRef.current?.contains(event.relatedTarget)
+      ) {
+        return;
+      }
+
+      scheduleClearHover();
     };
 
     editorRoot.addEventListener("focusin", onFocusIn);
@@ -84,8 +118,9 @@ export const DescriptionEditorLinkChrome = ({
       editorRoot.removeEventListener("pointerover", onPointerOver);
       editorRoot.removeEventListener("pointerout", onPointerOut);
       observer.disconnect();
+      cancelClearHover();
     };
-  }, [editorRoot]);
+  }, [cancelClearHover, editorRoot, scheduleClearHover]);
 
   const { refs, floatingStyles } = useFloating({
     open: Boolean(chromeLink),
@@ -107,17 +142,35 @@ export const DescriptionEditorLinkChrome = ({
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: keeps the editor focused when pressing the copy control beside a link mark.
     <div
-      ref={refs.setFloating}
+      ref={(node) => {
+        floatingRef.current = node;
+        refs.setFloating(node);
+      }}
       className="z-10"
       style={floatingStyles}
       onMouseDown={(event) => {
         event.preventDefault();
         event.stopPropagation();
       }}
+      onPointerEnter={cancelClearHover}
+      onPointerLeave={scheduleClearHover}
     >
       <TooltipWrapper
-        description="Copy link"
-        shortcut={[...KEYMAP.copyDescriptionLink.keycaps]}
+        description="Link"
+        shortcut={
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1">
+              <span className="text-xs">Copy</span>
+              <ShortcutKeys keys={[...KEYMAP.copyDescriptionLink.keycaps]} />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs">Open</span>
+              <ShortcutKeys
+                keys={[...KEYMAP.openDescriptionLinkAtCaret.keycaps]}
+              />
+            </div>
+          </div>
+        }
         shortcutId="edit-copy-description-link"
       >
         <IconButton
