@@ -22,8 +22,9 @@ test("description links are focusable and copy with Mod+Shift+C", async ({
   await fillTitleAndSaveEventForm(page, title);
   await openEventForEditingWithKeyboard(page, title);
 
-  const link = page.locator(".tiptap a").filter({ hasText: linkUrl });
+  const link = page.getByRole("link", { name: "example.com" });
   await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute("title", linkUrl);
   await link.focus();
   await expect(page.getByRole("button", { name: "Copy link" })).toBeVisible();
 
