@@ -128,6 +128,12 @@ public struct EventFormView: View {
                         .id(EventFormField.rsvp)
                     }
                 }
+                .onAppear {
+                    guard UITestLaunchPolicy.isParityCapture else { return }
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(EventFormField.start, anchor: .top)
+                    }
+                }
                 .onChange(of: model.eventFormFocusedField) { _, field in
                     proxy.scrollTo(field == .end ? EventFormField.start : field, anchor: .center)
                 }

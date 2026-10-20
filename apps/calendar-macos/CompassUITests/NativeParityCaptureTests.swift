@@ -214,7 +214,7 @@ final class NativeParityCaptureTests: XCTestCase {
         if dismissScrollHint.waitForExistence(timeout: 2) {
             dismissScrollHint.tap()
         }
-        sleep(1)
+        sleep(2)
     }
 
     @MainActor

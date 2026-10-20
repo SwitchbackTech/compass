@@ -399,7 +399,7 @@ public final class TimeGridView: NSView {
             label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,
-                y: Double(hour) * hourHeight + 2,
+                y: Double(hour) * hourHeight + 4,
                 width: width - 8,
                 height: 14)
             hourGutterView.addSubview(label)
