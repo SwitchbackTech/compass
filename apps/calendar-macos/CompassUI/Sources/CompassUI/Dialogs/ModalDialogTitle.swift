@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// The headline every native confirm dialog puts above its body.
+/// The headline every native confirm dialog puts above its body. Web
+/// `OverlayPanel` title: `font-semibold text-lg`.
 struct ModalDialogTitle: View {
     @Environment(\.nativeWebTheme) private var theme
     let text: String
@@ -11,7 +12,7 @@ struct ModalDialogTitle: View {
 
     var body: some View {
         Text(text)
-            .font(.rubik(17))
+            .font(.rubik(18, weight: .semibold))
             .foregroundStyle(theme.textColor)
     }
 }

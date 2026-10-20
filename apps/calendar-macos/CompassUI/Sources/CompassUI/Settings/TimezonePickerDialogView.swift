@@ -29,19 +29,11 @@ struct TimezonePickerDialogView: View {
                 .ignoresSafeArea()
                 .onTapGesture { settingsStore.dismissTimezoneDialog() }
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text(title)
-                        .font(.rubik(18))
-                        .foregroundStyle(theme.textColor)
-                    Spacer()
-                    Button("Close") { settingsStore.dismissTimezoneDialog() }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(theme.textMutedColor)
-                }
+                // Web `TimezonePickerDialog`: title and message only; Esc or
+                // the backdrop dismisses.
+                ModalDialogTitle(title)
                 if purpose == .timeTravel {
-                    Text("Compare your calendar hours in a second timezone.")
-                        .font(.rubik(12))
-                        .foregroundStyle(theme.textMutedColor)
+                    ModalDialogMessage("Compare your calendar hours in a second timezone.")
                 }
                 TextField("Search timezones", text: $query)
                     .textFieldStyle(.roundedBorder)
