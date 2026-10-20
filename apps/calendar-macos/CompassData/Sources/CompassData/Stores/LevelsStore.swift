@@ -117,6 +117,17 @@ public final class LevelsStore {
         }
     }
 
+    /// Parity captures pin a deterministic idle tip (web sidebar status bar).
+    public func pinShortcutTip(id: String) {
+        guard !tipsMuted, !badgeHidden,
+              let row = registryRows.first(where: { $0.id.rawValue == id })
+        else { return }
+        currentTip = ShortcutTipSnapshot(
+            shortcutId: row.id.rawValue,
+            label: row.label,
+            keycaps: row.displayKeycaps)
+    }
+
     public func setBadgeHidden(_ hidden: Bool) {
         guard hidden != badgeHidden else { return }
         badgeHidden = hidden

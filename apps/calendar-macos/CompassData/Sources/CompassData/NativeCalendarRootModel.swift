@@ -387,6 +387,7 @@ public final class NativeCalendarRootModel {
         let today = referenceNow
         viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         monthPickerMonth = today
+        levelsStore.pinShortcutTip(id: "focus-shift-hold")
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
