@@ -397,6 +397,22 @@ public final class NativeCalendarRootModel {
         try? DemoEventsBannerState.dismiss(repository: environment.userMetadataRepository)
     }
 
+    var hasSampleEvents: Bool { !cachedDemoEventIds.isEmpty }
+
+    /// Web `clearDemoEvents` from the palette: deletes seeded rows and dismisses the banner.
+    public func clearSampleEvents() async {
+        let ids = (try? environment.localEventRepository.demoEventIds()) ?? []
+        try? environment.localEventRepository.delete(ids: ids.map { EventId(rawValue: $0) })
+        cachedDemoEventIds = []
+        dismissDemoEventsBanner()
+        await refreshVisibleRange()
+        await refreshSideband()
+        guard !ids.isEmpty else { return }
+        statusToastStore.show(
+            id: "clear-demo-events",
+            message: ids.count == 1 ? "Removed 1 sample event" : "Removed \(ids.count) sample events")
+    }
+
     public func handleResume() async {
         if let eventStream {
             await eventStream.stop()
@@ -413,6 +429,7 @@ public final class NativeCalendarRootModel {
 
     public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
+    public var onShareFeedback: (() -> Void)?
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false

@@ -7,6 +7,10 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
     public let keywords: [String]
     public let subtitle: String?
     public let systemImage: String?
+    /// Web `CommandItem.badge`: a bordered pill before the shortcut.
+    public let badge: String?
+    /// Web `CommandItem.disabled`: shown dimmed, skipped by arrows, not runnable.
+    public let isDisabled: Bool
 
     public init(
         id: String,
@@ -14,7 +18,9 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
         shortcut: String? = nil,
         keywords: [String] = [],
         subtitle: String? = nil,
-        systemImage: String? = nil
+        systemImage: String? = nil,
+        badge: String? = nil,
+        isDisabled: Bool = false
     ) {
         self.id = id
         self.label = label
@@ -22,6 +28,8 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
         self.keywords = keywords
         self.subtitle = subtitle
         self.systemImage = systemImage
+        self.badge = badge
+        self.isDisabled = isDisabled
     }
 }
 
