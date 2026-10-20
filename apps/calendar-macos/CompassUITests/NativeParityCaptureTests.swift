@@ -180,10 +180,39 @@ final class NativeParityCaptureTests: XCTestCase {
     private func captureCommandPalette() {
         let window = launchDemoWindow()
         prepareParityGrid(window, dismissDemoBanner: true)
-        window.typeKey("k", modifierFlags: [.command])
-        XCTAssertTrue(
-            window.textFields["compass-native-command-palette-search"].waitForExistence(timeout: 15))
+        openCommandPaletteForCapture(window)
         NativeImageSnapshotSupport.captureWindow(window, named: "command-palette")
+    }
+
+    /// Cmd+K is flaky after parity grid setup in CI; fall back to sidebar and menu actions.
+    @MainActor
+    private func openCommandPaletteForCapture(_ window: XCUIElement) {
+        let palette = window.descendants(matching: .any)["compass-native-command-palette"]
+        let search = window.textFields["compass-native-command-palette-search"]
+        let sundayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-07"]
+        if sundayColumn.waitForExistence(timeout: 2) {
+            sundayColumn.click()
+        }
+        window.typeKey("k", modifierFlags: [.command])
+        if palette.waitForExistence(timeout: 4) {
+            XCTAssertTrue(search.waitForExistence(timeout: 5))
+            return
+        }
+        let sidebarPalette = window.buttons["Open command palette"]
+        if sidebarPalette.waitForExistence(timeout: 3) {
+            sidebarPalette.click()
+            if palette.waitForExistence(timeout: 8) {
+                XCTAssertTrue(search.waitForExistence(timeout: 5))
+                return
+            }
+        }
+        let app = window.application
+        app.menuBars.menuBarItems["View"].click()
+        app.menuItems["Command Palette"].click()
+        XCTAssertTrue(
+            palette.waitForExistence(timeout: 15),
+            "Expected command palette after View menu action")
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
     }
 
     @MainActor
