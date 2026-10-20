@@ -17,18 +17,22 @@ public struct DiscardUnsavedDraftDialogView: View {
 
     public var body: some View {
         if isPresented {
-            VStack(alignment: .leading, spacing: 16) {
-                ModalDialogTitle("Discard unsaved changes?")
-                HStack {
+            VStack(alignment: .leading, spacing: 24) {
+                HStack(spacing: 12) {
+                    ModalDialogTitle("Discard unsaved changes?")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    ModalDialogCloseButton(action: onCancel)
+                }
+                HStack(spacing: 12) {
                     Spacer()
-                    Button("Cancel", action: onCancel)
+                    OverlayPanelActionButton("Cancel", shortcut: ["Esc"], action: onCancel)
                         .keyboardShortcut(.cancelAction)
-                    Button("Discard", role: .destructive, action: onDiscard)
-                        .keyboardShortcut(.defaultAction)
+                    OverlayPanelActionButton("Discard", variant: .primary, shortcut: ["Mod", "Enter"], action: onDiscard)
+                        .keyboardShortcut(.return, modifiers: .command)
                 }
             }
             .modalDialogChrome(
-                maxWidth: 360,
+                maxWidth: 400,
                 identifier: "compass-discard-draft-dialog"
             )
         }

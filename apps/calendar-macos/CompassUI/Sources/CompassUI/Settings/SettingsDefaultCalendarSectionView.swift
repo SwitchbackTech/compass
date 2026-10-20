@@ -19,51 +19,35 @@ struct SettingsDefaultCalendarSectionView: View {
             hasConnectedAccount: hasConnectedAccount)
     }
 
-    private var selectedCalendarLabel: String {
-        let selectedId = settingsStore.defaultCalendarId ?? resolvedDefault?.id
-        if let selectedId, let match = writable.first(where: { $0.id == selectedId }) {
-            return match.name
-        }
-        return resolvedDefault?.name ?? writable.first?.name ?? "Calendar"
+    private var selectedName: String {
+        let id = settingsStore.defaultCalendarId ?? resolvedDefault?.id
+        return writable.first { $0.id == id }?.name ?? resolvedDefault?.name ?? ""
     }
 
     var body: some View {
         if writable.isEmpty {
             EmptyView()
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Default Calendar")
-                    .font(.rubik(15))
-                    .foregroundStyle(theme.textColor)
+            // Web `DefaultCalendarPicker`: a full-width native select.
+            VStack(alignment: .leading, spacing: 4) {
+                SettingsFieldLabel("Default Calendar")
                 Menu {
                     ForEach(writable, id: \.id) { calendar in
-                        Button(calendar.name) {
-                            settingsStore.setDefaultCalendarId(calendar.id)
-                        }
+                        Button(calendar.name) { settingsStore.setDefaultCalendarId(calendar.id) }
                     }
                 } label: {
                     HStack {
-                        Text(selectedCalendarLabel)
-                            .lineLimit(1)
-                        Spacer(minLength: 8)
-                        Image(systemName: "chevron.up.chevron.down")
+                        Text(selectedName)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(theme.textMutedColor)
                     }
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textColor)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(theme.surfaceOverlayColor)
-                    .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                            .stroke(theme.borderColor, lineWidth: 1)
-                    )
+                    .settingsSelectChrome()
                 }
-                .menuStyle(.borderlessButton)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .accessibilityLabel("Default Calendar: \(selectedName)")
             }
             .accessibilityIdentifier("settings-section-default-calendar")
         }

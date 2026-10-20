@@ -1,4 +1,3 @@
-import CompassKit
 import Foundation
 
 public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
@@ -7,7 +6,11 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
     public let shortcut: String?
     public let keywords: [String]
     public let subtitle: String?
-    public let icon: PhosphorIcon?
+    public let systemImage: String?
+    /// Web `CommandItem.badge`: a bordered pill before the shortcut.
+    public let badge: String?
+    /// Web `CommandItem.disabled`: shown dimmed, skipped by arrows, not runnable.
+    public let isDisabled: Bool
 
     public init(
         id: String,
@@ -15,14 +18,18 @@ public struct CommandPaletteItem: Identifiable, Hashable, Sendable {
         shortcut: String? = nil,
         keywords: [String] = [],
         subtitle: String? = nil,
-        icon: PhosphorIcon? = nil
+        systemImage: String? = nil,
+        badge: String? = nil,
+        isDisabled: Bool = false
     ) {
         self.id = id
         self.label = label
         self.shortcut = shortcut
         self.keywords = keywords
         self.subtitle = subtitle
-        self.icon = icon
+        self.systemImage = systemImage
+        self.badge = badge
+        self.isDisabled = isDisabled
     }
 }
 

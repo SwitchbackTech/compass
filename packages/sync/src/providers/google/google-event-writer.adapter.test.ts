@@ -255,8 +255,8 @@ describe("GoogleEventWriter", () => {
     );
   });
 
-  it("maps a 400 on create to unsupportedCapability with Google's status and reason", async () => {
-    const api = new FakeEventsApi({ insert: gError(400, "invalid") });
+  it("maps a generic 400 on create to providerRejectedChange", async () => {
+    const api = new FakeEventsApi({ insert: gError(400, "badRequest") });
     const { writer } = writerWith(api);
 
     const error = (await writer
@@ -264,9 +264,9 @@ describe("GoogleEventWriter", () => {
       .catch((e) => e)) as ProviderWriteError;
 
     expect(error).toBeInstanceOf(ProviderWriteError);
-    expect(error.reason).toBe("unsupportedCapability");
+    expect(error.reason).toBe("providerRejectedChange");
     expect((error.cause as Error)?.message).toContain("HTTP 400");
-    expect((error.cause as Error)?.message).toContain("invalid");
+    expect((error.cause as Error)?.message).toContain("badRequest");
     expect(JSON.stringify(error.cause ?? {})).not.toContain(
       "super-secret-token",
     );
@@ -554,8 +554,8 @@ describe("GoogleEventWriter", () => {
     expect(error.reason).toBe("readOnlyCalendar");
   });
 
-  it("maps a 400 on patch to unsupportedCapability with Google's status and reason", async () => {
-    const api = new FakeEventsApi({ patch: gError(400, "invalid") });
+  it("maps a generic 400 badRequest on patch to providerRejectedChange", async () => {
+    const api = new FakeEventsApi({ patch: gError(400, "badRequest") });
     const { writer } = writerWith(api);
 
     const error = (await writer
@@ -563,9 +563,9 @@ describe("GoogleEventWriter", () => {
       .catch((e) => e)) as ProviderWriteError;
 
     expect(error).toBeInstanceOf(ProviderWriteError);
-    expect(error.reason).toBe("unsupportedCapability");
+    expect(error.reason).toBe("providerRejectedChange");
     expect((error.cause as Error)?.message).toContain("HTTP 400");
-    expect((error.cause as Error)?.message).toContain("invalid");
+    expect((error.cause as Error)?.message).toContain("badRequest");
     expect(JSON.stringify(error.cause ?? {})).not.toContain(
       "super-secret-token",
     );
@@ -650,12 +650,17 @@ describe("GoogleEventWriter", () => {
     expect(missing.calls.delete).toHaveLength(1);
   });
 
-  it("maps a 400 on delete to unsupportedCapability, not a generic permanent failure", async () => {
-    // Google 400s a well-formed delete when the operation is unsupported for
-    // the event — e.g. cancelling one occurrence of a contact-linked birthday
-    // event. permanentProviderError here surfaced as a retryable 502 the
-    // client could never resolve.
-    const api = new FakeEventsApi({ delete: gError(400) });
+  it("maps eventTypeRestriction 400 on delete to unsupportedCapability", async () => {
+    const api = new FakeEventsApi({
+      delete: Object.assign(new Error("google error 400"), {
+        response: {
+          status: 400,
+          data: {
+            error: { errors: [{ reason: "eventTypeRestriction" }] },
+          },
+        },
+      }),
+    });
     const { writer } = writerWith(api);
 
     const error = (await writer
@@ -668,9 +673,24 @@ describe("GoogleEventWriter", () => {
       })
       .catch((e) => e)) as ProviderWriteError;
 
-    expect(error).toBeInstanceOf(ProviderWriteError);
     expect(error.reason).toBe("unsupportedCapability");
-    expect((error.cause as Error)?.message).toContain("HTTP 400");
+  });
+
+  it("maps a generic 400 on delete to providerRejectedChange", async () => {
+    const api = new FakeEventsApi({ delete: gError(400, "badRequest") });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .deleteEvent({
+        accessToken: "at",
+        calendarId: "cal",
+        providerEventId: "id00000",
+        expectedVersion: null,
+        invitation: "none",
+      })
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error.reason).toBe("providerRejectedChange");
   });
 
   it("still surfaces a precondition failure on delete", async () => {
@@ -767,6 +787,40 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.patch[0]).not.toHaveProperty("eventLabelVersion");
   });
 
+  it("does not clear eventLabelId when the event has no custom label", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      content: content({ color: "coral" }),
+    });
+
+    expect(api.calls.patch).toHaveLength(1);
+    expect(api.calls.patch[0]!.requestBody.colorId).toBe("4");
+    expect(api.calls.patch[0]).not.toHaveProperty("eventLabelVersion");
+  });
+
+  it("maps eventTypeRestriction 400 to unsupportedCapability", async () => {
+    const api = new FakeEventsApi({
+      patch: Object.assign(new Error("google error 400"), {
+        response: {
+          status: 400,
+          data: {
+            error: { errors: [{ reason: "eventTypeRestriction" }] },
+          },
+        },
+      }),
+    });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .patchEvent(basePatch)
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error.reason).toBe("unsupportedCapability");
+  });
+
   it("clears eventLabelId under v1 before writing a slot colorId", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
@@ -774,6 +828,7 @@ describe("GoogleEventWriter", () => {
     await writer.patchEvent({
       ...basePatch,
       expectedVersion: '"etag-v1"',
+      usesEventLabelColor: true,
       content: content({ color: "coral" }),
     });
 

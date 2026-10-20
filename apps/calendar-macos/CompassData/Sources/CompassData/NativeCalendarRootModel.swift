@@ -398,6 +398,22 @@ public final class NativeCalendarRootModel {
         try? DemoEventsBannerState.dismiss(repository: environment.userMetadataRepository)
     }
 
+    var hasSampleEvents: Bool { !cachedDemoEventIds.isEmpty }
+
+    /// Web `clearDemoEvents` from the palette: deletes seeded rows and dismisses the banner.
+    public func clearSampleEvents() async {
+        let ids = (try? environment.localEventRepository.demoEventIds()) ?? []
+        try? environment.localEventRepository.delete(ids: ids.map { EventId(rawValue: $0) })
+        cachedDemoEventIds = []
+        dismissDemoEventsBanner()
+        await refreshVisibleRange()
+        await refreshSideband()
+        guard !ids.isEmpty else { return }
+        statusToastStore.show(
+            id: "clear-demo-events",
+            message: ids.count == 1 ? "Removed 1 sample event" : "Removed \(ids.count) sample events")
+    }
+
     public func handleResume() async {
         if let eventStream {
             await eventStream.stop()
@@ -414,6 +430,7 @@ public final class NativeCalendarRootModel {
 
     public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
+    public var onShareFeedback: (() -> Void)?
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
@@ -1030,6 +1047,25 @@ public final class NativeCalendarRootModel {
             isTrialing: billingStore.status?.subscriptionStatus == .trialing)
     }
 
+    /// Web `gridEventCardClassName` dashed outline: samples, plus events this
+    /// account organizes whose guests are still awaiting or tentative.
+    private func unsettledGridEventIds(demoIds: Set<String>) -> Set<String> {
+        let accountEmails = Dictionary(
+            calendars.map { ($0.id, $0.accountEmail) }, uniquingKeysWith: { first, _ in first })
+        var ids = demoIds
+        for event in loadedEvents {
+            guard case .details(let details) = event.content,
+                  details.attendees?.isEmpty == false,
+                  AttendeeRsvp.hasUnsettledGuests(
+                    organizerEmail: details.organizer?.email,
+                    attendees: details.attendees,
+                    calendarAccountEmail: accountEmails[event.calendarId.rawValue] ?? nil)
+            else { continue }
+            ids.insert(event.id.rawValue)
+        }
+        return ids
+    }
+
     private func layoutMode() -> GridLayoutMode {
         viewStore.view == .day ? .day : .week
     }
@@ -1076,6 +1112,7 @@ public final class NativeCalendarRootModel {
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
         )
+        timeGridState.unsettledEventIds = unsettledGridEventIds(demoIds: demoIds)
         if eventJumpSelection.modeActive {
             quickTimeSlotHintLabels = buildQuickTimeSlotHints()
             timeGridState.quickTimeSlotHints = quickTimeSlotHintLabels

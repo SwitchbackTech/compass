@@ -10,6 +10,10 @@ import {
 export interface EventRepository {
   list(query: EventListQuery, signal?: AbortSignal): Promise<Event[]>;
   create(input: CreateEventInput): Promise<Event>;
-  replace(id: EventId, input: ReplaceEventInput): Promise<Event>;
+  replace(
+    id: EventId,
+    input: ReplaceEventInput,
+    signal?: AbortSignal,
+  ): Promise<Event>;
   delete(id: EventId, scope: RecurrenceScope): Promise<void>;
 }

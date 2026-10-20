@@ -150,9 +150,11 @@ public final class TimeGridView: NSView {
         clampWeekHorizontalScrollOrigin()
         guard let snapshot, let nowLine = snapshot.nowLine else { return }
         // The scroll document is the timed grid alone; the header is pinned above it.
-        let targetY = clampedScrollY(
-            max(0, nowLine.top - GridScrollMath.scrollToNowBufferPx)
-        )
+        let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
+            referenceNow: state.referenceNow,
+            hourHeight: snapshot.metrics.hourHeight,
+            allDayOffset: 0
+        ))
         let viewport = scrollView.contentView.bounds
         let nowLineVisible = nowLine.top >= viewport.minY && nowLine.top <= viewport.maxY
         var origin = scrollView.contentView.bounds.origin
@@ -388,8 +390,6 @@ public final class TimeGridView: NSView {
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
         currentHour: Int
     ) {
-        // Web `CalendarTimeColumn`: `top: calc(100% / TIMED_VISIBLE_HOURS - 5px)`.
-        let labelColumnTop = max(0, hourHeight - 5)
         for hour in 0 ..< Int(ceil(state.civilDayHours)) {
             let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
             let label = NSTextField(labelWithString: text)
@@ -399,7 +399,7 @@ public final class TimeGridView: NSView {
             label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,
-                y: labelColumnTop + Double(hour) * hourHeight + 4,
+                y: Double(hour) * hourHeight + 4,
                 width: width - 8,
                 height: 14)
             hourGutterView.addSubview(label)
@@ -457,66 +457,41 @@ public final class TimeGridView: NSView {
 
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
         let viewStartMonth = snapshot.columns.first.map { String($0.key.prefix(7)) }
-        let headerPalette = (
-            text: palette.text,
-            textMuted: palette.textMuted,
-            accent: themeAccentColor,
-            surfacePanel: palette.surfaceRaised,
-            border: palette.border,
-            background: palette.background
-        )
         for column in snapshot.columns {
-            if state.showDayJumpPrefixes {
-                let header = WeekDayColumnHeaderControl(
-                    frame: NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
-                )
-                header.apply(
+            let header = NSTextField(
+                labelWithAttributedString: weekDayLabel(
                     dayKey: column.key,
                     viewStartMonth: viewStartMonth,
-                    isToday: column.key == todayKey,
-                    isJumpDay: state.eventJumpActiveDayKeys.contains(column.key),
-                    showDayJumpPrefixes: true,
-                    dayJumpUseShiftPrefix: state.dayJumpUseShiftPrefix,
-                    palette: headerPalette
+                    color: column.key == todayKey ? themeAccentColor : palette.textMuted,
+                    trackWidth: state.trackWidth
                 )
-                header.setAccessibilityIdentifier(column.accessibilityIdentifier)
-                if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
-                    let formatter = DateFormatter()
-                    formatter.locale = Locale(identifier: "en_US_POSIX")
-                    formatter.calendar = EffectiveTimeZone.calendar
-                    formatter.timeZone = EffectiveTimeZone.timeZone
-                    formatter.dateFormat = "d EEE"
-                    header.setAccessibilityLabel(formatter.string(from: date))
-                }
-                headerRowView.addSubview(header)
-            } else {
-                let header = NSTextField(
-                    labelWithAttributedString: weekDayLabel(
-                        dayKey: column.key,
-                        viewStartMonth: viewStartMonth,
-                        color: column.key == todayKey ? themeAccentColor : palette.textMuted
-                    )
-                )
-                header.identifier = NSUserInterfaceItemIdentifier(column.key)
-                header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
-                header.alignment = .center
-                header.setAccessibilityIdentifier(column.accessibilityIdentifier)
-                if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
-                    let formatter = DateFormatter()
-                    formatter.locale = Locale(identifier: "en_US_POSIX")
-                    formatter.calendar = EffectiveTimeZone.calendar
-                    formatter.timeZone = EffectiveTimeZone.timeZone
-                    formatter.dateFormat = "d EEE"
-                    header.setAccessibilityLabel(formatter.string(from: date))
-                }
-                headerRowView.addSubview(header)
+            )
+            header.identifier = NSUserInterfaceItemIdentifier(column.key)
+            header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
+            header.alignment = .center
+            header.setAccessibilityIdentifier(column.accessibilityIdentifier)
+            if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.calendar = EffectiveTimeZone.calendar
+                formatter.timeZone = EffectiveTimeZone.timeZone
+                formatter.dateFormat = "d EEE"
+                header.setAccessibilityLabel(formatter.string(from: date))
             }
+            headerRowView.addSubview(header)
         }
     }
 
     /// Web `DayLabels`: a large day number ("7", or "Jul 1" when the month
-    /// changes mid-view) followed by the short weekday. Today is accented.
-    private func weekDayLabel(dayKey: String, viewStartMonth: String?, color: NSColor) -> NSAttributedString {
+    /// changes mid-view) followed by the short weekday, centered in the
+    /// column. Today is accented. Sizes follow web's container-query clamps:
+    /// number `clamp(xl, 2.7cqw, xxl)`, weekday `clamp(m, 2cqw, l)`.
+    private func weekDayLabel(
+        dayKey: String,
+        viewStartMonth: String?,
+        color: NSColor,
+        trackWidth: CGFloat
+    ) -> NSAttributedString {
         guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else {
             return NSAttributedString(string: dayKey)
         }
@@ -530,14 +505,26 @@ public final class TimeGridView: NSView {
         formatter.dateFormat = "EEE"
         let weekday = formatter.string(from: date)
 
+        let numberSize = min(20.8, max(18, trackWidth * 0.027))
+        let weekdaySize = min(16, max(13, trackWidth * 0.02))
+        let centered = NSMutableParagraphStyle()
+        centered.alignment = .center
         let label = NSMutableAttributedString(
             string: number,
-            attributes: [.font: CompassFont.nsFont(size: 18), .foregroundColor: color]
+            attributes: [
+                .font: CompassFont.nsFont(size: numberSize),
+                .foregroundColor: color,
+                .paragraphStyle: centered,
+            ]
         )
         label.append(
             NSAttributedString(
                 string: " \(weekday)",
-                attributes: [.font: CompassFont.nsFont(size: 13), .foregroundColor: color]
+                attributes: [
+                    .font: CompassFont.nsFont(size: weekdaySize),
+                    .foregroundColor: color,
+                    .paragraphStyle: centered,
+                ]
             )
         )
         return label
@@ -588,20 +575,8 @@ public final class TimeGridView: NSView {
         timedContentView.layer?.backgroundColor = palette.background.cgColor
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
 
-        let timedTopRule = NSView(
-            frame: NSRect(
-                x: snapshot.metrics.marginLeft,
-                y: 0,
-                width: timedContentView.frame.width - snapshot.metrics.marginLeft,
-                height: 1
-            )
-        )
-        timedTopRule.wantsLayer = true
-        timedTopRule.layer?.backgroundColor = palette.border.cgColor
-        addGridBackground(timedTopRule, to: timedContentView)
-
         for column in snapshot.columns {
-            // Web `TimedGrid` `data-[past=true]:bg-surface` on past day columns.
+            // Web `TimedGrid`: only past days receive the surface tone.
             if state.layoutMode == .week, column.key < todayKey {
                 let tint = NSView(frame: NSRect(x: column.left, y: 0, width: column.width, height: gridHeight))
                 tint.wantsLayer = true
@@ -647,13 +622,14 @@ public final class TimeGridView: NSView {
             let view = cardPool[card.eventId] ?? EventCardView(frame: .zero)
             cardPool[card.eventId] = view
 
-            let isFocused = state.focusedEventId == card.eventId && !state.pageJumpHintsVisible
+            let isFocused = state.focusedEventId == card.eventId
             let isSidebarEditing = state.sidebarEditingEventId == card.eventId
             view.apply(
                 card: card,
                 theme: theme,
                 isFocused: isFocused,
                 isSidebarEditing: isSidebarEditing,
+                isUnsettled: state.unsettledEventIds.contains(card.eventId),
                 timeLabel: EventCardTimeLabel.text(for: card, state: state)
             )
             view.cardDelegate = self

@@ -195,3 +195,27 @@ export function isSkippedEventWrite(data: unknown): boolean {
     (data as { wrote: unknown }).wrote === false
   );
 }
+
+const inFlightReplaceByWriteKey = new Map<string, AbortController>();
+
+/**
+ * When a newer replace for the same write key starts, abort the in-flight PUT
+ * so a burst of nudges collapses to one provider write (the latest state).
+ */
+export function claimCoalescedReplaceSignal(writeKey: string): AbortSignal {
+  const previous = inFlightReplaceByWriteKey.get(writeKey);
+  previous?.abort();
+  const controller = new AbortController();
+  inFlightReplaceByWriteKey.set(writeKey, controller);
+  return controller.signal;
+}
+
+export function releaseCoalescedReplaceSignal(
+  writeKey: string,
+  signal: AbortSignal,
+): void {
+  const current = inFlightReplaceByWriteKey.get(writeKey);
+  if (current?.signal === signal) {
+    inFlightReplaceByWriteKey.delete(writeKey);
+  }
+}

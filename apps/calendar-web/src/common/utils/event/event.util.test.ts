@@ -169,6 +169,30 @@ describe("handleError", () => {
     });
   });
 
+  it("names Google Calendar on a retryable provider failure when the body carries provider", () => {
+    const onRetry = mock(() => {});
+    const error = createServerError(502);
+    error.response = {
+      status: 502,
+      data: {
+        code: "PROVIDER_FAILURE",
+        message: "Sync command failed (permanentProviderError)",
+        retryable: true,
+        provider: "google",
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error, onRetry);
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    const [content, options] = mocks.error.mock.calls[0] ?? [];
+    expect(options).toMatchObject({ toastId: EVENT_SAVE_RETRYABLE_TOAST_ID });
+    const props = (content as { props: { message: string } }).props;
+    expect(props.message).toBe(
+      "Couldn't save to Google Calendar. Your change wasn't saved.",
+    );
+  });
+
   it("does not report a backend-authored mutation failure", () => {
     // A 502 PROVIDER_FAILURE the backend authored: it answered (so it isn't
     // "unavailable"), and it's retryable, so the user just needs a nudge. It
@@ -232,6 +256,29 @@ describe("handleError", () => {
     const [message] = mocks.error.mock.calls[0] ?? [];
     expect(message).toBe(
       "Google doesn't allow this change for this event (for example events created from an email, birthdays, or holidays). Delete it or manage it in your calendar.",
+    );
+  });
+
+  it("shows Google rejected copy for PROVIDER_REJECTED with retry", () => {
+    const onRetry = mock(() => {});
+    const error = createServerError(502);
+    error.response = {
+      status: 502,
+      data: {
+        code: "PROVIDER_REJECTED",
+        message: "Sync command failed (providerRejectedChange)",
+        retryable: true,
+        provider: "google",
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error, onRetry);
+
+    const [content, options] = mocks.error.mock.calls[0] ?? [];
+    expect(options).toMatchObject({ toastId: EVENT_SAVE_RETRYABLE_TOAST_ID });
+    const props = (content as { props: { message: string } }).props;
+    expect(props.message).toBe(
+      "Google rejected this change. Your edit wasn't saved. Try again.",
     );
   });
 

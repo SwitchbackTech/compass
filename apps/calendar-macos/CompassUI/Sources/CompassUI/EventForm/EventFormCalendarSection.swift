@@ -4,51 +4,70 @@ import SwiftUI
 
 struct EventFormCalendarSection: View {
     @Environment(\.nativeWebTheme) private var theme
+    @State private var isHovered = false
     @Bindable var model: NativeCalendarRootModel
     let draft: GridEventDraft
     let focusField: EventFormField
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Calendar")
-                .font(.rubik(12))
-                .foregroundStyle(theme.textMutedColor)
-            Menu {
-                ForEach(model.writableEventCalendars, id: \.id) { calendar in
-                    Button(calendarLabel(calendar)) {
-                        model.updateDraftFromForm(calendarId: CalendarId(rawValue: calendar.id))
-                    }
-                }
-            } label: {
-                HStack(spacing: 8) {
-                    if let calendar = selectedCalendar {
-                        Circle()
-                            .fill(calendarDotColor(calendar))
-                            .frame(width: 10, height: 10)
-                    }
-                    Text(selectedCalendar.map(calendarLabel) ?? "Choose calendar")
-                        .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
-                        .foregroundStyle(theme.textColor)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(theme.textMutedColor)
-                }
-                .padding(.horizontal, 8)
-                .frame(minHeight: 38)
-                .background(theme.surfaceOverlayColor)
-                .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
-                .overlay {
-                    RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                        .stroke(focusField == .calendar ? theme.accentColor : theme.borderColor, lineWidth: 1)
+        // Web `CalendarSelect`: a compact, borderless trigger (`px-1.5 py-1
+        // text-xs`, hover `bg-text/10`) inside the card; no visible label.
+        // An existing event names its calendar instead of offering a move.
+        Group {
+            if draft.kind != .create {
+                Text("Calendar: \(selectedCalendar?.name ?? originalCalendarName)")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textMutedColor)
+                    .accessibilityIdentifier("compass-event-form-calendar")
+            } else {
+                calendarMenu
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var calendarMenu: some View {
+        Menu {
+            ForEach(model.writableEventCalendars, id: \.id) { calendar in
+                Button(calendarLabel(calendar)) {
+                    model.updateDraftFromForm(calendarId: CalendarId(rawValue: calendar.id))
                 }
             }
-            .disabled(!model.canChangeDraftCalendar)
-            .accessibilityIdentifier("compass-event-form-calendar")
-            .pageJumpChipAnchor(id: "form-calendar")
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(selectedCalendar.map(calendarDotColor) ?? .clear)
+                    .frame(width: 10, height: 10)
+                Text(selectedCalendar.map(calendarLabel) ?? "Select a calendar")
+                    .font(.rubik(12))
+                    .foregroundStyle(theme.textColor)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(isHovered ? theme.textColor.opacity(0.1) : .clear)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+            .overlay {
+                if focusField == .calendar {
+                    RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                        .stroke(theme.accentColor, lineWidth: 1)
+                }
+            }
+            .contentShape(Rectangle())
         }
-        .eventFormSectionChrome(focused: focusField == .calendar)
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .onHover { isHovered = $0 }
+        .disabled(!model.canChangeDraftCalendar)
+        .accessibilityIdentifier("compass-event-form-calendar")
+        .pageJumpChipAnchor(id: "form-calendar")
+    }
+
+    private var originalCalendarName: String {
+        guard let id = draft.calendarId else { return "Unknown" }
+        return model.calendars.first { $0.id == id.rawValue }?.name ?? "Unknown"
     }
 
     private var selectedCalendar: CompassCalendar? {

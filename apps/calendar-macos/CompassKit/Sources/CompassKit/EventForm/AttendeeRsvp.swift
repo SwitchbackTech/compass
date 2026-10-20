@@ -28,6 +28,22 @@ public enum AttendeeRsvp {
         return "\(statuses.count) \(guestWord) (\(parts.joined(separator: ", ")))"
     }
 
+    /// Web `guestResponseForEvent` reduced to the grid's question: does a
+    /// guest of an event this account organizes still owe a firm answer?
+    public static func hasUnsettledGuests(
+        organizerEmail: String?,
+        attendees: [EventContentDetailsAttendees]?,
+        calendarAccountEmail: String?
+    ) -> Bool {
+        guard let calendarAccountEmail,
+              organizesEvent(organizerEmail: organizerEmail, calendarAccountEmail: calendarAccountEmail)
+        else { return false }
+        let account = calendarAccountEmail.lowercased()
+        return (attendees ?? []).contains {
+            $0.email.lowercased() != account && ($0.responseStatus == .needsAction || $0.responseStatus == .tentative)
+        }
+    }
+
     public static func organizesEvent(
         organizerEmail: String?,
         calendarAccountEmail: String?

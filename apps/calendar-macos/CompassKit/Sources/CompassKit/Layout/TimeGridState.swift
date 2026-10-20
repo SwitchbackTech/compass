@@ -20,6 +20,8 @@ public struct TimeGridState: Sendable {
     public var hasSecondaryTimeZone: Bool
     public var effectiveTimeZone: String
     public var timeTravelTimeZone: String?
+    /// Web dashed card outline: sample events and invites awaiting or tentative.
+    public var unsettledEventIds: Set<String> = []
 
     public init(
         layoutMode: GridLayoutMode = .week,

@@ -93,6 +93,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Now line **visual** (gradient + 1px rim) | 🟡 | macOS: accent gradient + 1px background rim (#4611); web shimmer timing still differs |
 | Now-cue pulse on **`t`** (today) | 🟡 | Web 700ms label shimmer; macOS week header opacity pulse + day view switcher pulse |
 | Click grid teaches shortcut | ✅ | Pointer hint overlay |
+| Day labels | ✅ | Centered per column; number `clamp(18, 2.7cqw, 20.8)`, weekday `clamp(13, 2cqw, 16)` |
 | Day column header focus | 🟡 | AppKit exterior ring vs web `c-focus-ring` |
 | Shift+C all-day tip strip | 🟡 | Sidebar jump line animates; full web tip stack still partial |
 
@@ -104,6 +105,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Jump / hold-F digit hints | ✅ | `eventJumpHold`, chips overlay |
 | Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump + quick-time slots still web-only |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
+| Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
 ### 2.3 Sidebar event form
 
@@ -124,7 +126,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Keyboard `i`, arrows, Enter | ✅ | |
 | Cmd+Shift+, / . month jump | ✅ | |
-| Selected range / today styling | 🟡 | Custom grid vs web react-datepicker theme |
+| Selected range / today styling | ✅ | Week mode bolds the selected week row with ink on today; 28.8pt circles; today follows the calendar clock; Go to this month circle hides on the current month |
 | Weekday header 10px muted | 🟡 | Rubik 10 in `SidebarMonthPicker.swift` |
 
 ### 2.5 Up Next / Now panel
@@ -177,11 +179,11 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Placeholder copy | ✅ | Same string |
 | Go-to-date from query | ✅ | Shared parsing fixtures |
 | Navigation / create / events / recent | ✅ | |
-| Fuzzy search + highlight | ❌ | Web `HighlightedLabel` + `filterSections` |
+| Fuzzy search + highlight | ✅ | `CommandPaletteSearchLogic` mirrors `filterSections`; muted label with bold matches |
 | Row icons (Phosphor) | 🟡 | SF Symbol row icons on navigation/more rows (#4613); not Phosphor |
-| Keycaps (`ShortcutKeys`) | 🟡 | Row shortcuts use `KeycapGlyphs`; footer keycaps match web |
+| Keycaps (`ShortcutKeys`) | ✅ | One `ShortcutHintChip` per key, like web `ShortcutKeys` |
 | Selected row ring inset | ✅ | Accent inset ring + lighter fill (web `ring-inset`) |
-| **Missing rows** vs web | 🟡 | Theme toggle + shortcut tip rows (#4613–#4614); notifications/booking/feedback still web-only |
+| **Missing rows** vs web | ✅ | Web section order and rows (Common Actions, Appearance, Settings, More); disabled rows dim and skip; notifications row is web-only (macOS uses system settings) |
 | Footer hint | ✅ | Keycap chips for navigate / select / close |
 
 ### 2.11 Command palette (desktop quick-add variant)
@@ -328,6 +330,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
+| 2026-10-20 | Palette: web sections, rows, disabled state, keycap chips |
 | 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
 
 ---

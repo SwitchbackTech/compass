@@ -1,7 +1,15 @@
+import { type gSchema$Event } from "@core/types/gcal";
 import { redactedCause } from "@sync/safety/redact-error";
 
 // Shared triage primitives for googleapis/gaxios failures, used by the read,
 // discovery, and watch paths (the writer keeps its own narrower 403 set).
+
+export type GoogleErrorEntry = {
+  domain?: string;
+  reason?: string;
+  message?: string;
+  location?: string;
+};
 
 // The HTTP status of a googleapis/gaxios error, from the response or the error
 // code. Reading it does not touch the request. Undefined means no HTTP
@@ -13,24 +21,90 @@ export function googleStatus(error: unknown): number | undefined {
   return typeof status === "number" ? status : undefined;
 }
 
+function googleErrorEntriesRaw(error: unknown): unknown[] {
+  const fromBody = (
+    error as {
+      response?: {
+        data?: { error?: { errors?: unknown[] } };
+      };
+    }
+  )?.response?.data?.error?.errors;
+  const fromError = (error as { errors?: unknown[] })?.errors;
+  return [...(fromBody ?? []), ...(fromError ?? [])];
+}
+
 // Google's machine-readable reasons for a failed call (e.g. "notFound",
 // "rateLimitExceeded"), from the standard error body; googleapis may put the
 // errors array on the response body OR on the error object itself — check
 // both. Response-derived only.
 export function googleErrorReasons(error: unknown): string[] {
-  const fromBody = (
-    error as {
-      response?: {
-        data?: { error?: { errors?: Array<{ reason?: unknown }> } };
-      };
-    }
-  )?.response?.data?.error?.errors;
-  const fromError = (error as { errors?: Array<{ reason?: unknown }> })?.errors;
   const reasons: string[] = [];
-  for (const entry of [...(fromBody ?? []), ...(fromError ?? [])]) {
-    if (typeof entry?.reason === "string") reasons.push(entry.reason);
+  for (const entry of googleErrorEntriesRaw(error)) {
+    const reason = (entry as { reason?: unknown })?.reason;
+    if (typeof reason === "string") reasons.push(reason);
   }
   return reasons;
+}
+
+export function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
+  const entries: GoogleErrorEntry[] = [];
+  for (const raw of googleErrorEntriesRaw(error)) {
+    const entry = raw as {
+      domain?: unknown;
+      reason?: unknown;
+      message?: unknown;
+      location?: unknown;
+    };
+    entries.push({
+      domain: typeof entry.domain === "string" ? entry.domain : undefined,
+      reason: typeof entry.reason === "string" ? entry.reason : undefined,
+      message: typeof entry.message === "string" ? entry.message : undefined,
+      location: typeof entry.location === "string" ? entry.location : undefined,
+    });
+  }
+  return entries;
+}
+
+/** Top-level keys on a Google request body, for logs only (no values/PII). */
+export function googleRequestBodyKeys(
+  body: Record<string, unknown> | undefined,
+): string[] {
+  if (!body) return [];
+  return Object.keys(body).sort();
+}
+
+export function formatGoogleErrorEntriesForLog(error: unknown): string {
+  const entries = googleErrorEntries(error);
+  if (entries.length === 0) return "(no errors[] entries)";
+  return entries
+    .map((entry) =>
+      [
+        entry.domain ? `domain=${entry.domain}` : null,
+        entry.reason ? `reason=${entry.reason}` : null,
+        entry.message ? `message=${entry.message}` : null,
+        entry.location ? `location=${entry.location}` : null,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    )
+    .join("; ");
+}
+
+/** Field-presence summary for skipped Google events (no titles, attendees, etc.). */
+export function summarizeGoogleEventFieldsForLog(item: gSchema$Event): string {
+  const start = item.start;
+  const end = item.end;
+  return [
+    `status=${item.status ?? "none"}`,
+    `eventType=${item.eventType ?? "default"}`,
+    `start.date=${start?.date ? "y" : "n"}`,
+    `start.dateTime=${start?.dateTime ? "y" : "n"}`,
+    `start.timeZone=${start?.timeZone ? "y" : "n"}`,
+    `end.date=${end?.date ? "y" : "n"}`,
+    `end.dateTime=${end?.dateTime ? "y" : "n"}`,
+    `end.timeZone=${end?.timeZone ? "y" : "n"}`,
+    `recurringEventId=${item.recurringEventId ? "y" : "n"}`,
+  ].join(", ");
 }
 
 // Reasons Google's 403 can carry for a quota/rate problem rather than a

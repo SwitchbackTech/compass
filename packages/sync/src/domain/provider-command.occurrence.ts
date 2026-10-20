@@ -21,6 +21,7 @@ import {
   resolveCurrentProviderEvent,
   stopCommand,
 } from "@sync/domain/provider-command.internal";
+import { providerLabelPatchFields } from "@sync/domain/provider-patch-fields";
 import { runProviderWrite } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { reprojectMaster } from "@sync/domain/series-exception";
@@ -143,32 +144,68 @@ export async function executeProviderOccurrenceUpdate(
     );
   }
 
-  const patchResult = await runProviderWrite(() =>
-    deps.writer.patchEvent({
-      ...location,
-      expectedVersion: command.expectedVersion,
-      content,
-      schedule,
-      recurrence: { kind: "instance" },
-      invitation: input.invitation,
-    }),
-  );
-  if (!patchResult.ok) {
-    return stopCommand(deps, command, patchResult.stop, connectionId);
-  }
-  const result = patchResult.value;
+  let activeInstance = instance;
+  let activeProviderEventId = providerEventId;
+  let activeLocation = location;
 
-  return commitProviderOccurrenceOverride(
-    deps,
-    command,
-    master,
-    recurrenceId,
-    content,
-    schedule,
-    providerEventId,
-    result.providerVersion,
-    now,
-  );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const patchResult = await runProviderWrite(() =>
+      deps.writer.patchEvent({
+        ...activeLocation,
+        ...providerLabelPatchFields(activeInstance),
+        expectedVersion: command.expectedVersion,
+        content,
+        schedule,
+        recurrence: { kind: "instance" },
+        invitation: input.invitation,
+      }),
+    );
+    if (patchResult.ok) {
+      const result = patchResult.value;
+      return commitProviderOccurrenceOverride(
+        deps,
+        command,
+        master,
+        recurrenceId,
+        content,
+        schedule,
+        activeProviderEventId,
+        result.providerVersion,
+        now,
+      );
+    }
+    const shouldRetry =
+      attempt === 0 &&
+      patchResult.stop.kind === "failed" &&
+      patchResult.stop.reason === "providerRejectedChange";
+    if (!shouldRetry) {
+      return stopCommand(deps, command, patchResult.stop, connectionId);
+    }
+
+    const refetched = await resolveCurrentProviderEvent(
+      deps,
+      command,
+      connectionId,
+      () =>
+        deps.writer.fetchInstanceAt({
+          accessToken,
+          calendarId: calendar.providerCalendarId,
+          seriesProviderEventId,
+          originalStartAt: recurrenceId,
+          scheduleKind: master.schedule.kind,
+        }),
+    );
+    if (!refetched.ok) return refetched.command;
+    activeInstance = refetched.current;
+    activeProviderEventId = activeInstance.providerEventId;
+    activeLocation = {
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      providerEventId: activeProviderEventId,
+    };
+  }
+
+  return failCommand(deps, command, "providerRejectedChange", connectionId);
 }
 
 // Commit a live occurrence override locally: upsert the exception carrying

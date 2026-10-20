@@ -3,6 +3,10 @@ import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
+  googleProviderRejectedChangeMessage,
+  providerSaveFailureMessage,
+} from "@core/event/event-mutation-user-message";
+import {
   type BaseEvent,
   type CompassEvent,
 } from "@core/types/compass-event.contracts";
@@ -10,6 +14,7 @@ import {
   type EventMutationError,
   EventMutationErrorSchema,
 } from "@core/types/event-command.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
@@ -251,6 +256,7 @@ const MUTATION_ERROR_TOAST_MESSAGES: Partial<
 > = {
   UNSUPPORTED_OPERATION:
     "Google doesn't allow this change for this event (for example events created from an email, birthdays, or holidays). Delete it or manage it in your calendar.",
+  PROVIDER_REJECTED: googleProviderRejectedChangeMessage(),
   CALENDAR_READ_ONLY:
     "This calendar is read-only, so its events can't be changed from Compass.",
   RECURRENCE_CONFLICT:
@@ -261,8 +267,7 @@ const MUTATION_ERROR_TOAST_MESSAGES: Partial<
     "Couldn't save that change, the calendar service is briefly unavailable. Your edit was not applied.",
   // Covers a failed round-trip and a response that broke the contract, so
   // the copy must not claim which one happened.
-  PROVIDER_FAILURE:
-    "Couldn't save that change, the calendar service had a problem. Your edit was not applied.",
+  // PROVIDER_FAILURE uses providerSaveFailureMessage when provider is known.
   MAINTENANCE:
     "Couldn't save that change, Compass is updating the calendar service. Your edit was not applied.",
 };
@@ -270,7 +275,31 @@ const MUTATION_ERROR_TOAST_MESSAGES: Partial<
 const showCatchallToast = (message: string) =>
   showErrorToast(message, { toastId: GENERIC_ERROR_TOAST_ID });
 
-export const handleError = (error: Error, onRetry?: () => void) => {
+export type HandleErrorContext = {
+  provider?: ProviderKind;
+};
+
+const mutationToastMessage = (
+  mutationError: EventMutationError,
+  providerHint?: ProviderKind,
+): string => {
+  const provider = mutationError.provider ?? providerHint;
+  if (mutationError.code === "PROVIDER_FAILURE") {
+    return providerSaveFailureMessage(provider);
+  }
+  if (mutationError.code === "PROVIDER_REJECTED" && provider === "google") {
+    return googleProviderRejectedChangeMessage();
+  }
+  return (
+    MUTATION_ERROR_TOAST_MESSAGES[mutationError.code] ?? CATCHALL_TOAST_MESSAGE
+  );
+};
+
+export const handleError = (
+  error: Error,
+  onRetry?: () => void,
+  context: HandleErrorContext = {},
+) => {
   if (isStorageWriteFailure(error)) {
     const kind = classifyStorageFailure(error);
     getPosthogClient()?.captureException(error, {
@@ -323,9 +352,7 @@ export const handleError = (error: Error, onRetry?: () => void) => {
     // actually happened when we have copy for it (a generic toast on a
     // deterministic refusal reads as "try again", which can never work).
     // No error-tracking capture either way — these are expected outcomes.
-    const message =
-      MUTATION_ERROR_TOAST_MESSAGES[mutationError.code] ??
-      CATCHALL_TOAST_MESSAGE;
+    const message = mutationToastMessage(mutationError, context.provider);
 
     // The backend already decided whether the same request could succeed
     // (RETRYABLE_BY_CODE in event.error.ts). When it can, hand the user the

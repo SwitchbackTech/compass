@@ -21,6 +21,7 @@ import {
   matchesIntendedEdit,
   patchExpectedVersion,
 } from "@sync/domain/provider-command.intent-match";
+import { providerLabelPatchFields } from "@sync/domain/provider-patch-fields";
 import {
   type ProviderWriteStop,
   resolveAccessToken,
@@ -394,6 +395,7 @@ export async function applyLinkedProviderUpdate(
   const patchResult = await runProviderWrite(() =>
     deps.writer.patchEvent({
       ...location,
+      ...providerLabelPatchFields(current),
       expectedVersion: patchExpectedVersion(
         command,
         current,

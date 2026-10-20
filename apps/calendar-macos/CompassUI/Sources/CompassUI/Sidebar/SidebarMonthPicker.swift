@@ -5,46 +5,34 @@ public struct SidebarMonthPicker: View {
     @Environment(\.nativeWebTheme) private var theme
     @Binding public var displayedMonth: Date
     public let selectedDate: Date
-    public let referenceNow: Date
-    public let viewRangeStart: Date
-    public let viewRangeEnd: Date
     public let visibleDayCount: Int
     public let onSelectDate: (Date) -> Void
     /// Day holding keyboard focus (`i`), drawn with a ring.
     public let focusedDate: Date?
+    /// The calendar's clock (`referenceNow`), so fixtures and pinned zones agree on today.
+    public let today: Date
     private let trailingHeader: AnyView?
 
     public init(
         displayedMonth: Binding<Date>,
         selectedDate: Date,
-        referenceNow: Date,
-        viewRangeStart: Date,
-        viewRangeEnd: Date,
         onSelectDate: @escaping (Date) -> Void,
         focusedDate: Date? = nil,
         visibleDayCount: Int = 1,
+        today: Date = Date(),
         trailingHeader: (() -> some View)? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
-        self.referenceNow = referenceNow
-        self.viewRangeStart = viewRangeStart
-        self.viewRangeEnd = viewRangeEnd
         self.onSelectDate = onSelectDate
         self.visibleDayCount = visibleDayCount
         self.focusedDate = focusedDate
+        self.today = today
         if let trailingHeader {
             self.trailingHeader = AnyView(trailingHeader())
         } else {
             self.trailingHeader = nil
         }
-    }
-
-    private var isWeekPickerUnit: Bool { visibleDayCount > 1 }
-
-    /// Web `--date-picker-hover-bg` on sidebar month cells.
-    private var datePickerHoverFill: Color {
-        theme.textMutedColor.opacity(0.18)
     }
 
     public var body: some View {
@@ -79,14 +67,14 @@ public struct SidebarMonthPicker: View {
                     }
                     .frame(height: 32.333)
                     .background {
-                        if rowHasVisibleWindow(days) || rowContainsSelectionWeek(days) {
-                            RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                                .fill(datePickerHoverFill)
+                        if rowContainsSelectedWeek(days) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(theme.textMutedColor.opacity(0.12))
                         }
                     }
                     .overlay {
-                        if isWeekPickerUnit, let focusedDate, days.contains(where: { isInSelectionRange($0, anchor: focusedDate) }) {
-                            RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                        if visibleDayCount > 1, let focusedDate, days.contains(where: { isInRange($0, from: focusedDate) }) {
+                            RoundedRectangle(cornerRadius: 4)
                                 .strokeBorder(theme.accentColor, lineWidth: 2)
                                 .allowsHitTesting(false)
                         }
@@ -103,49 +91,61 @@ public struct SidebarMonthPicker: View {
     private var monthHeader: some View {
         HStack(spacing: 8) {
             Text(monthTitle)
-                .font(.rubik(13))
+                .font(.rubik(14, weight: .medium))
                 .foregroundStyle(theme.textColor)
                 .fixedSize()
+                .frame(minWidth: 64, alignment: .leading)
             HStack(spacing: 4) {
                 monthButton("Previous month", symbol: "chevron.left") { shiftMonth(-1) }
                 monthButton("Next month", symbol: "chevron.right") { shiftMonth(1) }
-                monthButton("Current month", symbol: "arrow.uturn.backward") {
-                    displayedMonth = referenceNow
-                }
             }
+            // Web "Go to this month": a small circle, hidden on the current month.
+            Button {
+                displayedMonth = today
+            } label: {
+                Circle()
+                    .stroke(theme.textColor, lineWidth: 1.5)
+                    .frame(width: 10, height: 10)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Go to this month")
+            .help("Go to this month")
+            .opacity(isCurrentMonth ? 0 : 1)
+            .disabled(isCurrentMonth)
             Spacer(minLength: 0)
         }
     }
 
     private func dayButton(_ day: Date) -> some View {
         let calendar = EffectiveTimeZone.calendar
-        let selectionAnchor = focusedDate ?? selectedDate
-        let selectedInPicker = isInSelectionRange(day, anchor: selectionAnchor)
-        let isToday = calendar.isDate(day, inSameDayAs: referenceNow)
-        let inView = isInVisibleWindow(day)
-        let dayModeSelected = !isWeekPickerUnit && selectedInPicker
-
+        let isToday = calendar.isDate(day, inSameDayAs: today)
+        // Web week mode selects the whole week row (bold), and only today
+        // inside it keeps an ink circle; day mode inks the selected day.
+        let weekMode = visibleDayCount > 1
+        let selected = weekMode
+            ? isInSelectedWeek(day)
+            : isInRange(day, from: focusedDate ?? selectedDate)
+        let ink = weekMode ? selected && isToday : selected
         return Button {
             onSelectDate(day)
         } label: {
             Text(dayNumber(day))
-                .font(.rubik(11, weight: selectedInPicker ? .semibold : .regular))
-                .underline(isToday && !dayModeSelected, color: isWeekPickerUnit ? theme.textColor : theme.accentColor)
-                .foregroundStyle(
-                    dayModeSelected
-                        ? theme.onAccentColor
-                        : (isDisplayedMonth(day) ? theme.textColor : theme.textMutedColor)
-                )
+                .font(.rubik(11, weight: selected ? .semibold : .regular))
+                .underline(isToday && !ink, color: theme.accentColor)
+                .foregroundStyle(ink ? theme.backgroundColor : isDisplayedMonth(day) ? theme.textColor : theme.textMutedColor)
                 .frame(width: 24.8, height: 24.8)
                 .background {
-                    if dayModeSelected {
-                        Circle().fill(theme.accentColor)
+                    // Web draws the day circles 2px outside the 1.55rem cell.
+                    if ink {
+                        Circle().fill(theme.textColor).padding(-2)
                     } else if isToday {
-                        Circle().fill(datePickerHoverFill)
+                        Circle().fill(theme.textMutedColor.opacity(0.2)).padding(-2)
                     }
                 }
                 .overlay {
-                    if !isWeekPickerUnit, let focusedDate, calendar.isDate(day, inSameDayAs: focusedDate) {
+                    if visibleDayCount == 1, let focusedDate, calendar.isDate(day, inSameDayAs: focusedDate) {
                         Circle().stroke(theme.accentColor, lineWidth: 2)
                     }
                 }
@@ -155,7 +155,7 @@ public struct SidebarMonthPicker: View {
         .buttonStyle(.plain)
         .allowsHitTesting(false)
         .accessibilityLabel(dayAccessibilityLabel(day))
-        .accessibilityAddTraits(isInSelectionRange(day, anchor: selectedDate) ? .isSelected : [])
+        .accessibilityAddTraits(isInRange(day, from: selectedDate) ? .isSelected : [])
     }
 
     private var monthTitle: String {
@@ -181,34 +181,31 @@ public struct SidebarMonthPicker: View {
         return formatter.veryShortWeekdaySymbols[(weekStart - 1 + index) % 7]
     }
 
+    private var isCurrentMonth: Bool {
+        EffectiveTimeZone.calendar.isDate(displayedMonth, equalTo: today, toGranularity: .month)
+    }
+
+    private func isInSelectedWeek(_ date: Date) -> Bool {
+        let calendar = EffectiveTimeZone.calendar
+        guard let week = calendar.dateInterval(of: .weekOfYear, for: selectedDate) else {
+            return false
+        }
+        return week.contains(date)
+    }
+
     private func isDisplayedMonth(_ date: Date) -> Bool {
         EffectiveTimeZone.calendar.isDate(date, equalTo: displayedMonth, toGranularity: .month)
     }
 
-    private func isInSelectionRange(_ date: Date, anchor: Date) -> Bool {
+    private func isInRange(_ date: Date, from start: Date) -> Bool {
         let calendar = EffectiveTimeZone.calendar
-        let start = calendar.startOfDay(for: anchor)
-        let span = isWeekPickerUnit ? 7 : max(1, visibleDayCount)
-        guard let end = calendar.date(byAdding: .day, value: span, to: start) else { return false }
-        let day = calendar.startOfDay(for: date)
-        return day >= start && day < end
+        let start = calendar.startOfDay(for: start)
+        guard let end = calendar.date(byAdding: .day, value: max(1, visibleDayCount), to: start) else { return false }
+        return date >= start && date < end
     }
 
-    private func isInVisibleWindow(_ date: Date) -> Bool {
-        let calendar = EffectiveTimeZone.calendar
-        let day = calendar.startOfDay(for: date)
-        let start = calendar.startOfDay(for: viewRangeStart)
-        let end = calendar.startOfDay(for: viewRangeEnd)
-        return day >= start && day <= end
-    }
-
-    private func rowHasVisibleWindow(_ days: [Date]) -> Bool {
-        days.contains { isInVisibleWindow($0) }
-    }
-
-    /// Week row containing the selection anchor (web `react-datepicker__week--selected`).
-    private func rowContainsSelectionWeek(_ days: [Date]) -> Bool {
-        guard isWeekPickerUnit else { return false }
+    /// Matches web `react-datepicker__week--selected` for the week containing the anchor day.
+    private func rowContainsSelectedWeek(_ days: [Date]) -> Bool {
         let calendar = EffectiveTimeZone.calendar
         let anchor = calendar.startOfDay(for: selectedDate)
         guard let rowStart = days.first.map({ calendar.startOfDay(for: $0) }),
@@ -226,9 +223,9 @@ public struct SidebarMonthPicker: View {
     private func monthButton(_ label: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 10))
-                .foregroundStyle(theme.textMutedColor)
-                .frame(width: 18, height: 24)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(theme.textColor.opacity(0.9))
+                .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

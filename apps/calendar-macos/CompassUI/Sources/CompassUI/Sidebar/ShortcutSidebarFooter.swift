@@ -88,8 +88,10 @@ struct ShortcutSidebarFooter: View {
 
     private var eventFormSaveHint: some View {
         VStack(alignment: .center, spacing: 2) {
+            // Web `save-draft` tip: [Enter] saves · hold [Mod] to jump fields.
             HStack(spacing: 6) {
-                Text("Enter saves · hold")
+                ShortcutHintChip(label: "Enter")
+                Text("saves · hold")
                     .font(.rubik(11))
                     .foregroundStyle(theme.textMutedColor)
                 ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))

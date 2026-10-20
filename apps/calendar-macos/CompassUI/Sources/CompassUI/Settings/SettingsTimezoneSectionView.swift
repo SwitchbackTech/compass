@@ -17,25 +17,15 @@ struct SettingsTimezoneSectionView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Default timezone")
-                .font(.rubik(15))
-                .foregroundStyle(theme.textColor)
-            Button(label) {
+        VStack(alignment: .leading, spacing: 4) {
+            SettingsFieldLabel("Default timezone")
+            Button {
                 settingsStore.openTimezoneDialog(.pin)
+            } label: {
+                Text(label).settingsSelectChrome()
             }
             .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(theme.surfaceOverlayColor)
-            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
-            .overlay(
-                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                    .stroke(theme.borderColor, lineWidth: 1)
-            )
-            .foregroundStyle(theme.textColor)
-            .font(.rubik(13))
+            .accessibilityLabel("Default timezone: \(label)")
         }
         .accessibilityIdentifier("settings-section-timezone")
     }

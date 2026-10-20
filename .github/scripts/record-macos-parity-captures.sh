@@ -150,6 +150,7 @@ out = sys.argv[2]
 path = os.path.join(out, "mac-title-bar.png")
 TITLE_BAND_POINTS = 120
 CONTENT_HEIGHT_POINTS = 820
+MIN_TITLE_BAR_WIDTH = 1240
 
 def export_attachments(raw_dir: str) -> None:
     os.makedirs(raw_dir, exist_ok=True)
@@ -200,17 +201,50 @@ def chrome_score(image: Image.Image) -> int:
                 score += 1
     return score
 
+
+def sidebar_toggle_score(image: Image.Image) -> int:
+    px = image.load()
+    width, height = image.size
+    score = 0
+    right_start = max(0, width - int(width * 0.14))
+    for y in range(min(height, 55)):
+        for x in range(right_start, width - 8):
+            r, g, b, a = px[x, y]
+            if a < 16:
+                continue
+            if r + g + b < 520:
+                score += 2
+            if max(r, g, b) - min(r, g, b) > 24:
+                score += 1
+    return score
+
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
 full_window = find_attachment(raw, "mac-title-bar-full-window")
 if not full_window:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
-crop_title_bar(full_window, path)
+app_export = path if os.path.isfile(path) else None
+if app_export:
+    band = Image.open(app_export).convert("RGBA")
+    if band.size[0] < MIN_TITLE_BAR_WIDTH or sidebar_toggle_score(band) < 8:
+        app_export = None
+
+if not app_export:
+    crop_title_bar(full_window, path)
+
 band = Image.open(path).convert("RGBA")
 if band.size[1] < 100 or chrome_score(band) < 12:
     raise SystemExit(
         "mac-title-bar.png crop looks empty; expected traffic lights and nav chrome in the top band"
+    )
+if band.size[0] < MIN_TITLE_BAR_WIDTH:
+    raise SystemExit(
+        f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px for sidebar toggle"
+    )
+if sidebar_toggle_score(band) < 8:
+    raise SystemExit(
+        "mac-title-bar.png missing sidebar toggle in the top-right title bar row"
     )
 
 if not os.path.isfile(path):
@@ -228,8 +262,8 @@ with open(path, "rb") as handle:
 
 if height < 110:
     raise SystemExit(f"mac-title-bar.png height {height}, expected at least 110px")
-if width < 400:
-    raise SystemExit(f"mac-title-bar.png width {width}, expected a full window slice")
+if width < MIN_TITLE_BAR_WIDTH:
+    raise SystemExit(f"mac-title-bar.png width {width}, expected at least {MIN_TITLE_BAR_WIDTH}px")
 
 print(f"mac-title-bar.png ok ({width}x{height})")
 PY

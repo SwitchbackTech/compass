@@ -29,7 +29,7 @@ public struct CommandPaletteOverlay: View {
             GeometryReader { geometry in
                 let resultsMaxHeight = geometry.size.height * Self.resultsMaxViewportFraction
                 ZStack {
-                    paletteBackdrop
+                    theme.overlayBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { paletteStore.close() }
 
@@ -134,37 +134,50 @@ public struct CommandPaletteOverlay: View {
         }
     }
 
-    /// NSVisualEffectView backdrops crash some macOS CI hosts when the palette opens under parity capture.
-    @ViewBuilder
-    private var paletteBackdrop: some View {
-        if UITestLaunchPolicy.isParityCapture {
-            theme.overlayBackdropColor
-        } else {
-            PanelBackdropView()
-        }
-    }
-
     @ViewBuilder
     private func paletteRow(_ item: CommandPaletteItem, query: String, selected: Bool) -> some View {
+        let isSearching = !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         Button {
             model.runPaletteCommand(id: item.id)
         } label: {
             HStack(spacing: 12) {
-                if let icon = item.icon {
-                    PhosphorIconView(icon: icon, size: 18)
-                        .frame(width: 18, alignment: .center)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    CommandPaletteHighlightedLabel(label: item.label, query: query)
-                    if let subtitle = item.subtitle {
-                        Text(subtitle)
-                            .font(.rubik(11))
-                            .foregroundStyle(theme.textMutedColor)
+                Image(systemName: item.systemImage ?? "circle")
+                    .font(.system(size: 16, weight: .regular))
+                    .frame(width: 18, height: 18, alignment: .center)
+                    .opacity(item.systemImage == nil ? 0 : 1)
+                // Web highlights only plain command labels, not event detail rows or go-to-date.
+                Group {
+                    if isSearching, item.subtitle == nil, item.id != "go-to-date" {
+                        CommandPaletteHighlightedLabel(label: item.label, query: query)
+                    } else {
+                        Text(item.label).font(.rubik(14))
                     }
                 }
+                .lineLimit(1)
+                .truncationMode(.tail)
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                if let subtitle = item.subtitle {
+                    Text(subtitle)
+                        .font(.rubik(12))
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                if let badge = item.badge {
+                    Text(badge)
+                        .font(.rubik(12))
+                        .padding(.horizontal, 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
+                                .stroke(theme.borderColor, lineWidth: 1))
+                        .fixedSize()
+                }
                 if let shortcut = item.shortcut {
-                    PaletteShortcutKeys(shortcut: shortcut)
+                    HStack(spacing: 4) {
+                        ForEach(Array(paletteShortcutKeys(shortcut).enumerated()), id: \.offset) { _, key in
+                            ShortcutHintChip(label: key)
+                        }
+                    }
+                    .fixedSize()
                 }
             }
             .padding(.vertical, 8)
@@ -179,11 +192,24 @@ public struct CommandPaletteOverlay: View {
                         .stroke(theme.accentColor, lineWidth: 1)
                 }
             }
+            .opacity(item.isDisabled ? 0.5 : 1)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(item.isDisabled)
         .accessibilityValue(selected ? "Selected" : "Not selected")
         .accessibilityAddTraits(selected ? .isSelected : [])
         .accessibilityIdentifier("compass-native-palette-item-\(item.id)")
+    }
+
+    /// One keycap per key, like web `ShortcutKeys` (`mod+shift+z` → ⌘ ⇧ Z).
+    private func paletteShortcutKeys(_ shortcut: String) -> [String] {
+        let tokens = shortcut.count > 1 && shortcut.contains("+")
+            ? shortcut.split(separator: "+").map(String.init)
+            : [shortcut]
+        return tokens.map { token in
+            KeycapGlyphs.display([token.count == 1 ? token.uppercased() : token])
+        }
     }
 
     private var paletteFooterHints: some View {

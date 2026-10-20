@@ -189,6 +189,10 @@ final class NativeGridKeyboardRouter {
                     model.requestLogout()
                     return true
                 }
+                if letter == "d" {
+                    model.requestDeleteAccount()
+                    return true
+                }
             }
             if key.key == .named(.escape), key.modifiers.isEmpty {
                 if model.settingsStore.timezoneDialogPurpose != nil {
@@ -247,8 +251,18 @@ final class NativeGridKeyboardRouter {
         }
 
         if model.pendingDiscardDraftConfirmation {
+            // Web `DiscardUnsavedChangesDialog`: Esc keeps editing, Shift+Esc
+            // or Mod+Enter discards.
             if keyEvent.key == .named(.escape) {
-                model.cancelDiscardDraftConfirmation()
+                if keyEvent.modifiers == .shift {
+                    model.discardDraftConfirmed()
+                } else {
+                    model.cancelDiscardDraftConfirmation()
+                }
+                return true
+            }
+            if keyEvent.key == .named(.enter), keyEvent.modifiers == .command {
+                model.discardDraftConfirmed()
                 return true
             }
             return false

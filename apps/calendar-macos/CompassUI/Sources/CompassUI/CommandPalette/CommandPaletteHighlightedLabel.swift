@@ -13,7 +13,7 @@ struct CommandPaletteHighlightedLabel: View {
 
     private var attributedLabel: AttributedString {
         var result = AttributedString(label)
-        result.foregroundColor = theme.textColor
+        result.foregroundColor = theme.textMutedColor
         let ranges = CommandPaletteSearchLogic.labelMatchRanges(label: label, query: query)
         for range in ranges {
             guard range.lowerBound >= 0,
@@ -25,7 +25,7 @@ struct CommandPaletteHighlightedLabel: View {
             let lower = start..<end
             if let attrRange = Range(lower, in: result) {
                 result[attrRange].font = .rubik(14, weight: .semibold)
-                result[attrRange].foregroundColor = theme.accentColor
+                result[attrRange].foregroundColor = theme.textColor
             }
         }
         return result

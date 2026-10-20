@@ -113,6 +113,22 @@ enum NativeImageSnapshotSupport {
             XCTFail("Window missing for title bar reference screenshot", file: file, line: line)
             return
         }
+        XCTAssertGreaterThanOrEqual(
+            window.frame.width,
+            1270,
+            "Parity window must stay at full 1280px width so the sidebar toggle is in frame")
+        let sidebarToggle = window.buttons.matching(
+            NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
+        ).firstMatch
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        XCTAssertLessThan(
+            sidebarToggle.frame.maxX,
+            window.frame.maxX - 2,
+            "Sidebar toggle should sit inside the captured window width")
+        if let url = URL(string: "compass://debug/parity-title-bar-export") {
+            NSWorkspace.shared.open(url)
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
         let png = window.screenshot().pngRepresentation
         guard !png.isEmpty else {

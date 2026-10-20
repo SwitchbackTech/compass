@@ -190,9 +190,28 @@ enum ParityViewSnapshotExporter {
                 if max(r, g, b) - min(r, g, b) > 24 || max(r, g, b) < 240 {
                     variedPixels += 1
                 }
+                if Int(r) + Int(g) + Int(b) < 520 {
+                    darkPixels += 1
+                }
             }
         }
-        return opaquePixels > 40 && variedPixels > 12
+        var rightDark = 0
+        let rightStart = max(0, width - Int(Double(width) * 0.12))
+        for y in 0 ..< min(height, Int(Double(height) * 0.55)) {
+            for x in rightStart ..< width {
+                let offset = (y * width + x) * 4
+                let r = bytes[offset]
+                let g = bytes[offset + 1]
+                let b = bytes[offset + 2]
+                let a = bytes[offset + 3]
+                if a < 16 { continue }
+                if Int(r) + Int(g) + Int(b) < 520 { rightDark += 1 }
+            }
+        }
+        return opaquePixels > 40
+            && (variedPixels > 8 || darkPixels > 6)
+            && rightDark > 4
+            && width >= 1240
     }
 
     private static func windowListPNG(window: NSWindow) -> Data? {
