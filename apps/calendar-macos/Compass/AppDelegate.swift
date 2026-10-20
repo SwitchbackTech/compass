@@ -58,8 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installRootContent(on: window)
         if UITestLaunchPolicy.isParityCapture {
             // Parity XCUITest must match web 1280×820; never restore a narrow autosaved frame.
-            window.setContentSize(NSSize(width: 1280, height: 820))
-            window.center()
+            ParityCaptureWindowPolicy.scheduleReapply(to: window)
         } else {
             // Installing the content controller resizes the window, so restore the saved frame afterwards.
             window.setFrameUsingName(Self.windowFrameName)

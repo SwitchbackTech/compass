@@ -164,7 +164,7 @@ public struct CommandPaletteOverlay: View {
             Text("Navigate")
                 .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)
-            footerKeycap("↩")
+            footerKeycap("Enter")
             Text("Select")
                 .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)

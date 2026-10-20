@@ -90,7 +90,7 @@ public struct SettingsWindowOverlay: View {
     private var content: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 12) {
                     if model.settingsStore.page == .billing {
                         billingContent
                     } else if model.settingsStore.page == .booking {
@@ -99,12 +99,12 @@ public struct SettingsWindowOverlay: View {
                         accountsContent
                     }
                 }
-                .padding(20)
+                .padding(16)
             }
             if model.settingsStore.page == .accounts {
                 Divider().overlay(theme.borderColor)
                 SettingsDataActionsSectionView(model: model)
-                    .padding(20)
+                    .padding(16)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -119,11 +119,13 @@ public struct SettingsWindowOverlay: View {
                 settingsStore: model.settingsStore,
                 calendars: model.calendars,
                 hasConnectedAccount: !model.syncConnectionsStore.connections.isEmpty)
-            SettingsThemeSectionView(settingsStore: model.settingsStore)
-            SettingsLaunchAtLoginSectionView(settingsStore: model.settingsStore)
-            SettingsQuickAddHotkeySectionView(settingsStore: model.settingsStore)
             if model.isSignedIn {
+                SettingsThemeSectionView(settingsStore: model.settingsStore)
+                SettingsLaunchAtLoginSectionView(settingsStore: model.settingsStore)
+                SettingsQuickAddHotkeySectionView(settingsStore: model.settingsStore)
                 SettingsAccountsSectionView(syncStore: model.syncConnectionsStore)
+            } else {
+                SettingsUnsignedAccountsSectionView()
             }
         }
     }

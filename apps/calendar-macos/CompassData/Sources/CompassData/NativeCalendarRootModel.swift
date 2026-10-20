@@ -158,8 +158,12 @@ public final class NativeCalendarRootModel {
         self.demoPresentation = demoPresentation
         self.now = now
         self.overlayStores = overlayStores
-        let pinnedTimeZone = demoPresentation?.timeZone ?? CompassDevicePreferences.readPinnedTimeZone()
-        EffectiveTimeZone.identifier = pinnedTimeZone ?? TimeZone.current.identifier
+        // Demo matches web parity: effective UTC via browser timezone, not a pinned override.
+        let demoTimeZone = demoPresentation?.timeZone
+        let pinnedTimeZone =
+            demoPresentation == nil ? CompassDevicePreferences.readPinnedTimeZone() : nil
+        EffectiveTimeZone.identifier =
+            demoTimeZone ?? pinnedTimeZone ?? TimeZone.current.identifier
         eventsStore = environment.eventsStore
         hiddenEventsStore = environment.hiddenEventsStore
         calendarVisibilityStore = CalendarVisibilityStore()
@@ -180,7 +184,8 @@ public final class NativeCalendarRootModel {
             view: .week,
             anchorDate: anchor,
             visibleDayCount: CalendarWindowMath.weekDayCount,
-            pinnedTimeZone: pinnedTimeZone
+            pinnedTimeZone: pinnedTimeZone,
+            browserTimeZone: demoTimeZone ?? TimeZone.current.identifier
         )
         if demoPresentation == nil {
             viewStore.setTimeTravelTimeZone(CompassDevicePreferences.readTimeTravelTimeZone())
@@ -219,7 +224,11 @@ public final class NativeCalendarRootModel {
         overlayStores.legend.onOpenChanged = { [weak self] open in
             self?.onShortcutsLegendAccessibilityProbeChanged?(open)
         }
-        rebuildPresentation()
+        if UITestLaunchPolicy.isParityCapture {
+            applyParityCapturePresentationIfNeeded()
+        } else {
+            rebuildPresentation()
+        }
     }
 
     public func closeSettingsIfAllowed() {
@@ -377,6 +386,7 @@ public final class NativeCalendarRootModel {
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
+        onParityCapturePresentationApplied?()
     }
 
     public func dismissDemoEventsBanner() {
@@ -397,6 +407,7 @@ public final class NativeCalendarRootModel {
         await syncConnectionsStore.reloadFromMetadata()
     }
 
+    public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
@@ -917,15 +928,30 @@ public final class NativeCalendarRootModel {
     private func goToToday() {
         let today = referenceNow
         let calendar = EffectiveTimeZone.calendar
+        var anchorChanged = false
         if viewStore.visibleDayCount == 1 {
-            viewStore.setAnchorDate(today)
-        } else {
+            if !calendar.isDate(viewStore.anchorDate, inSameDayAs: today) {
+                viewStore.setAnchorDate(today)
+                anchorChanged = true
+            }
+        } else if !isReferenceDayInVisibleWindow(today) {
             viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
+            anchorChanged = true
         }
         monthPickerMonth = today
-        rebuildPresentation()
-        scheduleRefreshVisibleRange()
+        if anchorChanged {
+            rebuildPresentation()
+            scheduleRefreshVisibleRange()
+        }
+        // Web `goToTodayInWeek` always runs scroll-to-now / now-cue even when the anchor is unchanged.
         pendingScroll = .scrollToNowOrPulse
+    }
+
+    /// Matches web `useWeek` `isCurrentWeek` before `goToToday` moves the anchor.
+    private func isReferenceDayInVisibleWindow(_ day: Date) -> Bool {
+        let calendar = EffectiveTimeZone.calendar
+        let dayStart = calendar.startOfDay(for: day)
+        return dayStart >= startOfView && dayStart <= endOfView
     }
 
     private func shiftMonth(by months: Int) {

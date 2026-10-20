@@ -90,6 +90,9 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         configureNativeServices()
         configureKeyboard()
         configureResume()
+        model.onParityCapturePresentationApplied = { [weak self] in
+            ParityCaptureWindowPolicy.applyIfNeeded(to: self?.view.window)
+        }
         Task {
             await model.start()
             deepLinkRouter.markConsumerReady()
@@ -105,6 +108,7 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
 
     override func viewDidAppear() {
         super.viewDidAppear()
+        ParityCaptureWindowPolicy.scheduleReapply(to: view.window)
         // AppKit hands launch focus to the first key view, the header Previous
         // button, which then draws a ring and swallows Space and typing. The
         // grid owns the keyboard through the router, so start with no control
