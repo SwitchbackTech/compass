@@ -104,8 +104,8 @@ describe("event positioning on DST days", () => {
       },
     ).top;
 
-    expect(beforeDst).toBe(9 * 60);
-    expect(afterDst).toBe(9 * 60);
+    expect(beforeDst).toBe(8 * measurements.hourHeight);
+    expect(afterDst).toBe(8 * measurements.hourHeight);
   });
 
   it("preserves duration in minutes across spring-forward week", () => {
@@ -125,7 +125,7 @@ describe("event positioning on DST days", () => {
       },
     );
 
-    expect(position.top).toBe(9 * measurements.hourHeight);
+    expect(position.top).toBe(8 * measurements.hourHeight);
     expect(position.height).toBeGreaterThan(0);
     expect(position.height).toBe(60 - 3);
   });
@@ -256,8 +256,8 @@ describe("pinned calendar timezone with a mismatched browser zone", () => {
       },
     ).top;
 
-    expect(wakeTop).toBe(4 * measurements.hourHeight);
-    expect(sundayWakeTop).toBe(4 * measurements.hourHeight);
+    expect(wakeTop).toBe(3 * measurements.hourHeight);
+    expect(sundayWakeTop).toBe(3 * measurements.hourHeight);
   });
 });
 
@@ -300,8 +300,8 @@ describe("Europe/London DST weeks", () => {
       },
     ).top;
 
-    expect(fallBackTop).toBe(9 * measurements.hourHeight);
-    expect(springForwardTop).toBe(9 * measurements.hourHeight);
+    expect(fallBackTop).toBe(8 * measurements.hourHeight);
+    expect(springForwardTop).toBe(8 * measurements.hourHeight);
   });
 });
 

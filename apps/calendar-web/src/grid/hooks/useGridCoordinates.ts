@@ -74,7 +74,7 @@ export const useGridCoordinates = (
   const getYByDate = (date: string) => {
     const timeZone = getEffectiveTimeZone();
     const minutes = gridMinutesFromCivilMidnight(date, timeZone);
-    return measurements.hourHeight * (minutes / 60);
+    return measurements.hourHeight * (Math.max(0, minutes - 60) / 60);
   };
 
   return {

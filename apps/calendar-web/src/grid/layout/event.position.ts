@@ -3,6 +3,11 @@ import {
   formatInstantInTimeZone,
   gridMinutesFromCivilMidnight,
 } from "@core/util/date/civil-day";
+
+/** Timed grid rows and gutter labels start at 1 AM, not midnight. */
+const timedGridMinutesToTop = (minutesFromCivilMidnight: number) =>
+  Math.max(0, minutesFromCivilMidnight - 60);
+
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -62,7 +67,9 @@ export const getTimedEventPosition = (
       (durationMinutes / 60) * input.measurements.hourHeight -
       DRAFT_PADDING_BOTTOM,
     left: gridMarginLeftPx() + columnLeft + TIMED_EVENT_COLUMN_INSET,
-    top: (minutesFromStartOfDay / 60) * input.measurements.hourHeight,
+    top:
+      (timedGridMinutesToTop(minutesFromStartOfDay) / 60) *
+      input.measurements.hourHeight,
     width: Math.max(
       0,
       columnWidth * widthMultiplier - TIMED_EVENT_COLUMN_INSET * 2,
@@ -113,7 +120,9 @@ export const getBusyPeriodPosition = (
   return {
     height: (durationMinutes / 60) * input.measurements.hourHeight,
     left: gridMarginLeftPx() + columnLeft + TIMED_EVENT_COLUMN_INSET,
-    top: (minutesFromStartOfDay / 60) * input.measurements.hourHeight,
+    top:
+      (timedGridMinutesToTop(minutesFromStartOfDay) / 60) *
+      input.measurements.hourHeight,
     width: Math.max(0, columnWidth - TIMED_EVENT_COLUMN_INSET * 2),
   };
 };

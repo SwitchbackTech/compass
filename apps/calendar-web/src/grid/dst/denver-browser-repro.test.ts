@@ -66,7 +66,7 @@ describe("Denver browser zone (Tyler scenario)", () => {
       } as never,
       { measurements, visibleDates: visible("2026-11-01"), isDraft: false },
     ).top;
-    expect(top).toBe(4 * hourHeight);
+    expect(top).toBe(3 * hourHeight);
   });
 
   it("places 4 AM wake on the 4 AM row with Auto Denver", () => {
@@ -85,7 +85,7 @@ describe("Denver browser zone (Tyler scenario)", () => {
         } as never,
         { measurements, visibleDates: visible(dayKey), isDraft: false },
       ).top;
-      expect(top).toBe(4 * hourHeight);
+      expect(top).toBe(3 * hourHeight);
     }
   });
 
@@ -126,7 +126,7 @@ describe("Denver browser zone (Tyler scenario)", () => {
       } as never,
       { measurements, visibleDates: visible("2026-11-01"), isDraft: false },
     ).top;
-    expect(top).toBe(4 * hourHeight);
+    expect(top).toBe(3 * hourHeight);
   });
 
   it("re-anchors UTC instants before grid minutes (Tyler 2h offset)", () => {
@@ -149,7 +149,7 @@ describe("Denver browser zone (Tyler scenario)", () => {
       },
     ).top;
 
-    expect(top).toBe(9 * hourHeight);
+    expect(top).toBe(8 * hourHeight);
   });
 
   it("places 4 AM wake on the 4 AM row with pinned Denver", () => {
@@ -167,6 +167,6 @@ describe("Denver browser zone (Tyler scenario)", () => {
       } as never,
       { measurements, visibleDates: visible("2026-11-05"), isDraft: false },
     ).top;
-    expect(top).toBe(4 * hourHeight);
+    expect(top).toBe(3 * hourHeight);
   });
 });
