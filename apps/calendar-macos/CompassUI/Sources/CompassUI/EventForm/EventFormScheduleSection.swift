@@ -6,7 +6,6 @@ struct EventFormScheduleSection: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
     let draft: GridEventDraft
-    let focusField: EventFormField
 
     private var scheduleLocked: Bool {
         model.isScheduleLocked(for: draft)
@@ -23,57 +22,22 @@ struct EventFormScheduleSection: View {
             .accessibilityIdentifier("compass-event-form-allday")
 
             if draft.schedule.kind == .timed {
-                HStack(spacing: 8) {
-                    EventFormCompactDateField(
-                        date: Binding(
-                            get: { draft.schedule.start },
-                            set: { updateStart(mergeCalendarDay(into: draft.schedule.start, day: $0)) }
-                        ),
-                        accessibilityIdentifier: "compass-event-form-start-date"
-                    )
-                    .disabled(scheduleLocked)
-                    .pageJumpChipAnchor(id: "form-start")
-
-                    DatePicker(
-                        "Start time",
-                        selection: Binding(
-                            get: { draft.schedule.start },
-                            set: { updateStart($0) }
-                        ),
-                        displayedComponents: [.hourAndMinute]
-                    )
-                    .labelsHidden()
-                    .controlSize(.small)
-                    .frame(minHeight: 38)
-                    .disabled(scheduleLocked)
-                    .accessibilityIdentifier("compass-event-form-start")
-                }
-
-                HStack(spacing: 8) {
-                    EventFormCompactDateField(
-                        date: Binding(
-                            get: { draft.schedule.end },
-                            set: { updateEnd(mergeCalendarDay(into: draft.schedule.end, day: $0)) }
-                        ),
-                        accessibilityIdentifier: "compass-event-form-end-date"
-                    )
-                    .disabled(scheduleLocked)
-                    .pageJumpChipAnchor(id: "form-end")
-
-                    DatePicker(
-                        "End time",
-                        selection: Binding(
-                            get: { draft.schedule.end },
-                            set: { updateEnd($0) }
-                        ),
-                        displayedComponents: [.hourAndMinute]
-                    )
-                    .labelsHidden()
-                    .controlSize(.small)
-                    .frame(minHeight: 38)
-                    .disabled(scheduleLocked)
-                    .accessibilityIdentifier("compass-event-form-end")
-                }
+                timedRow(
+                    date: draft.schedule.start,
+                    dateAccessibilityIdentifier: "compass-event-form-start-date",
+                    timeLabel: "Start time",
+                    timeAccessibilityIdentifier: "compass-event-form-start",
+                    pageJumpId: "form-start",
+                    update: updateStart
+                )
+                timedRow(
+                    date: draft.schedule.end,
+                    dateAccessibilityIdentifier: "compass-event-form-end-date",
+                    timeLabel: "End time",
+                    timeAccessibilityIdentifier: "compass-event-form-end",
+                    pageJumpId: "form-end",
+                    update: updateEnd
+                )
             } else {
                 EventFormCompactDateField(
                     date: Binding(
@@ -108,6 +72,42 @@ struct EventFormScheduleSection: View {
                 .foregroundStyle(theme.textMutedColor)
                 .accessibilityIdentifier("compass-event-form-schedule-locked-note")
             }
+        }
+    }
+
+    @ViewBuilder
+    private func timedRow(
+        date: Date,
+        dateAccessibilityIdentifier: String,
+        timeLabel: String,
+        timeAccessibilityIdentifier: String,
+        pageJumpId: String,
+        update: @escaping (Date) -> Void
+    ) -> some View {
+        HStack(spacing: 8) {
+            EventFormCompactDateField(
+                date: Binding(
+                    get: { date },
+                    set: { update(mergeCalendarDay(into: date, day: $0)) }
+                ),
+                accessibilityIdentifier: dateAccessibilityIdentifier
+            )
+            .disabled(scheduleLocked)
+            .pageJumpChipAnchor(id: pageJumpId)
+
+            DatePicker(
+                timeLabel,
+                selection: Binding(
+                    get: { date },
+                    set: { update($0) }
+                ),
+                displayedComponents: [.hourAndMinute]
+            )
+            .labelsHidden()
+            .controlSize(.small)
+            .frame(minHeight: 38)
+            .disabled(scheduleLocked)
+            .accessibilityIdentifier(timeAccessibilityIdentifier)
         }
     }
 

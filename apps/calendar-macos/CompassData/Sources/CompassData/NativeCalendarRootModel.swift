@@ -948,7 +948,7 @@ public final class NativeCalendarRootModel {
         ) ?? startOfView
     }
 
-    private func visibleDateKeys() -> [String] {
+    func visibleDateKeys() -> [String] {
         let calendar = EffectiveTimeZone.calendar
         return (0 ..< viewStore.visibleDayCount).compactMap { offset in
             guard let day = calendar.date(byAdding: .day, value: offset, to: startOfView) else {

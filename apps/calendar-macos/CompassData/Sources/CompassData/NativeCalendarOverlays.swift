@@ -49,7 +49,8 @@ extension NativeCalendarRootModel {
         let items = filteredPaletteSections().flatMap(\.items)
         guard !items.isEmpty else { return }
         let index = items.firstIndex { $0.id == commandPaletteStore.selectedCommandId } ?? 0
-        let next = (index + delta % items.count + items.count) % items.count
+        let count = items.count
+        let next = ((index + delta) % count + count) % count
         commandPaletteStore.select(commandId: items[next].id)
     }
 

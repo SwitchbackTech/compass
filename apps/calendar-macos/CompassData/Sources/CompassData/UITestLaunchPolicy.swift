@@ -29,22 +29,12 @@ public enum UITestLaunchPolicy {
 
     /// When set, focuses this grid event once the demo fixture layout is ready (no pointer hint).
     public static var initialGridFocusEventId: String? {
-        let args = ProcessInfo.processInfo.arguments
-        guard let index = args.firstIndex(of: "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT"),
-            index + 1 < args.count
-        else { return nil }
-        let value = args[index + 1]
-        return value.isEmpty ? nil : value
+        stringValue(forFlag: "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT")
     }
 
     /// When set, a grid tap that would show the scroll hint focuses this event id instead.
     public static var gridClickFocusEventId: String? {
-        let args = ProcessInfo.processInfo.arguments
-        guard let index = args.firstIndex(of: "-COMPASS_UI_TEST_GRID_CLICK_FOCUS_EVENT"),
-            index + 1 < args.count
-        else { return nil }
-        let value = args[index + 1]
-        return value.isEmpty ? nil : value
+        stringValue(forFlag: "-COMPASS_UI_TEST_GRID_CLICK_FOCUS_EVENT")
     }
 
     /// Opens the native edit form for the initially focused grid event once layout is ready.
@@ -98,11 +88,17 @@ public enum UITestLaunchPolicy {
 
     /// Seeds the open event form title (XCUITest typing is flaky for recurring edits in CI).
     public static var presetEventFormTitle: String? {
-        let args = ProcessInfo.processInfo.arguments
-        guard let index = args.firstIndex(of: "-COMPASS_UI_TEST_EVENT_FORM_TITLE"),
-            index + 1 < args.count
-        else { return nil }
-        let value = args[index + 1]
+        stringValue(forFlag: "-COMPASS_UI_TEST_EVENT_FORM_TITLE")
+    }
+
+    private static func stringValue(
+        forFlag flag: String,
+        in arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> String? {
+        guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else {
+            return nil
+        }
+        let value = arguments[index + 1]
         return value.isEmpty ? nil : value
     }
 
