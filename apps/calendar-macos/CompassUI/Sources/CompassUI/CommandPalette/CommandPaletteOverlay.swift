@@ -3,13 +3,18 @@ import CompassKit
 import SwiftUI
 
 public struct CommandPaletteOverlay: View {
-    private static let resultsMaxHeight: CGFloat = 360
+    /// Matches web `CommandPalette` panel width (`w-[640px]`).
+    private static let panelWidth: CGFloat = 640
+    /// Matches web `max-h-[50vh]` on the results scroller.
+    private static let resultsMaxViewportFraction: CGFloat = 0.5
+    /// Matches web `mt-[15vh]` on the floating panel.
+    private static let topInsetViewportFraction: CGFloat = 0.15
 
     @Environment(\.nativeWebTheme) private var theme
     public var model: NativeCalendarRootModel
     @Bindable private var paletteStore: CommandPaletteStore
     @FocusState private var searchFocused: Bool
-    @State private var resultsHeight: CGFloat = Self.resultsMaxHeight
+    @State private var resultsHeight: CGFloat = 360
 
     public init(model: NativeCalendarRootModel) {
         self.model = model
@@ -21,78 +26,104 @@ public struct CommandPaletteOverlay: View {
             let sections = model.filteredPaletteSections()
             let selectedId = model.selectedPaletteItemId
             let query = paletteStore.query
-            ZStack {
-                theme.overlayBackdropColor
-                    .ignoresSafeArea()
-                    .onTapGesture { paletteStore.close() }
+            GeometryReader { geometry in
+                let resultsMaxHeight = geometry.size.height * Self.resultsMaxViewportFraction
+                ZStack {
+                    theme.overlayBackdropColor
+                        .ignoresSafeArea()
+                        .onTapGesture { paletteStore.close() }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    TextField(
-                        "Search commands, events, or type a date",
-                        text: $paletteStore.query
-                    )
-                    .textFieldStyle(.plain)
-                    .font(.rubik(15))
-                    .foregroundStyle(theme.textColor)
-                    .focused($searchFocused)
-                    .accessibilityIdentifier("compass-native-command-palette-search")
+                    VStack(spacing: 0) {
+                        Spacer(minLength: geometry.size.height * Self.topInsetViewportFraction)
+                        VStack(alignment: .leading, spacing: 0) {
+                            TextField(
+                                "Search commands, events, or type a date",
+                                text: $paletteStore.query
+                            )
+                            .textFieldStyle(.plain)
+                            .font(.rubik(15))
+                            .foregroundStyle(theme.textColor)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .focused($searchFocused)
+                            .accessibilityIdentifier("compass-native-command-palette-search")
+                            .overlay(alignment: .bottom) {
+                                Rectangle()
+                                    .fill(theme.borderColor)
+                                    .frame(height: 1)
+                            }
 
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 8) {
-                                if sections.isEmpty {
-                                    Text("No results for “\(query)”")
-                                        .foregroundStyle(theme.textMutedColor)
-                                        .padding(12)
+                            ScrollViewReader { proxy in
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        if sections.isEmpty {
+                                            Text("No results for “\(query)”")
+                                                .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
+                                                .foregroundStyle(theme.textMutedColor)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 8)
+                                        }
+                                        ForEach(sections) { section in
+                                            if !section.heading.isEmpty {
+                                                Text(section.heading.uppercased())
+                                                    .font(.rubik(12, weight: .semibold))
+                                                    .foregroundStyle(theme.textColor)
+                                                    .tracking(0.4)
+                                                    .padding(.horizontal, 12)
+                                                    .padding(.top, 8)
+                                                    .padding(.bottom, 4)
+                                            }
+                                            ForEach(section.items) { item in
+                                                paletteRow(item, query: query, selected: item.id == selectedId)
+                                                    .id(item.id)
+                                            }
+                                        }
+                                    }
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .background {
+                                        GeometryReader { contentGeometry in
+                                            Color.clear.onChange(
+                                                of: contentGeometry.size.height,
+                                                initial: true
+                                            ) { _, height in
+                                                resultsHeight = height
+                                            }
+                                        }
+                                    }
                                 }
-                                ForEach(sections) { section in
-                                    if !section.heading.isEmpty {
-                                        Text(section.heading.uppercased())
-                                            .font(.rubik(11, weight: .medium))
-                                            .foregroundStyle(theme.textMutedColor)
-                                            .tracking(0.4)
-                                    }
-                                    ForEach(section.items) { item in
-                                        paletteRow(item, query: query, selected: item.id == selectedId)
-                                            .id(item.id)
-                                    }
+                                .frame(height: min(resultsHeight, resultsMaxHeight))
+                                .padding(8)
+                                .onChange(of: selectedId) { _, id in
+                                    if let id { proxy.scrollTo(id, anchor: .center) }
+                                }
+                                .onChange(of: paletteStore.query) { _, _ in
+                                    model.schedulePaletteEventSearch()
+                                    if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
                                 }
                             }
-                            .fixedSize(horizontal: false, vertical: true)
-                            .background {
-                                GeometryReader { geometry in
-                                    Color.clear.onChange(of: geometry.size.height, initial: true) { _, height in
-                                        resultsHeight = height
-                                    }
-                                }
+
+                            HStack {
+                                Spacer(minLength: 0)
+                                paletteFooterHints
                             }
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 10)
+                            .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
                         }
-                        .frame(height: min(resultsHeight, Self.resultsMaxHeight))
-                        .onChange(of: selectedId) { _, id in
-                            if let id { proxy.scrollTo(id, anchor: .center) }
-                        }
-                        .onChange(of: paletteStore.query) { _, _ in
-                            model.schedulePaletteEventSearch()
-                            if let selectedId { proxy.scrollTo(selectedId, anchor: .top) }
-                        }
-                    }
-                    HStack {
+                        .frame(width: Self.panelWidth)
+                        .background(theme.surfacePanelColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(theme.borderColor, lineWidth: 1)
+                        )
+                        .shadow(color: theme.shadowDefaultColor, radius: 24, x: 0, y: 16)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("compass-native-command-palette")
                         Spacer(minLength: 0)
-                        paletteFooterHints
                     }
-                    .accessibilityLabel("Up and Down navigate, Return selects, Escape closes")
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(16)
-                .frame(maxWidth: 520)
-                .background(theme.surfacePanelColor)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(theme.borderColor, lineWidth: 1)
-                )
-                .shadow(color: theme.shadowDefaultColor, radius: 16, x: 0, y: 8)
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("compass-native-command-palette")
             }
             .focusOnAppear($searchFocused)
         }
@@ -103,10 +134,10 @@ public struct CommandPaletteOverlay: View {
         Button {
             model.runPaletteCommand(id: item.id)
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 if let systemImage = item.systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(theme.textMutedColor)
                         .frame(width: 18, alignment: .center)
                 }
@@ -118,16 +149,17 @@ public struct CommandPaletteOverlay: View {
                             .foregroundStyle(theme.textMutedColor)
                     }
                 }
-                Spacer()
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
                 if let shortcut = item.shortcut {
                     Text(paletteShortcutLabel(shortcut))
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                 }
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 8)
-            .background(selected ? theme.accentColor.opacity(0.08) : Color.clear)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .foregroundStyle(theme.textMutedColor)
+            .background(selected ? theme.surfaceOverlayColor : Color.clear)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
             .overlay {
                 if selected {

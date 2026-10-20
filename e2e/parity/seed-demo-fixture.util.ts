@@ -21,6 +21,7 @@ const DEMO_SEED_PATH = join(
 
 type DemoSeedFixture = {
   referenceNow: string;
+  timeZone: string;
   calendarId: string;
   events: unknown[];
 };
@@ -34,6 +35,7 @@ type ParityWebOptions = {
   dismissOnboarding?: boolean;
 };
 
+/** Playwright-only setup for `e2e/parity/desktop-web-parity.spec.ts`; not used by the web app. */
 export async function installParityWebEnvironment(
   page: Page,
   options: ParityWebOptions = {},
@@ -45,6 +47,8 @@ export async function installParityWebEnvironment(
     "compass.localCalendarId": demoFixture.calendarId,
     "compass.view.sidebar-open": "true",
     "compass.sidebar.width": String(PARITY_SIDEBAR_WIDTH),
+    // Parity captures only: macOS asserts UTC on the grid header; pin web the same for screenshots.
+    "compass.timezone.default": demoFixture.timeZone,
   };
   if (dismissOnboarding) {
     localStorageSeed["compass.onboarding.has-seen-welcome"] = "true";

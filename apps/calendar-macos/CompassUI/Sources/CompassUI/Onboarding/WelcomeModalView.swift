@@ -18,9 +18,11 @@ struct WelcomeModalView: View {
                 .ignoresSafeArea()
             ScrollView {
                 panel
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 32)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.top, 32)
+                    .padding(.bottom, 32)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .onAppear {
             model.onboardingStore.setWelcomeFirstVisitOpen(true)
@@ -32,7 +34,7 @@ struct WelcomeModalView: View {
     }
 
     private var panel: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 24) {
             headerRow
             stepContent
             stepDots
