@@ -20,6 +20,7 @@ final class NativeParityCaptureTests: XCTestCase {
             throw XCTSkip("Set PARITY_CAPTURE=1 to export parity PNGs")
         }
 
+        captureWelcomeOnboarding()
         captureWeekGrid()
         captureWeekGridAllDay()
         captureDemoEventsBanner()
@@ -31,7 +32,6 @@ final class NativeParityCaptureTests: XCTestCase {
         captureEventFormTimePicker()
         captureCommandPalette()
         captureSettings()
-        captureWelcomeOnboarding()
     }
 
     @MainActor
@@ -143,6 +143,8 @@ final class NativeParityCaptureTests: XCTestCase {
         app.launchArguments += [
             "-\(OnboardingStorageKeys.hasSeenWelcome)", "false",
             "-compass.theme", "light-beach",
+            "-COMPASS_UI_TEST_PARITY_CAPTURE",
+            "-PARITY_CAPTURE",
         ]
         app.launchEnvironment["PARITY_CAPTURE"] = "1"
         if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {

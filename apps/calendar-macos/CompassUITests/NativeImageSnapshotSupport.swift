@@ -2,9 +2,6 @@ import AppKit
 import XCTest
 
 enum NativeImageSnapshotSupport {
-    /// AppKit `cacheDisplay` parity export returns a blank frame for some SwiftUI-only surfaces.
-    private static let xcuiScreenshotParitySurfaces: Set<String> = ["onboarding-welcome"]
-
     static let recordSnapshots = ProcessInfo.processInfo.environment["RECORD_SNAPSHOTS"] == "1"
     /// Export PNGs for web parity comparison (no ReferenceImages assert).
     static var parityCapture: Bool {
@@ -30,15 +27,9 @@ enum NativeImageSnapshotSupport {
             return
         }
 
-        if parityCapture, parityOutputDirectory != nil {
-            if xcuiScreenshotParitySurfaces.contains(name) {
-                writeParityScreenshot(window: window, named: name, file: file, line: line)
-                return
-            }
-            if let png = exportParitySnapshot(window: window, named: name, file: file, line: line) {
-                attachPNG(png, named: name)
-                return
-            }
+        if parityCapture, let png = exportParitySnapshot(window: window, named: name, file: file, line: line) {
+            attachPNG(png, named: name)
+            return
         }
 
         let screenshot = window.screenshot()
@@ -75,30 +66,6 @@ enum NativeImageSnapshotSupport {
         } catch {
             XCTFail("Failed to load reference snapshot \(name): \(error)", file: file, line: line)
         }
-    }
-
-    @MainActor
-    private static func writeParityScreenshot(
-        window: XCUIElement,
-        named name: String,
-        file: StaticString,
-        line: UInt
-    ) {
-        guard let outDir = parityOutputDirectory else {
-            XCTFail("PARITY_OUTPUT_DIR is required for parity screenshot \(name)", file: file, line: line)
-            return
-        }
-        let screenshot = window.screenshot()
-        let data = screenshot.pngRepresentation
-        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("\(name).png")
-        do {
-            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try data.write(to: fileURL)
-        } catch {
-            XCTFail("Failed to write parity screenshot \(name): \(error)", file: file, line: line)
-            return
-        }
-        attachPNG(data, named: name)
     }
 
     @MainActor
