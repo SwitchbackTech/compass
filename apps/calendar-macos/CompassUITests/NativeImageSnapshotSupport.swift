@@ -168,7 +168,7 @@ enum NativeImageSnapshotSupport {
             XCTFail("Title bar screenshot fallback was empty or too small", file: file, line: line)
             return nil
         }
-        return best
+        return cropped
     }
 
     private static func titleBarPNGMeetsMinimumSize(_ png: Data) -> Bool {
