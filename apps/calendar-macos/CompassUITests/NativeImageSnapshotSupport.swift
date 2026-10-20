@@ -1,5 +1,4 @@
 import AppKit
-import CompassKit
 import XCTest
 
 enum NativeImageSnapshotSupport {
@@ -102,44 +101,47 @@ enum NativeImageSnapshotSupport {
         return nil
     }
 
-    /// Full-window screenshot crop for marketing (includes traffic lights in unified title bar).
+    /// Full-window title bar PNG (traffic lights + nav); written by the app process during parity capture.
     @MainActor
     static func exportMacTitleBarReference(
         _ window: XCUIElement,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
-        guard parityCapture, let outDir = parityOutputDirectory else { return }
-        guard window.waitForExistence(timeout: 15) else {
-            XCTFail("Window missing for mac title bar reference", file: file, line: line)
-            return
-        }
-        let screenshot = window.screenshot()
-        let bandHeight = MacTitleBarChromeMetrics.contentBandHeight
-        guard let cropped = cropTopBand(from: screenshot.pngRepresentation, heightPoints: bandHeight) else {
-            XCTFail("Failed to crop mac title bar reference", file: file, line: line)
-            return
-        }
-        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("mac-title-bar.png")
-        do {
-            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try cropped.write(to: fileURL)
-        } catch {
-            XCTFail("Failed to write mac-title-bar.png: \(error)", file: file, line: line)
-            return
-        }
-        attachPNG(cropped, named: "mac-title-bar")
+        guard parityCapture else { return }
+        guard let png = exportParityTitleBarSnapshot(window: window, file: file, line: line) else { return }
+        attachPNG(png, named: "mac-title-bar")
     }
 
-    private static func cropTopBand(from png: Data, heightPoints: CGFloat) -> Data? {
-        guard let rep = NSBitmapImageRep(data: png), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
-        let scale = CGFloat(rep.pixelsHigh) / max(rep.size.height, 1)
-        let cropPixels = min(rep.pixelsHigh, max(1, Int((heightPoints * scale).rounded(.up))))
-        let cropRect = CGRect(x: 0, y: rep.pixelsHigh - cropPixels, width: rep.pixelsWide, height: cropPixels)
-        guard let source = rep.cgImage, let cropped = source.cropping(to: cropRect) else { return nil }
-        let out = NSBitmapImageRep(cgImage: cropped)
-        out.size = NSSize(width: rep.size.width, height: heightPoints)
-        return out.representation(using: .png, properties: [:])
+    @MainActor
+    private static func exportParityTitleBarSnapshot(
+        window: XCUIElement,
+        file: StaticString,
+        line: UInt
+    ) -> Data? {
+        guard let outDir = parityOutputDirectory else {
+            XCTFail("PARITY_OUTPUT_DIR is required for title bar parity export", file: file, line: line)
+            return nil
+        }
+        guard let url = URL(string: "compass://debug/parity-title-bar-export") else {
+            XCTFail("Invalid parity title bar export URL", file: file, line: line)
+            return nil
+        }
+        NSWorkspace.shared.open(url)
+
+        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("mac-title-bar.png")
+        let exportedValue = "parity-exported:mac-title-bar"
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline {
+            if window.value as? String == exportedValue, FileManager.default.fileExists(atPath: fileURL.path) {
+                if let data = try? Data(contentsOf: fileURL), !data.isEmpty {
+                    return data
+                }
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+        XCTFail("Timed out waiting for mac-title-bar.png at \(fileURL.path)", file: file, line: line)
+        return nil
     }
 
     @MainActor

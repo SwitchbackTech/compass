@@ -80,6 +80,50 @@ enum ParityViewSnapshotExporter {
 
     /// SwiftUI hosting views sometimes produce empty `cacheDisplay` bitmaps; fall back to the
     /// composited window image (same pixels the user sees on screen).
+    @MainActor
+    static func exportTitleBarReference(from window: NSWindow?) throws {
+        guard UITestLaunchPolicy.isParityCapture else { return }
+        guard let window, let directory = parityOutputDirectory else { return }
+
+        ParityCaptureWindowPolicy.applyIfNeeded(to: window)
+        window.orderFrontRegardless()
+        window.displayIfNeeded()
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
+
+        let windowID = CGWindowID(window.windowNumber)
+        guard windowID != 0,
+              let cgImage = CGWindowListCreateImage(
+                  .null,
+                  .optionIncludingWindow,
+                  windowID,
+                  [.bestResolution]
+              )
+        else { return }
+
+        let scale = CGFloat(cgImage.height) / max(window.frame.height, 1)
+        let cropPixels = min(
+            cgImage.height,
+            max(1, Int((MacTitleBarChromeMetrics.contentBandHeight * scale).rounded(.up)))
+        )
+        let cropRect = CGRect(
+            x: 0,
+            y: cgImage.height - cropPixels,
+            width: cgImage.width,
+            height: cropPixels
+        )
+        guard let cropped = cgImage.cropping(to: cropRect) else { return }
+
+        let rep = NSBitmapImageRep(cgImage: cropped)
+        rep.size = NSSize(width: window.frame.width, height: MacTitleBarChromeMetrics.contentBandHeight)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return }
+
+        let folder = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let file = folder.appendingPathComponent("mac-title-bar.png")
+        try png.write(to: file)
+        NativeAccessibilityProbes.publishParityExport(surface: "mac-title-bar", on: window)
+    }
+
     private static func windowListPNG(window: NSWindow) -> Data? {
         window.orderFrontRegardless()
         window.displayIfNeeded()
