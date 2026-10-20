@@ -189,19 +189,17 @@ final class NativeParityCaptureTests: XCTestCase {
     private func openCommandPaletteForCapture(_ window: XCUIElement, app: XCUIApplication) {
         let palette = window.descendants(matching: .any)["compass-native-command-palette"]
         let search = window.textFields["compass-native-command-palette-search"]
-        let sidebarPalette = window.buttons["Open command palette"]
-        if sidebarPalette.waitForExistence(timeout: 5) {
-            sidebarPalette.click()
-            if palette.waitForExistence(timeout: 8) {
-                XCTAssertTrue(search.waitForExistence(timeout: 5))
-                return
-            }
-        }
         app.menuBars.menuBarItems["View"].click()
         app.menuItems["Command Palette"].click()
+        if !palette.waitForExistence(timeout: 10) {
+            let sidebarPalette = window.buttons["Open command palette"]
+            if sidebarPalette.waitForExistence(timeout: 3), sidebarPalette.isHittable {
+                sidebarPalette.click()
+            }
+        }
         XCTAssertTrue(
             palette.waitForExistence(timeout: 15),
-            "Expected command palette after View menu action")
+            "Expected command palette after View menu or sidebar action")
         XCTAssertTrue(search.waitForExistence(timeout: 5))
     }
 
