@@ -180,7 +180,7 @@ def crop_title_bar(full_png: str, dest: str) -> None:
     image = Image.open(full_png).convert("RGBA")
     width, height = image.size
     # Window screenshot: take the top band (title bar + a slice of grid below).
-    crop_px = max(110, round(height * TITLE_BAND_POINTS / (CONTENT_HEIGHT_POINTS + TITLE_BAND_POINTS)))
+    crop_px = max(TITLE_BAND_POINTS, round(height * TITLE_BAND_POINTS / (CONTENT_HEIGHT_POINTS + TITLE_BAND_POINTS)))
     crop_px = min(crop_px, height)
     band = image.crop((0, 0, width, crop_px))
     band.save(dest)
