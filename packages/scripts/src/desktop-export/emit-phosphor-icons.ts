@@ -24,6 +24,8 @@ export const PHOSPHOR_ICON_NAMES = [
   "MapPin",
   "MoonStars",
   "Plus",
+  "Repeat",
+  "CaretUpDown",
   "SidebarSimple",
   "Sun",
   "Trash",
@@ -63,6 +65,9 @@ const extractRegularPath = (source: string): string => {
 };
 
 const swiftCaseName = (icon: PhosphorIconName): string => {
+  if (icon === "Repeat") {
+    return "repeatIcon";
+  }
   const first = icon[0]?.toLowerCase() ?? "";
   return first + icon.slice(1);
 };
