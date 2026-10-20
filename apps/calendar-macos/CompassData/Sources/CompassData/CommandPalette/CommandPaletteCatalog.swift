@@ -12,7 +12,8 @@ public enum CommandPaletteCatalog {
         eventHits: [CommandPaletteEventHit],
         recentIds: [String],
         tipsMuted: Bool,
-        levelHidden: Bool
+        levelHidden: Bool,
+        theme: CompassThemeName
     ) -> [CommandPaletteSection] {
         var built: [CommandPaletteSection] = []
 
@@ -48,7 +49,7 @@ public enum CommandPaletteCatalog {
         }
 
         built.append(contentsOf: eventActionSections())
-        built.append(contentsOf: moreSections(isTrialing: isTrialing))
+        built.append(contentsOf: moreSections(isTrialing: isTrialing, theme: theme))
 
         var accountItems = [CommandPaletteItem(
             id: "export-data",
@@ -214,8 +215,10 @@ public enum CommandPaletteCatalog {
     }
 
     private static func moreSections(
-        isTrialing: Bool
+        isTrialing: Bool,
+        theme: CompassThemeName
     ) -> [CommandPaletteSection] {
+        let isDark = theme == .darkAbyss
         var items: [CommandPaletteItem] = [
             CommandPaletteItem(
                 id: "undo",
@@ -227,6 +230,11 @@ public enum CommandPaletteCatalog {
                 label: "Redo",
                 shortcut: "mod+shift+z",
                 keywords: ["repeat", "forward"]),
+            CommandPaletteItem(
+                id: "toggle-theme",
+                label: isDark ? "Switch to light theme" : "Switch to dark theme",
+                keywords: ["theme", "dark mode", "light mode", "appearance"],
+                systemImage: isDark ? "sun.max" : "moon.stars"),
             CommandPaletteItem(
                 id: "open-settings",
                 label: "Settings",

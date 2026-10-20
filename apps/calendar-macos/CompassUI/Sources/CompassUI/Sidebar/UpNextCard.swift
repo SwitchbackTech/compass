@@ -6,6 +6,7 @@ struct UpNextCard: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
     let onOpen: () -> Void
+    @State private var isHovered = false
 
     var body: some View {
         let state = model.upNextState
@@ -49,6 +50,13 @@ struct UpNextCard: View {
                     .accessibilityLabel(
                         "\(snapshot.isCurrentEvent ? "Now" : "Up next"): \(upNext.title). \(countdown).")
                 }
+                .overlay(alignment: .topTrailing) {
+                    ShortcutHintChip(label: state.conferenceURL != nil ? "V" : "N")
+                        .opacity(isHovered ? 1 : 0)
+                        .animation(.easeOut(duration: 0.15), value: isHovered)
+                        .allowsHitTesting(false)
+                }
+                .onHover { isHovered = $0 }
                 .accessibilityIdentifier("compass-native-up-next-card")
             } else {
                 Text("All clear")

@@ -193,7 +193,10 @@ public struct RootView: View {
             SidebarSyncStatusLine(model: model)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 4)
-            ShortcutSidebarFooter(levelsStore: model.levelsStore)
+            ShortcutSidebarFooter(
+                levelsStore: model.levelsStore,
+                isEventFormVisible: model.isEventFormVisible,
+                suppressTips: model.eventJumpStatusText != nil)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
             sidebarActions
