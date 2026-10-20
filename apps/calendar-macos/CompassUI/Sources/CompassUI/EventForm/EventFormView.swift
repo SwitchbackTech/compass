@@ -53,8 +53,7 @@ public struct EventFormView: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 EventFormScheduleSection(
                                     model: model,
-                                    draft: draft,
-                                    focusField: model.eventFormFocusedField
+                                    draft: draft
                                 )
                                 EventFormRecurrenceSection(
                                     model: model,
@@ -82,7 +81,7 @@ public struct EventFormView: View {
                             }
                         }
                         .id(EventFormField.calendar)
-                        EventFormCard {
+                        EventFormCard(highlighted: isLogisticsFieldFocused(model.eventFormFocusedField)) {
                             VStack(alignment: .leading, spacing: 10) {
                                 EventFormLocationField(
                                     model: model,
@@ -92,8 +91,7 @@ public struct EventFormView: View {
                                 .disabled(isReadOnly)
                                 EventFormConferenceSection(
                                     model: model,
-                                    draft: draft,
-                                    focusField: model.eventFormFocusedField
+                                    draft: draft
                                 )
                                 EventFormAttendeesSection(
                                     model: model,
@@ -103,14 +101,8 @@ public struct EventFormView: View {
                                 .id(EventFormField.attendees)
                             }
                         }
-                        .overlay {
-                            if isLogisticsFieldFocused(model.eventFormFocusedField) {
-                                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                                    .stroke(theme.accentColor, lineWidth: 1)
-                            }
-                        }
                         .id(EventFormField.location)
-                        EventFormCard {
+                        EventFormCard(highlighted: model.eventFormFocusedField == .description) {
                             DescriptionEditorView(
                                 html: Binding(
                                     get: { draft.description },
@@ -122,12 +114,6 @@ public struct EventFormView: View {
                                 onLinkCopied: { model.didCopyDescriptionLink() }
                             )
                             .frame(minHeight: 72, maxHeight: 140)
-                        }
-                        .overlay {
-                            if model.eventFormFocusedField == .description {
-                                RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
-                                    .stroke(theme.accentColor, lineWidth: 1)
-                            }
                         }
                         .pageJumpChipAnchor(id: "form-description")
                         .id(EventFormField.description)

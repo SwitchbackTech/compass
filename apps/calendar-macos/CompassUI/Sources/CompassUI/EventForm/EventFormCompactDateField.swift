@@ -62,7 +62,7 @@ struct EventFormCompactDateField: View {
     private func commitTypedDate() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            text = EventFormDateFormat.formatLabel(for: date)
+            revertTextToBoundDate()
             return
         }
         if let parsed = EventFormDateFormat.parseTypedLabel(trimmed, now: date) {
@@ -70,6 +70,10 @@ struct EventFormCompactDateField: View {
             text = EventFormDateFormat.formatLabel(for: parsed)
             return
         }
+        revertTextToBoundDate()
+    }
+
+    private func revertTextToBoundDate() {
         text = EventFormDateFormat.formatLabel(for: date)
     }
 }

@@ -72,13 +72,13 @@ extension NativeCalendarRootModel {
             return
         }
 
-        guard let prefix = DayJumpPrefixes.dayPrefix(forShiftedLetter: letter), prefix != "s" else { return }
+        guard let prefix = DayJumpPrefixes.dayPrefix(forShiftedLetter: letter) else { return }
         selectJumpDay(prefix: prefix)
     }
 
     private func selectJumpDay(prefix: String) {
         let calendar = EffectiveTimeZone.calendar
-        for dayKey in visibleDateKeysForJump() {
+        for dayKey in visibleDateKeys() {
             guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { continue }
             let weekday = calendar.component(.weekday, from: date) - 1
             guard DayJumpPrefixes.prefix(forWeekday: weekday) == prefix else { continue }
@@ -158,13 +158,4 @@ extension NativeCalendarRootModel {
         }
     }
 
-    private func visibleDateKeysForJump() -> [String] {
-        let calendar = EffectiveTimeZone.calendar
-        return (0 ..< viewStore.visibleDayCount).compactMap { offset in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: startOfView) else {
-                return nil
-            }
-            return CompassDateParsing.formatCalendarDay(day)
-        }
-    }
 }

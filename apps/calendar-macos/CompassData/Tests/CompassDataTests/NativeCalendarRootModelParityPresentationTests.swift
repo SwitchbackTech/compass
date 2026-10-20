@@ -49,11 +49,11 @@ final class NativeCalendarRootModelParityPresentationTests: XCTestCase {
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
         let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
         await model.start()
-        model.applyParityCapturePresentationIfNeeded()
         let anchorBefore = model.viewStore.anchorDate
 
         model.handleShortcut(.navToday)
 
         XCTAssertEqual(model.viewStore.anchorDate, anchorBefore)
+        XCTAssertEqual(model.consumePendingScroll(), .scrollToNowOrPulse)
     }
 }

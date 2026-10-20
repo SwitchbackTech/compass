@@ -4,7 +4,7 @@ import Foundation
 public enum CommandPaletteSearchLogic {
     private static let minSubsequenceTokenLength = 3
 
-    public struct ScoredItem: Hashable, Sendable {
+    private struct ScoredItem: Hashable, Sendable {
         public let item: CommandPaletteSearchItem
         public let score: Int
     }
@@ -130,7 +130,7 @@ public enum CommandPaletteSearchLogic {
 
     private static func hasWordStartingWith(haystack: String, token: String) -> Bool {
         haystack.split(whereSeparator: { $0.isWhitespace || $0 == "-" })
-            .contains { $0.lowercased().hasPrefix(token) }
+            .contains { $0.hasPrefix(token) }
     }
 
     private static func isSubsequence(haystack: String, token: String) -> Bool {

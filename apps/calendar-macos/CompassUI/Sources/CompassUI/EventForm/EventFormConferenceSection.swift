@@ -6,7 +6,6 @@ struct EventFormConferenceSection: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
     let draft: GridEventDraft
-    let focusField: EventFormField
 
     var body: some View {
         if model.showCreateConferenceToggle(for: draft),

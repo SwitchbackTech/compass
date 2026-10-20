@@ -100,6 +100,16 @@ final class NativeParityCaptureTests: XCTestCase {
     /// Dismiss demo chrome and wait for the shared demo-seed grid event (web parity uses the same fixture).
     @MainActor
     private func prepareParityGrid(_ window: XCUIElement) {
+        let layoutProbe = window.descendants(matching: .any)["compass-parity-layout-probe"]
+        XCTAssertTrue(
+            layoutProbe.waitForExistence(timeout: 20),
+            "Expected parity layout probe in demo grid")
+        let expectedLayout = "\(Int(ParityCaptureGeometry.contentTrackWidth))-\(ParityCaptureGeometry.visibleDayCount)"
+        XCTAssertEqual(
+            layoutProbe.value as? String,
+            expectedLayout,
+            "Expected pinned parity week grid geometry")
+
         let okay = window.buttons["Okay"]
         if okay.waitForExistence(timeout: 4) {
             okay.tap()
@@ -122,10 +132,14 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             sundayColumn.waitForExistence(timeout: 20),
             "Expected Sunday demo week column (2026-06-07) after nav today")
+        XCTAssertTrue(sundayColumn.isHittable, "Expected Sunday column visible, not scrolled off-screen")
+        let timezoneHeader = window.descendants(matching: .any)["compass-grid-timezone-effective"]
         XCTAssertTrue(
-            window.staticTexts["Calendar timezone: UTC"].waitForExistence(timeout: 5)
-                || window.buttons["Calendar timezone: UTC"].waitForExistence(timeout: 5),
+            timezoneHeader.waitForExistence(timeout: 10),
             "Expected UTC timezone header on parity week grid")
+        XCTAssertTrue(
+            timezoneHeader.label.contains("UTC"),
+            "Expected effective timezone label to include UTC, got: \(timezoneHeader.label)")
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")

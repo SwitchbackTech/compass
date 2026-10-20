@@ -34,7 +34,7 @@ export interface OAuthStatePayload {
 
 // Default lifetime of a state token: long enough for a human to complete
 // consent, short enough to bound replay of a leaked callback URL.
-export const DEFAULT_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 // Derive a purpose-specific signing key from the service root secret, so the
 // OAuth state and internal-auth request signatures never share a key. Domain
@@ -78,12 +78,11 @@ export function verifyOAuthState(
   options: VerifyOAuthStateOptions = {},
 ): OAuthStateResult {
   const ttlMs = options.ttlMs ?? DEFAULT_OAUTH_STATE_TTL_MS;
-  const dot = token.indexOf(".");
-  if (dot <= 0 || dot === token.length - 1) {
+  const parts = splitSignedToken(token);
+  if (!parts) {
     return { ok: false, reason: "malformed" };
   }
-  const encoded = token.slice(0, dot);
-  const signature = token.slice(dot + 1);
+  const { encoded, signature } = parts;
 
   // Verify the signature before trusting any byte of the payload.
   if (!signaturesMatch(sign(secret, encoded), signature)) {
@@ -116,9 +115,17 @@ function signaturesMatch(expected: string, provided: string): boolean {
 
 /** Decode the payload without verifying the signature (analytics only). */
 export function peekOAuthStatePayload(token: string): OAuthStatePayload | null {
+  const parts = splitSignedToken(token);
+  if (!parts) return null;
+  return decodePayload(parts.encoded);
+}
+
+function splitSignedToken(
+  token: string,
+): { encoded: string; signature: string } | null {
   const dot = token.indexOf(".");
   if (dot <= 0 || dot === token.length - 1) return null;
-  return decodePayload(token.slice(0, dot));
+  return { encoded: token.slice(0, dot), signature: token.slice(dot + 1) };
 }
 
 function encodePayload(payload: OAuthStatePayload): string {
