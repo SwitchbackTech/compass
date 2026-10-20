@@ -190,6 +190,9 @@ final class NativeParityCaptureTests: XCTestCase {
             }
         }
         if pageJumpHintsPinned {
+            XCTAssertTrue(
+                window.descendants(matching: .any)["compass-mod-hold-chips"].waitForExistence(timeout: 20),
+                "Expected page-jump chip overlay while hints are pinned")
             let wednesdayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-10"]
             XCTAssertTrue(
                 wednesdayColumn.waitForExistence(timeout: 20),
