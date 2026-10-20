@@ -209,9 +209,8 @@ describe("DescriptionEditor", () => {
       cancelUrl,
       rescheduleUrl,
     ]);
-    expect(
-      links.every((link) => link.getAttribute("title") === link.href),
-    ).toBe(true);
+    expect(links[0]).toHaveAttribute("title", cancelUrl);
+    expect(links[1]).toHaveAttribute("title", rescheduleUrl);
   });
 
   it("leaves existing HTML descriptions untouched", () => {
