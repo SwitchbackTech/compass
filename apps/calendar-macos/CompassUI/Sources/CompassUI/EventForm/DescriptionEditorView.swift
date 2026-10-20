@@ -275,8 +275,33 @@ final class DescriptionTextView: NSTextView {
 
     func toggleList(ordered: Bool) {
         guard isEditable, let storage = textStorage else { return }
-        let selection = selectedRange()
-        let range = paragraphRange(containing: selection)
+        var selection = selectedRange()
+        var range = paragraphRange(containing: selection)
+        let lineSeparator = "\u{2028}"
+        let rangeText = (storage.string as NSString).substring(with: range)
+        if rangeText.contains(lineSeparator) {
+            let preservedSelection = selection
+            storage.beginEditing()
+            var searchStart = range.location
+            let rangeEnd = NSMaxRange(range)
+            while searchStart < rangeEnd {
+                let found = (storage.string as NSString).range(
+                    of: lineSeparator,
+                    range: NSRange(location: searchStart, length: rangeEnd - searchStart)
+                )
+                if found.location == NSNotFound { break }
+                guard shouldChangeText(in: found, replacementString: "\n") else {
+                    storage.endEditing()
+                    return
+                }
+                storage.replaceCharacters(in: found, with: "\n")
+                searchStart = found.location + 1
+            }
+            storage.endEditing()
+            setSelectedRange(preservedSelection)
+            selection = preservedSelection
+            range = paragraphRange(containing: selection)
+        }
         let start = range.location
         guard shouldChangeText(in: range, replacementString: nil) else { return }
         let source = storage.attributedSubstring(from: range)
