@@ -367,6 +367,9 @@ public final class NativeCalendarRootModel {
         await refreshVisibleRange()
         await refreshSideband()
         applyParityCapturePresentationIfNeeded()
+        if UITestLaunchPolicy.showPageJumpHintsForUITest {
+            setPageJumpHintsVisible(true)
+        }
         if isSignedIn {
             startEventStream()
         }
@@ -412,6 +415,9 @@ public final class NativeCalendarRootModel {
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
+    public internal(set) var pendingDeleteAccountConfirmation = false
+    public internal(set) var isDeletingAccount = false
+    public internal(set) var deleteAccountError: String?
     public internal(set) var isLoggingOut = false
     public internal(set) var logoutError: String?
 

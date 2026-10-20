@@ -55,6 +55,11 @@ public enum UITestLaunchPolicy {
         arguments.contains("-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM")
     }
 
+    /// Pins page-jump chips visible for mod-hold parity PNGs (no key hold in XCUITest).
+    public static var showPageJumpHintsForUITest: Bool {
+        ProcessInfo.processInfo.arguments.contains("-COMPASS_UI_TEST_SHOW_PAGE_JUMP_HINTS")
+    }
+
     /// Desktop ↔ web screenshot capture (`NativeParityCaptureTests`).
     public static var isParityCapture: Bool {
         ProcessInfo.processInfo.environment["PARITY_CAPTURE"] == "1"

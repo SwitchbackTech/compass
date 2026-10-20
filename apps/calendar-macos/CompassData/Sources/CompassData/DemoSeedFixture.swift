@@ -152,7 +152,7 @@ public struct DemoSeedFixture: Sendable {
             isActive: true,
             isPrimary: true,
             isVisible: true,
-            name: "Work",
+            name: "Compass",
             provider: "local",
             timeZone: IANATimeZone(rawValue: timeZone)
         )

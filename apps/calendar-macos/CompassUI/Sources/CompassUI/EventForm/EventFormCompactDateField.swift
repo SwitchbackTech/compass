@@ -56,6 +56,7 @@ struct EventFormCompactDateField: View {
                 .datePickerStyle(.graphical)
                 .labelsHidden()
                 .padding(12)
+                .accessibilityIdentifier("compass-event-form-date-picker")
             }
     }
 
