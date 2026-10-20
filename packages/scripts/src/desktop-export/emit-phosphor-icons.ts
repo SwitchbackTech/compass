@@ -55,10 +55,11 @@ const phosphorDefsDir = (): string => {
 
 const extractRegularPath = (source: string): string => {
   const match = source.match(/"regular",[\s\S]*?d:\s*"([^"]+)"/);
-  if (!match) {
+  const path = match?.[1];
+  if (!path) {
     throw new Error("Missing regular weight path in phosphor def");
   }
-  return match[1];
+  return path;
 };
 
 const swiftCaseName = (icon: PhosphorIconName): string => {
