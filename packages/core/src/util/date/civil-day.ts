@@ -70,6 +70,15 @@ export function gridMinutesFromCivilMidnight(
     return byWallClock;
   }
   if (slots === 25) {
+    const daylightOffset = start.utcOffset();
+    const inRepeatedHour =
+      zoned.hour() === 1 && zoned.utcOffset() < daylightOffset;
+    if (inRepeatedHour) {
+      return byElapsed;
+    }
+    if (byElapsed > byWallClock) {
+      return byWallClock;
+    }
     return byElapsed;
   }
 

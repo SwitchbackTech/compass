@@ -1,7 +1,7 @@
 import { type MutableRefObject } from "react";
 import {
   civilDayLengthMinutes,
-  minutesFromCivilMidnight,
+  gridMinutesFromCivilMidnight,
   startOfCivilDay,
 } from "@core/util/date/civil-day";
 import dayjs from "@core/util/date/dayjs";
@@ -73,7 +73,7 @@ export const useGridCoordinates = (
 
   const getYByDate = (date: string) => {
     const timeZone = getEffectiveTimeZone();
-    const minutes = minutesFromCivilMidnight(date, timeZone);
+    const minutes = gridMinutesFromCivilMidnight(date, timeZone);
     return measurements.hourHeight * (minutes / 60);
   };
 

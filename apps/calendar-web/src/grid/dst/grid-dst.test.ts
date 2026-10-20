@@ -244,10 +244,10 @@ describe("pinned calendar timezone with a mismatched browser zone", () => {
 
     const sundayWakeTop = getTimedEventPosition(
       {
-        endDate: "2026-11-01T05:00:00-06:00",
+        endDate: "2026-11-01T05:00:00-07:00",
         isAllDay: false,
         position: { widthMultiplier: 1 },
-        startDate: "2026-11-01T04:00:00-06:00",
+        startDate: "2026-11-01T04:00:00-07:00",
       } as never,
       {
         measurements,
