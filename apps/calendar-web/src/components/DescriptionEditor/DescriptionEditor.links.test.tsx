@@ -153,7 +153,7 @@ describe("DescriptionEditor link staging UX", () => {
       resetKey: "digit-hints",
     });
 
-    expect(screen.getByTestId("1-icon")).toBeTruthy();
+    expect(screen.getByText("1")).toBeTruthy();
   });
 
   it("opens the caret link with Mod+Shift+Enter and preserves html on blur", async () => {

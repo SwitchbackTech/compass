@@ -34,12 +34,10 @@ import {
 } from "@web/components/DescriptionEditor/plain-text-description";
 import { toggleDescriptionList } from "@web/components/DescriptionEditor/toggle-description-list";
 import { useDescriptionEditorCopyLinkShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorCopyLinkShortcut";
-import {
-  useDescriptionEditorOpenLinkAtCaretShortcut,
-  useDescriptionEditorOpenLinkDigitShortcuts,
-} from "@web/components/DescriptionEditor/useDescriptionEditorOpenLinkShortcuts";
+import { useDescriptionEditorOpenLinkAtCaretShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorOpenLinkShortcuts";
 import { useDescriptionLinkPresentation } from "@web/components/DescriptionEditor/useDescriptionLinkPresentation";
 import { Divider } from "@web/components/Divider/Divider";
+import { useDescriptionLinkDigitShortcut } from "@web/shortcuts/description-link/useDescriptionLinkDigitShortcut";
 
 // The allowlist is shared with the desktop export (description-html.policy),
 // which sanitizes the same untrusted provider HTML before emitting the native
@@ -241,10 +239,7 @@ export const DescriptionEditor = ({
     editorRoot,
     linkUxEnabled && editable,
   );
-  useDescriptionEditorOpenLinkDigitShortcuts(
-    editorRoot,
-    linkUxEnabled && !isFocused,
-  );
+  useDescriptionLinkDigitShortcut(editorRoot, linkUxEnabled && !isFocused);
 
   useDescriptionLinkPresentation(editor, editorRoot, linkUxEnabled, isFocused);
 
