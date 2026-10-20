@@ -71,6 +71,18 @@ export type ConnectionBeginFeatures = z.infer<
   typeof ConnectionBeginFeaturesSchema
 >;
 
+// Why a signed OAuth state token failed verification on the public callback.
+// Sync mints the state at `begin` and verifies the echo; callback analytics map
+// these onto funnel reasons. Shared here so the verifier and the analytics
+// mapper cannot drift apart.
+export const OAuthStateFailureSchema = z.enum([
+  "malformed",
+  "invalidSignature",
+  "expired",
+  "stateMismatch",
+]);
+export type OAuthStateFailure = z.infer<typeof OAuthStateFailureSchema>;
+
 // Opaque authenticated-encryption envelope for credentials sent between the
 // Compass API and Sync services. The browser never sees this transport type.
 export const EncryptedCredentialEnvelopeSchema = z.strictObject({

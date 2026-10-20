@@ -2,6 +2,7 @@ import {
   type OAuthFailedReason,
   oauthFailedReasonFromCallbackQuery,
 } from "@core/analytics/oauth-signup.events";
+import { type OAuthStateFailure } from "@core/types/sync/connection.contracts";
 
 export type SyncOAuthCallbackOutcome =
   | "connected"
@@ -42,32 +43,28 @@ export function oauthCallbackFailureReason(input: {
   code: unknown;
   oauthError: unknown;
   oauthErrorDescription?: unknown;
-  stateVerifyReason?:
-    | "malformed"
-    | "invalidSignature"
-    | "expired"
-    | "stateMismatch"
-    | undefined;
+  stateVerifyReason?: OAuthStateFailure | undefined;
   exchangeError?: unknown;
 }): { reason: OAuthFailedReason; provider_error?: string } | undefined {
   if (input.outcome === "connected") return undefined;
 
-  const providerErrorRaw =
-    typeof input.oauthError === "string" ? input.oauthError : undefined;
+  // Callback query values reach here as `unknown` straight off the request, so
+  // each one is narrowed once up front rather than at every branch that reads it.
+  const state = asNonEmptyString(input.state);
+  const code = asNonEmptyString(input.code);
+  const providerErrorRaw = asNonEmptyString(input.oauthError);
   const providerError = sanitizeOAuthProviderError(providerErrorRaw);
   const providerDescription = sanitizeOAuthProviderError(
-    typeof input.oauthErrorDescription === "string"
-      ? input.oauthErrorDescription
-      : undefined,
+    asNonEmptyString(input.oauthErrorDescription),
   );
   const mergedProviderError = providerError ?? providerDescription;
 
   if (input.outcome === "declined") {
     const reason =
       oauthFailedReasonFromCallbackQuery({
-        state: typeof input.state === "string" ? input.state : null,
-        code: typeof input.code === "string" ? input.code : null,
-        providerError: providerErrorRaw ?? null,
+        state,
+        code,
+        providerError: providerErrorRaw,
       }) ?? "other";
     return withProviderError(reason, providerError);
   }
@@ -77,13 +74,10 @@ export function oauthCallbackFailureReason(input: {
   }
 
   if (input.outcome === "error") {
-    const hasState = typeof input.state === "string" && input.state.length > 0;
-    const hasCode = typeof input.code === "string" && input.code.length > 0;
-
-    if (!hasState || input.stateVerifyReason === "malformed") {
+    if (!state || input.stateVerifyReason === "malformed") {
       return withProviderError("invalid_state", providerError);
     }
-    if (!hasCode) {
+    if (!code) {
       return withProviderError("missing_code", providerError);
     }
     if (
@@ -92,11 +86,9 @@ export function oauthCallbackFailureReason(input: {
     ) {
       return { reason: "invalid_state" };
     }
-    if (isTokenExchangeFailure(input.exchangeError)) {
-      return {
-        reason: "token_exchange_error",
-        provider_error: providerErrorFromExchange(input.exchangeError),
-      };
+    const exchange = tokenExchangeFailure(input.exchangeError);
+    if (exchange) {
+      return withProviderError("token_exchange_error", exchange.providerError);
     }
     return withProviderError("other", mergedProviderError);
   }
@@ -114,17 +106,22 @@ function withProviderError(
   };
 }
 
-function isTokenExchangeFailure(error: unknown): boolean {
-  if (!error || typeof error !== "object") return false;
-  const name = (error as { name?: unknown }).name;
-  return name === "ProviderAuthError";
+/** Blank query values mean "absent", the same way a missing param does. */
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function providerErrorFromExchange(error: unknown): string | undefined {
-  if (!error || typeof error !== "object") return undefined;
-  const reason = (error as { reason?: unknown }).reason;
-  if (typeof reason === "string" && reason.length > 0) {
-    return sanitizeOAuthProviderError(reason);
-  }
-  return undefined;
+/**
+ * A provider token-exchange failure, matched structurally because core cannot
+ * import sync's `ProviderAuthError` without inverting the package dependency.
+ * Returns its sanitized reason when it matches, else null.
+ */
+function tokenExchangeFailure(
+  error: unknown,
+): { providerError?: string } | null {
+  if (!error || typeof error !== "object") return null;
+  const { name, reason } = error as { name?: unknown; reason?: unknown };
+  if (name !== "ProviderAuthError") return null;
+  const providerError = sanitizeOAuthProviderError(asNonEmptyString(reason));
+  return { ...(providerError ? { providerError } : {}) };
 }

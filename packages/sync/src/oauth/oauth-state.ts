@@ -1,3 +1,4 @@
+import { type OAuthStateFailure } from "@core/types/sync/connection.contracts";
 import {
   type ConnectionId,
   ConnectionIdSchema,
@@ -55,12 +56,6 @@ export function signOAuthState(
   const encoded = encodePayload(payload);
   return `${encoded}.${sign(secret, encoded)}`;
 }
-
-export type OAuthStateFailure =
-  | "malformed"
-  | "invalidSignature"
-  | "expired"
-  | "stateMismatch";
 
 export type OAuthStateResult =
   | { readonly ok: true; readonly payload: OAuthStatePayload }
