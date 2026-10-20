@@ -201,6 +201,12 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
                 }
                 return
             }
+            if case .parityTitleBarExport = command {
+                Task { @MainActor in
+                    try? ParityViewSnapshotExporter.exportTitleBarReference(from: view.window)
+                }
+                return
+            }
             if pendingDebugCommands != nil {
                 pendingDebugCommands?.append(command)
             } else {

@@ -72,6 +72,13 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 
 **Token drift prevention:** Prefer extending `NativeWebTheme` from generated `ThemeTokens` rather than new literals. Optional follow-up: export radius/typography scales from CSS the same way as colors.
 
+### 1.6 macOS unified title bar (intentional platform difference)
+
+| Item | Web | macOS | Status | Notes |
+| --- | --- | --- | --- | --- |
+| Calendar nav + title + sidebar toggle | In-content header row (`CalendarHeader`, `h-12`) | Unified title bar beside traffic lights (`MacTitleBarChromeMetrics`) | ✅ | Tyler: reclaim vertical space; window drag on empty title-bar background |
+| Parity screenshot grid region | Crop includes in-viewport header band | Regional grid crop starts at `mainContentTopInset` (52px); web crop skips 48px header | ✅ | `.github/scripts/compose-desktop-parity-shots.py` `grid_region_crop()` |
+
 ---
 
 ## 2. Surfaces

@@ -11,7 +11,7 @@ struct EventFormConferenceSection: View {
         if model.showCreateConferenceToggle(for: draft),
             let kind = CalendarCapabilities.creatableConferenceKind(on: model.attendeeCalendar(for: draft))
         {
-            EventFormIconRow(systemImage: "video") {
+            EventFormIconRow(icon: .videoCamera) {
                 Toggle(
                     isOn: Binding(
                         get: { draft.createConference },

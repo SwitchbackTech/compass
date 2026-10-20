@@ -44,9 +44,7 @@ struct WelcomeModalView: View {
         }
         .padding(28)
         .frame(width: 480)
-        .background(theme.surfacePanelColor)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.1), radius: 20, y: 10)
+        .overlayPanelChrome()
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
         .accessibilityLabel("Welcome to Compass Calendar")

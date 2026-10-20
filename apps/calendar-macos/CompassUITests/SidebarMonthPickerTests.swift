@@ -20,11 +20,11 @@ final class SidebarMonthPickerTests: XCTestCase {
         picker.buttons["Previous month"].click()
         XCTAssertEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
 
-        // Web hides "Go to this month" on the current month, so browse away first.
         picker.buttons["Next month"].click()
-        picker.buttons["Go to this month"].click()
-        // The picker's "this month" follows the calendar clock (the demo
-        // fixture's pinned now), which is the month the app opened on.
+        XCTAssertNotEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
+        let goToThisMonth = picker.buttons["Go to this month"]
+        XCTAssertTrue(goToThisMonth.waitForExistence(timeout: 2))
+        goToThisMonth.click()
         XCTAssertEqual(picker.staticTexts.element(boundBy: 0).value as? String, originalMonth)
         XCTAssertEqual(title.label, originalTitle)
     }

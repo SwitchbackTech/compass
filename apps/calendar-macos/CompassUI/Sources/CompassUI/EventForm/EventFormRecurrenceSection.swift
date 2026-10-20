@@ -17,8 +17,7 @@ struct EventFormRecurrenceSection: View {
                 toggleRecurrence(!hasRecurrence)
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "repeat")
-                        .font(.system(size: 18, weight: .regular))
+                    PhosphorIconView(icon: .repeatIcon, size: 18)
                     Text("Repeat")
                         .font(.rubik(NativeWebLayoutTokens.fontSizeM))
                 }

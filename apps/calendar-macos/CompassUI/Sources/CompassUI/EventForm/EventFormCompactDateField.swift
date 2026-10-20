@@ -25,7 +25,7 @@ struct EventFormCompactDateField: View {
             .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
             .padding(.horizontal, 8)
-            .frame(minWidth: 96, maxWidth: 108)
+            .frame(minWidth: 72, idealWidth: 84, maxWidth: 96)
             .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
@@ -61,6 +61,9 @@ struct EventFormCompactDateField: View {
                 .datePickerStyle(.graphical)
                 .labelsHidden()
                 .padding(12)
+                .background(theme.surfacePanelColor)
+                .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-event-form-date-picker")
             }

@@ -20,6 +20,9 @@ SURFACES=(
   onboarding-welcome
 )
 mkdir -p "$OUT"
+if ! python3 -c "import PIL" 2>/dev/null; then
+  python3 -m pip install --break-system-packages --quiet Pillow
+fi
 cd "$ROOT/apps/calendar-macos"
 
 if ! command -v xcodegen >/dev/null 2>&1; then
@@ -42,7 +45,7 @@ xcodebuild test \
   -derivedDataPath build/DerivedData \
   -clonedSourcePackagesDirPath build/SourcePackages \
   -resultBundlePath build/ParityCapture.xcresult \
-  -only-testing:CompassUITests/NativeParityCaptureTests/testExportParitySurfaces
+  -only-testing:CompassUITests/NativeParityCaptureTests
 
 if [ ! -d "$RESULT" ]; then
   echo "Missing result bundle at ${RESULT}" >&2
@@ -130,4 +133,137 @@ for surface in surfaces:
             raise SystemExit(f"{surface}.png width {width}, expected 1280")
 
 print(f"Parity PNGs written to {out} ({len(surfaces)} files)")
+PY
+
+python3 - "$RESULT" "$OUT" <<'PY'
+import json
+import os
+import re
+import shutil
+import struct
+import sys
+
+from PIL import Image
+
+result = sys.argv[1]
+out = sys.argv[2]
+path = os.path.join(out, "mac-title-bar.png")
+TITLE_BAND_POINTS = 120
+CONTENT_HEIGHT_POINTS = 820
+MIN_TITLE_BAR_WIDTH = 1240
+
+def export_attachments(raw_dir: str) -> None:
+    os.makedirs(raw_dir, exist_ok=True)
+    os.system(
+        f'xcrun xcresulttool export attachments --path "{result}" --output-path "{raw_dir}" >/dev/null 2>&1'
+    )
+
+def find_attachment(raw_dir: str, wanted_name: str) -> str | None:
+    manifest_path = os.path.join(raw_dir, "manifest.json")
+    if not os.path.isfile(manifest_path):
+        return None
+    with open(manifest_path) as handle:
+        manifest = json.load(handle)
+    for test in manifest:
+        for attachment in test.get("attachments", []):
+            if attachment.get("isAssociatedWithFailure"):
+                continue
+            name = attachment.get("suggestedHumanReadableName", attachment.get("exportedFileName", ""))
+            name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
+            if name != wanted_name:
+                continue
+            src = os.path.join(raw_dir, attachment["exportedFileName"])
+            if os.path.isfile(src):
+                return src
+    return None
+
+def crop_title_bar(full_png: str, dest: str) -> None:
+    image = Image.open(full_png).convert("RGBA")
+    width, height = image.size
+    # Window screenshot: take the top band (title bar + a slice of grid below).
+    crop_px = max(TITLE_BAND_POINTS, round(height * TITLE_BAND_POINTS / (CONTENT_HEIGHT_POINTS + TITLE_BAND_POINTS)))
+    crop_px = min(crop_px, height)
+    band = image.crop((0, 0, width, crop_px))
+    band.save(dest)
+
+def chrome_score(image: Image.Image) -> int:
+    px = image.load()
+    width, height = image.size
+    score = 0
+    for y in range(min(height, 80)):
+        for x in range(min(width, 220)):
+            r, g, b, a = px[x, y]
+            if a < 16:
+                continue
+            if r + g + b < 520:
+                score += 2
+            if max(r, g, b) - min(r, g, b) > 28:
+                score += 1
+    return score
+
+
+def sidebar_toggle_score(image: Image.Image) -> int:
+    px = image.load()
+    width, height = image.size
+    score = 0
+    right_start = max(0, width - int(width * 0.14))
+    for y in range(min(height, 55)):
+        for x in range(right_start, width - 8):
+            r, g, b, a = px[x, y]
+            if a < 16:
+                continue
+            if r + g + b < 520:
+                score += 2
+            if max(r, g, b) - min(r, g, b) > 24:
+                score += 1
+    return score
+
+raw = os.path.join(out, "_title_bar_attachments")
+export_attachments(raw)
+full_window = find_attachment(raw, "mac-title-bar-full-window")
+if not full_window:
+    raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
+
+app_export = path if os.path.isfile(path) else None
+if app_export:
+    band = Image.open(app_export).convert("RGBA")
+    if band.size[0] < MIN_TITLE_BAR_WIDTH or sidebar_toggle_score(band) < 8:
+        app_export = None
+
+if not app_export:
+    crop_title_bar(full_window, path)
+
+band = Image.open(path).convert("RGBA")
+if band.size[1] < 100 or chrome_score(band) < 12:
+    raise SystemExit(
+        "mac-title-bar.png crop looks empty; expected traffic lights and nav chrome in the top band"
+    )
+if band.size[0] < MIN_TITLE_BAR_WIDTH:
+    raise SystemExit(
+        f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px for sidebar toggle"
+    )
+if sidebar_toggle_score(band) < 8:
+    raise SystemExit(
+        "mac-title-bar.png missing sidebar toggle in the top-right title bar row"
+    )
+
+if not os.path.isfile(path):
+    raise SystemExit("Missing mac-title-bar.png (title bar marketing reference)")
+
+with open(path, "rb") as handle:
+    signature = handle.read(8)
+    if signature != b"\x89PNG\r\n\x1a\n":
+        raise SystemExit("mac-title-bar.png is not a PNG")
+    handle.read(4)
+    chunk = handle.read(4)
+    if chunk != b"IHDR":
+        raise SystemExit("mac-title-bar.png missing IHDR")
+    width, height = struct.unpack(">II", handle.read(8))
+
+if height < 110:
+    raise SystemExit(f"mac-title-bar.png height {height}, expected at least 110px")
+if width < MIN_TITLE_BAR_WIDTH:
+    raise SystemExit(f"mac-title-bar.png width {width}, expected at least {MIN_TITLE_BAR_WIDTH}px")
+
+print(f"mac-title-bar.png ok ({width}x{height})")
 PY

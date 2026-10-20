@@ -18,7 +18,6 @@ public struct RootView: View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    header
                     if model.viewStore.view != .life, model.showsDemoEventsBanner {
                         DemoEventsBannerView {
                             model.dismissDemoEventsBanner()
@@ -33,17 +32,22 @@ public struct RootView: View {
                                 : 0
                         )
                 }
+                .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.
                 if model.isSidebarOpen || model.isEventFormVisible {
-                    sidebarResizeHandle
-                    sidebar
+                    HStack(spacing: 0) {
+                        sidebarResizeHandle
+                        sidebar
+                    }
+                    .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 }
             }
+            titleBarChrome
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(.top, 52)
+                .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset + 8)
                 .padding(.leading, contentLeadingInset + 8)
         }
         .background(theme.backgroundColor)
@@ -207,7 +211,7 @@ public struct RootView: View {
             ShortcutSidebarFooter(
                 levelsStore: model.levelsStore,
                 isEventFormVisible: model.isEventFormVisible,
-                suppressTips: model.eventJumpStatusText != nil,
+                suppressTips: model.eventJumpStatusText != nil || model.focusStore.pageJumpHintsVisible,
                 suppressForQuickTime: !model.draftStore.quickTimeDigits.isEmpty)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -261,14 +265,15 @@ public struct RootView: View {
         HStack(spacing: 8) {
             sidebarActionButton(
                 label: model.shortcutsLegendStore.isOpen ? "Close shortcuts" : "Open shortcuts",
-                systemImage: "keyboard"
+                icon: .keyboard
             ) {
                 model.toggleShortcutsLegend()
             }
-            sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
+            Spacer(minLength: 0)
+            sidebarActionButton(label: "Open settings", icon: .gear) {
                 model.settingsStore.open()
             }
-            sidebarActionButton(label: "Open command palette", systemImage: "command") {
+            sidebarActionButton(label: "Open command palette", icon: .command) {
                 model.toggleCommandPalette()
             }
             SidebarRefreshButton(model: model)
@@ -285,13 +290,11 @@ public struct RootView: View {
 
     private func sidebarActionButton(
         label: String,
-        systemImage: String,
+        icon: PhosphorIcon,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 14))
-                .foregroundStyle(theme.textMutedColor)
+            PhosphorIconView(icon: icon, size: 16)
                 .frame(width: 36, height: 36)
                 .contentShape(Rectangle())
         }
@@ -300,45 +303,44 @@ public struct RootView: View {
         .accessibilityLabel(label)
     }
 
-    private var header: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 12) {
-                headerButton(
-                    label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
-                    systemImage: "chevron.left"
-                ) {
-                    model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
-                }
-                headerButton(
-                    label: model.viewStore.view == .life ? "Next life variation" : "Next",
-                    systemImage: "chevron.right"
-                ) {
-                    model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
-                }
-                ViewSwitcherView(model: model)
-            }
-            .padding(.leading, contentLeadingInset)
-
-            Spacer()
-
-            headerButton(
-                label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-                systemImage: "sidebar.right"
-            ) {
-                model.isSidebarOpen.toggle()
-            }
-            .padding(.trailing, 20)
-        }
-        .frame(height: 48)
-        .padding(.top, 20)
-        .frame(maxWidth: .infinity)
-        .background(theme.backgroundColor)
-        .overlay {
-            Color.clear
-                .accessibilityElement()
+    /// Unified title bar: nav and view switcher beside traffic lights; sidebar toggle on the right.
+    private var titleBarChrome: some View {
+        ZStack(alignment: .top) {
+            theme.backgroundColor
+                .frame(maxWidth: .infinity)
+                .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
                 .accessibilityIdentifier("compass-native-header")
-                .allowsHitTesting(false)
+            HStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    titleBarNavButton(
+                        label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
+                        icon: .caretLeft
+                    ) {
+                        model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
+                    }
+                    titleBarNavButton(
+                        label: model.viewStore.view == .life ? "Next life variation" : "Next",
+                        icon: .caretRight
+                    ) {
+                        model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
+                    }
+                    ViewSwitcherView(model: model)
+                }
+                .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
+
+                Spacer(minLength: 0)
+
+                titleBarNavButton(
+                    label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
+                    icon: .sidebarSimple
+                ) {
+                    model.isSidebarOpen.toggle()
+                }
+                .padding(.trailing, 20)
+            }
+            .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     private var content: some View {
@@ -395,16 +397,15 @@ public struct RootView: View {
         }
     }
 
-    private func headerButton(
+    private func titleBarNavButton(
         label: String,
-        systemImage: String,
+        icon: PhosphorIcon,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(theme.textMutedColor)
+            PhosphorIconView(icon: icon, size: 16, color: theme.textMutedColor)
                 .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(label)
