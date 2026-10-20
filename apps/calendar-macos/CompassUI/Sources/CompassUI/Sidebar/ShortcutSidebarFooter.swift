@@ -56,14 +56,23 @@ struct ShortcutSidebarFooter: View {
     }
 
     private var eventFormSaveHint: some View {
-        HStack(spacing: 6) {
-            Text("Enter saves · hold")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
-            ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
-            Text("to jump fields")
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
+        VStack(alignment: .center, spacing: 2) {
+            HStack(spacing: 6) {
+                Text("Enter saves · hold")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+                ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+                Text("to jump fields")
+                    .font(.rubik(11))
+                    .foregroundStyle(theme.textMutedColor)
+            }
+            .frame(maxWidth: .infinity)
+            Button("Hide tips") {
+                levelsStore.setTipsMuted(true)
+            }
+            .buttonStyle(.plain)
+            .font(.rubik(11))
+            .foregroundStyle(theme.textMutedColor)
         }
         .accessibilityIdentifier("compass-native-shortcut-tip")
     }
