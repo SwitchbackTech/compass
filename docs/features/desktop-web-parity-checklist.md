@@ -83,7 +83,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Deck layout / card frames | ✅ | Shared fixtures, `GridLayoutSnapshotTests` |
 | All-day row above timed scroll | ✅ | `TimeGridView.renderAllDayColumns` |
 | Now line position | ✅ | Shared now math |
-| Now line **visual** (gradient + 1px rim) | ❌ | Web: `accentGradient` + `c-now-line-rim`; macOS: solid 2px accent |
+| Now line **visual** (gradient + 1px rim) | 🟡 | macOS: accent gradient + 1px background rim (#4611); web shimmer timing still differs |
 | Now-cue pulse on **`t`** (today) | 🟡 | Web 700ms label shimmer; macOS week header opacity pulse + day view switcher pulse |
 | Click grid teaches shortcut | ✅ | Pointer hint overlay |
 | Day column header focus | 🟡 | AppKit exterior ring vs web `c-focus-ring` |
@@ -103,11 +103,11 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
-| Date field **MM.DD.YY** closed display | ❌ | Web `EventFormDateField.tsx`; macOS `DatePicker` locale format |
+| Date field **MM.DD.YY** closed display | 🟡 | `EventFormCompactDateField` + `EventFormDateFormat`; verify parity capture after merge |
 | Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
 | Time pickers | 🟡 | Visual parity pass needed |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
-| Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | ❌ | Web `SaveSection.tsx` + `c-button-save-bar`; macOS inverted text/background + Enter chip only |
+| Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | 🟡 | macOS save bar matches accent + Mod+Enter keycap (#4610); sidebar shows web save-draft tip (#4614) |
 | Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
 
@@ -126,7 +126,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Projection + join URL | ✅ | |
 | `N` / `V` shortcuts | ✅ | Registry + router |
-| Shortcut hint on card (N/V keycaps) | ❌ | Web `UpNextCard.tsx` |
+| Shortcut hint on card (N/V keycaps) | 🟡 | Hover/focus keycap on native Up Next (#4614) |
 | Bottom banner vs web notice stack | 🟡 | Fewer notice types on native |
 
 ### 2.6 Account list / calendars sidebar
@@ -171,10 +171,10 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Go-to-date from query | ✅ | Shared parsing fixtures |
 | Navigation / create / events / recent | ✅ | |
 | Fuzzy search + highlight | ❌ | Web `HighlightedLabel` + `filterSections` |
-| Row icons (Phosphor) | ❌ | Plain text rows |
-| Keycaps (`ShortcutKeys`) | 🟡 | Row shortcuts use `KeycapGlyphs`; Phosphor row icons still missing |
+| Row icons (Phosphor) | 🟡 | SF Symbol row icons on navigation/more rows (#4613); not Phosphor |
+| Keycaps (`ShortcutKeys`) | 🟡 | Row shortcuts use `KeycapGlyphs`; footer keycaps match web |
 | Selected row ring inset | ✅ | Accent inset ring + lighter fill (web `ring-inset`) |
-| **Missing rows** vs web | 🟡 | Undo/redo wired in catalog; still missing theme, notifications, booking, feedback, shortcut-tip rows vs web `CommandPalette.tsx` |
+| **Missing rows** vs web | 🟡 | Theme toggle + shortcut tip rows (#4613–#4614); notifications/booking/feedback still web-only |
 | Footer hint | ✅ | Keycap chips for navigate / select / close |
 
 ### 2.11 Command palette (desktop quick-add variant)
@@ -321,6 +321,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 updated from workflow run 39299882448 (macOS + compare artifacts) |
 | 2026-10-19 | §5 queue: event form logistics grouping (web #4599); CI fixes on main (palette Range, e2e/parity shard) |
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
+| 2026-10-20 | #4611 parity capture geometry on `main`; #4612 Sunday week + UTC labels queued; #4613 palette nav/icons; #4614 sidebar tips + Up Next + theme row |
 
 ---
 
@@ -339,4 +340,4 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick and quick-time slots still ❌ vs web `useShiftHoldEventHints`.
 
-Re-run `desktop-web-parity-screenshots.yml` on `main` after #4607 merge for canonical compare PNGs.
+Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).
