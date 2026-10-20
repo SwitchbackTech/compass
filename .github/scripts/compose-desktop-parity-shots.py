@@ -71,9 +71,9 @@ GUTTER = 8
 TARGET_WIDTH = 1280
 
 
-def load_rgb(path: Path) -> Image.Image:
+def load_rgb(path: Path, *, stretch_full_viewport: bool = True) -> Image.Image:
     image = Image.open(path).convert("RGB")
-    if image.width != TARGET_WIDTH:
+    if stretch_full_viewport and image.width != TARGET_WIDTH:
         ratio = TARGET_WIDTH / image.width
         image = image.resize(
             (TARGET_WIDTH, max(1, int(image.height * ratio))),
