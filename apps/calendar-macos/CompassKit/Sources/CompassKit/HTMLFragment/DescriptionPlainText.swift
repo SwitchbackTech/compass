@@ -9,13 +9,12 @@ public enum DescriptionPlainText {
 
     public static func plainTextToDescriptionHtml(_ value: String) -> String {
         let blocks = splitPlainTextBlocks(value)
-        return blocks.map { block in
+        return blocks.flatMap { block -> [String] in
             let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
-            let lines = trimmed.components(separatedBy: "\n")
-            let inner = lines.map { line in
-                linkifyUrls(escapeHtml(line))
-            }.joined(separator: "<br>")
-            return "<p>\(inner)</p>"
+            guard !trimmed.isEmpty else { return [] }
+            return trimmed.components(separatedBy: "\n").map { line in
+                "<p>\(linkifyUrls(escapeHtml(line)))</p>"
+            }
         }.joined()
     }
 

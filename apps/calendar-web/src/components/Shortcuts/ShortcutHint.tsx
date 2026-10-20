@@ -6,11 +6,14 @@ export function ShortcutHint({
   title,
   className = "",
   variant = "keycap",
+  visible = true,
 }: {
   children: ReactNode;
   title?: string;
   className?: string;
   variant?: "keycap" | "plain";
+  /** When false, keeps layout space but hides the chip (shortcuts stand down). */
+  visible?: boolean;
 }) {
   return (
     <span
@@ -19,6 +22,7 @@ export function ShortcutHint({
         variant === "keycap"
           ? "c-keycap"
           : "inline-flex items-center text-text-muted text-xs",
+        !visible && "invisible",
         className,
       )}
       aria-hidden

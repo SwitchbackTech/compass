@@ -8,10 +8,13 @@ import { SessionContext } from "@web/auth/compass/session/session.context";
 import * as realSignupFunnel from "@web/auth/posthog/signup-funnel";
 import * as realTrack from "@web/auth/posthog/track";
 import * as realProviderAvailability from "@web/auth/providers/useIsProviderAvailable";
-import * as realSignInProviders from "@web/auth/providers/useSignInProviders";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
+import {
+  initialFirstEventPromptState,
+  useFirstEventPromptStore,
+} from "@web/components/FirstEventPrompt/first-event.store";
 import {
   LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL,
   LOCAL_MODE_CONNECT_PROMPT_MESSAGE,
@@ -24,23 +27,9 @@ import {
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const mockStartSignIn = mock();
+const mockOpenModal = mock();
 const trackSpy = mock();
 const trackSignupStartedAtClickSpy = mock();
-
-mockModuleForFile(
-  "@web/auth/providers/useSignInProviders",
-  realSignInProviders,
-  {
-    useSignInProviders: () => ({
-      available: ["google"],
-      startSignIn: mockStartSignIn,
-      isLoading: false,
-      loadingKind: null,
-      byKind: {},
-    }),
-  },
-);
 
 mockModuleForFile(
   "@web/auth/providers/useIsProviderAvailable",
@@ -68,7 +57,7 @@ const renderPrompt = () =>
           value={{
             isOpen: false,
             currentView: "login",
-            openModal: mock(),
+            openModal: mockOpenModal,
             closeModal: mock(),
             setView: mock(),
           }}
@@ -82,34 +71,42 @@ const renderPrompt = () =>
 describe("LocalModeConnectPrompt", () => {
   beforeEach(() => {
     localStorage.clear();
-    mockStartSignIn.mockClear();
+    mockOpenModal.mockClear();
     trackSpy.mockClear();
     trackSignupStartedAtClickSpy.mockClear();
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
+    useFirstEventPromptStore.setState({
+      ...initialFirstEventPromptState,
+      isDone: true,
+    });
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_WELCOME, "true");
     persistentBrowserStore.set(
       STORAGE_KEYS.ANONYMOUS_CALENDAR_WRITE_COUNT,
-      "3",
+      "1",
     );
     resetLocalModeConnectPromptStoreForTests();
   });
 
-  it("does not render before the write threshold", () => {
+  it("does not render before engagement", () => {
     persistentBrowserStore.set(
       STORAGE_KEYS.ANONYMOUS_CALENDAR_WRITE_COUNT,
-      "2",
+      "0",
     );
     resetLocalModeConnectPromptStoreForTests();
     renderPrompt();
     expect(
-      screen.queryByRole("complementary", { name: "Connect Google" }),
+      screen.queryByRole("complementary", {
+        name: "Start your free trial",
+      }),
     ).toBeNull();
   });
 
-  it("renders after three anonymous writes with connect copy", () => {
+  it("renders after one anonymous write with trial copy and S keycap", () => {
     renderPrompt();
     expect(
-      screen.getByRole("complementary", { name: "Connect Google" }),
+      screen.getByRole("complementary", {
+        name: "Start your free trial",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(LOCAL_MODE_CONNECT_PROMPT_MESSAGE),
@@ -119,13 +116,14 @@ describe("LocalModeConnectPrompt", () => {
         name: LOCAL_MODE_CONNECT_PROMPT_CONNECT_LABEL,
       }),
     ).toBeInTheDocument();
+    expect(screen.getByText("S")).toBeInTheDocument();
   });
 
   it("fires connect_prompt_shown once with event count", async () => {
     renderPrompt();
     await waitFor(() => {
       expect(trackSpy).toHaveBeenCalledWith("connect_prompt_shown", {
-        events_created_count: 3,
+        events_created_count: 1,
         provider: "google",
       });
     });
@@ -134,7 +132,7 @@ describe("LocalModeConnectPrompt", () => {
     ).toHaveLength(1);
   });
 
-  it("starts Google signup and tracks click", async () => {
+  it("opens signup and tracks click", async () => {
     const user = userEvent.setup();
     renderPrompt();
     await user.click(
@@ -144,13 +142,19 @@ describe("LocalModeConnectPrompt", () => {
     );
 
     expect(trackSpy).toHaveBeenCalledWith("connect_prompt_clicked", {
-      events_created_count: 3,
+      events_created_count: 1,
       provider: "google",
     });
     expect(trackSignupStartedAtClickSpy).toHaveBeenCalledWith(
       "local_mode_connect_prompt",
     );
-    expect(mockStartSignIn).toHaveBeenCalledWith("google");
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
+  });
+
+  it("starts signup on S", () => {
+    renderPrompt();
+    pressKey("S");
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 
   it("dismisses on Escape and persists", async () => {
@@ -159,11 +163,13 @@ describe("LocalModeConnectPrompt", () => {
 
     await waitFor(() => {
       expect(
-        screen.queryByRole("complementary", { name: "Connect Google" }),
+        screen.queryByRole("complementary", {
+          name: "Start your free trial",
+        }),
       ).toBeNull();
     });
     expect(trackSpy).toHaveBeenCalledWith("connect_prompt_dismissed", {
-      events_created_count: 3,
+      events_created_count: 1,
       provider: "google",
     });
     expect(
@@ -171,11 +177,5 @@ describe("LocalModeConnectPrompt", () => {
         STORAGE_KEYS.HAS_DISMISSED_LOCAL_MODE_CONNECT_PROMPT,
       ),
     ).toBe("true");
-  });
-
-  it("connects on Enter when focus is not in a field", async () => {
-    renderPrompt();
-    pressKey("Enter");
-    expect(mockStartSignIn).toHaveBeenCalledWith("google");
   });
 });

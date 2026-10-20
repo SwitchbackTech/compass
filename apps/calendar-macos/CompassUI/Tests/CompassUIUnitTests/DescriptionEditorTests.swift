@@ -35,6 +35,30 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertFalse(NSFontManager.shared.traits(of: editor.typingAttributes[.font] as! NSFont).contains(.boldFontMask))
     }
 
+    func testPartialSelectionBulletsOnlySelectedLinesInHardBreakParagraph() {
+        var html =
+            "<p>PLACES<br>Magpie Art Supply, LLC<br>Paper and Grace<br>Sacks Thrift Store<br>Salvation Army<br>UFS BZN</p>"
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
+        let editor = DescriptionTextView()
+        coordinator.textView = editor
+        editor.delegate = coordinator
+        coordinator.load(html: html, resetKey: "event")
+        let text = editor.string as NSString
+        let start = text.range(of: "Magpie Art Supply, LLC").location
+        let end = NSMaxRange(text.range(of: "UFS BZN"))
+        editor.setSelectedRange(NSRange(location: start, length: end - start))
+
+        editor.toggleList(ordered: false)
+        XCTAssertTrue(html.contains("<ul>"))
+        XCTAssertEqual(html.components(separatedBy: "<li>").count - 1, 5)
+        XCTAssertTrue(html.contains("PLACES"))
+        XCTAssertFalse(html.contains("- Frames"))
+
+        editor.toggleList(ordered: false)
+        XCTAssertFalse(html.contains("<ul>"))
+        XCTAssertTrue(html.contains("Magpie Art Supply, LLC"))
+    }
+
     func testListButtonsPreserveInlineFormattingAndToggleBackToParagraphs() {
         var html = "<p><strong>🌴 First</strong></p><p>Second</p>"
         let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))

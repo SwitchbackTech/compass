@@ -449,6 +449,17 @@ describe("Event Command Contracts", () => {
   });
 
   describe("EventMutationErrorSchema", () => {
+    it("accepts an optional provider on provider failures", () => {
+      const error = {
+        code: "PROVIDER_FAILURE" as const,
+        message: "failed",
+        retryable: true,
+        provider: "google" as const,
+      };
+
+      expect(EventMutationErrorSchema.safeParse(error).success).toBe(true);
+    });
+
     it("accepts every mutation error code", () => {
       const codes = [
         "EVENT_NOT_FOUND",
