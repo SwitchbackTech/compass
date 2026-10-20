@@ -125,7 +125,7 @@ public struct SettingsWindowOverlay: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var accountsContent: some View {
