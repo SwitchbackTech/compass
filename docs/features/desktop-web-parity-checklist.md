@@ -86,6 +86,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Now line **visual** (gradient + 1px rim) | 🟡 | macOS: accent gradient + 1px background rim (#4611); web shimmer timing still differs |
 | Now-cue pulse on **`t`** (today) | 🟡 | Web 700ms label shimmer; macOS week header opacity pulse + day view switcher pulse |
 | Click grid teaches shortcut | ✅ | Pointer hint overlay |
+| Day labels | ✅ | Centered per column; number `clamp(18, 2.7cqw, 20.8)`, weekday `clamp(13, 2cqw, 16)` |
 | Day column header focus | 🟡 | AppKit exterior ring vs web `c-focus-ring` |
 | Shift+C all-day tip strip | 🟡 | Sidebar jump line animates; full web tip stack still partial |
 
@@ -97,6 +98,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Jump / hold-F digit hints | ✅ | `eventJumpHold`, chips overlay |
 | Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump + quick-time slots still web-only |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
+| Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
 ### 2.3 Sidebar event form
 
@@ -117,7 +119,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Keyboard `i`, arrows, Enter | ✅ | |
 | Cmd+Shift+, / . month jump | ✅ | |
-| Selected range / today styling | 🟡 | Custom grid vs web react-datepicker theme |
+| Selected range / today styling | ✅ | Week mode bolds the selected week row with ink on today; 28.8pt circles; today follows the calendar clock; Go to this month circle hides on the current month |
 | Weekday header 10px muted | 🟡 | Rubik 10 in `SidebarMonthPicker.swift` |
 
 ### 2.5 Up Next / Now panel

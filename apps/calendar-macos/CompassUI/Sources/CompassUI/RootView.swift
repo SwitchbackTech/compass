@@ -238,6 +238,7 @@ public struct RootView: View {
                 onSelectDate: { model.goToDate($0) },
                 focusedDate: model.monthPickerFocusDate,
                 visibleDayCount: model.viewStore.visibleDayCount,
+                today: model.referenceNow,
                 trailingHeader: {
                     HStack(spacing: 8) {
                         TrialBadgeView(billingStore: model.billingStore)

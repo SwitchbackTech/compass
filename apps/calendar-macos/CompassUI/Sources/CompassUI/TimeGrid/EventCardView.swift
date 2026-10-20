@@ -12,6 +12,8 @@ final class EventCardView: NSView {
     private let timeField = NSTextField(labelWithString: "")
     private let accentLayer = CALayer()
     private let focusRingLayer = CALayer()
+    /// Web `outline-dashed outline-1 outline-text-muted/50` for unsettled cards.
+    private let unsettledOutlineLayer = CAShapeLayer()
     private let focusAccessibilityAnchor = FocusedEventAccessibilityAnchorView()
 
     weak var cardDelegate: EventCardViewDelegate?
@@ -33,6 +35,12 @@ final class EventCardView: NSView {
         accentLayer.cornerRadius = 4
         accentLayer.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
         layer?.addSublayer(accentLayer)
+
+        unsettledOutlineLayer.fillColor = nil
+        unsettledOutlineLayer.lineWidth = 1
+        unsettledOutlineLayer.lineDashPattern = [3, 2]
+        unsettledOutlineLayer.isHidden = true
+        layer?.addSublayer(unsettledOutlineLayer)
 
         focusRingLayer.borderWidth = 2
         focusRingLayer.cornerRadius = 6
@@ -72,6 +80,7 @@ final class EventCardView: NSView {
         theme: NativeWebTheme,
         isFocused: Bool,
         isSidebarEditing: Bool = false,
+        isUnsettled: Bool = false,
         timeLabel: String? = nil
     ) {
         eventId = card.eventId
@@ -112,6 +121,8 @@ final class EventCardView: NSView {
             focusRingLayer.borderColor = focusRingColor(fill: EventCardColorParser.nsColor(hex: card.focusColorHex) ?? fill, theme: theme).cgColor
         }
         focusRingLayer.isHidden = !(isFocused || isSidebarEditing)
+        unsettledOutlineLayer.strokeColor = unsettledOutlineColor(theme).cgColor
+        unsettledOutlineLayer.isHidden = !isUnsettled || card.isDraft
         // The ring sits outside the card, like the web's 2px outline with a
         // 2px offset, so the card must not clip. AppKit turns clipping back on
         // after init, so this runs on every apply. The accent strip rounds its
@@ -156,6 +167,11 @@ final class EventCardView: NSView {
             width: titleBounds.width, height: timeHeight)
         accentLayer.frame = CGRect(x: 0, y: 0, width: 3, height: bounds.height)
         focusRingLayer.frame = bounds.insetBy(dx: -4, dy: -4)
+        // A CSS outline sits just outside the border box.
+        let outlineRect = bounds.insetBy(dx: -0.5, dy: -0.5)
+        unsettledOutlineLayer.frame = bounds
+        unsettledOutlineLayer.path = CGPath(
+            roundedRect: outlineRect, cornerWidth: 4.5, cornerHeight: 4.5, transform: nil)
         focusAccessibilityAnchor.frame = bounds
         syncAccessibilityFrame()
     }
@@ -336,6 +352,14 @@ private func contrastText(on fill: NSColor, theme: NativeWebTheme) -> NSColor {
 
 /// Web `eventFocusColor`: the card's color, or the theme text color when that
 /// color is too light to read against the page paper.
+private func unsettledOutlineColor(_ theme: NativeWebTheme) -> NSColor {
+    let muted: NSColor = switch theme {
+    case .lightBeach: ThemeTokens.lightBeach.textMuted.nsColor
+    case .darkAbyss: ThemeTokens.darkAbyss.textMuted.nsColor
+    }
+    return muted.withAlphaComponent(0.5)
+}
+
 private func focusRingColor(fill: NSColor, theme: NativeWebTheme) -> NSColor {
     let text: NSColor = switch theme {
     case .lightBeach: ThemeTokens.lightBeach.text.nsColor
