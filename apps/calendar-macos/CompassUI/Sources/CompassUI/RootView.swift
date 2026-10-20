@@ -111,7 +111,9 @@ public struct RootView: View {
         .overlay(alignment: .topLeading) {
             if UITestLaunchPolicy.openCommandPaletteForUITest {
                 Button("Open command palette") {
-                    model.toggleCommandPalette()
+                    if !model.commandPaletteStore.isOpen {
+                        model.toggleCommandPalette()
+                    }
                 }
                 .buttonStyle(.plain)
                 .frame(width: 1, height: 1)
