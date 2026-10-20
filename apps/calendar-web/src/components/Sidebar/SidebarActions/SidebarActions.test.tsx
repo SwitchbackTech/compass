@@ -100,14 +100,13 @@ describe("SidebarActions", () => {
     expect(footer?.childElementCount).toBe(3);
     expect(footer?.className).not.toContain("justify-between");
 
-    expect(
-      screen.getByRole("button", { name: "Open shortcuts" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Open settings" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Open command palette" }),
-    ).toBeInTheDocument();
+    const labels = screen
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"));
+    expect(labels).toEqual([
+      "Open shortcuts",
+      "Open settings",
+      "Open command palette",
+    ]);
   });
 });

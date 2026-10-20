@@ -58,7 +58,6 @@ export const SidebarActions = () => {
           />
         </button>
       </TooltipWrapper>
-      <SidebarRefreshButton />
       <TooltipWrapper
         description="Open settings"
         shortcut={["Mod", ","]}
@@ -109,6 +108,7 @@ export const SidebarActions = () => {
           </span>
         </button>
       </TooltipWrapper>
+      <SidebarRefreshButton />
     </div>
   );
 };

@@ -255,7 +255,7 @@ public struct RootView: View {
         .padding(.bottom, 20)
     }
 
-    /// Web `SidebarActions`: one leading group (shortcuts, refresh, settings, palette).
+    /// Web `SidebarActions`: one leading group; refresh trails so stable icons never shift.
     private var sidebarActions: some View {
         HStack(spacing: 8) {
             sidebarActionButton(
@@ -264,13 +264,13 @@ public struct RootView: View {
             ) {
                 model.toggleShortcutsLegend()
             }
-            SidebarRefreshButton(model: model)
             sidebarActionButton(label: "Open settings", systemImage: "gearshape") {
                 model.settingsStore.open()
             }
             sidebarActionButton(label: "Open command palette", systemImage: "command") {
                 model.toggleCommandPalette()
             }
+            SidebarRefreshButton(model: model)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
