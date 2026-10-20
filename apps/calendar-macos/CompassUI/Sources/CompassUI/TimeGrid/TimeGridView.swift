@@ -184,13 +184,10 @@ public final class TimeGridView: NSView {
 
     private func pulseHeaderLabel(_ header: NSTextField, accent: NSColor) {
         header.wantsLayer = true
-        let shimmer = CABasicAnimation(keyPath: "opacity")
-        shimmer.fromValue = 1
-        shimmer.toValue = 0.55
-        shimmer.duration = 0.7
-        shimmer.autoreverses = true
-        shimmer.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        header.layer?.add(shimmer, forKey: "nowCueLabelShimmer")
+        header.layer?.add(
+            nowCuePulseAnimation(keyPath: "opacity", from: 1, to: 0.55),
+            forKey: "nowCueLabelShimmer"
+        )
         if let attributed = header.attributedStringValue.mutableCopy() as? NSMutableAttributedString {
             attributed.addAttribute(.foregroundColor, value: accent, range: NSRange(location: 0, length: attributed.length))
             header.attributedStringValue = attributed

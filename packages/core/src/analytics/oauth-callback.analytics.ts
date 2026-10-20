@@ -60,6 +60,7 @@ export function oauthCallbackFailureReason(input: {
       ? input.oauthErrorDescription
       : undefined,
   );
+  const mergedProviderError = providerError ?? providerDescription;
 
   if (input.outcome === "declined") {
     const reason =
@@ -68,10 +69,7 @@ export function oauthCallbackFailureReason(input: {
         code: typeof input.code === "string" ? input.code : null,
         providerError: providerErrorRaw ?? null,
       }) ?? "other";
-    return {
-      reason,
-      ...(providerError ? { provider_error: providerError } : {}),
-    };
+    return withProviderError(reason, providerError);
   }
 
   if (input.outcome === "stateMismatch") {
@@ -83,16 +81,10 @@ export function oauthCallbackFailureReason(input: {
     const hasCode = typeof input.code === "string" && input.code.length > 0;
 
     if (!hasState || input.stateVerifyReason === "malformed") {
-      return {
-        reason: "invalid_state",
-        ...(providerError ? { provider_error: providerError } : {}),
-      };
+      return withProviderError("invalid_state", providerError);
     }
     if (!hasCode) {
-      return {
-        reason: "missing_code",
-        ...(providerError ? { provider_error: providerError } : {}),
-      };
+      return withProviderError("missing_code", providerError);
     }
     if (
       input.stateVerifyReason === "invalidSignature" ||
@@ -106,21 +98,19 @@ export function oauthCallbackFailureReason(input: {
         provider_error: providerErrorFromExchange(input.exchangeError),
       };
     }
-    return {
-      reason: "other",
-      ...((providerError ?? providerDescription)
-        ? {
-            provider_error: providerError ?? providerDescription,
-          }
-        : {}),
-    };
+    return withProviderError("other", mergedProviderError);
   }
 
+  return withProviderError("other", mergedProviderError);
+}
+
+function withProviderError(
+  reason: OAuthFailedReason,
+  providerError?: string,
+): { reason: OAuthFailedReason; provider_error?: string } {
   return {
-    reason: "other",
-    ...((providerError ?? providerDescription)
-      ? { provider_error: providerError ?? providerDescription }
-      : {}),
+    reason,
+    ...(providerError ? { provider_error: providerError } : {}),
   };
 }
 

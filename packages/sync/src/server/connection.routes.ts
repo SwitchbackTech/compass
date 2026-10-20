@@ -118,8 +118,6 @@ const CONNECT_CORRELATION_QUERY = "cid";
 const CONNECT_INTENT_QUERY = "intent";
 const CONNECT_CORRELATION_ID_LENGTH = 8;
 
-type OAuthCallbackOutcome = SyncOAuthCallbackOutcome;
-
 type OAuthConnectIntent = "connect" | "reconnect";
 
 export class ReconnectAccountMismatchError extends Error {
@@ -883,7 +881,7 @@ export function registerConnectionRoutes(
       };
 
       const redirect = (
-        status: OAuthCallbackOutcome,
+        status: SyncOAuthCallbackOutcome,
         error?: unknown,
         stateVerifyReason?: OAuthStateFailure,
       ) =>
@@ -1105,36 +1103,29 @@ function oauthCallbackErrorClass(error: unknown): string {
   return "Error";
 }
 
-function oauthCallbackDistinctId(
+function oauthStateAnalyticsContext(
   deps: ConnectionApiDeps,
   state: unknown,
-): string | undefined {
-  if (typeof state !== "string" || state.length === 0) return undefined;
+): {
+  distinctId?: string;
+  intent?: OAuthConnectIntent;
+  relayDesktop: boolean;
+} {
+  if (typeof state !== "string" || state.length === 0) {
+    return { relayDesktop: false };
+  }
   const now = (deps.now ?? Date.now)();
   const verified = verifyOAuthState(deps.stateSecret, state, now);
-  if (verified.ok) return verified.payload.principalId;
-  return peekOAuthStatePayload(state)?.principalId;
-}
-
-function connectIntentFromState(
-  deps: ConnectionApiDeps,
-  state: unknown,
-  expectedProvider: ProviderKind,
-): OAuthConnectIntent | undefined {
-  if (typeof state !== "string") return undefined;
-  const now = (deps.now ?? Date.now)();
-  const withProvider = verifyOAuthState(deps.stateSecret, state, now, {
-    expectedProvider,
-  });
-  if (withProvider.ok) {
-    return withProvider.payload.connectionId !== null ? "reconnect" : "connect";
-  }
-  // Signature-valid state on the wrong provider path still carries intent.
-  const anyProvider = verifyOAuthState(deps.stateSecret, state, now);
-  if (anyProvider.ok) {
-    return anyProvider.payload.connectionId !== null ? "reconnect" : "connect";
-  }
-  return undefined;
+  const payload = verified.ok ? verified.payload : peekOAuthStatePayload(state);
+  return {
+    distinctId: payload?.principalId,
+    intent: verified.ok
+      ? verified.payload.connectionId !== null
+        ? "reconnect"
+        : "connect"
+      : undefined,
+    relayDesktop: verified.ok && verified.payload.relayDesktop === true,
+  };
 }
 
 async function captureOAuthCallbackThenRedirect(
@@ -1142,7 +1133,7 @@ async function captureOAuthCallbackThenRedirect(
   res: Response,
   input: {
     provider: ProviderKind;
-    outcome: OAuthCallbackOutcome;
+    outcome: SyncOAuthCallbackOutcome;
     state: unknown;
     code: unknown;
     oauthError: unknown;
@@ -1152,9 +1143,10 @@ async function captureOAuthCallbackThenRedirect(
   },
 ): Promise<void> {
   const correlationId = newConnectCorrelationId();
-  const intent = connectIntentFromState(deps, input.state, input.provider);
-  const relayDesktop = relayDesktopConnectFromState(deps, input.state);
-  const distinctId = oauthCallbackDistinctId(deps, input.state);
+  const { distinctId, intent, relayDesktop } = oauthStateAnalyticsContext(
+    deps,
+    input.state,
+  );
   const properties: Record<string, unknown> = {
     provider: input.provider,
     outcome: input.outcome,
@@ -1173,12 +1165,7 @@ async function captureOAuthCallbackThenRedirect(
     stateVerifyReason: input.stateVerifyReason,
     exchangeError: input.error,
   });
-  if (failure) {
-    properties["reason"] = failure.reason;
-    if (failure.provider_error) {
-      properties["provider_error"] = failure.provider_error;
-    }
-  }
+  if (failure) Object.assign(properties, failure);
   if (distinctId) {
     await captureSafely(deps.posthog ?? null, {
       event: OAUTH_CALLBACK_EVENT,
@@ -1191,16 +1178,6 @@ async function captureOAuthCallbackThenRedirect(
     intent,
     ...(relayDesktop ? { relayDesktop: true } : {}),
   });
-}
-
-function relayDesktopConnectFromState(
-  deps: ConnectionApiDeps,
-  state: unknown,
-): boolean {
-  if (typeof state !== "string") return false;
-  const now = (deps.now ?? Date.now)();
-  const verified = verifyOAuthState(deps.stateSecret, state, now);
-  return verified.ok && verified.payload.relayDesktop === true;
 }
 
 async function linkCredentialConnection(
