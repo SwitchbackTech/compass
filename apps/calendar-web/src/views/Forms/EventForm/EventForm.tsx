@@ -1063,6 +1063,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   editable={!isReadOnly}
                   underlineColor={eventColor}
                   onKeyDown={handleIgnoredKeys}
+                  suppressLinkShortcutHints={showBookingFormActions}
                 />
               </FormCard>
             </fieldset>

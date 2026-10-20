@@ -14,16 +14,26 @@ export function useDescriptionLinkPresentation(
   isFocused: boolean,
 ) {
   const wasFocusedRef = useRef(false);
+  const presentationAppliedRef = useRef(false);
 
   useEffect(() => {
     if (!editor || !editorRoot || !enabled) return;
 
-    if (isFocused && !wasFocusedRef.current) {
-      editor.view.dispatch(editor.state.tr);
+    if (isFocused) {
+      if (presentationAppliedRef.current) {
+        editor.view.dispatch(editor.state.tr);
+        presentationAppliedRef.current = false;
+      }
+      wasFocusedRef.current = true;
+      return;
     }
-    wasFocusedRef.current = isFocused;
 
-    if (isFocused) return;
+    if (presentationAppliedRef.current) {
+      wasFocusedRef.current = false;
+      return;
+    }
+    presentationAppliedRef.current = true;
+    wasFocusedRef.current = false;
 
     const domObserver = (
       editor.view as unknown as {

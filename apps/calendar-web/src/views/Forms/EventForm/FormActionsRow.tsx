@@ -158,10 +158,12 @@ export const FormActionsRow = forwardRef<FormActionsRowHandle, Props>(
       ],
     );
 
+    const cancelConfirmWasActiveRef = useRef(false);
     useEffect(() => {
-      if (isCancelConfirm) {
+      if (isCancelConfirm && !cancelConfirmWasActiveRef.current) {
         cancelButtonRef.current?.focus();
       }
+      cancelConfirmWasActiveRef.current = isCancelConfirm;
     }, [isCancelConfirm]);
 
     useEffect(() => {

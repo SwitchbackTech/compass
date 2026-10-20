@@ -94,6 +94,8 @@ interface DescriptionEditorProps {
   underlineColor?: string;
   onKeyDown?: (e: KeyboardEvent) => void;
   id?: string;
+  /** Booking events use description links for cancel/reschedule actions. */
+  suppressLinkShortcutHints?: boolean;
 }
 
 const TOOLBAR_BUTTON_CLASSNAME =
@@ -131,6 +133,7 @@ export const DescriptionEditor = ({
   underlineColor,
   onKeyDown,
   id,
+  suppressLinkShortcutHints = false,
 }: DescriptionEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -229,7 +232,10 @@ export const DescriptionEditor = ({
 
   useDescriptionEditorCopyLinkShortcut(editor, editorRoot, editable);
   useDescriptionEditorOpenLinkAtCaretShortcut(editor, editorRoot, editable);
-  useDescriptionLinkDigitShortcut(editorRoot, !isFocused);
+  useDescriptionLinkDigitShortcut(
+    editorRoot,
+    !isFocused && !suppressLinkShortcutHints,
+  );
 
   useDescriptionLinkPresentation(editor, editorRoot, true, isFocused);
 
@@ -352,7 +358,7 @@ export const DescriptionEditor = ({
       />
       <DescriptionEditorLinkHints
         editorRoot={editorRoot}
-        visible={!isFocused}
+        visible={!isFocused && !suppressLinkShortcutHints}
       />
       <DescriptionEditorLinkChrome editorRoot={editorRoot} />
       <Divider color={underlineColor} toggled={isFocused} />

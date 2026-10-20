@@ -1,5 +1,5 @@
-import { flip, offset, shift, useFloating } from "@floating-ui/react";
-import { useEffect } from "react";
+import { useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   DESCRIPTION_LINK_SHORTCUT_COUNT,
   listDescriptionLinks,
@@ -47,27 +47,36 @@ const DescriptionEditorLinkHintChip = ({
   anchor: HTMLAnchorElement;
   digit: string;
 }) => {
-  const { refs, floatingStyles } = useFloating({
-    open: true,
-    placement: "right-start",
-    middleware: [offset(2), flip(), shift({ padding: 4 })],
-  });
+  const [style, setStyle] = useState<React.CSSProperties | null>(null);
 
-  useEffect(() => {
-    refs.setReference(anchor);
-  }, [anchor, refs]);
+  useLayoutEffect(() => {
+    const update = () => {
+      const rect = anchor.getBoundingClientRect();
+      setStyle({
+        position: "fixed",
+        left: rect.right + 2,
+        top: rect.top,
+        zIndex: 10,
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [anchor]);
 
-  return (
-    <span
-      ref={refs.setFloating}
-      className="pointer-events-none z-10"
-      style={floatingStyles}
-      aria-hidden="true"
-    >
+  if (!style) return null;
+
+  return createPortal(
+    <span className="pointer-events-none" style={style} aria-hidden="true">
       <ShortcutKeys
         keys={digit}
         className="inline-flex pointer-coarse:inline-flex"
       />
-    </span>
+    </span>,
+    document.body,
   );
 };
