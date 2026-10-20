@@ -17,14 +17,9 @@ import {
 const envConstantsSnapshot = { ...realEnvConstants };
 
 const copyTextMock = mock(() => Promise.resolve(true));
-const recordShortcutMock = mock(() => {});
 
 mock.module("@web/common/utils/clipboard/clipboard.util", () => ({
   copyText: copyTextMock,
-}));
-
-mock.module("@web/shortcuts/tips/shortcut-telemetry", () => ({
-  recordHandledShortcutInvocation: recordShortcutMock,
 }));
 
 const lastToastMessage = (toastMock: { mock: { calls: unknown[][] } }) => {
