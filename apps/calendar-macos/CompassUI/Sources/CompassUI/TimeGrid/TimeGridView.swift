@@ -146,6 +146,7 @@ public final class TimeGridView: NSView {
     }
 
     private func scrollToNowOrPulse() {
+        clampWeekHorizontalScrollOrigin()
         guard let snapshot, let nowLine = snapshot.nowLine else { return }
         // The scroll document is the timed grid alone; the header is pinned above it.
         let targetY = clampedScrollY(GridScrollMath.scrollToNowDocumentY(
@@ -159,6 +160,8 @@ public final class TimeGridView: NSView {
         origin.y = targetY
         scrollView.contentView.scroll(to: origin)
         scrollView.reflectScrolledClipView(scrollView.contentView)
+        clampWeekHorizontalScrollOrigin()
+        syncPinnedHeaderScrollX()
         if nowLineVisible { pulseNowCue() }
     }
 
@@ -259,6 +262,7 @@ public final class TimeGridView: NSView {
 
     /// Day view scrolls horizontally; the pinned header follows the clip view's x.
     @objc private func clipViewBoundsDidChange(_ notification: Notification) {
+        clampWeekHorizontalScrollOrigin()
         syncPinnedHeaderScrollX()
     }
 
@@ -270,18 +274,14 @@ public final class TimeGridView: NSView {
         pinnedHeaderView.setBoundsOrigin(NSPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
     }
 
-    /// Week view keeps the timezone header and hour gutter pinned at x=0.
-    private func resetWeekHorizontalScrollIfNeeded() {
+    /// Week view never scrolls horizontally; a non-zero x clips the gutter and first column.
+    private func clampWeekHorizontalScrollOrigin() {
         guard state.layoutMode == .week else { return }
         var origin = scrollView.contentView.bounds.origin
-        guard origin.x != 0 else {
-            pinnedHeaderView.setBoundsOrigin(.zero)
-            return
-        }
+        guard origin.x != 0 else { return }
         origin.x = 0
         scrollView.contentView.scroll(to: origin)
         scrollView.reflectScrolledClipView(scrollView.contentView)
-        pinnedHeaderView.setBoundsOrigin(.zero)
     }
 
     private func relayout() {
@@ -323,7 +323,7 @@ public final class TimeGridView: NSView {
         renderTimedGrid(snapshot: snapshot, hourHeight: hourHeight, gridHeight: gridHeight)
         renderCards(snapshot: snapshot)
         updateNowLine()
-        resetWeekHorizontalScrollIfNeeded()
+        clampWeekHorizontalScrollOrigin()
         syncPinnedHeaderScrollX()
     }
 

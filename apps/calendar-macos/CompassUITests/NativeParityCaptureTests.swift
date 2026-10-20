@@ -122,6 +122,7 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             sundayColumn.waitForExistence(timeout: 20),
             "Expected Sunday demo week column (2026-06-07) after nav today")
+        XCTAssertTrue(sundayColumn.isHittable, "Expected Sunday column visible, not scrolled off-screen")
         let timezoneHeader = window.descendants(matching: .any)["compass-grid-timezone-effective"]
         XCTAssertTrue(
             timezoneHeader.waitForExistence(timeout: 10),
