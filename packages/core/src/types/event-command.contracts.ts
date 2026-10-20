@@ -231,6 +231,9 @@ export const EventMutationErrorCodeSchema = z.enum([
   // is neither INVALID_INPUT nor PROVIDER_FAILURE; retrying can never
   // succeed.
   "UNSUPPORTED_OPERATION",
+  // A well-formed write the provider rejected with a generic badRequest (not
+  // an event-type restriction). Retry may succeed after provider state catches up.
+  "PROVIDER_REJECTED",
   // The request body failed contract validation (e.g. an unrecognized key on
   // a strict schema). Always a client-side mistake, never retryable.
   "INVALID_INPUT",

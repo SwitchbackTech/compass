@@ -749,7 +749,12 @@ async function pullUntilQuiet(
       // this before, so "late" and "dropped" were indistinguishable after the
       // fact.
       deps.log?.info?.(
-        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms over ${passes} pass(es), ${pull.changed} changed, ${pull.deleted} deleted`,
+        `Sync resource ${pull.resource._id} (calendar ${calendar._id}): push latency ${pull.pushLatencyMs}ms over ${passes} pass(es), ${pull.changed} changed, ${pull.deleted} deleted, ${pull.skipped} skipped`,
+      );
+    }
+    if (pull.skipped > 0) {
+      deps.log?.info?.(
+        `Incremental pull for calendar ${calendar._id}: skipped ${pull.skipped} unusable provider event(s)`,
       );
     }
   }

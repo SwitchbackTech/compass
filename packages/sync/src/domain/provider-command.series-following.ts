@@ -25,6 +25,7 @@ import {
   stopCommand,
 } from "@sync/domain/provider-command.internal";
 import { executeProviderSeriesUpdate } from "@sync/domain/provider-command.series-update";
+import { providerLabelPatchFields } from "@sync/domain/provider-patch-fields";
 import { runProviderWrite } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
@@ -163,6 +164,7 @@ async function splitProviderSeriesAt(
     const patchResult = await runProviderWrite(() =>
       deps.writer.patchEvent({
         ...location,
+        ...providerLabelPatchFields(current),
         expectedVersion: patchExpectedVersion(command, current, master),
         content: master.content,
         schedule: master.schedule,

@@ -20,8 +20,12 @@ export class RemoteEventRepository implements EventRepository {
     return this.api.create(input);
   }
 
-  async replace(id: EventId, input: ReplaceEventInput): Promise<Event> {
-    return this.api.replace(id, input);
+  async replace(
+    id: EventId,
+    input: ReplaceEventInput,
+    signal?: AbortSignal,
+  ): Promise<Event> {
+    return this.api.replace(id, input, signal);
   }
 
   async delete(id: EventId, scope: RecurrenceScope): Promise<void> {

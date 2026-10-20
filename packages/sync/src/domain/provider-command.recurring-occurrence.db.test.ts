@@ -285,6 +285,41 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       expect(writer.patchCalls).toHaveLength(0);
     });
 
+    it("re-fetches the instance and retries once after providerRejectedChange", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "update", "Moved");
+      const writer = new FakeProviderEventWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+      let patchAttempts = 0;
+      const basePatch = writer.patchEvent.bind(writer);
+      writer.patchEvent = async (input) => {
+        patchAttempts += 1;
+        if (patchAttempts === 1) {
+          throw new ProviderWriteError(
+            "providerRejectedChange",
+            "Google rejected this change",
+          );
+        }
+        return basePatch(input);
+      };
+
+      const result = await executeProviderOccurrenceUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.fetchInstanceCalls).toHaveLength(2);
+      expect(patchAttempts).toBe(2);
+    });
+
     it("leaves the command pending on a transient patch failure", async () => {
       const { calendar, master } = await seedMaster();
       const command = await thisScopeCommand(master, "update");

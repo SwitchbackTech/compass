@@ -1,4 +1,5 @@
 import {
+  googleProviderRejectedChangeMessage,
   providerCalendarProductName,
   providerSaveFailureMessage,
 } from "@core/event/event-mutation-user-message";
@@ -20,6 +21,14 @@ describe("providerSaveFailureMessage", () => {
   it("falls back when the provider is unknown", () => {
     expect(providerSaveFailureMessage(undefined)).toBe(
       "Couldn't save that change, the calendar service had a problem. Your edit was not applied.",
+    );
+  });
+});
+
+describe("googleProviderRejectedChangeMessage", () => {
+  it("tells the user to try again without birthday copy", () => {
+    expect(googleProviderRejectedChangeMessage()).toBe(
+      "Google rejected this change. Your edit wasn't saved. Try again.",
     );
   });
 });
