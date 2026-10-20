@@ -93,7 +93,7 @@ enum ParityViewSnapshotExporter {
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.25))
 
         let captureHeight = MacTitleBarChromeMetrics.referenceCaptureHeight
-        guard let png = captureTitleBarPNG(window: window, captureHeightPoints: captureHeight) else { return }
+        guard let png = compositeTitleBarPNG(window: window, captureHeightPoints: captureHeight) else { return }
 
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -102,7 +102,115 @@ enum ParityViewSnapshotExporter {
         NativeAccessibilityProbes.publishParityExport(surface: "mac-title-bar", on: window)
     }
 
-    /// Top slice of the on-screen window (traffic lights + unified chrome + grid header).
+    /// Canonical 1280px-wide title band: content snapshot (nav + toggle) with system traffic lights composited on the left.
+    @MainActor
+    private static func compositeTitleBarPNG(window: NSWindow, captureHeightPoints: CGFloat) -> Data? {
+        guard let contentBand = contentTitleBarPNG(window: window, captureHeightPoints: captureHeightPoints),
+              let contentRep = NSBitmapImageRep(data: contentBand),
+              let contentImage = contentRep.cgImage
+        else { return nil }
+
+        let width = contentImage.width
+        let height = contentImage.height
+        guard width >= Int(ParityCaptureGeometry.viewportWidth) - 40 else { return nil }
+
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+
+        context.draw(contentImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+
+        if let chrome = windowTitleBarChromePNG(window: window, captureHeightPoints: captureHeightPoints),
+           let chromeRep = NSBitmapImageRep(data: chrome),
+           let chromeImage = chromeRep.cgImage
+        {
+            let inset = Int(MacTitleBarChromeMetrics.trafficLightLeadingInset.rounded())
+            let overlayWidth = min(inset + 24, chromeImage.width, width)
+            let dest = CGRect(x: 0, y: 0, width: overlayWidth, height: height)
+            let source = CGRect(x: 0, y: 0, width: overlayWidth, height: min(height, chromeImage.height))
+            if let slice = chromeImage.cropping(to: source) {
+                context.draw(slice, in: dest)
+            }
+        }
+
+        guard let output = context.makeImage() else { return nil }
+        let rep = NSBitmapImageRep(cgImage: output)
+        rep.size = NSSize(width: ParityCaptureGeometry.viewportWidth, height: captureHeightPoints)
+        guard let png = rep.representation(using: .png, properties: [:]),
+              titleBarPNGHasChrome(png)
+        else { return nil }
+        return png
+    }
+
+    @MainActor
+    private static func contentTitleBarPNG(window: NSWindow, captureHeightPoints: CGFloat) -> Data? {
+        guard let contentView = window.contentView else { return nil }
+        ParityCaptureWindowPolicy.applyIfNeeded(to: window)
+        window.displayIfNeeded()
+        contentView.layoutSubtreeIfNeeded()
+        enableLayerBackedDrawing(contentView)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
+
+        guard let bitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pixelWidth,
+            pixelsHigh: pixelHeight,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else { return nil }
+
+        bitmap.size = NSSize(
+            width: ParityCaptureGeometry.viewportWidth,
+            height: ParityCaptureGeometry.viewportHeight
+        )
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        guard let context = NSGraphicsContext(bitmapImageRep: bitmap) else { return nil }
+        NSGraphicsContext.current = context
+        let captureRect = NSRect(
+            origin: .zero,
+            size: NSSize(
+                width: ParityCaptureGeometry.viewportWidth,
+                height: ParityCaptureGeometry.viewportHeight
+            )
+        )
+        context.cgContext.clear(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
+        contentView.cacheDisplay(in: captureRect, to: bitmap)
+
+        guard let fullImage = bitmap.cgImage else { return nil }
+        let bandPixels = min(
+            fullImage.height,
+            max(1, Int((captureHeightPoints / ParityCaptureGeometry.viewportHeight * CGFloat(pixelHeight)).rounded(.up)))
+        )
+        let cropRect = CGRect(
+            x: 0,
+            y: fullImage.height - bandPixels,
+            width: fullImage.width,
+            height: bandPixels
+        )
+        guard let band = fullImage.cropping(to: cropRect) else { return nil }
+        let rep = NSBitmapImageRep(cgImage: band)
+        rep.size = NSSize(width: ParityCaptureGeometry.viewportWidth, height: captureHeightPoints)
+        return rep.representation(using: .png, properties: [:])
+    }
+
+    /// Top slice of the on-screen window frame (system traffic lights).
+    @MainActor
+    private static func windowTitleBarChromePNG(window: NSWindow, captureHeightPoints: CGFloat) -> Data? {
+        captureTitleBarPNG(window: window, captureHeightPoints: captureHeightPoints)
+    }
+
     @MainActor
     private static func captureTitleBarPNG(window: NSWindow, captureHeightPoints: CGFloat) -> Data? {
         let windowID = CGWindowID(window.windowNumber)
@@ -126,10 +234,7 @@ enum ParityViewSnapshotExporter {
 
             let rep = NSBitmapImageRep(cgImage: cropped)
             rep.size = NSSize(width: frame.width, height: captureHeightPoints)
-            guard let png = rep.representation(using: .png, properties: [:]),
-                  titleBarPNGHasChrome(png)
-            else { continue }
-            return png
+            return rep.representation(using: .png, properties: [:])
         }
         return nil
     }
