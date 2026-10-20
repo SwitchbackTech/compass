@@ -722,6 +722,11 @@ public final class NativeCalendarRootModel {
     }
 
     public func handleGridPointerDown(registry: ShortcutRegistry) {
+        guard !UITestLaunchPolicy.isParityCapture,
+              OnboardingGating.selectPointerHintSurfaceEligible(
+                  pointerHintVisible: true,
+                  dismissedPermanently: OnboardingGating.pointerHintDismissedPermanently())
+        else { return }
         showPointerHint(for: .gridScroll, registry: registry)
     }
 

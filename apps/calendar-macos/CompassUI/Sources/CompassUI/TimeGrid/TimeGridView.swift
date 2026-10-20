@@ -38,6 +38,7 @@ public final class TimeGridView: NSView {
     private var state: TimeGridState
     private var theme: NativeWebTheme
     private var snapshot: GridLayoutSnapshot?
+    private var lastScrollSyncHourHeight: Double?
 
     public override var isFlipped: Bool { true }
 
@@ -286,11 +287,17 @@ public final class TimeGridView: NSView {
 
     private func relayout() {
         let colWidths = state.resolvedColumnWidths()
-        let snapshot = state.snapshot(colWidths: colWidths)
+        let viewportHeight = scrollView.contentView.bounds.height
+        let hourHeight: Double
+        if viewportHeight > 1 {
+            hourHeight = viewportHeight / Double(GridTimeConstants.timedVisibleHours)
+        } else {
+            hourHeight = 60
+        }
+        let snapshot = state.snapshot(colWidths: colWidths, hourHeight: hourHeight)
         self.snapshot = snapshot
 
         let marginLeft = snapshot.metrics.marginLeft
-        let hourHeight = snapshot.metrics.hourHeight
         let gridHeight = hourHeight * state.civilDayHours
         let allDayHeight = snapshot.metrics.allDayRowHeight
         let headerHeight = GridTimeConstants.dayHeaderRowHeight
@@ -325,6 +332,16 @@ public final class TimeGridView: NSView {
         updateNowLine()
         clampWeekHorizontalScrollOrigin()
         syncPinnedHeaderScrollX()
+        syncScrollToNowAfterViewportHourHeightChange(hourHeight: hourHeight, viewportHeight: viewportHeight)
+    }
+
+    /// Web `getMinuteHeight(clientHeight)`: scroll targets depend on viewport, not a fixed 60px hour.
+    private func syncScrollToNowAfterViewportHourHeightChange(hourHeight: Double, viewportHeight: Double) {
+        guard viewportHeight > 1 else { return }
+        let changed = lastScrollSyncHourHeight.map { abs($0 - hourHeight) > 0.25 } ?? true
+        guard changed else { return }
+        lastScrollSyncHourHeight = hourHeight
+        scrollToNowOrPulse()
     }
 
     private func renderHourGutter(

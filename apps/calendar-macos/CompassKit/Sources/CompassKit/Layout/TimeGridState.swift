@@ -61,10 +61,11 @@ public struct TimeGridState: Sendable {
         return (calendar.dateInterval(of: .day, for: hourLabelDate)?.duration ?? 86_400) / 3600
     }
 
-    public func snapshot(colWidths: [Double]) -> GridLayoutSnapshot {
+    public func snapshot(colWidths: [Double], hourHeight: Double = 60) -> GridLayoutSnapshot {
         GridLayoutSnapshotBuilder.build(
             scenario: scenario,
             colWidths: colWidths,
+            hourHeight: hourHeight,
             hasSecondaryTimeZone: hasSecondaryTimeZone)
     }
 
