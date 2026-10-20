@@ -80,6 +80,13 @@ enum ParityViewSnapshotExporter {
         window?.makeKeyAndOrderFront(nil)
         window?.displayIfNeeded()
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.2))
+        guard let window, let directory = parityOutputDirectory else { return }
+        let windowNumber = window.windowNumber
+        guard windowNumber != 0 else { return }
+        let file = URL(fileURLWithPath: directory, isDirectory: true)
+            .appendingPathComponent("parity-window-id.txt")
+        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? String(windowNumber).write(to: file, atomically: true, encoding: .utf8)
     }
 
     private static func enableLayerBackedDrawing(_ view: NSView) {

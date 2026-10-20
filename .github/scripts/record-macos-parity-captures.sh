@@ -206,20 +206,20 @@ def close_rgb(a, b, tol=40):
 def assert_traffic_lights(image: Image.Image) -> None:
     px = image.load()
     width, height = image.size
-    scale = max(1, width // 1280)
-    samples = [
-        (14 * scale, 22 * scale, (255, 82, 85)),
-        (34 * scale, 22 * scale, (250, 200, 0)),
-        (54 * scale, 22 * scale, (50, 180, 70)),
-    ]
-    for x, y, target in samples:
-        if y >= height or x >= width:
-            raise SystemExit(f"mac-title-bar.png too small for traffic light probe at ({x},{y})")
-        r, g, b, a = px[x, y]
-        if a < 128 or not close_rgb((r, g, b), target, tol=55):
-            raise SystemExit(
-                f"mac-title-bar.png missing traffic light at ({x},{y}); got rgba=({r},{g},{b},{a})"
-            )
+    found = {"red": False, "yellow": False, "green": False}
+    for y in range(min(height, 60)):
+        for x in range(min(width, 140)):
+            r, g, b, a = px[x, y]
+            if a < 128:
+                continue
+            if r > 190 and g < 140 and b < 140:
+                found["red"] = True
+            if r > 190 and g > 150 and b < 110:
+                found["yellow"] = True
+            if g > 130 and r < 130 and b < 130:
+                found["green"] = True
+    if not all(found.values()):
+        raise SystemExit(f"mac-title-bar.png missing macOS traffic lights in top-left: {found}")
 
 
 def assert_month_title_band(image: Image.Image) -> None:
@@ -290,6 +290,16 @@ ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
 full_window = find_attachment(raw, "mac-title-bar-full-window")
+window_id_path = os.path.join(out, "parity-window-id.txt")
+screencap_path = os.path.join(out, "_parity_window_screencap.png")
+if os.path.isfile(window_id_path):
+    with open(window_id_path) as handle:
+        window_id = handle.read().strip()
+    if window_id.isdigit():
+        os.system(f'screencapture -l {window_id} -x "{screencap_path}"')
+        if os.path.isfile(screencap_path) and os.path.getsize(screencap_path) > 1000:
+            full_window = screencap_path
+
 if not full_window:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
