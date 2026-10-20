@@ -360,7 +360,9 @@ export const DescriptionEditor = ({
         editorRoot={editorRoot}
         visible={!isFocused && !suppressLinkShortcutHints}
       />
-      <DescriptionEditorLinkChrome editorRoot={editorRoot} />
+      {!suppressLinkShortcutHints && (
+        <DescriptionEditorLinkChrome editorRoot={editorRoot} />
+      )}
       <Divider color={underlineColor} toggled={isFocused} />
     </div>
   );
