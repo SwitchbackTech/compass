@@ -135,6 +135,8 @@ final class NativeGridKeyboardRouter {
         model.formFieldDigitHintsVisible = false
     }
 
+    func handleKeyUp(_: NSEvent) {}
+
     func handleKeyDown(_ event: NSEvent) -> Bool {
         if model.pendingLogoutConfirmation {
             guard let key = KeyEvent(nsEvent: event) else { return false }
