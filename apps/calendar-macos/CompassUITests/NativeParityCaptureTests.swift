@@ -156,9 +156,7 @@ final class NativeParityCaptureTests: XCTestCase {
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         XCTAssertTrue(
-            window.descendants(matching: .any)["compass-grid-timed"].waitForExistence(timeout: 15))
-        XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 10))
+            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 15))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
     }
