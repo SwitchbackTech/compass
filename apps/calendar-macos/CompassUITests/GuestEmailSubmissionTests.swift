@@ -17,7 +17,8 @@ final class GuestEmailSubmissionTests: XCTestCase {
         title.click()
         title.typeKey("a", modifierFlags: [.command])
         title.typeText("Guest input regression")
-        let calendar = form.popUpButtons["compass-event-form-calendar"]
+        let calendar = form.buttons["compass-event-form-calendar"]
+        XCTAssertTrue(calendar.waitForExistence(timeout: 8))
         calendar.click()
         app.menuItems["Work"].click()
         window.typeKey("8", modifierFlags: [.command])

@@ -5,7 +5,9 @@ import XCTest
 @MainActor
 final class NativeCalendarRootModelEventJumpTests: XCTestCase {
     func testToggleEventJumpModeShowsQuickTimeSlots() async throws {
-        let model = try await NativeCalendarRootModel.makeForUnitTests()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment)
+        await model.start()
         EffectiveTimeZone.identifier = "UTC"
         model.goToDate(CompassDateParsing.calendarDateInEffectiveTimeZone("2026-05-18")!)
         XCTAssertFalse(model.eventJumpSelection.modeActive)

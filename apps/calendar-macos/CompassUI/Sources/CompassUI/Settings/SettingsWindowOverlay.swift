@@ -13,7 +13,7 @@ public struct SettingsWindowOverlay: View {
     public var body: some View {
         if model.settingsStore.isPresented {
             GeometryReader { geometry in
-                ZStack {
+                ZStack(alignment: .top) {
                     theme.panelBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { model.closeSettingsIfAllowed() }
@@ -44,6 +44,8 @@ public struct SettingsWindowOverlay: View {
                         height: min(620, max(0, geometry.size.height - 32))
                     )
                     .overlayPanelChrome()
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.top, geometry.size.height * 0.05)
                 }
             }
             .accessibilityIdentifier("compass-native-settings")
