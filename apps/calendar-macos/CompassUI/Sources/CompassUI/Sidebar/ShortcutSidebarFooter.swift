@@ -6,6 +6,7 @@ struct ShortcutSidebarFooter: View {
     @Bindable var levelsStore: LevelsStore
     var isEventFormVisible: Bool = false
     var suppressTips: Bool = false
+    var suppressForQuickTime: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,9 +24,11 @@ struct ShortcutSidebarFooter: View {
                     }
             }
 
-            if isEventFormVisible, !levelsStore.tipsMuted, !suppressTips {
+            if isEventFormVisible, !levelsStore.tipsMuted, !suppressTips, !suppressForQuickTime {
                 eventFormSaveHint
-            } else if !levelsStore.badgeHidden, !suppressTips, let tip = levelsStore.currentTip {
+            } else if !levelsStore.badgeHidden, !suppressTips, !suppressForQuickTime,
+                let tip = levelsStore.currentTip
+            {
                 HStack(spacing: 8) {
                     Text("Try \(tip.label)")
                         .font(.rubik(11))
