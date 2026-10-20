@@ -25,7 +25,7 @@ enum SVGPathParser {
         var y: Double
     }
 
-    static func makePath(
+    fileprivate static func makePath(
         d: String,
         transform: (Point) -> CGPoint
     ) -> CGPath {
