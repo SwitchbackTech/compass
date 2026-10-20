@@ -207,7 +207,7 @@ public struct RootView: View {
             ShortcutSidebarFooter(
                 levelsStore: model.levelsStore,
                 isEventFormVisible: model.isEventFormVisible,
-                suppressTips: model.eventJumpStatusText != nil,
+                suppressTips: model.eventJumpStatusText != nil || model.focusStore.pageJumpHintsVisible,
                 suppressForQuickTime: !model.draftStore.quickTimeDigits.isEmpty)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)

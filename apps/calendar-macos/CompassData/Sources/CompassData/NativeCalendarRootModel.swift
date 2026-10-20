@@ -1047,6 +1047,9 @@ public final class NativeCalendarRootModel {
         )
         scenario.draftOverlay = draftOverlayForPresentation()
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
+        let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
+        let showDayJumpPrefixes =
+            !isEventFormVisible && (focusStore.pageJumpHintsVisible || eventJumpActive)
         timeGridState = TimeGridState(
             layoutMode: layoutMode(),
             referenceNow: referenceNow,
@@ -1059,6 +1062,9 @@ public final class NativeCalendarRootModel {
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
+            showDayJumpPrefixes: showDayJumpPrefixes,
+            dayJumpUseShiftPrefix: !eventJumpSelection.modeActive,
+            eventJumpActiveDayKeys: eventJumpSelection.activeDayKeys,
             hasSecondaryTimeZone: hasSecondaryTimeZone,
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
