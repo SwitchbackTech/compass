@@ -56,6 +56,9 @@ final class DesktopDebugCommandTests: XCTestCase {
         XCTAssertEqual(
             DesktopDebugCommand.parse("compass://debug/parity-apply-capture-window"),
             .parityApplyCaptureWindow)
+        XCTAssertEqual(
+            DesktopDebugCommand.parse("compass://debug/parity-export-title-bar-reference"),
+            .parityExportTitleBarReference)
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/parity-export?name=not-a-surface"))
 
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/unknown"))

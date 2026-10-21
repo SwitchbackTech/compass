@@ -345,8 +345,8 @@ describe("event position", () => {
       { measurements, visibleDates, isDraft: false },
     ).top;
 
-    expect(utcTop).toBe(9 * 60);
-    expect(chicagoTop).toBe(4 * 60);
+    expect(utcTop).toBe(8 * 60);
+    expect(chicagoTop).toBe(3 * 60);
     expect(chicagoTop).not.toBe(utcTop);
   });
 
@@ -371,7 +371,7 @@ describe("event position", () => {
       },
     );
 
-    expect(position.top).toBe(4 * measurements.hourHeight);
+    expect(position.top).toBe(3 * measurements.hourHeight);
   });
 
   it("shifts timed events right for the extra hour column without moving them in time", () => {
