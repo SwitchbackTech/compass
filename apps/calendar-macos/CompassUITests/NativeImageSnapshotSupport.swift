@@ -153,12 +153,53 @@ enum NativeImageSnapshotSupport {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        if let outDir = parityOutputDirectory,
+           let windowID = waitForParityWindowId(in: outDir),
+           let screencap = screencaptureWindowPNG(windowID: windowID, in: outDir)
+        {
+            attachPNG(screencap, named: "mac-title-bar-full-window")
+            return
+        }
         let png = window.screenshot().pngRepresentation
         guard !png.isEmpty else {
             XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
             return
         }
         attachPNG(png, named: "mac-title-bar-full-window")
+    }
+
+    private static func waitForParityWindowId(in outDir: String, timeout: TimeInterval = 8) -> String? {
+        let path = (outDir as NSString).appendingPathComponent("parity-window-id.txt")
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if let raw = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) {
+                let id = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !id.isEmpty, id.allSatisfy(\.isNumber) {
+                    return id
+                }
+            }
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        }
+        return nil
+    }
+
+    private static func screencaptureWindowPNG(windowID: String, in outDir: String) -> Data? {
+        let dest = (outDir as NSString).appendingPathComponent("_mac_title_bar_screencap.png")
+        try? FileManager.default.removeItem(atPath: dest)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/screencapture")
+        process.arguments = ["-l", windowID, "-x", dest]
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return nil
+        }
+        guard process.terminationStatus == 0,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: dest)),
+              !data.isEmpty
+        else { return nil }
+        return data
     }
 
     @MainActor

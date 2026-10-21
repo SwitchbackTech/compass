@@ -333,7 +333,8 @@ public struct RootView: View {
                 titleBarNavButton(
                     label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
                     icon: .sidebarSimple,
-                    iconSize: 21
+                    iconSize: 21,
+                    iconColor: theme.textColor
                 ) {
                     model.isSidebarOpen.toggle()
                 }
@@ -342,6 +343,8 @@ public struct RootView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
+            .compositingGroup()
+            .drawingGroup()
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -413,10 +416,11 @@ public struct RootView: View {
         label: String,
         icon: PhosphorIcon,
         iconSize: CGFloat = 16,
+        iconColor: Color? = nil,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            PhosphorIconView(icon: icon, size: iconSize, color: theme.textMutedColor)
+            PhosphorIconView(icon: icon, size: iconSize, color: iconColor ?? theme.textMutedColor)
                 .frame(width: max(24, iconSize + 3), height: max(24, iconSize + 3))
                 .contentShape(Rectangle())
         }

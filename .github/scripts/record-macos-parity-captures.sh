@@ -302,8 +302,8 @@ def assert_sidebar_toggle_icon(image: Image.Image) -> None:
 
     if len(dark_points) < 18 * scale:
         raise SystemExit(
-            "missing sidebar toggle icon in top-right title bar row "
-            f"(found {len(dark_points)} dark pixels in right ~60px × top 52px band)"
+            "missing sidebar toggle icon beside the content track "
+            f"(found {len(dark_points)} dark pixels in x=[{x_start},{x_end}) y=[{8 * scale},{band_bottom}))"
         )
 
     xs = {x for x, _ in dark_points}
