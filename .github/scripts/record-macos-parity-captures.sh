@@ -371,16 +371,40 @@ export_attachments(raw)
 bounds_attachment = find_attachment(raw, "parity-toggle-bounds.json")
 if bounds_attachment and not os.path.isfile(os.path.join(out, "parity-toggle-bounds.json")):
     shutil.copyfile(bounds_attachment, os.path.join(out, "parity-toggle-bounds.json"))
-full_window = find_attachment(raw, "mac-title-bar-full-window")
-window_top = os.path.join(out, "parity-window-top.png")
 native_window_png = os.path.join(out, "mac-title-bar-full-window.png")
-if full_window and not os.path.isfile(native_window_png):
-    shutil.copyfile(full_window, native_window_png)
+attachment_window = find_attachment(raw, "mac-title-bar-full-window")
+if os.path.isfile(native_window_png) and os.path.getsize(native_window_png) > 1000:
+    full_window = native_window_png
+    title_bar_source = "xctest-export"
+elif attachment_window:
+    full_window = attachment_window
+    title_bar_source = "xctest-attachment"
+else:
+    full_window = None
+    title_bar_source = None
 window_id_path = os.path.join(out, "parity-window-id.txt")
 screencap_path = os.path.join(out, "_parity_window_screencap.png")
 metrics_path = os.path.join(out, "parity-window-metrics.txt")
 if os.path.isfile(metrics_path):
     print(open(metrics_path).read(), file=sys.stderr)
+
+# XCUITest window screenshots include traffic lights; `screencapture -l` on CI
+# often crops them out of the client area. Use screencapture only when the
+# attachment export is missing (#4637).
+if full_window is None and os.path.isfile(window_id_path):
+    with open(window_id_path) as handle:
+        window_id = handle.read().strip()
+    if window_id.isdigit():
+        os.system(f'screencapture -l {window_id} -x "{screencap_path}" 2>/dev/null')
+        if os.path.isfile(screencap_path) and os.path.getsize(screencap_path) > 1000:
+            full_window = screencap_path
+            title_bar_source = "screencapture-window"
+
+if full_window is None:
+    raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
+
+if not os.path.isfile(native_window_png):
+    shutil.copyfile(full_window, native_window_png)
 
 def validate_title_bar_band(band: Image.Image, source: str) -> None:
     assert_traffic_lights(band)
@@ -393,43 +417,12 @@ def validate_title_bar_band(band: Image.Image, source: str) -> None:
         )
     assert_sidebar_toggle_icon(band, out)
 
-candidates: list[tuple[str, str]] = []
-if os.path.isfile(native_window_png) and os.path.getsize(native_window_png) > 1000:
-    candidates.append(("native-full-window", native_window_png))
-if full_window:
-    candidates.append(("xcui-attachment", full_window))
-if os.path.isfile(window_id_path):
-    with open(window_id_path) as handle:
-        window_id = handle.read().strip()
-    if window_id.isdigit():
-        os.system(f'screencapture -l {window_id} -x "{screencap_path}" 2>/dev/null')
-        if os.path.isfile(screencap_path) and os.path.getsize(screencap_path) > 1000:
-            candidates.append(("screencapture-window", screencap_path))
-if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
-    candidates.append(("parity-window-top", window_top))
-
-if not candidates:
-    raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
-
-errors: list[str] = []
-chosen = None
-for name, src in candidates:
-    try:
-        if os.path.isfile(path):
-            os.remove(path)
-        crop_title_bar(src, path)
-        band = Image.open(path).convert("RGBA")
-        validate_title_bar_band(band, name)
-        chosen = name
-        break
-    except SystemExit as exc:
-        errors.append(f"{name}: {exc}")
-        if os.path.isfile(path):
-            os.remove(path)
-
-if chosen is None:
-    raise SystemExit("No valid title bar capture:\n" + "\n".join(errors))
-print(f"mac-title-bar source: {chosen}", file=sys.stderr)
+if os.path.isfile(path):
+    os.remove(path)
+crop_title_bar(full_window, path)
+band = Image.open(path).convert("RGBA")
+validate_title_bar_band(band, title_bar_source or "xctest-attachment")
+print(f"mac-title-bar source: {title_bar_source}", file=sys.stderr)
 
 if not os.path.isfile(path):
     raise SystemExit("Missing mac-title-bar.png (title bar marketing reference)")
