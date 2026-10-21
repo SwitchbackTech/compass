@@ -242,7 +242,7 @@ public final class DescriptionTextView: NSTextView {
     @objc func toggleNumberedList(_ sender: Any?) { toggleList(ordered: true) }
     @objc func toggleBulletList(_ sender: Any?) { toggleList(ordered: false) }
 
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if event.modifierFlags.contains(.command) {
             switch event.charactersIgnoringModifiers?.lowercased() {
             case "b":
@@ -261,7 +261,7 @@ public final class DescriptionTextView: NSTextView {
         return super.performKeyEquivalent(with: event)
     }
 
-    override func mouseDown(with event: NSEvent) {
+    public override func mouseDown(with event: NSEvent) {
         if event.modifierFlags.contains(.command),
             let link = link(at: event.locationInWindow)
         {
@@ -309,7 +309,7 @@ public final class DescriptionTextView: NSTextView {
         onFormattingChange?()
     }
 
-    override func insertNewline(_ sender: Any?) {
+    public override func insertNewline(_ sender: Any?) {
         guard isEditable, let storage = textStorage else { return }
         let range = paragraphRange(containing: NSRange(location: selectedRange().location, length: 0))
         guard range.length > 0,

@@ -1,3 +1,4 @@
+import CompassKit
 import Foundation
 
 enum DescriptionLinkPresentation {
