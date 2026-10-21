@@ -59,6 +59,7 @@ public struct RootView: View {
                 }
             }
             titleBarChrome
+                .frame(maxWidth: .infinity, alignment: .leading)
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -362,6 +363,17 @@ public struct RootView: View {
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
         .frame(maxWidth: .infinity, alignment: .top)
+        .frame(width: mainTrackColumnWidth, alignment: .topLeading)
+    }
+
+    /// Main calendar column width during parity capture (excludes open sidebar chrome).
+    private var mainTrackColumnWidth: CGFloat? {
+        guard UITestLaunchPolicy.isParityCapture else { return nil }
+        let sidebarChrome: CGFloat =
+            (model.isSidebarOpen || model.isEventFormVisible)
+            ? sidebarDividerWidth + model.sidebarWidth
+            : 0
+        return CGFloat(ParityCaptureGeometry.viewportWidth) - sidebarChrome
     }
 
     private var content: some View {

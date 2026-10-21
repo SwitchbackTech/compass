@@ -52,8 +52,17 @@ struct TitleBarSidebarToggle: NSViewRepresentable {
             .frame(width: 21, height: 21)
             let renderer = ImageRenderer(content: icon)
             renderer.scale = 2
-            button.image = renderer.nsImage
+            if let image = renderer.nsImage, image.size.width > 0 {
+                button.image = image
+            } else if let symbol = NSImage(
+                systemSymbolName: "sidebar.right",
+                accessibilityDescription: label
+            ) {
+                symbol.isTemplate = true
+                button.image = symbol
+            }
             button.contentTintColor = NSColor(theme.textMutedColor)
+            button.wantsLayer = true
         }
     }
 }
