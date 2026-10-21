@@ -280,13 +280,16 @@ def reject_bottom_of_window(image: Image.Image) -> None:
 
 
 def assert_sidebar_toggle_icon(image: Image.Image) -> None:
-    """Require a phosphor-style icon cluster in the top-right title row (web parity)."""
+    """Require a phosphor-style icon cluster beside the content track (web CalendarHeader)."""
     px = image.load()
     width, height = image.size
     scale = max(1, width // 1280)
     band_bottom = min(height, 52 * scale)
-    x_start = max(0, width - 60 * scale)
-    x_end = max(x_start + 1, width - 8 * scale)
+    # Parity captures keep the sidebar open @ 345px + 32px divider (see ParityCaptureGeometry).
+    sidebar_chrome = int((32 + 345) * scale)
+    track_right = max(0, width - sidebar_chrome)
+    x_end = max(0, track_right - 8 * scale)
+    x_start = max(0, track_right - 60 * scale)
 
     dark_points: list[tuple[int, int]] = []
     for y in range(8 * scale, band_bottom):

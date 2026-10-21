@@ -332,17 +332,27 @@ public struct RootView: View {
 
                 titleBarNavButton(
                     label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-                    icon: .sidebarSimple
+                    icon: .sidebarSimple,
+                    iconSize: 21
                 ) {
                     model.isSidebarOpen.toggle()
                 }
                 .accessibilityIdentifier("compass-native-sidebar-toggle")
-                .padding(.trailing, 20)
+                .padding(.trailing, titleBarTrailingInset)
             }
             .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    /// Web `CalendarHeader`: toggle sits on the right of the main column, not over the sidebar.
+    private var titleBarTrailingInset: CGFloat {
+        let sidebarGutter: CGFloat =
+            (model.isSidebarOpen || model.isEventFormVisible)
+            ? sidebarDividerWidth + model.sidebarWidth
+            : 0
+        return sidebarGutter + 20
     }
 
     private var content: some View {
@@ -402,11 +412,12 @@ public struct RootView: View {
     private func titleBarNavButton(
         label: String,
         icon: PhosphorIcon,
+        iconSize: CGFloat = 16,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            PhosphorIconView(icon: icon, size: 16, color: theme.textMutedColor)
-                .frame(width: 24, height: 24)
+            PhosphorIconView(icon: icon, size: iconSize, color: theme.textMutedColor)
+                .frame(width: max(24, iconSize + 3), height: max(24, iconSize + 3))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

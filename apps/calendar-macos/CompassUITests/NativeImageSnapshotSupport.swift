@@ -122,11 +122,23 @@ enum NativeImageSnapshotSupport {
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
         let toggleMinX = sidebarToggle.frame.minX - window.frame.minX
+        let toggleMaxX = sidebarToggle.frame.maxX - window.frame.minX
         let windowWidth = window.frame.width
+        // Web: toggle is on the main column's right edge, left of the open sidebar (~345+32).
+        let sidebarChrome: CGFloat = 345 + 32
+        let contentTrackRight = windowWidth - sidebarChrome
+        XCTAssertGreaterThan(
+            toggleMaxX,
+            contentTrackRight - 72,
+            "Sidebar toggle should sit near the content-track edge (maxX \(toggleMaxX), track ends ~\(contentTrackRight))")
+        XCTAssertLessThan(
+            toggleMaxX,
+            contentTrackRight + 8,
+            "Sidebar toggle should not paint over the sidebar panel (maxX \(toggleMaxX), track ends ~\(contentTrackRight))")
         XCTAssertGreaterThan(
             toggleMinX,
-            windowWidth * 0.72,
-            "Sidebar toggle should sit in the top-right title bar row (got minX \(toggleMinX) in \(windowWidth)pt window)")
+            windowWidth * 0.45,
+            "Sidebar toggle should stay in the right half of the window (minX \(toggleMinX))")
         let headerTitle = window.buttons["compass-native-header-title"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(
