@@ -1,19 +1,16 @@
 import type React from "react";
 import { type MouseEvent, useCallback } from "react";
-import { type EventFormActionListOptions } from "@core/shortcuts/event-form-actions";
 import { Btn } from "@web/components/Button/Button";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { pulseClickTaughtShortcut } from "@web/shortcuts/pointer-intent/pulseClickTaughtShortcut";
 import { isRealMouseClick } from "@web/shortcuts/pointer-intent/real-mouse-click";
-import { FormActionsShortcutList } from "@web/views/Forms/EventForm/FormActionsShortcutList";
 
 interface Props {
   saveText?: string;
   cancelText?: string;
   onSubmit: () => void;
   onCancel?: () => void;
-  actionListOptions?: EventFormActionListOptions;
 }
 
 export const SaveSection: React.FC<Props> = ({
@@ -21,7 +18,6 @@ export const SaveSection: React.FC<Props> = ({
   cancelText = "Cancel",
   onSubmit,
   onCancel,
-  actionListOptions,
 }) => {
   const onSaveClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
@@ -61,9 +57,6 @@ export const SaveSection: React.FC<Props> = ({
           keys={["Mod", "Enter"]}
         />
       </Btn>
-      {actionListOptions ? (
-        <FormActionsShortcutList {...actionListOptions} />
-      ) : null}
     </div>
   );
 };

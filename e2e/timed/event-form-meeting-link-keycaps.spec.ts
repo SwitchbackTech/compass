@@ -84,11 +84,6 @@ test("shows meeting-link copy keycaps and copies with Mod+Shift+L", async ({
   await expect(
     meetCopy.locator("xpath=..").getByTestId("l-icon"),
   ).toBeVisible();
-  await expect(
-    form
-      .getByRole("list", { name: "Event form shortcuts" })
-      .getByText("Copy meeting link"),
-  ).toBeVisible();
 
   await page.evaluate(() => {
     (window as unknown as { __copied?: string }).__copied = "";
@@ -111,13 +106,20 @@ test("shows meeting-link copy keycaps and copies with Mod+Shift+L", async ({
     )
     .toBe(MEET_URL);
 
-  await page.screenshot({
+  await page.setViewportSize({ width: 1440, height: 960 });
+  const meetLink = form.getByRole("link", { name: "Google Meet" });
+  await meetLink.scrollIntoViewIfNeeded();
+  await expect(meetLink).toBeInViewport();
+  await expect(
+    meetCopy.locator("xpath=..").getByTestId("l-icon"),
+  ).toBeInViewport();
+
+  const sidebar = page.locator("#sidebar");
+  await sidebar.screenshot({
     path: "/opt/cursor/artifacts/event-form-meeting-link-keycaps.png",
-    fullPage: true,
   });
 
-  await page.screenshot({
+  await sidebar.screenshot({
     path: testInfo.outputPath("event-form-meeting-link-keycaps.png"),
-    fullPage: true,
   });
 });

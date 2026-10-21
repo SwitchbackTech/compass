@@ -16,8 +16,8 @@ export type EventFormActionListOptions = {
 };
 
 /**
- * Rows for the in-form actions list and command palette. Conditional entries
- * are omitted when they cannot fire, so keycap hints never advertise dead keys.
+ * Command palette rows while the event form is open. Conditional entries are
+ * omitted when they cannot fire, so palette labels never advertise dead keys.
  */
 export function listEventFormActions(
   options: EventFormActionListOptions,

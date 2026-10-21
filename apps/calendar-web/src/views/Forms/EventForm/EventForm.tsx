@@ -1179,15 +1179,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   ))}
                 </ul>
               ) : null}
-              <SaveSection
-                actionListOptions={{
-                  hasMeetingLink: Boolean(meetingLinkUrl),
-                  isExistingEvent,
-                  isReadOnly,
-                  showBookingFormActions,
-                }}
-                onSubmit={() => onSubmitForm("click")}
-              />
+              <SaveSection onSubmit={() => onSubmitForm("click")} />
             </>
           )}
         </EventFormShell>
