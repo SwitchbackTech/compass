@@ -1,7 +1,7 @@
 /**
  * Day-prefix event jump labels.
  *
- * SU/M/T/W/R/F/SA + per-day chronological index (W4, SU1, F10), in both week
+ * su/m/t/w/r/f/sa + per-day chronological index (w4, su1, f10), in both week
  * and day view. Day view groups on the single date it shows, so its labels are
  * that weekday's prefix (W1, W2, …). One scheme for both views is what keeps a
  * bare digit free everywhere for quick-time create (shortcuts/quick-time).

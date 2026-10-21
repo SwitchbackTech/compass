@@ -76,7 +76,7 @@ describe("ShiftHintOverlay", () => {
 
     render(<ShiftHintOverlay hints={[hintFor(event)]} />);
 
-    expect(overlayRoot()?.textContent).toBe("M1");
+    expect(overlayRoot()?.textContent).toBe("m1");
     expect(overlayChip()?.style.top).toBe("224px");
     expect(overlayChip()?.style.left).toBe("214px");
   });
@@ -108,7 +108,7 @@ describe("ShiftHintOverlay", () => {
 
     render(<ShiftHintOverlay hints={[hintFor(event, "su1")]} />);
 
-    expect(overlayChip()?.textContent).toBe("SU1");
+    expect(overlayChip()?.textContent).toBe("su1");
     expect(overlayChip()?.style.top).toBe("204px");
     expect(overlayChip()?.style.left).toBe("206px");
   });

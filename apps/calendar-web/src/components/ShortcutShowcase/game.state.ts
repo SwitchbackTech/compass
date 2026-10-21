@@ -536,7 +536,7 @@ export const getDisplayKeycaps = (
 ): readonly string[] => {
   if (task.type === "eventJump") {
     const letter = getJumpLetters(state.practice)[task.targetEventId];
-    return letter ? [...task.keycaps, letter.toUpperCase()] : task.keycaps;
+    return letter ? [...task.keycaps, letter] : task.keycaps;
   }
   if (
     (task.type === "palette" && state.simOverlay === "palette") ||
