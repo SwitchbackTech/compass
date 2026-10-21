@@ -5,6 +5,8 @@ import { AuthCallbackOverlay } from "@web/auth/callback/AuthCallbackOverlay";
 import { DesktopOAuthCallbackRelay } from "@web/auth/callback/DesktopOAuthCallbackRelay";
 import { shouldRelayDesktopOAuthCallback } from "@web/auth/callback/desktop-oauth-callback-relay";
 import { reportAuthCallbackCrash } from "@web/auth/callback/report-auth-callback-crash";
+import { resolveStaleProviderOAuthReplay } from "@web/auth/callback/resolve-stale-provider-oauth-replay";
+import { stripOAuthCallbackQueryFromHistory } from "@web/auth/callback/strip-oauth-callback-url";
 import { useOneShotAuthCallback } from "@web/auth/callback/useOneShotAuthCallback";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { trackOAuthSignupFailed } from "@web/auth/posthog/oauth-signup-funnel";
@@ -40,6 +42,17 @@ export async function completeProviderAuthCallback({
   navigate,
   search,
 }: CompleteProviderAuthCallbackOptions): Promise<void> {
+  stripOAuthCallbackQueryFromHistory();
+
+  const staleReturnPath = await resolveStaleProviderOAuthReplay({
+    provider,
+    search,
+  });
+  if (staleReturnPath) {
+    navigate(staleReturnPath, { replace: true });
+    return;
+  }
+
   // Before any branch: a user who came back from the provider is counted even
   // when the exchange below fails.
   recordOAuthSignInCallbackLanding(provider, search);
