@@ -31,41 +31,24 @@ public struct PhosphorIconView: View {
             .frame(width: size, height: size)
             .scaleEffect(x: mirrored ? -1 : 1, y: 1)
 
-        if UITestLaunchPolicy.isParityCapture {
-            MacRasterizedIcon(size: size, content: vector)
+        if UITestLaunchPolicy.isParityCapture,
+           let image = Self.rasterize(content: vector, size: size)
+        {
+            Image(nsImage: image)
+                .resizable()
+                .interpolation(.high)
+                .antialiased(true)
+                .frame(width: size, height: size)
         } else {
             vector
         }
     }
-}
 
-/// Vector fills can be absent from window PNGs while accessibility still reports the control.
-private struct MacRasterizedIcon<Content: View>: View {
-    let size: CGFloat
-    let content: Content
-    @State private var image: NSImage?
-
-    var body: some View {
-        Group {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .frame(width: size, height: size)
-            } else {
-                Color.clear
-                    .frame(width: size, height: size)
-                    .onAppear(perform: render)
-            }
-        }
-    }
-
-    private func render() {
+    private static func rasterize<Content: View>(content: Content, size: CGFloat) -> NSImage? {
         let renderer = ImageRenderer(
             content: content.frame(width: size, height: size)
         )
         renderer.scale = 2
-        image = renderer.nsImage
+        return renderer.nsImage
     }
 }

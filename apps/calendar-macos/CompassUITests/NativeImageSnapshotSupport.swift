@@ -142,7 +142,8 @@ enum NativeImageSnapshotSupport {
             NSWorkspace.shared.open(url)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        // Parity icons rasterize synchronously; allow one frame for AppKit layout.
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.0))
         attachToggleProbeBounds(
             minX: toggleMinX,
             maxX: toggleMaxX,

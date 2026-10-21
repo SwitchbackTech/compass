@@ -356,9 +356,15 @@ public struct RootView: View {
 
                 Spacer(minLength: 0)
 
-                TitleBarSidebarToggle(model: model)
-                    .frame(width: 24, height: 24)
-                    .padding(.trailing, 20)
+                titleBarNavButton(
+                    label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
+                    icon: .sidebarSimple,
+                    mirrored: true
+                ) {
+                    model.isSidebarOpen.toggle()
+                }
+                .padding(.trailing, 20)
+                .compositingGroup()
             }
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
@@ -433,10 +439,16 @@ public struct RootView: View {
     private func titleBarNavButton(
         label: String,
         icon: PhosphorIcon,
+        mirrored: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            PhosphorIconView(icon: icon, size: 16, color: theme.textMutedColor)
+            PhosphorIconView(
+                icon: icon,
+                size: 16,
+                color: theme.textMutedColor,
+                mirrored: mirrored
+            )
                 .frame(width: 24, height: 24)
                 .contentShape(Rectangle())
         }

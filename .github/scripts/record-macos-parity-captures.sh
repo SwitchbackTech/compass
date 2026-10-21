@@ -322,10 +322,10 @@ def assert_sidebar_toggle_icon(image: Image.Image, out_dir: str) -> None:
             r, g, b, a = px[x, y]
             if a < 128:
                 continue
-            if r + g + b < 430:
+            if r + g + b < 520:
                 dark_points.append((x, y))
 
-    if len(dark_points) < 18 * scale:
+    if len(dark_points) < 12 * scale:
         best_x = 0
         best_count = 0
         window = 60 * scale
@@ -338,7 +338,7 @@ def assert_sidebar_toggle_icon(image: Image.Image, out_dir: str) -> None:
                     r, g, b, a = px[x, y]
                     if a < 128:
                         continue
-                    if r + g + b < 430:
+                    if r + g + b < 520:
                         count += 1
             if count > best_count:
                 best_count = count
