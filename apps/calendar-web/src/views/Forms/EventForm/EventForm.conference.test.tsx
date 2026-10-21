@@ -22,6 +22,13 @@ import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut"
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+const copyMeetingLinkUrl = mock(async () => true);
+
+mock.module("@web/views/Forms/EventForm/conference-link.util", () => ({
+  copyMeetingLinkUrl,
+  MEETING_LINK_COPIED_TOAST_ID: "meeting-link-copied",
+}));
+
 // The "Add Google Meet" switch: offered on a create draft whose target
 // calendar advertises a conference kind, never on an edit (sync has no
 // conference channel on update), and reachable through the `e m` leader
@@ -223,5 +230,30 @@ describe("EventForm meeting link switch", () => {
     expect(
       screen.getByRole("button", { name: "copy meeting link" }),
     ).toBeInTheDocument();
+  });
+
+  it("copies the meeting link with Mod+Shift+L while the title field is focused", () => {
+    copyMeetingLinkUrl.mockClear();
+    const calendar = makeCalendar();
+    renderEventForm(editDraftWithLink(calendar.id), [calendar]);
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    titleField.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        key: "l",
+        metaKey: resolveModifier("Mod") === "Meta",
+        ctrlKey: resolveModifier("Mod") === "Control",
+        shiftKey: true,
+      }),
+    );
+
+    expect(copyMeetingLinkUrl).toHaveBeenCalledWith(
+      "https://meet.google.com/abc-defg-hij",
+    );
   });
 });

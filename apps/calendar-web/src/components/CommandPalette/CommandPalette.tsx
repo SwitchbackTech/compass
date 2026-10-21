@@ -26,6 +26,7 @@ import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.c
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
+import { useEventFormCmdItems } from "@web/components/CommandPalette/hooks/useEventFormCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useMeetingPageCmdItems } from "@web/components/CommandPalette/hooks/useMeetingPageCmdItems";
 import { usePaletteLegendCmdItems } from "@web/components/CommandPalette/hooks/usePaletteLegendCmdItems";
@@ -428,10 +429,20 @@ export const CommandPalette = ({
   const notificationCmdItems = useNotificationCmdItems();
   const legendCmdItems = usePaletteLegendCmdItems();
   const shortcutTipsCmdItems = useShortcutTipsCmdItems();
+  const eventFormCmdItems = useEventFormCmdItems();
   const { undo, redo, canUndo, canRedo } = useUndoRedo(mutationDependencies);
   const recentCommandIds = useRecentCommandIds();
 
   const sections: CommandSection[] = [
+    ...(eventFormCmdItems.length > 0
+      ? [
+          {
+            id: "event-form",
+            heading: "Event form",
+            items: eventFormCmdItems,
+          } satisfies CommandSection,
+        ]
+      : []),
     {
       id: "navigation",
       heading: "Navigation",

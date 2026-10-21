@@ -556,6 +556,15 @@
         }
       },
       {
+        "id": "edit-copy-meeting-link",
+        "keys": ["Mod", "Shift", "L"],
+        "label": "Copy meeting link",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        }
+      },
+      {
         "id": "edit-open-description-link",
         "keys": ["Mod", "Shift", "Enter"],
         "label": "Open link under description caret",
