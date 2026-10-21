@@ -355,16 +355,23 @@ public struct RootView: View {
         Button {
             model.isSidebarOpen.toggle()
         } label: {
-            PhosphorIconView(
-                icon: .sidebarSimple,
-                size: 21,
-                color: theme.textMutedColor,
-                mirrored: true
-            )
+            ZStack {
+                if UITestLaunchPolicy.isParityCapture {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(theme.borderColor)
+                }
+                PhosphorIconView(
+                    icon: .sidebarSimple,
+                    size: 21,
+                    color: UITestLaunchPolicy.isParityCapture ? theme.textColor : theme.textMutedColor,
+                    mirrored: true
+                )
+            }
             .frame(width: 24, height: 24)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .opacity(1)
         .help(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
         .accessibilityLabel(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
         .accessibilityIdentifier("compass-native-sidebar-toggle")
