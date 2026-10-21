@@ -783,6 +783,13 @@ public final class NativeCalendarRootModel {
             monthPickerMonth = viewStore.anchorDate
         case "calendars":
             focusCalendarList()
+        case let id where id.hasPrefix(PageJumpTargets.calendarAccountPrefix):
+            // Web clicks a collapsed heading so the jump shows its calendars.
+            let key = String(id.dropFirst(PageJumpTargets.calendarAccountPrefix.count))
+            if isAccountCollapsed(key) {
+                toggleAccountCollapsed(key)
+            }
+            focusCalendarList(key)
         case let id where id.hasPrefix(PageJumpTargets.dayColumnPrefix):
             let calendarId = String(id.dropFirst(PageJumpTargets.dayColumnPrefix.count))
             focusDayColumn(calendarId: calendarId)
@@ -1220,11 +1227,14 @@ public final class NativeCalendarRootModel {
 
     private func nativePageJumpTargets() -> [PageJumpTarget] {
         let resolved: [PageJumpTargets.Resolved]
+        let accounts: [(key: String, label: String)] = calendarListGroups.compactMap { group in
+            group.account.map { (key: group.id, label: $0) }
+        }
         if viewStore.view == .day {
             let displayed = visibleCalendars().map { (id: $0.id, name: $0.name) }
-            resolved = PageJumpTargets.buildDayPageJumpTargets(displayedCalendars: displayed)
+            resolved = PageJumpTargets.buildDayPageJumpTargets(displayedCalendars: displayed, accounts: accounts)
         } else {
-            resolved = PageJumpTargets.buildSidebarPageJumpTargets()
+            resolved = PageJumpTargets.buildSidebarPageJumpTargets(accounts: accounts)
         }
         return resolved.map { target in
             PageJumpTarget(id: target.id, digit: target.digit, label: target.label)
