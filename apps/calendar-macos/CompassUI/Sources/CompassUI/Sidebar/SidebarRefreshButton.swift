@@ -1,4 +1,5 @@
 import CompassData
+import CompassKit
 import SwiftUI
 
 /// Web `SidebarRefreshButton`: offered once live updates have been down a
@@ -13,15 +14,18 @@ struct SidebarRefreshButton: View {
                 Button {
                     model.refreshFromSidebar()
                 } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
-                        .font(.rubik(12))
-                        .foregroundStyle(theme.textMutedColor)
-                        .padding(.horizontal, 8)
-                        .frame(height: 36)
-                        .contentShape(Rectangle())
+                    HStack(spacing: 6) {
+                        PhosphorIconView(icon: .arrowClockwise, size: 16)
+                        Text("Refresh")
+                            .font(.rubik(12))
+                            .foregroundStyle(theme.textMutedColor)
+                    }
+                    .padding(.horizontal, 8)
+                    .frame(height: 36)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Reload for the latest calendar")
+                .help("Reload for the latest version")
             }
         }
     }

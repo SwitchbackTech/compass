@@ -234,9 +234,15 @@ describe("GoogleEventReaderAdapter", () => {
       calendarId: "primary@google.com",
     });
 
-    expect(warnings).toEqual([
-      "Skipped unusable Google event no-etag (missingIdentity)",
-    ]);
+    expect(warnings).toHaveLength(1);
+    expect(
+      warnings[0]?.startsWith(
+        "Skipped unusable Google event no-etag (missingIdentity)",
+      ),
+    ).toBe(true);
+    expect(warnings[0]).toContain("message=Event carried no etag");
+    expect(warnings[0]).toContain("fields={");
+    expect(warnings[0]).not.toContain("Secret title");
   });
 
   it("skips a content-oversized event instead of failing the whole page", async () => {

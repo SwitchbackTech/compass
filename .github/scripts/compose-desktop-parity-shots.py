@@ -22,8 +22,17 @@ SIDEBAR_WIDTH = 345
 CONTENT_TRACK_WIDTH = (
     VIEWPORT_WIDTH - CONTENT_LEADING_INSET - SIDEBAR_DIVIDER_WIDTH - SIDEBAR_WIDTH
 )
+# Web keeps calendar header inside the 1280×820 viewport; macOS uses a unified title bar.
+WEB_CALENDAR_HEADER_HEIGHT = 48
+MAC_MAIN_CONTENT_TOP = 52
 GRID_CROP = (0, 0, CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, VIEWPORT_HEIGHT)
 SIDEBAR_CROP = (CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
+
+
+def grid_region_crop(*, macos: bool) -> tuple[int, int, int, int]:
+    left, _, right, bottom = GRID_CROP
+    top = MAC_MAIN_CONTENT_TOP if macos else WEB_CALENDAR_HEADER_HEIGHT
+    return (left, top, right, bottom)
 
 SURFACES = (
     "week-grid",
@@ -138,13 +147,17 @@ def stack_pair(macos: Path, web: Path, title: str, out: Path) -> None:
     print(out)
 
 
-def regional_outputs(surface: str) -> Iterable[tuple[str, tuple[int, int, int, int]]]:
+def regional_outputs(
+    surface: str,
+) -> Iterable[tuple[str, tuple[int, int, int, int], tuple[int, int, int, int]]]:
     if surface in GRID_REGION_SURFACES:
-        yield ("grid", GRID_CROP)
+        yield ("grid", grid_region_crop(macos=True), grid_region_crop(macos=False))
     if surface in SIDEBAR_REGION_SURFACES:
-        yield ("sidebar", SIDEBAR_CROP)
+        box = SIDEBAR_CROP
+        yield ("sidebar", box, box)
     if surface in MODAL_REGION_SURFACES:
-        yield ("modal", modal_crop(surface))
+        box = modal_crop(surface)
+        yield ("modal", box, box)
 
 
 def main() -> None:
@@ -171,11 +184,11 @@ def main() -> None:
         )
         macos_full = load_rgb(macos_path)
         web_full = load_rgb(web_path)
-        for region_name, box in regional_outputs(surface):
+        for region_name, mac_box, web_box in regional_outputs(surface):
             macos_crop = args.macos_dir / f"{surface}-{region_name}.png"
             web_crop = args.web_dir / f"{surface}-{region_name}.png"
-            crop_box(macos_full, box).save(macos_crop, format="PNG", optimize=True)
-            crop_box(web_full, box).save(web_crop, format="PNG", optimize=True)
+            crop_box(macos_full, mac_box).save(macos_crop, format="PNG", optimize=True)
+            crop_box(web_full, web_box).save(web_crop, format="PNG", optimize=True)
             stack_pair(
                 macos_crop,
                 web_crop,

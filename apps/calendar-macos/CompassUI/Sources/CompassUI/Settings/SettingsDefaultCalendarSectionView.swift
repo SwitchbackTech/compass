@@ -19,25 +19,35 @@ struct SettingsDefaultCalendarSectionView: View {
             hasConnectedAccount: hasConnectedAccount)
     }
 
+    private var selectedName: String {
+        let id = settingsStore.defaultCalendarId ?? resolvedDefault?.id
+        return writable.first { $0.id == id }?.name ?? resolvedDefault?.name ?? ""
+    }
+
     var body: some View {
         if writable.isEmpty {
             EmptyView()
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Default Calendar")
-                    .font(.rubik(15))
-                    .foregroundStyle(theme.textColor)
-                Picker(
-                    "Default Calendar",
-                    selection: Binding(
-                        get: { settingsStore.defaultCalendarId ?? resolvedDefault?.id ?? "" },
-                        set: { settingsStore.setDefaultCalendarId($0.isEmpty ? nil : $0) })
-                ) {
+            // Web `DefaultCalendarPicker`: a full-width native select.
+            VStack(alignment: .leading, spacing: 4) {
+                SettingsFieldLabel("Default Calendar")
+                Menu {
                     ForEach(writable, id: \.id) { calendar in
-                        Text(calendar.name).tag(calendar.id)
+                        Button(calendar.name) { settingsStore.setDefaultCalendarId(calendar.id) }
                     }
+                } label: {
+                    HStack {
+                        Text(selectedName)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .settingsSelectChrome()
                 }
-                .labelsHidden()
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .accessibilityLabel("Default Calendar: \(selectedName)")
             }
             .accessibilityIdentifier("settings-section-default-calendar")
         }

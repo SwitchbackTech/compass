@@ -8,6 +8,7 @@ struct EventFormCompactDateField: View {
     let accessibilityIdentifier: String
     @State private var text: String
     @State private var showsCalendar = false
+    @State private var pickerMonth = Date()
     @FocusState private var isFocused: Bool
 
     init(date: Binding<Date>, accessibilityIdentifier: String) {
@@ -25,7 +26,7 @@ struct EventFormCompactDateField: View {
             .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
             .padding(.horizontal, 8)
-            .frame(minWidth: 96, maxWidth: 108)
+            .frame(minWidth: 72, idealWidth: 84, maxWidth: 96)
             .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
             .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
@@ -47,23 +48,36 @@ struct EventFormCompactDateField: View {
                 showsCalendar = true
             }
             .popover(isPresented: $showsCalendar, arrowEdge: .bottom) {
-                DatePicker(
-                    "Pick date",
-                    selection: Binding(
-                        get: { date },
-                        set: { newDate in
-                            date = newDate
-                            text = EventFormDateFormat.formatLabel(for: newDate)
-                        }
-                    ),
-                    displayedComponents: [.date]
+                // Web `react-datepicker`: the same compact month grid as the sidebar.
+                SidebarMonthPicker(
+                    displayedMonth: $pickerMonth,
+                    selectedDate: date,
+                    onSelectDate: { picked in
+                        date = Self.keepingTime(of: date, onDayOf: picked)
+                        text = EventFormDateFormat.formatLabel(for: date)
+                        showsCalendar = false
+                    },
+                    today: Date(),
+                    daysAreClickable: true
                 )
-                .datePickerStyle(.graphical)
-                .labelsHidden()
+                .frame(width: 252)
                 .padding(12)
+                .background(theme.surfacePanelColor)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-event-form-date-picker")
+                .onAppear { pickerMonth = date }
             }
+    }
+
+    /// Picking a day changes the calendar day only; the time of day stays.
+    static func keepingTime(of original: Date, onDayOf picked: Date) -> Date {
+        let calendar = EffectiveTimeZone.calendar
+        var parts = calendar.dateComponents([.year, .month, .day], from: picked)
+        let time = calendar.dateComponents([.hour, .minute, .second], from: original)
+        parts.hour = time.hour
+        parts.minute = time.minute
+        parts.second = time.second
+        return calendar.date(from: parts) ?? picked
     }
 
     private func commitTypedDate() {

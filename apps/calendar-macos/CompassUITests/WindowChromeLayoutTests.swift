@@ -12,8 +12,8 @@ final class WindowChromeLayoutTests: XCTestCase {
         XCTAssertLessThan(title.frame.midY - window.frame.minY, 60,
             "The calendar header belongs in the top chrome, not below an empty toolbar")
         let previous = window.buttons["Previous"]
-        XCTAssertLessThan(previous.frame.minX - window.frame.minX, 50,
-            "The header does not need a traffic-light inset below the title bar")
+        XCTAssertLessThan(previous.frame.minX - window.frame.minX, 96,
+            "Previous week control should sit in the unified title bar beside traffic lights")
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Calendar styling and top chrome"
         evidence.lifetime = .keepAlways

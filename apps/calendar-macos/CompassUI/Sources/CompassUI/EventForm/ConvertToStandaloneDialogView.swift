@@ -21,16 +21,16 @@ public struct ConvertToStandaloneDialogView: View {
 
     public var body: some View {
         if isPresented {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 ModalDialogTitle("Convert to standalone event?")
                 Text("\"\(eventTitle)\" will be removed from its recurring series.")
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textMutedColor)
-                HStack {
+                    .font(.rubik(16))
+                    .foregroundStyle(theme.textColor)
+                HStack(spacing: 12) {
                     Spacer()
-                    Button("Cancel", action: onCancel)
+                    OverlayPanelActionButton("Cancel", shortcut: ["Esc"], action: onCancel)
                         .keyboardShortcut(.cancelAction)
-                    Button("Convert", action: onConfirm)
+                    OverlayPanelActionButton("Convert", variant: .primary, shortcut: ["Enter"], action: onConfirm)
                         .keyboardShortcut(.defaultAction)
                 }
             }

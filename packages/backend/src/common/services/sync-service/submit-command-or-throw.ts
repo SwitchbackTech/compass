@@ -35,6 +35,13 @@ const mapSyncFailure = (
         "UNSUPPORTED_OPERATION",
         "This calendar doesn't allow this change for this event (for example birthday or holiday events). Try deleting the entire series, or manage it in your calendar.",
       );
+    case "providerRejectedChange":
+      return eventMutationError(
+        "PROVIDER_REJECTED",
+        "Sync command failed (providerRejectedChange)",
+        undefined,
+        provider,
+      );
     case "permanentProviderError":
       return eventMutationError(
         "PROVIDER_FAILURE",

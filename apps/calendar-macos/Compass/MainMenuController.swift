@@ -135,7 +135,7 @@ final class MainMenuController: NSObject {
     }
 
     @objc private func shareFeedback(_ sender: Any?) {
-        CompassFeedbackPanel.present()
+        nativeRootController?.model.openFeedbackDialog()
     }
 
     @objc private func openSettings(_ sender: Any?) {

@@ -74,6 +74,7 @@ export function normalizeGoogleEvent(
       : {}),
     recurrence: mapRecurrence(item),
     popupReminderMinutes,
+    ...(item.eventLabelId ? { usesEventLabelColor: true as const } : {}),
   };
 }
 

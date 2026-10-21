@@ -16,9 +16,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { IS_EVENT_SIDEBAR_STAGING_UX } from "@web/common/constants/env.constants";
 import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
 import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
+import { DescriptionEditorLinkHints } from "@web/components/DescriptionEditor/DescriptionEditorLinkHints";
 import {
   DESCRIPTION_HTML_ALLOWED_ATTR,
   DESCRIPTION_HTML_ALLOWED_TAGS,
@@ -33,7 +33,10 @@ import {
 } from "@web/components/DescriptionEditor/plain-text-description";
 import { toggleDescriptionList } from "@web/components/DescriptionEditor/toggle-description-list";
 import { useDescriptionEditorCopyLinkShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorCopyLinkShortcut";
+import { useDescriptionEditorOpenLinkAtCaretShortcut } from "@web/components/DescriptionEditor/useDescriptionEditorOpenLinkShortcuts";
+import { useDescriptionLinkPresentation } from "@web/components/DescriptionEditor/useDescriptionLinkPresentation";
 import { Divider } from "@web/components/Divider/Divider";
+import { useDescriptionLinkDigitShortcut } from "@web/shortcuts/description-link/useDescriptionLinkDigitShortcut";
 
 // The allowlist is shared with the desktop export (description-html.policy),
 // which sanitizes the same untrusted provider HTML before emitting the native
@@ -91,6 +94,8 @@ interface DescriptionEditorProps {
   underlineColor?: string;
   onKeyDown?: (e: KeyboardEvent) => void;
   id?: string;
+  /** Booking events use description links for cancel/reschedule actions. */
+  suppressLinkShortcutHints?: boolean;
 }
 
 const TOOLBAR_BUTTON_CLASSNAME =
@@ -128,6 +133,7 @@ export const DescriptionEditor = ({
   underlineColor,
   onKeyDown,
   id,
+  suppressLinkShortcutHints = false,
 }: DescriptionEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -177,7 +183,6 @@ export const DescriptionEditor = ({
             target: "_blank",
             rel: "noopener noreferrer nofollow",
             class: "text-accent underline",
-            title: "Mod+click to open",
           },
         }),
         Placeholder.configure({ placeholder }),
@@ -225,12 +230,14 @@ export const DescriptionEditor = ({
   const editorRoot =
     editor?.view.dom instanceof HTMLElement ? editor.view.dom : null;
 
-  const linkUxEnabled = IS_EVENT_SIDEBAR_STAGING_UX;
-  useDescriptionEditorCopyLinkShortcut(
-    editor,
+  useDescriptionEditorCopyLinkShortcut(editor, editorRoot, editable);
+  useDescriptionEditorOpenLinkAtCaretShortcut(editor, editorRoot, editable);
+  useDescriptionLinkDigitShortcut(
     editorRoot,
-    linkUxEnabled && editable,
+    !isFocused && !suppressLinkShortcutHints,
   );
+
+  useDescriptionLinkPresentation(editor, editorRoot, true, isFocused);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
@@ -253,7 +260,7 @@ export const DescriptionEditor = ({
 
   const handleDescriptionKeyDown = (event: KeyboardEvent) => {
     onKeyDown?.(event);
-    if (!linkUxEnabled || !editorRoot || event.defaultPrevented) return;
+    if (!editorRoot || event.defaultPrevented) return;
 
     const link = findLinkElement(editorRoot, event.target);
     if (!link) return;
@@ -345,11 +352,18 @@ export const DescriptionEditor = ({
         editor={editor}
         className={classNames(
           "c-rich-text relative w-full text-sm text-text",
+          !suppressLinkShortcutHints && "c-description-link-hints",
           !editable && "cursor-default",
         )}
         onKeyDown={handleDescriptionKeyDown}
       />
-      {linkUxEnabled && <DescriptionEditorLinkChrome editorRoot={editorRoot} />}
+      <DescriptionEditorLinkHints
+        editorRoot={editorRoot}
+        visible={!isFocused && !suppressLinkShortcutHints}
+      />
+      {!suppressLinkShortcutHints && (
+        <DescriptionEditorLinkChrome editorRoot={editorRoot} />
+      )}
       <Divider color={underlineColor} toggled={isFocused} />
     </div>
   );

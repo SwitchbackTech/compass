@@ -554,6 +554,24 @@
         "when": {
           "isFormOpen": true
         }
+      },
+      {
+        "id": "edit-open-description-link",
+        "keys": ["Mod", "Shift", "Enter"],
+        "label": "Open link under description caret",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        }
+      },
+      {
+        "id": "edit-open-description-link-digit",
+        "keys": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        "label": "Open description link by number",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        }
       }
     ]
   },

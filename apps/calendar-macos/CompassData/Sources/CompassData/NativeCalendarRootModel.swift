@@ -105,6 +105,11 @@ public final class NativeCalendarRootModel {
     private let demoPresentation: DemoSeedFixture?
     private let now: () -> Date
     private var cachedDemoEventIds: Set<String> = []
+    /// Web `TIMEZONE_MISMATCH_SNOOZED_BROWSER`: the device zone "Keep" was chosen for.
+    var timezoneMismatchSnoozedFor = UserDefaults.standard.string(
+        forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+    /// Observed copy of `DemoEventsBannerState` so dismissing re-renders.
+    private var isDemoEventsBannerDismissed = false
     private let analyticsIdentity: AnalyticsIdentityCoordinator
     private var eventStream: ServerEventStream?
     /// Every reload (saves, drafts, deletes, undo) also refreshes Up next, so a
@@ -131,6 +136,9 @@ public final class NativeCalendarRootModel {
         demoPresentation?.referenceNow ?? now()
     }
 
+    /// `-COMPASS_FIXTURE demo`: onboarding nudges stay out of the way like `showCalendarOnboarding`.
+    var isDemoFixture: Bool { demoPresentation != nil }
+
     var demoEventIds: Set<String> {
         cachedDemoEventIds.union(demoPresentation?.demoEventIds ?? [])
     }
@@ -145,8 +153,7 @@ public final class NativeCalendarRootModel {
     }
 
     public var showsDemoEventsBanner: Bool {
-        !demoEventIds.isEmpty && !DemoEventsBannerState.isDismissed(
-            repository: environment.userMetadataRepository)
+        !demoEventIds.isEmpty && !isDemoEventsBannerDismissed
     }
 
     public init(
@@ -209,6 +216,9 @@ public final class NativeCalendarRootModel {
         )
         settingsStore.onDevicePreferencesChanged = { [weak self] in
             self?.rebuildPresentation()
+        }
+        eventsStore.onWriteLanded = { [weak self] isNewCreate in
+            self?.noteEventWriteLanded(isNewCreate: isNewCreate)
         }
         authStore.onAuthenticated = { [weak self] in
             await self?.handleAuthenticated()
@@ -342,7 +352,7 @@ public final class NativeCalendarRootModel {
             guestMeetingSetupActive: settingsStore.guestMeetingSetupActive,
             shortcutShowcaseActive: blockPartyStore.isActive,
             connectCalendarEligible: connectEligible,
-            firstEventEligible: firstEventEligible,
+            firstEventEligible: firstEventEligible && !onboardingStore.defersFirstEventPromptForSignUpNudge,
             pointerHintVisible: pointerHintStore.isVisible,
             pointerHintDismissedPermanently: OnboardingGating.pointerHintDismissedPermanently(),
             isLifeView: viewStore.view == .life)
@@ -363,6 +373,8 @@ public final class NativeCalendarRootModel {
             metadata: environment.userMetadataRepository,
             fixture: demoPresentation)
         cachedDemoEventIds = (try? environment.localEventRepository.demoEventIds()) ?? []
+        isDemoEventsBannerDismissed = DemoEventsBannerState.isDismissed(
+            repository: environment.userMetadataRepository)
         try? await hiddenEventsStore.load()
         await reloadCalendars()
         await refreshVisibleRange()
@@ -387,6 +399,7 @@ public final class NativeCalendarRootModel {
         let today = referenceNow
         viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         monthPickerMonth = today
+        levelsStore.pinShortcutTip(id: "focus-shift-hold")
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
@@ -395,6 +408,23 @@ public final class NativeCalendarRootModel {
 
     public func dismissDemoEventsBanner() {
         try? DemoEventsBannerState.dismiss(repository: environment.userMetadataRepository)
+        isDemoEventsBannerDismissed = true
+    }
+
+    var hasSampleEvents: Bool { !cachedDemoEventIds.isEmpty }
+
+    /// Web `clearDemoEvents` from the palette: deletes seeded rows and dismisses the banner.
+    public func clearSampleEvents() async {
+        let ids = (try? environment.localEventRepository.demoEventIds()) ?? []
+        try? environment.localEventRepository.delete(ids: ids.map { EventId(rawValue: $0) })
+        cachedDemoEventIds = []
+        dismissDemoEventsBanner()
+        await refreshVisibleRange()
+        await refreshSideband()
+        guard !ids.isEmpty else { return }
+        statusToastStore.show(
+            id: "clear-demo-events",
+            message: ids.count == 1 ? "Removed 1 sample event" : "Removed \(ids.count) sample events")
     }
 
     public func handleResume() async {
@@ -413,6 +443,10 @@ public final class NativeCalendarRootModel {
 
     public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
+    /// Delivers feedback details and the current view name; throws when sending fails.
+    public var feedbackSender: ((String, String) async throws -> Void)?
+    public internal(set) var isFeedbackDialogPresented = false
+    public internal(set) var isFeedbackSubmitting = false
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
@@ -542,6 +576,7 @@ public final class NativeCalendarRootModel {
     func recordShortcut(_ id: ShortcutId) {
         guard let section = ShortcutTelemetrySection.section(for: id) else { return }
         levelsStore.recordShortcutInvocation(id, section: section)
+        noteShortcutEngagementIfAnonymous()
     }
 
     public func handleShortcut(_ id: ShortcutId) {
@@ -654,7 +689,7 @@ public final class NativeCalendarRootModel {
 
     public func setPageJumpHintsVisible(_ visible: Bool) {
         focusStore.setPageJumpHintsVisible(visible)
-        applyFocusPresentation()
+        rebuildPresentation()
     }
 
     public func focusDayColumn(calendarId: String) {
@@ -883,6 +918,9 @@ public final class NativeCalendarRootModel {
         var scenario = timeGridState.scenario
         scenario.draftOverlay = draftOverlayForPresentation()
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
+        let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
+        let showDayJumpPrefixes =
+            !isEventFormVisible && (focusStore.pageJumpHintsVisible || eventJumpActive)
         timeGridState = TimeGridState(
             layoutMode: timeGridState.layoutMode,
             referenceNow: timeGridState.referenceNow,
@@ -895,6 +933,9 @@ public final class NativeCalendarRootModel {
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
+            showDayJumpPrefixes: showDayJumpPrefixes,
+            dayJumpUseShiftPrefix: !eventJumpSelection.modeActive,
+            eventJumpActiveDayKeys: eventJumpSelection.activeDayKeys,
             hasSecondaryTimeZone: hasSecondaryTimeZone,
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
@@ -992,11 +1033,11 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    var startOfView: Date {
+    public var startOfView: Date {
         EffectiveTimeZone.calendar.startOfDay(for: viewStore.anchorDate)
     }
 
-    var endOfView: Date {
+    public var endOfView: Date {
         let calendar = EffectiveTimeZone.calendar
         return calendar.date(
             byAdding: .day,
@@ -1023,6 +1064,25 @@ public final class NativeCalendarRootModel {
             isTrialing: billingStore.status?.subscriptionStatus == .trialing)
     }
 
+    /// Web `gridEventCardClassName` dashed outline: samples, plus events this
+    /// account organizes whose guests are still awaiting or tentative.
+    private func unsettledGridEventIds(demoIds: Set<String>) -> Set<String> {
+        let accountEmails = Dictionary(
+            calendars.map { ($0.id, $0.accountEmail) }, uniquingKeysWith: { first, _ in first })
+        var ids = demoIds
+        for event in loadedEvents {
+            guard case .details(let details) = event.content,
+                  details.attendees?.isEmpty == false,
+                  AttendeeRsvp.hasUnsettledGuests(
+                    organizerEmail: details.organizer?.email,
+                    attendees: details.attendees,
+                    calendarAccountEmail: accountEmails[event.calendarId.rawValue] ?? nil)
+            else { continue }
+            ids.insert(event.id.rawValue)
+        }
+        return ids
+    }
+
     private func layoutMode() -> GridLayoutMode {
         viewStore.view == .day ? .day : .week
     }
@@ -1047,6 +1107,9 @@ public final class NativeCalendarRootModel {
         )
         scenario.draftOverlay = draftOverlayForPresentation()
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
+        let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
+        let showDayJumpPrefixes =
+            !isEventFormVisible && (focusStore.pageJumpHintsVisible || eventJumpActive)
         timeGridState = TimeGridState(
             layoutMode: layoutMode(),
             referenceNow: referenceNow,
@@ -1059,10 +1122,14 @@ public final class NativeCalendarRootModel {
             focusedDayColumnCalendarId: focusedDayColumnCalendarId,
             pageJumpHintsVisible: focusStore.pageJumpHintsVisible,
             pageJumpDigitByCalendarId: pageJumpDigitByCalendarId(),
+            showDayJumpPrefixes: showDayJumpPrefixes,
+            dayJumpUseShiftPrefix: !eventJumpSelection.modeActive,
+            eventJumpActiveDayKeys: eventJumpSelection.activeDayKeys,
             hasSecondaryTimeZone: hasSecondaryTimeZone,
             effectiveTimeZone: viewStore.effectiveTimeZone,
             timeTravelTimeZone: viewStore.timeTravelTimeZone
         )
+        timeGridState.unsettledEventIds = unsettledGridEventIds(demoIds: demoIds)
         if eventJumpSelection.modeActive {
             quickTimeSlotHintLabels = buildQuickTimeSlotHints()
             timeGridState.quickTimeSlotHints = quickTimeSlotHintLabels

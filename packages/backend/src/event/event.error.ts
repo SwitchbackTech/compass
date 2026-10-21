@@ -34,6 +34,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   // event (e.g. deleting one occurrence of a Google birthday event) — not a
   // provider outage, so never the retryable 502 it used to surface as.
   UNSUPPORTED_OPERATION: Status.FORBIDDEN,
+  PROVIDER_REJECTED: 502 as Status,
   // 403 like the capability refusals above: guests can only be written to a
   // writable calendar that can invite attendees, and retrying cannot change that.
   ATTENDEES_UNSUPPORTED: Status.FORBIDDEN,
@@ -55,6 +56,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   INVALID_INPUT: false,
   BILLING_REQUIRED: false,
   UNSUPPORTED_OPERATION: false,
+  PROVIDER_REJECTED: true,
   ATTENDEES_UNSUPPORTED: false,
 };
 

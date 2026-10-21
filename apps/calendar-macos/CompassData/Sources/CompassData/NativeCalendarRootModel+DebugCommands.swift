@@ -30,7 +30,7 @@ extension NativeCalendarRootModel {
             handleShortcut(.navWeekView)
         case .view(.life):
             handleShortcut(.navLifeView)
-        case .parityExport:
+        case .parityExport, .parityApplyCaptureWindow:
             break
         }
     }

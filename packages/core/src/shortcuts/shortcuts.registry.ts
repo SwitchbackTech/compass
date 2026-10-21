@@ -372,6 +372,20 @@ export const SHORTCUTS_REGISTRY = [
     section: "edit",
     when: { isFormOpen: true },
   },
+  {
+    id: "edit-open-description-link",
+    keys: [...B.editOpenDescriptionLink.keycaps],
+    label: "Open link under description caret",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
+  {
+    id: "edit-open-description-link-digit",
+    keys: [...B.editOpenDescriptionLinkDigit.keycaps],
+    label: "Open description link by number",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
   // Not form-gated: the same digit pick also runs in the event context
   // menu's color swatch strip, independent of whether the form is open.
   {

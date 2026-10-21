@@ -1,4 +1,9 @@
 import {
+  emitPhosphorIconsSwift,
+  emitPhosphorSvgFiles,
+  PHOSPHOR_ICONS_SWIFT_PATH,
+} from "@scripts/desktop-export/emit-phosphor-icons";
+import {
   emitProductEventNativeCoverageSwift,
   emitProductEventSwift,
   PRODUCT_EVENT_COVERAGE_SWIFT_PATH,
@@ -82,6 +87,11 @@ const buildScriptGeneratedFiles = (): GeneratedFile[] => {
       path: join(COMPASS_KIT_FIXTURES_DIR, "booking-setup-steps.vectors.json"),
       contents: emitBookingSetupStepsFixturesJson(),
     },
+    {
+      path: PHOSPHOR_ICONS_SWIFT_PATH,
+      contents: emitPhosphorIconsSwift(),
+    },
+    ...emitPhosphorSvgFiles(),
   ];
 };
 

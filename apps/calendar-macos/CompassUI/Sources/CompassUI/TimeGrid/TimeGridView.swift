@@ -462,7 +462,8 @@ public final class TimeGridView: NSView {
                 labelWithAttributedString: weekDayLabel(
                     dayKey: column.key,
                     viewStartMonth: viewStartMonth,
-                    color: column.key == todayKey ? themeAccentColor : palette.textMuted
+                    color: column.key == todayKey ? themeAccentColor : palette.textMuted,
+                    trackWidth: state.trackWidth
                 )
             )
             header.identifier = NSUserInterfaceItemIdentifier(column.key)
@@ -482,8 +483,15 @@ public final class TimeGridView: NSView {
     }
 
     /// Web `DayLabels`: a large day number ("7", or "Jul 1" when the month
-    /// changes mid-view) followed by the short weekday. Today is accented.
-    private func weekDayLabel(dayKey: String, viewStartMonth: String?, color: NSColor) -> NSAttributedString {
+    /// changes mid-view) followed by the short weekday, centered in the
+    /// column. Today is accented. Sizes follow web's container-query clamps:
+    /// number `clamp(xl, 2.7cqw, xxl)`, weekday `clamp(m, 2cqw, l)`.
+    private func weekDayLabel(
+        dayKey: String,
+        viewStartMonth: String?,
+        color: NSColor,
+        trackWidth: CGFloat
+    ) -> NSAttributedString {
         guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else {
             return NSAttributedString(string: dayKey)
         }
@@ -497,14 +505,26 @@ public final class TimeGridView: NSView {
         formatter.dateFormat = "EEE"
         let weekday = formatter.string(from: date)
 
+        let numberSize = min(20.8, max(18, trackWidth * 0.027))
+        let weekdaySize = min(16, max(13, trackWidth * 0.02))
+        let centered = NSMutableParagraphStyle()
+        centered.alignment = .center
         let label = NSMutableAttributedString(
             string: number,
-            attributes: [.font: CompassFont.nsFont(size: 18), .foregroundColor: color]
+            attributes: [
+                .font: CompassFont.nsFont(size: numberSize),
+                .foregroundColor: color,
+                .paragraphStyle: centered,
+            ]
         )
         label.append(
             NSAttributedString(
                 string: " \(weekday)",
-                attributes: [.font: CompassFont.nsFont(size: 13), .foregroundColor: color]
+                attributes: [
+                    .font: CompassFont.nsFont(size: weekdaySize),
+                    .foregroundColor: color,
+                    .paragraphStyle: centered,
+                ]
             )
         )
         return label
@@ -609,6 +629,7 @@ public final class TimeGridView: NSView {
                 theme: theme,
                 isFocused: isFocused,
                 isSidebarEditing: isSidebarEditing,
+                isUnsettled: state.unsettledEventIds.contains(card.eventId),
                 timeLabel: EventCardTimeLabel.text(for: card, state: state)
             )
             view.cardDelegate = self

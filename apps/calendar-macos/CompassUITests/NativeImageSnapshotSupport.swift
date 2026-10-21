@@ -101,6 +101,48 @@ enum NativeImageSnapshotSupport {
         return nil
     }
 
+    /// Attaches a full-window screenshot; `record-macos-parity-captures.sh` crops the title bar slice.
+    @MainActor
+    static func exportMacTitleBarReference(
+        _ window: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard parityCapture else { return }
+        guard window.waitForExistence(timeout: 10) else {
+            XCTFail("Window missing for title bar reference screenshot", file: file, line: line)
+            return
+        }
+        let sidebarToggle = window.buttons.matching(
+            NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
+        ).firstMatch
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        XCTAssertLessThan(
+            sidebarToggle.frame.maxX,
+            window.frame.maxX - 2,
+            "Sidebar toggle should sit inside the captured window width")
+        let headerTitle = window.buttons["compass-native-header-title"]
+        XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            headerTitle.label.contains("2026"),
+            "Title bar reference should show demo month title, got: \(headerTitle.label)")
+        XCTAssertLessThan(
+            headerTitle.frame.minY,
+            window.frame.maxY - window.frame.height * 0.85,
+            "Month title should sit in the top band of the window screenshot")
+        if let url = URL(string: "compass://debug/parity-apply-capture-window") {
+            NSWorkspace.shared.open(url)
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
+        }
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
+        let png = window.screenshot().pngRepresentation
+        guard !png.isEmpty else {
+            XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
+            return
+        }
+        attachPNG(png, named: "mac-title-bar-full-window")
+    }
+
     @MainActor
     private static func attachPNG(_ data: Data, named name: String) {
         let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.png")

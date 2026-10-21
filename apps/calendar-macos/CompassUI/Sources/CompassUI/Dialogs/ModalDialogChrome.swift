@@ -18,7 +18,8 @@ struct ModalDialogChrome: ViewModifier {
                 .ignoresSafeArea()
             content
                 .padding(OverlayPanelChrome.padding)
-                .frame(maxWidth: maxWidth)
+                // Web modal panels are a fixed width (`w-[400px]` by default).
+                .frame(width: maxWidth)
                 .overlayPanelChrome()
                 .accessibilityIdentifier(identifier)
         }

@@ -23,7 +23,14 @@ extension NativeCalendarRootModel {
         let query = commandPaletteStore.query
         let localHits = paletteEventHits(query: query)
         let mergedHits = mergePaletteHits(local: localHits, remote: paletteEventSearchHits)
-        return CommandPaletteCatalog.sections(
+        let meetingPage: CommandPaletteContext.MeetingPage? = if !isSignedIn || bookingStore.serverPage == nil {
+            nil
+        } else if bookingStore.isLive, let url = bookingStore.meetingLinkURL(calendars: calendars) {
+            .live(url)
+        } else {
+            .setup
+        }
+        return CommandPaletteCatalog.sections(CommandPaletteContext(
             view: viewStore.view,
             query: query,
             now: referenceNow,
@@ -33,20 +40,34 @@ extension NativeCalendarRootModel {
             recentIds: commandPaletteStore.recentCommandIds,
             tipsMuted: levelsStore.tipsMuted,
             levelHidden: levelsStore.badgeHidden,
-            theme: settingsStore.theme)
+            theme: settingsStore.theme,
+            isSidebarOpen: isSidebarOpen,
+            hasUpNext: upNextState.snapshot.upNext != nil,
+            hasConference: upNextState.conferenceURL != nil,
+            canUndo: undoStore.canUndo,
+            canRedo: undoStore.canRedo,
+            hasDemoEvents: hasSampleEvents,
+            timeZoneAbbreviation: TimeZoneFormatting.abbreviation(for: EffectiveTimeZone.identifier),
+            billingBadge: BillingPlanBadgeResolver.badge(access: billingStore.appAccess)?.label,
+            meetingPage: meetingPage))
     }
 
     public func filteredPaletteSections() -> [CommandPaletteSection] {
         CommandPaletteSearch.filter(sections: paletteSections(), query: commandPaletteStore.query)
     }
 
+    /// Disabled rows are skipped like web `useListNavigation({ disabledIndices })`.
+    private var selectablePaletteItems: [CommandPaletteItem] {
+        filteredPaletteSections().flatMap(\.items).filter { !$0.isDisabled }
+    }
+
     public var selectedPaletteItemId: String? {
-        let items = filteredPaletteSections().flatMap(\.items)
+        let items = selectablePaletteItems
         return items.first { $0.id == commandPaletteStore.selectedCommandId }?.id ?? items.first?.id
     }
 
     public func movePaletteSelection(by delta: Int) {
-        let items = filteredPaletteSections().flatMap(\.items)
+        let items = selectablePaletteItems
         guard !items.isEmpty else { return }
         let index = items.firstIndex { $0.id == commandPaletteStore.selectedCommandId } ?? 0
         let count = items.count
@@ -87,6 +108,8 @@ extension NativeCalendarRootModel {
 
     public func runPaletteCommand(id selectionId: String) {
         let id = selectionId.hasPrefix("recent-") ? String(selectionId.dropFirst(7)) : selectionId
+        let sections = filteredPaletteSections()
+        if sections.flatMap(\.items).contains(where: { $0.id == selectionId && $0.isDisabled }) { return }
         let savedQuery = commandPaletteStore.query
         commandPaletteStore.recordSelection(commandId: id)
 
@@ -138,16 +161,45 @@ extension NativeCalendarRootModel {
             authStore.openModal(.signUp)
         case "log-in":
             authStore.openModal(.login)
-        case "export-data":
-            Task { await exportLocalData() }
         case "log-out":
             requestLogout()
-        case "subscribe":
+        case "subscribe-now":
             handleShortcut(.otherSubscribe)
-        case "undo":
+        case "undo-last-change":
             undoLastChange()
-        case "redo":
+        case "redo-last-change":
             redoLastChange()
+        case "focus-month-picker":
+            handleShortcut(.focusSidebar)
+        case "open-up-next":
+            openUpNextEvent()
+            recordShortcut(.navUpNext)
+        case "join-up-next-meeting":
+            joinUpNextMeeting()
+            recordShortcut(.navJoinMeeting)
+        case "clear-sample-events":
+            Task { await clearSampleEvents() }
+        case "change-default-timezone":
+            settingsStore.openTimezoneDialog(.pin)
+        case "time-travel":
+            handleShortcut(.otherTimeTravel)
+        case "show-accounts":
+            settingsStore.open(page: .accounts)
+        case "show-billing":
+            settingsStore.open(page: .billing)
+        case "update-card":
+            settingsStore.open(page: .billing)
+            Task { await billingStore.openHostedPaymentMethodUpdate() }
+        case "show-booking", "setup-meeting-page":
+            openBookingSettings()
+        case "open-meeting-page":
+            if let url = bookingStore.meetingLinkURL(calendars: calendars) {
+                openExternalURLHandler?(url)
+            }
+        case "share-feedback":
+            openFeedbackDialog()
+        case "book-personal-onboarding":
+            openExternalURLHandler?(CommandPaletteCatalog.personalOnboardingURL)
         default:
             if id.hasPrefix("event-") {
                 let eventId = String(id.dropFirst("event-".count))

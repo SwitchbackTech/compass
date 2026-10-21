@@ -112,6 +112,7 @@ final class NativeGridKeyboardRouter {
     func handleFlagsChanged(_ event: NSEvent) {
         let commandDown = event.modifierFlags.contains(.command)
         if model.settingsStore.isPresented || model.authStore.isModalPresented || model.pendingLogoutConfirmation
+            || model.isFeedbackDialogPresented
             || model.pendingDeleteAccountConfirmation
             || model.invitationPrompt != nil || model.pendingRsvpChoice != nil {
             modHold.handleFlagsChanged(modifierDown: false)
@@ -138,6 +139,16 @@ final class NativeGridKeyboardRouter {
     func handleKeyUp(_: NSEvent) {}
 
     func handleKeyDown(_ event: NSEvent) -> Bool {
+        if model.isFeedbackDialogPresented {
+            // The text view owns typing. Esc closes, Cmd+Enter sends (web is a
+            // form, so a plain Enter would add a line here).
+            guard let key = KeyEvent(nsEvent: event) else { return false }
+            if key.key == .named(.escape), key.modifiers.isEmpty {
+                model.closeFeedbackDialog()
+                return true
+            }
+            return false
+        }
         if model.pendingLogoutConfirmation {
             guard let key = KeyEvent(nsEvent: event) else { return false }
             if key.key == .named(.escape), key.modifiers.isEmpty {
@@ -187,6 +198,10 @@ final class NativeGridKeyboardRouter {
                 }
                 if letter == "o", model.isSignedIn {
                     model.requestLogout()
+                    return true
+                }
+                if letter == "d" {
+                    model.requestDeleteAccount()
                     return true
                 }
             }
@@ -247,8 +262,18 @@ final class NativeGridKeyboardRouter {
         }
 
         if model.pendingDiscardDraftConfirmation {
+            // Web `DiscardUnsavedChangesDialog`: Esc keeps editing, Shift+Esc
+            // or Mod+Enter discards.
             if keyEvent.key == .named(.escape) {
-                model.cancelDiscardDraftConfirmation()
+                if keyEvent.modifiers == .shift {
+                    model.discardDraftConfirmed()
+                } else {
+                    model.cancelDiscardDraftConfirmation()
+                }
+                return true
+            }
+            if keyEvent.key == .named(.enter), keyEvent.modifiers == .command {
+                model.discardDraftConfirmed()
                 return true
             }
             return false
@@ -331,6 +356,12 @@ final class NativeGridKeyboardRouter {
            handleMonthPickerFocusKeys(keyEvent)
             || handleNoticeFocusKeys(keyEvent)
             || handleCalendarListFocusKeys(keyEvent)
+        {
+            return true
+        }
+
+        if model.handleNoticeActionKey(
+            keyEvent, editSequenceArmed: dispatcher.leaderEngine.phase != .idle)
         {
             return true
         }

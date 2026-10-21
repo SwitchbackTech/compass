@@ -46,6 +46,9 @@ export interface ProviderEvent {
   readonly recurrence: ProviderEventRecurrence;
   /** Popup reminder offsets in minutes before start; empty when explicitly none. */
   readonly popupReminderMinutes?: readonly number[];
+  // Google events colored via eventLabelId need a label-clear patch before
+  // writing a slot colorId; slot-only colors omit this.
+  readonly usesEventLabelColor?: true;
 }
 
 // A cancelled event or cancelled series occurrence. Providers report these with

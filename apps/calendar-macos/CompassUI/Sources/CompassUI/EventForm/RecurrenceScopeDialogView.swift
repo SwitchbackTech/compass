@@ -22,16 +22,16 @@ public struct RecurrenceScopeDialogView: View {
 
     public var body: some View {
         if isPresented {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 ModalDialogTitle(title)
                 scopeOption(.this, label: "This event")
                 scopeOption(.thisAndFollowing, label: "This and following events")
                 scopeOption(.all, label: "All events")
-                HStack {
+                HStack(spacing: 12) {
                     Spacer()
-                    Button("Cancel", action: onCancel)
+                    OverlayPanelActionButton("Cancel", shortcut: ["Esc"], action: onCancel)
                         .keyboardShortcut(.cancelAction)
-                    Button("Ok", action: { onConfirm(selectedScope) })
+                    OverlayPanelActionButton("Ok", variant: .primary, shortcut: ["Enter"]) { onConfirm(selectedScope) }
                         .keyboardShortcut(.defaultAction)
                 }
             }

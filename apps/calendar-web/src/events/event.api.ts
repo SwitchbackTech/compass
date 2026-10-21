@@ -46,10 +46,15 @@ const EventApi = {
     return EventResponseSchema.parse(response.data).event;
   },
 
-  replace: async (id: EventId, input: ReplaceEventInput): Promise<Event> => {
+  replace: async (
+    id: EventId,
+    input: ReplaceEventInput,
+    signal?: AbortSignal,
+  ): Promise<Event> => {
     const response = await BaseApi.put<unknown>(
       `/event/${encodeURIComponent(id)}`,
       input,
+      { signal },
     );
     return EventResponseSchema.parse(response.data).event;
   },
