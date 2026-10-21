@@ -298,6 +298,9 @@ final class NativeParityCaptureTests: XCTestCase {
             waitForGridColumnCount(window, atLeast: 5, timeout: 20),
             "Expected five day columns in parity week grid")
         window.typeKey("t", modifierFlags: [])
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
+        // Re-run today/scroll after the timed viewport height settles (viewport-based hourHeight).
+        window.typeKey("t", modifierFlags: [])
         let sundayColumn = window.descendants(matching: .any)["compass-grid-column-2026-06-07"]
         XCTAssertTrue(
             sundayColumn.waitForExistence(timeout: 20),
@@ -313,6 +316,9 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
+        XCTAssertTrue(
+            window.buttons["Exercise"].waitForExistence(timeout: 20),
+            "Expected Wednesday Exercise demo event after scroll-to-now parity setup")
         let dismissScrollHint = window.buttons["Dismiss"]
         if dismissScrollHint.waitForExistence(timeout: 2) {
             dismissScrollHint.tap()
