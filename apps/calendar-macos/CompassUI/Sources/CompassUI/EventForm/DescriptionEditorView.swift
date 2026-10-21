@@ -124,6 +124,10 @@ struct DescriptionEditorView: NSViewRepresentable {
         private var presentationShowsHosts = false
 
         func syncPresentation(isFocused: Bool, html: String, resetKey: String) {
+            guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else {
+                presentationShowsHosts = false
+                return
+            }
             if isFocused {
                 if presentationShowsHosts {
                     load(html: html, resetKey: resetKey)
