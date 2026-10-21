@@ -306,35 +306,53 @@ screencap_path = os.path.join(out, "_parity_window_screencap.png")
 metrics_path = os.path.join(out, "parity-window-metrics.txt")
 if os.path.isfile(metrics_path):
     print(open(metrics_path).read(), file=sys.stderr)
+
+def validate_title_bar_band(band: Image.Image) -> None:
+    assert_traffic_lights(band)
+    assert_month_title_band(band)
+    reject_bottom_of_window(band)
+    if band.size[0] < MIN_TITLE_BAR_WIDTH:
+        raise SystemExit(
+            f"width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
+        )
+    if sidebar_toggle_score(band) < 8:
+        raise SystemExit("missing sidebar toggle in the top-right title bar row")
+
+candidates: list[tuple[str, str]] = []
 if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
-    full_window = window_top
-elif os.path.isfile(window_id_path):
+    candidates.append(("parity-window-top", window_top))
+if os.path.isfile(window_id_path):
     with open(window_id_path) as handle:
         window_id = handle.read().strip()
     if window_id.isdigit():
         os.system(f'screencapture -l {window_id} -x "{screencap_path}"')
         if os.path.isfile(screencap_path) and os.path.getsize(screencap_path) > 1000:
-            full_window = screencap_path
-
-if not full_window:
+            candidates.append(("screencapture-window", screencap_path))
+if full_window:
+    candidates.append(("xcui-window", full_window))
+if not candidates:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
-if os.path.isfile(path):
-    os.remove(path)
-crop_title_bar(full_window, path)
+errors: list[str] = []
+chosen = None
+for name, src in candidates:
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+        crop_title_bar(src, path)
+        band = Image.open(path).convert("RGBA")
+        validate_title_bar_band(band)
+        chosen = name
+        break
+    except SystemExit as exc:
+        errors.append(f"{name}: {exc}")
+        if os.path.isfile(path):
+            os.remove(path)
 
+if chosen is None:
+    raise SystemExit("No valid title bar capture:\n" + "\n".join(errors))
+print(f"mac-title-bar source: {chosen}", file=sys.stderr)
 band = Image.open(path).convert("RGBA")
-assert_traffic_lights(band)
-assert_month_title_band(band)
-reject_bottom_of_window(band)
-if band.size[0] < MIN_TITLE_BAR_WIDTH:
-    raise SystemExit(
-        f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
-    )
-if sidebar_toggle_score(band) < 8:
-    raise SystemExit(
-        "mac-title-bar.png missing sidebar toggle in the top-right title bar row"
-    )
 
 if not os.path.isfile(path):
     raise SystemExit("Missing mac-title-bar.png (title bar marketing reference)")
