@@ -765,11 +765,19 @@ public final class NativeCalendarRootModel {
         showPointerHint(for: .gridScroll, registry: registry)
     }
 
+    /// Web `view-select` page jump opens the view dropdown, like clicking it.
+    public var isViewSwitcherOpen = false
+
     public func focusPageJump(digit: Character) {
         guard let target = focusStore.pageJumpTargets.first(where: { $0.digit == String(digit) }) else {
             return
         }
         switch target.id {
+        case "view-select":
+            isViewSwitcherOpen = true
+        case "up-next":
+            // Web focuses the Up next card so Enter opens it; with no event the digit does nothing.
+            openUpNextEvent()
         case "month-picker":
             monthPickerMonth = viewStore.anchorDate
         case "calendars":
