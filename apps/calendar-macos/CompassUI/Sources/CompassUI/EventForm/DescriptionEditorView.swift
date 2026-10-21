@@ -52,7 +52,6 @@ struct DescriptionEditorView: NSViewRepresentable {
         }
         context.coordinator.suppressLinkHintSlots = suppressLinkHintSlots
         context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
-        context.coordinator.syncLinkHintSlotsSilently()
         container.updateLinkHintOverlay(visible: isEditable && !isFocused && !suppressLinkHintSlots)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
@@ -103,7 +102,7 @@ struct DescriptionEditorView: NSViewRepresentable {
         }
 
         func syncLinkHintSlotsSilently() {
-            guard let textView else { return }
+            guard let textView, shouldSyncLinkHintSlots(for: textView) else { return }
             suppressDelegate = true
             container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
             suppressDelegate = false
@@ -111,7 +110,20 @@ struct DescriptionEditorView: NSViewRepresentable {
 
         private func linkHintSlotsReserved(for textView: DescriptionTextView) -> Bool {
             guard textView.isEditable, !suppressLinkHintSlots, !descriptionContainsBookingLinks() else { return false }
-            return true
+            if !DescriptionLinkPresentation.linkHrefs(in: html.wrappedValue).isEmpty { return true }
+            guard let storage = textView.textStorage, storage.length > 0 else { return false }
+            var hasLink = false
+            storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+                if value != nil {
+                    hasLink = true
+                    stop.pointee = true
+                }
+            }
+            return hasLink
+        }
+
+        private func shouldSyncLinkHintSlots(for textView: DescriptionTextView) -> Bool {
+            linkHintSlotsReserved(for: textView) || textView.hasLinkHintSlotAttachments
         }
 
         private func descriptionContainsBookingLinks() -> Bool {
@@ -230,6 +242,18 @@ public final class DescriptionTextView: NSTextView {
             storage.addAttribute(.toolTip, value: entry.href, range: newRange)
         }
         storage.endEditing()
+    }
+
+    var hasLinkHintSlotAttachments: Bool {
+        guard let storage = textStorage, storage.length > 0 else { return false }
+        var found = false
+        storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+            if value is DescriptionLinkHintSlotAttachment {
+                found = true
+                stop.pointee = true
+            }
+        }
+        return found
     }
 
     func syncLinkHintSlots(reserved: Bool) {
