@@ -484,9 +484,12 @@ final class NativeGridKeyboardRouter {
             (1...9).contains(digit),
             !isEditableNonDescriptionTextInputFocused()
         {
-            if let editor = DescriptionTextView.findInKeyWindow(),
-               editor.openDescriptionLink(at: digit - 1)
-            {
+            let opened = NSApp.sendAction(
+                #selector(DescriptionTextView.openDescriptionLinkDigit(_:)),
+                to: nil,
+                from: NSNumber(value: digit - 1)
+            )
+            if opened {
                 model.recordShortcut(.editOpenDescriptionLinkDigit)
                 return true
             }

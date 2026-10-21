@@ -154,7 +154,7 @@ public final class DescriptionTextView: NSTextView {
     }
 
     @discardableResult
-    public func openDescriptionLink(at index: Int) -> Bool {
+    func openDescriptionLink(at index: Int) -> Bool {
         guard index >= 0, index < orderedLinkHrefs().count,
               let url = URL(string: orderedLinkHrefs()[index])
         else { return false }
