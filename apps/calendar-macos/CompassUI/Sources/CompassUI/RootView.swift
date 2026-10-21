@@ -44,6 +44,7 @@ public struct RootView: View {
                 }
             }
             titleBarChrome
+                .zIndex(2)
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -304,7 +305,7 @@ public struct RootView: View {
 
     /// Unified title bar: nav and view switcher beside traffic lights; sidebar toggle on the right.
     private var titleBarChrome: some View {
-        ZStack(alignment: .top) {
+        ZStack(alignment: .topLeading) {
             theme.backgroundColor
                 .frame(maxWidth: .infinity)
                 .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
@@ -335,11 +336,13 @@ public struct RootView: View {
                 ) {
                     model.isSidebarOpen.toggle()
                 }
+                .accessibilityIdentifier("compass-native-sidebar-toggle")
                 .padding(.trailing, 20)
             }
+            .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
-        .frame(maxWidth: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private var content: some View {

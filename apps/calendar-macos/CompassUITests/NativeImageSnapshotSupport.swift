@@ -121,6 +121,12 @@ enum NativeImageSnapshotSupport {
             sidebarToggle.frame.maxX,
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
+        let toggleMinX = sidebarToggle.frame.minX - window.frame.minX
+        let windowWidth = window.frame.width
+        XCTAssertGreaterThan(
+            toggleMinX,
+            windowWidth * 0.72,
+            "Sidebar toggle should sit in the top-right title bar row (got minX \(toggleMinX) in \(windowWidth)pt window)")
         let headerTitle = window.buttons["compass-native-header-title"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(

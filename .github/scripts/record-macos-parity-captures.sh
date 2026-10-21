@@ -279,21 +279,37 @@ def reject_bottom_of_window(image: Image.Image) -> None:
         )
 
 
-def sidebar_toggle_score(image: Image.Image) -> int:
+def assert_sidebar_toggle_icon(image: Image.Image) -> None:
+    """Require a phosphor-style icon cluster in the top-right title row (web parity)."""
     px = image.load()
     width, height = image.size
-    score = 0
-    right_start = max(0, width - int(width * 0.14))
-    for y in range(min(height, 55)):
-        for x in range(right_start, width - 8):
+    scale = max(1, width // 1280)
+    band_bottom = min(height, 52 * scale)
+    x_start = max(0, width - 60 * scale)
+    x_end = max(x_start + 1, width - 8 * scale)
+
+    dark_points: list[tuple[int, int]] = []
+    for y in range(8 * scale, band_bottom):
+        for x in range(x_start, x_end):
             r, g, b, a = px[x, y]
-            if a < 16:
+            if a < 128:
                 continue
-            if r + g + b < 520:
-                score += 2
-            if max(r, g, b) - min(r, g, b) > 24:
-                score += 1
-    return score
+            if r + g + b < 430:
+                dark_points.append((x, y))
+
+    if len(dark_points) < 18 * scale:
+        raise SystemExit(
+            "missing sidebar toggle icon in top-right title bar row "
+            f"(found {len(dark_points)} dark pixels in right ~60px × top 52px band)"
+        )
+
+    xs = {x for x, _ in dark_points}
+    ys = {y for _, y in dark_points}
+    if len(xs) < 4 or len(ys) < 4:
+        raise SystemExit(
+            "top-right title bar band lacks a sidebar toggle icon cluster "
+            f"(spread xs={len(xs)} ys={len(ys)})"
+        )
 
 ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280})
 
@@ -315,8 +331,7 @@ def validate_title_bar_band(band: Image.Image) -> None:
         raise SystemExit(
             f"width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
         )
-    if sidebar_toggle_score(band) < 5:
-        raise SystemExit("missing sidebar toggle in the top-right title bar row")
+    assert_sidebar_toggle_icon(band)
 
 candidates: list[tuple[str, str]] = []
 if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
