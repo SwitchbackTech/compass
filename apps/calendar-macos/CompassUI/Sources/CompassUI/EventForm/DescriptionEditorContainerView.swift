@@ -48,15 +48,33 @@ final class DescriptionEditorContainerView: NSView {
     }
 
     func updateLinkHintOverlay(visible: Bool) {
+        guard window != nil else {
+            teardownLinkHintOverlay()
+            return
+        }
         linkHintOverlay.textView = textView
         linkHintOverlay.hintsVisible = visible
         linkHintOverlay.isHidden = !visible
-        linkHintOverlay.needsLayout = true
+        if visible {
+            linkHintOverlay.needsLayout = true
+        } else {
+            linkHintOverlay.subviews.forEach { $0.removeFromSuperview() }
+        }
+    }
+
+    func teardownLinkHintOverlay() {
+        linkHintOverlay.textView = nil
+        linkHintOverlay.hintsVisible = false
+        linkHintOverlay.isHidden = true
+        linkHintOverlay.subviews.forEach { $0.removeFromSuperview() }
     }
 
     func syncLinkHintSlots(reserved: Bool) {
+        guard textView.window != nil else { return }
         textView.syncLinkHintSlots(reserved: reserved)
-        linkHintOverlay.needsLayout = true
+        if linkHintOverlay.hintsVisible {
+            linkHintOverlay.needsLayout = true
+        }
     }
 
     @available(*, unavailable)

@@ -12,7 +12,11 @@ final class DescriptionLinkHintOverlayView: NSView {
     override func layout() {
         super.layout()
         subviews.forEach { $0.removeFromSuperview() }
-        guard hintsVisible, let textView, let layoutManager = textView.layoutManager,
+        guard hintsVisible,
+              let textView,
+              textView.window != nil,
+              textView.window === window,
+              let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer
         else { return }
 

@@ -42,6 +42,11 @@ struct DescriptionEditorView: NSViewRepresentable {
         return container
     }
 
+    static func dismantleNSView(_ container: DescriptionEditorContainerView, coordinator: Coordinator) {
+        coordinator.teardown()
+        container.teardownLinkHintOverlay()
+    }
+
     func updateNSView(_ container: DescriptionEditorContainerView, context: Context) {
         let textView = container.textView
         textView.onLinkCopied = onLinkCopied
@@ -53,7 +58,13 @@ struct DescriptionEditorView: NSViewRepresentable {
         context.coordinator.suppressLinkHintSlots = suppressLinkHintSlots
         context.coordinator.applyInitialBlurPresentationIfNeeded(isFocused: isFocused, html: html)
         context.coordinator.syncPresentationOnFocusChange(isFocused: isFocused, html: html, resetKey: resetKey)
-        container.updateLinkHintOverlay(visible: isEditable && !isFocused && !suppressLinkHintSlots)
+        container.updateLinkHintOverlay(
+            visible: context.coordinator.shouldShowLinkHintOverlay(
+                isFocused: isFocused,
+                html: html,
+                isEditable: isEditable
+            )
+        )
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
@@ -70,6 +81,19 @@ struct DescriptionEditorView: NSViewRepresentable {
 
         init(html: Binding<String>) {
             self.html = html
+        }
+
+        func teardown() {
+            textView?.delegate = nil
+            textView = nil
+            container = nil
+        }
+
+        func shouldShowLinkHintOverlay(isFocused: Bool, html: String, isEditable: Bool) -> Bool {
+            guard isEditable, !isFocused, !suppressLinkHintSlots, container?.window != nil else { return false }
+            if !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty { return true }
+            guard let textView else { return false }
+            return linkHintSlotsReserved(for: textView)
         }
 
         func applyTheme(_ theme: NativeWebTheme) {
@@ -100,7 +124,9 @@ struct DescriptionEditorView: NSViewRepresentable {
             )
             suppressDelegate = true
             textView.textStorage?.setAttributedString(attributed)
-            container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            if shouldSyncLinkHintSlots(for: textView) {
+                container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            }
             suppressDelegate = false
         }
 
@@ -145,6 +171,7 @@ struct DescriptionEditorView: NSViewRepresentable {
         func applyInitialBlurPresentationIfNeeded(isFocused: Bool, html: String) {
             guard !presentationShowsHosts, !isFocused, !wasDescriptionFocused else { return }
             guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else { return }
+            guard textView?.window != nil else { return }
             suppressDelegate = true
             textView?.applyHostLinkPresentation()
             if let textView {
@@ -164,7 +191,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             if isFocused, presentationShowsHosts {
                 load(html: html, resetKey: resetKey)
                 presentationShowsHosts = false
-            } else if !isFocused {
+            } else if !isFocused, textView?.window != nil {
                 suppressDelegate = true
                 textView?.applyHostLinkPresentation()
                 if let textView {

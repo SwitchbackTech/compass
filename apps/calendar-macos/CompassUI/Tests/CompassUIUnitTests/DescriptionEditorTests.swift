@@ -169,6 +169,30 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertNotNil(BookingEventLinks.parse(bound))
     }
 
+    func testPlainBoldDescriptionSaveReopenCycleDoesNotShowLinkHintOverlay() {
+        var html = "<p><strong>Formatted note</strong></p>"
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
+        coordinator.textView = editor
+        coordinator.container = container
+        editor.delegate = coordinator
+
+        coordinator.load(html: html, resetKey: "demo-morning-standup")
+        coordinator.syncPresentationOnFocusChange(isFocused: false, html: html, resetKey: "demo-morning-standup")
+        XCTAssertFalse(
+            coordinator.shouldShowLinkHintOverlay(isFocused: false, html: html, isEditable: true)
+        )
+        container.updateLinkHintOverlay(visible: false)
+        container.layoutSubtreeIfNeeded()
+
+        coordinator.load(html: html, resetKey: "demo-morning-standup")
+        coordinator.syncPresentationOnFocusChange(isFocused: true, html: html, resetKey: "demo-morning-standup")
+        XCTAssertEqual(editor.string, "Formatted note")
+        coordinator.teardown()
+        container.teardownLinkHintOverlay()
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))
