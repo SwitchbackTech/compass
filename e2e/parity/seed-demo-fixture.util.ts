@@ -85,8 +85,19 @@ export async function prepareParityDemoWeek(
   }
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("t");
-  // Web scroll-to-now uses smooth scrolling; wait for parity PNG alignment with macOS.
-  await page.waitForTimeout(800);
+  // Match macOS instant scroll-to-now during parity capture (no mid-animation PNGs).
+  await page.evaluate(() => {
+    const timedGrid = document.getElementById("timedColumns");
+    if (!(timedGrid instanceof HTMLElement)) return;
+    const timedVisibleHours = 13;
+    const scrollToNowBufferPx = 150;
+    const minuteHeight = timedGrid.clientHeight / timedVisibleHours / 60;
+    const now = new Date();
+    const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const targetTop = Math.max(0, minutes * minuteHeight - scrollToNowBufferPx);
+    timedGrid.scrollTo({ top: targetTop, behavior: "instant" });
+  });
+  await page.waitForTimeout(400);
   await page
     .getByRole("button", { name: /Exercise|Morning standup/i })
     .first()
