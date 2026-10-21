@@ -20,24 +20,27 @@ const STORED_OAUTH_FILTER = {
 export async function countPlaintextOauthRefreshCredentials(
   db: Db,
 ): Promise<number> {
-  return db
+  const row = await db
     .collection(SYNC_COLLECTIONS.credentials)
-    .countDocuments(PLAINTEXT_OAUTH_FILTER);
+    .findOne(PLAINTEXT_OAUTH_FILTER, { projection: { _id: 1 } });
+  return row ? 1 : 0;
 }
 
 export async function assertOauthCredentialStartupReady(
   db: Db,
   credentialEncryptionKey: string | undefined,
 ): Promise<void> {
-  const plaintextCount = await countPlaintextOauthRefreshCredentials(db);
-  if (plaintextCount > 0) {
+  const hasPlaintext = await db
+    .collection(SYNC_COLLECTIONS.credentials)
+    .findOne(PLAINTEXT_OAUTH_FILTER, { projection: { _id: 1 } });
+  if (hasPlaintext) {
     throw new Error(PLAINTEXT_OAUTH_BOOT_MESSAGE);
   }
 
-  const storedOauthCount = await db
+  const hasStoredOauth = await db
     .collection(SYNC_COLLECTIONS.credentials)
-    .countDocuments(STORED_OAUTH_FILTER);
-  if (storedOauthCount > 0 && !credentialEncryptionKey) {
+    .findOne(STORED_OAUTH_FILTER, { projection: { _id: 1 } });
+  if (hasStoredOauth && !credentialEncryptionKey) {
     throw new Error(MISSING_AT_REST_KEY);
   }
 }

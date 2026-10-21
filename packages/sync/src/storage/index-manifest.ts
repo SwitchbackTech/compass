@@ -180,25 +180,32 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { subscriptionId: 1 },
       options: { sparse: true },
     },
-    // Reconcile always filters resourceKind:"events" before lastSuccessAt /
-    // lastAttemptAt, so lead with resourceKind to avoid walking every
-    // calendarList row on each sweep. New names (not last_success /
-    // last_attempt) so installIndexManifest drops the old single-field keys
-    // instead of conflicting on same-name/different-spec.
+    // Global sweeps lead with resourceKind, then credentialUsable:true (equality
+    // in #listForSweep), then the staleness field. New names drop
+    // resource_last_* / resource_bootstrap_stalled without credentialUsable,
+    // which walked every dead-credential row through $lookup each sweep.
     {
-      name: "resource_last_success",
-      key: { resourceKind: 1, lastSuccessAt: 1 },
+      name: "resource_usable_last_success",
+      key: { resourceKind: 1, credentialUsable: 1, lastSuccessAt: 1 },
     },
     {
-      name: "resource_last_attempt",
-      key: { resourceKind: 1, lastAttemptAt: 1 },
+      name: "resource_usable_last_attempt",
+      key: { resourceKind: 1, credentialUsable: 1, lastAttemptAt: 1 },
     },
     {
-      // The bootstrap-recovery sweep's finder: lead with resourceKind (as
-      // above), then bootstrapState so the common "ready" majority never
-      // enters the updatedAt range scan.
-      name: "resource_bootstrap_stalled",
-      key: { resourceKind: 1, bootstrapState: 1, updatedAt: 1 },
+      name: "resource_usable_last_full_list",
+      key: { resourceKind: 1, credentialUsable: 1, lastFullListAt: 1 },
+    },
+    {
+      // The bootstrap-recovery sweep's finder: same credentialUsable lead as
+      // the other global sweeps, then bootstrapState before updatedAt.
+      name: "resource_usable_bootstrap_stalled",
+      key: {
+        resourceKind: 1,
+        credentialUsable: 1,
+        bootstrapState: 1,
+        updatedAt: 1,
+      },
     },
   ],
   [SYNC_COLLECTIONS.commands]: [
