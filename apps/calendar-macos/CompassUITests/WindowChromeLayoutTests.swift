@@ -18,10 +18,16 @@ final class WindowChromeLayoutTests: XCTestCase {
             NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
         ).firstMatch
         XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        let contentTrackRight = window.frame.width - (345 + 32)
+        let toggleMaxX = sidebarToggle.frame.maxX - window.frame.minX
         XCTAssertGreaterThan(
-            sidebarToggle.frame.minX - window.frame.minX,
-            window.frame.width * 0.72,
-            "Sidebar toggle should align with the web header on the right")
+            toggleMaxX,
+            contentTrackRight - 72,
+            "Sidebar toggle should align with the web header on the main column's right edge")
+        XCTAssertLessThan(
+            toggleMaxX,
+            contentTrackRight + 8,
+            "Sidebar toggle should not sit over the sidebar panel")
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Calendar styling and top chrome"
         evidence.lifetime = .keepAlways
