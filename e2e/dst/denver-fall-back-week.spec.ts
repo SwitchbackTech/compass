@@ -1,0 +1,225 @@
+import { expect, test } from "@playwright/test";
+import {
+  getVisibleDayDates,
+  prepareCalendarPage,
+} from "../utils/event-test-utils";
+
+const DENVER = "America/Denver";
+const WEEK_START = "2026-11-01";
+/** Outside the Nov 1–7 view so no column is "today" and the now line stays hidden. */
+const FROZEN_CLOCK = "2026-10-20T12:00:00-06:00";
+
+type SeededEvent = {
+  id: string;
+  title: string;
+  startUtc: string;
+  endUtc: string;
+};
+
+function tylerWeekEvents(): SeededEvent[] {
+  const events: SeededEvent[] = [];
+  for (let day = 1; day <= 7; day += 1) {
+    const dayKey = `2026-11-${String(day).padStart(2, "0")}`;
+    const dayId = String(day).padStart(2, "0");
+    events.push({
+      id: `${dayId}${"a".repeat(22)}`,
+      title: "~ Wake",
+      startUtc: `${dayKey}T11:00:00.000Z`,
+      endUtc: `${dayKey}T12:00:00.000Z`,
+    });
+    events.push({
+      id: `${dayId}${"c".repeat(22)}`,
+      title: "~ Devotion",
+      startUtc: `${dayKey}T13:00:00.000Z`,
+      endUtc: `${dayKey}T14:00:00.000Z`,
+    });
+  }
+  return events;
+}
+
+async function seedTylerWeek(page: import("@playwright/test").Page) {
+  await expect
+    .poll(() =>
+      page.evaluate(() => localStorage.getItem("compass.localCalendarId")),
+    )
+    .not.toBeNull();
+
+  await page.evaluate(async (seedEvents) => {
+    const calendarId = localStorage.getItem("compass.localCalendarId");
+    if (!calendarId) {
+      throw new Error("missing local calendar id");
+    }
+
+    const records = seedEvents.map(({ id, title, startUtc, endUtc }) => ({
+      version: 2,
+      id,
+      isDemo: false,
+      event: {
+        id,
+        calendarId,
+        content: { kind: "details", title, description: "" },
+        schedule: {
+          kind: "timed",
+          start: startUtc,
+          end: endUtc,
+          timeZone: "America/Denver",
+        },
+        recurrence: { kind: "single" },
+        createdAt: "2026-11-01T00:00:00.000Z",
+        updatedAt: null,
+      },
+    }));
+
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("compass-local");
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("events", "readwrite");
+        const store = tx.objectStore("events");
+        for (const record of records) {
+          store.put(record);
+        }
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } finally {
+      db.close();
+    }
+  }, tylerWeekEvents());
+}
+
+function alignmentPayload() {
+  const grid = document.querySelector("#mainGrid");
+  if (!grid) {
+    return { ok: false, reason: "missing grid" };
+  }
+  const tolerance = 4;
+  const timeColumn = grid.querySelector(
+    ':scope > div[aria-hidden="true"].absolute',
+  );
+  if (!timeColumn) {
+    return { ok: false, reason: "missing time column" };
+  }
+  const labelSpans = [
+    ...timeColumn.querySelectorAll<HTMLSpanElement>("span"),
+  ].filter((node) => node.classList.contains("text-[10px]"));
+  const labelIndex = (text: string) =>
+    labelSpans.findIndex((node) => node.textContent?.trim() === text);
+  const labelTop = (text: string) => {
+    const index = labelIndex(text);
+    if (index === -1) {
+      return null;
+    }
+    return labelSpans[index]!.getBoundingClientRect().top;
+  };
+
+  const layers = document.querySelector("#timedEvents");
+  if (!layers) {
+    return { ok: false, reason: "missing timedEvents" };
+  }
+
+  const cardsFor = (pattern: RegExp) =>
+    [...layers.querySelectorAll<HTMLElement>("[style*='top']")].filter((node) =>
+      pattern.test(node.textContent ?? ""),
+    );
+
+  const wakeCards = cardsFor(/wake/i);
+  const devotionCards = cardsFor(/devotion/i);
+  if (wakeCards.length !== 7 || devotionCards.length !== 7) {
+    return {
+      ok: false,
+      reason: `expected 7 wake and 7 devotion, got ${wakeCards.length} and ${devotionCards.length}`,
+    };
+  }
+
+  const fourAmIndex = labelIndex("4 AM");
+  const sixAmIndex = labelIndex("6 AM");
+  const fourAmTop = fourAmIndex === -1 ? null : labelTop("4 AM");
+  const sixAmTop = sixAmIndex === -1 ? null : labelTop("6 AM");
+  if (fourAmTop === null || sixAmTop === null) {
+    return {
+      ok: false,
+      reason: "missing 4 AM or 6 AM gutter label",
+      labels: labelSpans.map((node) => node.textContent?.trim()),
+    };
+  }
+
+  const wakeDeltas = wakeCards.map(
+    (node) => node.getBoundingClientRect().top - fourAmTop,
+  );
+  const devotionDeltas = devotionCards.map(
+    (node) => node.getBoundingClientRect().top - sixAmTop,
+  );
+  const misaligned = [...wakeDeltas, ...devotionDeltas].filter(
+    (delta) => Math.abs(delta) > tolerance,
+  );
+
+  const nowLines = grid.querySelectorAll(".c-now-line-rim");
+  return {
+    ok: misaligned.length === 0 && nowLines.length === 0,
+    wakeDeltas,
+    devotionDeltas,
+    nowLineCount: nowLines.length,
+  };
+}
+
+test.describe("Denver browser fall-back week", () => {
+  test.use({
+    timezoneId: DENVER,
+    viewport: { width: 1280, height: 800 },
+  });
+
+  test("renders the Nov 2026 fall-back week aligned with gutter labels", async ({
+    page,
+  }, testInfo) => {
+    testInfo.setTimeout(90_000);
+    await page.addInitScript(() => {
+      localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
+      localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+      localStorage.setItem("compass.view.sidebar-open", "false");
+    });
+    await page.clock.install({ time: new Date(FROZEN_CLOCK) });
+    await prepareCalendarPage(page);
+    await page.goto(`/week/${WEEK_START}`, { waitUntil: "domcontentloaded" });
+    await page.locator("#mainGrid").waitFor({ state: "visible" });
+
+    await expect.poll(() => getVisibleDayDates(page)).toContain(WEEK_START);
+
+    await seedTylerWeek(page);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.locator("#mainGrid").waitFor({ state: "visible" });
+
+    await expect(
+      page.locator("#timedEvents").getByRole("button", { name: /Wake/i }),
+    ).toHaveCount(7);
+    await expect(
+      page.locator("#timedEvents").getByRole("button", { name: /Devotion/i }),
+    ).toHaveCount(7);
+
+    await page.locator("#mainGrid").evaluate((grid) => {
+      grid.scrollTop = 0;
+    });
+
+    const alignment = await page.evaluate(alignmentPayload);
+    expect(alignment.ok, JSON.stringify(alignment)).toBe(true);
+
+    await page.locator("#mainSection").screenshot({
+      path: "/opt/cursor/artifacts/dst-nov-week-full.png",
+    });
+
+    const slots = await page
+      .locator("#mainGrid")
+      .evaluate((grid) =>
+        getComputedStyle(grid)
+          .getPropertyValue("--calendar-day-hour-slots")
+          .trim(),
+      );
+    expect(slots).toBe("25");
+    await expect(
+      page.getByRole("button", { name: "Calendar timezone" }),
+    ).toContainText("MST");
+  });
+});

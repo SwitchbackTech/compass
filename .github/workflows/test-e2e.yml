@@ -90,7 +90,7 @@ jobs:
           - shard: 2
             specs: e2e/booking e2e/oauth e2e/auth e2e/billing
           - shard: 3
-            specs: e2e/timed e2e/event-form e2e/parity
+            specs: e2e/timed e2e/dst e2e/event-form e2e/parity
           - shard: 4
             specs: e2e/onboarding e2e/calendars e2e/life e2e/navigation e2e/attendees
     container:

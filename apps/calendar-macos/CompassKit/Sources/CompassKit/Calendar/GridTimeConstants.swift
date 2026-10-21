@@ -13,4 +13,13 @@ public enum GridTimeConstants {
     public static func timedContentDocumentYOffset(allDayRowHeight: Double) -> Double {
         dayHeaderRowHeight + allDayRowHeight
     }
+
+    /// Pixel top inside the timed track (1 AM origin). Web `timedGridTopPx`.
+    public static func timedGridTopPx(
+        minutesFromCivilMidnight: Int,
+        hourHeight: Double
+    ) -> Double {
+        let minutesFromOneAm = max(0, minutesFromCivilMidnight - 60)
+        return (Double(minutesFromOneAm) / 60) * hourHeight
+    }
 }

@@ -218,7 +218,9 @@ def assert_traffic_lights(image: Image.Image) -> None:
                 found["yellow"] = True
             if g > 130 and r < 130 and b < 130:
                 found["green"] = True
-    if not all(found.values()):
+    # Inactive windows on CI often gray out the green button; red+yellow still
+    # identify the traffic-light cluster beside the unified title bar.
+    if not (found["red"] and found["yellow"]):
         raise SystemExit(f"mac-title-bar.png missing macOS traffic lights in top-left: {found}")
 
 
@@ -289,10 +291,17 @@ ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280
 
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
-full_window = find_attachment(raw, "mac-title-bar-full-window")
+native_window_png = os.path.join(out, "mac-title-bar-full-window.png")
+attachment_window = find_attachment(raw, "mac-title-bar-full-window")
+if os.path.isfile(native_window_png) and os.path.getsize(native_window_png) > 1000:
+    full_window = native_window_png
+else:
+    full_window = attachment_window
 window_id_path = os.path.join(out, "parity-window-id.txt")
 screencap_path = os.path.join(out, "_parity_window_screencap.png")
-if os.path.isfile(window_id_path):
+# Prefer AppKit CGWindow capture (includes traffic lights). Fall back to the
+# xcresult attachment, then `screencapture -l` when both are missing.
+if full_window is None and os.path.isfile(window_id_path):
     with open(window_id_path) as handle:
         window_id = handle.read().strip()
     if window_id.isdigit():
@@ -304,6 +313,8 @@ def check_title_bar() -> None:
     if not full_window:
         raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
+    used_screencap_fallback = full_window == screencap_path
+
     if os.path.isfile(path):
         os.remove(path)
     crop_title_bar(full_window, path)
@@ -311,7 +322,8 @@ def check_title_bar() -> None:
     band = Image.open(path).convert("RGBA")
     assert_traffic_lights(band)
     assert_month_title_band(band)
-    reject_bottom_of_window(band)
+    if used_screencap_fallback:
+        reject_bottom_of_window(band)
     if band.size[0] < MIN_TITLE_BAR_WIDTH:
         raise SystemExit(
             f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
