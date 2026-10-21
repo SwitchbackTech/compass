@@ -86,7 +86,7 @@
       },
       "output": {
         "height": 57,
-        "left": 55,
+        "left": 5,
         "top": 480,
         "width": 310
       }
@@ -169,7 +169,7 @@
       },
       "output": {
         "height": 90,
-        "left": 385,
+        "left": 335,
         "top": 480,
         "width": 120
       }
@@ -179,7 +179,7 @@
       "input": {
         "position": {
           "height": 57,
-          "left": 55,
+          "left": 5,
           "top": 480,
           "width": 310
         },
@@ -191,7 +191,7 @@
       },
       "output": {
         "height": 57,
-        "left": 55,
+        "left": 5,
         "top": 480,
         "width": 212,
         "zIndex": 1
