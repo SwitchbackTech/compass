@@ -44,7 +44,7 @@ public struct RootView: View {
                 }
             }
             titleBarChrome
-                .zIndex(2)
+                .zIndex(10)
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -310,43 +310,49 @@ public struct RootView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
                 .accessibilityIdentifier("compass-native-header")
+
             HStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    titleBarNavButton(
-                        label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
-                        icon: .caretLeft
-                    ) {
-                        model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
-                    }
-                    titleBarNavButton(
-                        label: model.viewStore.view == .life ? "Next life variation" : "Next",
-                        icon: .caretRight
-                    ) {
-                        model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
-                    }
-                    ViewSwitcherView(model: model)
-                }
-                .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
-
-                Spacer(minLength: 0)
-
                 titleBarNavButton(
-                    label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-                    icon: .sidebarSimple,
-                    iconSize: 21,
-                    iconColor: theme.textColor
+                    label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
+                    icon: .caretLeft
                 ) {
-                    model.isSidebarOpen.toggle()
+                    model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
                 }
-                .accessibilityIdentifier("compass-native-sidebar-toggle")
-                .padding(.trailing, titleBarTrailingInset)
+                titleBarNavButton(
+                    label: model.viewStore.view == .life ? "Next life variation" : "Next",
+                    icon: .caretRight
+                ) {
+                    model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
+                }
+                ViewSwitcherView(model: model)
             }
+            .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
+
+            // Web `CalendarHeader`: trailing cluster is its own row so Spacer/drawingGroup
+            // never clips the phosphor toggle in real window captures.
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                titleBarSidebarToggle
+            }
+            .padding(.trailing, titleBarTrailingInset)
             .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
-            .compositingGroup()
-            .drawingGroup()
         }
         .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private var titleBarSidebarToggle: some View {
+        titleBarNavButton(
+            label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
+            icon: .sidebarSimple,
+            iconSize: 21,
+            iconColor: theme.textMutedColor
+        ) {
+            model.isSidebarOpen.toggle()
+        }
+        .accessibilityIdentifier("compass-native-sidebar-toggle")
     }
 
     /// Web `CalendarHeader`: toggle sits on the right of the main column, not over the sidebar.
