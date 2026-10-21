@@ -3,6 +3,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { mongoPerformanceOptions } from "@core/server/mongo-client-options";
 import { backfillCalendarActive } from "@sync/storage/backfill-calendar-active";
 import { installIndexManifest } from "@sync/storage/index-manifest";
+import { reconcileCredentialUsable } from "@sync/storage/reconcile-credential-usable";
 
 const logger = Logger("sync:mongo");
 
@@ -57,6 +58,12 @@ export class SyncMongoService {
       await this.verifyLeastPrivilege(options);
       await installIndexManifest(this.#db);
       await backfillCalendarActive(this.#db);
+      const credentialUsable = await reconcileCredentialUsable(this.#db);
+      if (credentialUsable.corrected > 0) {
+        logger.info(
+          `credentialUsable startup reconcile corrected ${credentialUsable.corrected} of ${credentialUsable.scanned} sync_resources row(s)`,
+        );
+      }
     } catch (error) {
       // A failed startup must not leave an open client behind.
       await this.disconnect();

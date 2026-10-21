@@ -42,9 +42,26 @@ const PLAINTEXT_REFRESH_TOKEN_FIELD = { refreshToken: "" } as const;
 // can never surface a token. The repository never logs credential material.
 export class CredentialRepository {
   private readonly collection: Collection<CredentialRecord>;
+  private readonly db: Db;
 
   constructor(db: Db) {
+    this.db = db;
     this.collection = db.collection(SYNC_COLLECTIONS.credentials);
+  }
+
+  // Single choke point: every credential store or delete mirrors usability onto
+  // all sync_resources for that connection so global sweeps can filter before
+  // the credential $lookup.
+  async #mirrorSyncResourceCredentialUsability(
+    connectionId: ConnectionId,
+    usable: boolean,
+  ): Promise<void> {
+    await this.db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateMany(
+        { connectionId },
+        { $set: { credentialUsable: usable, updatedAt: new Date() } },
+      );
   }
 
   // Store or replace a connection's OAuth credential with encrypted refresh
@@ -85,6 +102,10 @@ export class CredentialRepository {
     if (!result) {
       throw new Error("Credential store did not return a record");
     }
+    await this.#mirrorSyncResourceCredentialUsability(
+      fields.connectionId,
+      true,
+    );
     return OauthRefreshCredentialReadSchema.parse(result);
   }
 
@@ -119,6 +140,10 @@ export class CredentialRepository {
     if (!result) {
       throw new Error("Password credential store did not return a record");
     }
+    await this.#mirrorSyncResourceCredentialUsability(
+      fields.connectionId,
+      true,
+    );
     return PasswordCredentialReadSchema.parse(result);
   }
 
@@ -190,6 +215,7 @@ export class CredentialRepository {
   // whether a credential existed to delete.
   async deleteByConnection(connectionId: ConnectionId): Promise<boolean> {
     const result = await this.collection.deleteOne({ _id: connectionId });
+    await this.#mirrorSyncResourceCredentialUsability(connectionId, false);
     return result.deletedCount > 0;
   }
 }
