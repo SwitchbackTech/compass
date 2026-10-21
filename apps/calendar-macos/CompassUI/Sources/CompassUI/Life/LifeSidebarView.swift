@@ -8,6 +8,8 @@ struct LifeSidebarView: View {
   @State private var birthDate = ""
   @State private var lifespan = ""
   @State private var invalidBirthDate = false
+  /// Web `LifeQuote`: one random quote per visit to the sidebar.
+  @State private var quote = LifeQuotes.random()
   @FocusState private var focusedField: Field?
   private enum Field { case birthDate, lifespan }
 
@@ -38,7 +40,7 @@ struct LifeSidebarView: View {
               .accessibilityLabel("Date of birth")
               .focused($focusedField, equals: .birthDate)
               .onSubmit { commitBirthDate() }
-              .help("Enter a date as yyyy-mm-dd")
+              .help("Enter a date like Jun 10, 2026")
               .padding(.vertical, 8).frame(width: 176)
               .background(theme.surfaceColor).foregroundStyle(theme.textColor)
               .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -69,7 +71,7 @@ struct LifeSidebarView: View {
         }
         .textFieldStyle(.plain)
         .multilineTextAlignment(.center)
-        Text("“Lost time is never found again.” (Benjamin Franklin)").italic()
+        Text(quote).italic()
       }
       .font(.rubik(14))
       .foregroundStyle(theme.textMutedColor)
@@ -97,12 +99,15 @@ struct LifeSidebarView: View {
   }
 
   private func refreshInputs() {
-    birthDate = model.lifeStore.preferences.birthDate
+    birthDate = LifeDateFormat.display(model.lifeStore.preferences.birthDate)
     lifespan = String(model.lifeStore.preferences.lifespan)
   }
 
   private func commitBirthDate() {
-    invalidBirthDate = !model.lifeStore.updateBirthDate(birthDate)
+    let typed = birthDate.trimmingCharacters(in: .whitespacesAndNewlines)
+    // An empty field clears the date; otherwise accept "Jun 10, 2026" or "2026-06-10".
+    invalidBirthDate = !model.lifeStore.updateBirthDate(
+      typed.isEmpty ? "" : (LifeDateFormat.storedValue(from: typed) ?? typed))
     refreshInputs()
   }
 
