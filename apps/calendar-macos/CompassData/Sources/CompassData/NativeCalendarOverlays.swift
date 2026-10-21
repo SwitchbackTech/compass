@@ -197,7 +197,7 @@ extension NativeCalendarRootModel {
                 openExternalURLHandler?(url)
             }
         case "share-feedback":
-            onShareFeedback?()
+            openFeedbackDialog()
         case "book-personal-onboarding":
             openExternalURLHandler?(CommandPaletteCatalog.personalOnboardingURL)
         default:

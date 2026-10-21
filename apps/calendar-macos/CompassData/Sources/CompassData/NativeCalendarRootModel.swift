@@ -443,7 +443,10 @@ public final class NativeCalendarRootModel {
 
     public var onParityCapturePresentationApplied: (() -> Void)?
     public var onShowAbout: (() -> Void)?
-    public var onShareFeedback: (() -> Void)?
+    /// Delivers feedback details and the current view name; throws when sending fails.
+    public var feedbackSender: ((String, String) async throws -> Void)?
+    public internal(set) var isFeedbackDialogPresented = false
+    public internal(set) var isFeedbackSubmitting = false
     public var onExportLocalData: ((Data, String) async throws -> Bool)?
     public internal(set) var isExportingLocalData = false
     public internal(set) var pendingLogoutConfirmation = false
