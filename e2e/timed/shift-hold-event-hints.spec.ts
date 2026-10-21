@@ -201,6 +201,9 @@ test("lowercase day prefix plus digit targets an event without a typed-time draf
   page,
 }) => {
   await prepareTimedCalendarPage(page);
+  await blurActive(page);
+  await page.keyboard.press("Escape");
+  await expect(shiftHintOverlay(page)).toHaveCount(0);
 
   const titles: string[] = [];
   for (let index = 0; index < 4; index++) {
