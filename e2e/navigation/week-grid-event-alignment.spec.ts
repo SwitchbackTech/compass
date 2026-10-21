@@ -69,6 +69,7 @@ async function openAlignmentWeek(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
     localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+    localStorage.setItem("compass.onboarding.has-seen-life-view-intro", "true");
     localStorage.setItem("compass.view.sidebar-open", "false");
   });
   await page.clock.install({ time: new Date(FROZEN_CLOCK) });
