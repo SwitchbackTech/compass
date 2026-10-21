@@ -154,14 +154,17 @@ public enum EventPositionCalculator {
         let columnWidth = measurements.colWidths.indices.contains(dateIndex)
             ? measurements.colWidths[dateIndex]
             : 0
-        let startOfDay = EffectiveTimeZone.calendar.startOfDay(for: start)
-        let minutesFromStartOfDay = minuteDiff(from: startOfDay, to: start)
+        let timeZone = EffectiveTimeZone.timeZone
+        let minutesFromStartOfDay = CivilDay.gridMinutesFromCivilMidnight(start, timeZone: timeZone)
 
         return TimedSlot(
             columnWidth: columnWidth,
             left: GridMetrics.gridMarginLeftPx(hasSecondaryTimeZone: hasSecondaryTimeZone)
                 + columnLeft + GridLayoutConstants.timedEventColumnInset,
-            top: (Double(minutesFromStartOfDay) / 60) * measurements.hourHeight,
+            top: GridTimeConstants.timedGridTopPx(
+                minutesFromCivilMidnight: minutesFromStartOfDay,
+                hourHeight: measurements.hourHeight
+            ),
             durationMinutes: minuteDiff(from: start, to: end)
         )
     }
