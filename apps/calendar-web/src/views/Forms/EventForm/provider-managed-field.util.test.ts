@@ -3,6 +3,7 @@ import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   providerManagedRecurrenceToast,
+  providerManagedScheduleNote,
   providerManagedScheduleToast,
 } from "@web/views/Forms/EventForm/provider-managed-field.util";
 import { describe, expect, it } from "bun:test";
@@ -20,6 +21,25 @@ const calendar = (provider: "google" | "microsoft" | "apple") => ({
   isPrimary: true,
   isVisible: true,
   isActive: true,
+});
+
+describe("providerManagedScheduleNote", () => {
+  const tail =
+    " keeps this event's time updated. Your title, notes, and location edits stay in Compass.";
+
+  it("names Google, Microsoft Outlook, and Apple", () => {
+    expect(providerManagedScheduleNote(calendar("google"))).toBe(
+      `Google${tail}`,
+    );
+    expect(providerManagedScheduleNote(calendar("microsoft"))).toBe(
+      `Microsoft Outlook${tail}`,
+    );
+    expect(providerManagedScheduleNote(calendar("apple"))).toBe(`Apple${tail}`);
+  });
+
+  it("falls back when the calendar is unknown", () => {
+    expect(providerManagedScheduleNote(undefined)).toBe(`Your calendar${tail}`);
+  });
 });
 
 describe("providerManagedScheduleToast", () => {

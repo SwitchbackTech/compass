@@ -102,6 +102,7 @@ import { LocationField } from "@web/views/Forms/EventForm/LocationField/Location
 import { ProviderManagedFieldShield } from "@web/views/Forms/EventForm/ProviderManagedFieldShield";
 import {
   providerManagedRecurrenceToast,
+  providerManagedScheduleNote,
   providerManagedScheduleToast,
 } from "@web/views/Forms/EventForm/provider-managed-field.util";
 import { setEventFormProviderManagedFocusGuard } from "@web/views/Forms/EventForm/provider-managed-focus-guard";
@@ -1093,9 +1094,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
             {isScheduleLocked && !IS_EVENT_SIDEBAR_STAGING_UX && (
               <p role="note" className="text-text-muted text-xs">
-                Your calendar provider keeps this event updated (for example
-                from an email), so its time follows the provider. Changes to the
-                title, notes, and location stay in Compass.
+                {providerManagedScheduleNote(attendeeCalendar)}
               </p>
             )}
 

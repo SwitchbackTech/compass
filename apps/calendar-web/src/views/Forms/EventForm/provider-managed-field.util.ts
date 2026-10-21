@@ -12,6 +12,15 @@ const PROVIDER_MANAGED_PRODUCT_NAME: Record<ProviderKind, string> = {
   apple: "iCloud Calendar",
 };
 
+const PROVIDER_MANAGED_SCHEDULE_NOTE_SUBJECT: Record<ProviderKind, string> = {
+  google: "Google",
+  microsoft: "Microsoft Outlook",
+  apple: "Apple",
+};
+
+const PROVIDER_MANAGED_SCHEDULE_NOTE_TAIL =
+  " keeps this event's time updated. Your title, notes, and location edits stay in Compass.";
+
 // An undefined kind means there is no product to name: the local calendar, or
 // a calendar the lookup has not resolved yet. Both take the generic sentence,
 // never a guessed provider.
@@ -33,6 +42,16 @@ export const providerManagedScheduleToast = (
     "This time is managed by your calendar and can't be edited here.",
     (product) => `This time is managed by ${product}.`,
   );
+
+export const providerManagedScheduleNote = (
+  calendar: Calendar | undefined,
+): string => {
+  const kind = calendar ? calendarProviderKind(calendar) : undefined;
+  const subject = kind
+    ? PROVIDER_MANAGED_SCHEDULE_NOTE_SUBJECT[kind]
+    : "Your calendar";
+  return `${subject}${PROVIDER_MANAGED_SCHEDULE_NOTE_TAIL}`;
+};
 
 export const providerManagedRecurrenceToast = (
   calendar: Calendar | undefined,
