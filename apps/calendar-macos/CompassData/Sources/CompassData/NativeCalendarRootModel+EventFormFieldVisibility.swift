@@ -54,7 +54,7 @@ extension NativeCalendarRootModel {
             canInviteAttendees: capabilities?.canInviteAttendees ?? false,
             canWriteCalendar: capabilities?.canWrite ?? false,
             organizerEmail: details?.organizer?.email,
-            attendeeEmails: details?.attendees.map(\.email) ?? [],
+            attendeeEmails: (details?.attendees ?? []).map(\.email),
             hasConferenceLink: details?.conference?.url != nil,
             creatableConferenceKind: creatable,
             recurrenceKind: recurrenceKind(for: baseline)
@@ -64,7 +64,10 @@ extension NativeCalendarRootModel {
     public func eventFormFieldVisibilityInput(for event: Event) -> EventFormFieldVisibilityInput {
         let lookup = CalendarLookupBuilder.build(calendars)
         let calendar = lookup[event.calendarId.rawValue]
-        let isBusy = event.content.kind == .busy
+        let isBusy: Bool = {
+            if case .busy = event.content { return true }
+            return false
+        }()
         let details: EventContent_DetailsPayload? = {
             guard case .details(let payload) = event.content else { return nil }
             return payload
@@ -84,7 +87,7 @@ extension NativeCalendarRootModel {
             canInviteAttendees: calendar?.capabilities.canInviteAttendees ?? false,
             canWriteCalendar: calendar?.capabilities.canWrite ?? false,
             organizerEmail: details?.organizer?.email,
-            attendeeEmails: details?.attendees.map(\.email) ?? [],
+            attendeeEmails: (details?.attendees ?? []).map(\.email),
             hasConferenceLink: details?.conference?.url != nil,
             creatableConferenceKind: nil,
             recurrenceKind: recurrenceKind(for: event)
