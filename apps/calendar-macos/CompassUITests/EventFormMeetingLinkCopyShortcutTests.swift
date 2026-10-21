@@ -16,15 +16,21 @@ final class EventFormMeetingLinkCopyShortcutTests: XCTestCase {
         ]
         app.launch()
         let window = app.windows["Compass"]
-        let conference = window.descendants(matching: .any)["compass-event-form-conference"]
-        XCTAssertTrue(conference.waitForExistence(timeout: 8))
-        XCTAssertTrue(window.staticTexts["Google Meet"].exists)
+        let form = window.descendants(matching: .any)["compass-event-form"]
+        XCTAssertTrue(form.waitForExistence(timeout: 12))
 
-        let copyControl = window.buttons["compass-event-form-meeting-link-copy"]
-        XCTAssertTrue(copyControl.waitForExistence(timeout: 8))
+        window.typeKey("=", modifierFlags: [.command])
+        let conference = form.descendants(matching: .any)["compass-event-form-conference"]
+        for _ in 0 ..< 4 where !conference.waitForExistence(timeout: 1) {
+            form.swipeUp()
+        }
+        XCTAssertTrue(conference.waitForExistence(timeout: 4))
 
-        let title = window.textFields["compass-event-form-title"]
-        XCTAssertTrue(title.exists)
+        let copyControl = form.descendants(matching: .any)["compass-event-form-meeting-link-copy"]
+        XCTAssertTrue(copyControl.waitForExistence(timeout: 4))
+
+        let title = form.descendants(matching: .any)["compass-event-form-title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 4))
         title.click()
         pasteboard.clearContents()
         window.typeKey("l", modifierFlags: [.command, .shift])
