@@ -125,7 +125,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Keyboard `i`, arrows, Enter | ✅ | |
-| Cmd+Shift+, / . month jump | ✅ | |
+| Mod+Alt+Shift+J / K month jump | ✅ | |
 | Selected range / today styling | ✅ | Week mode bolds the selected week row with ink on today; 28.8pt circles; today follows the calendar clock; Go to this month circle hides on the current month |
 | Weekday header 10px muted | 🟡 | Rubik 10 in `SidebarMonthPicker.swift` |
 
@@ -222,8 +222,8 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `nav-next` | K | ✅ | ✅ | ✅ |
 | `nav-shift-left` | Mod+Shift+← | ✅ | ✅ | ✅ |
 | `nav-shift-right` | Mod+Shift+→ | ✅ | ✅ | ✅ |
-| `nav-month-prev` | Mod+Shift+, | ✅ | ✅ | ✅ |
-| `nav-month-next` | Mod+Shift+. | ✅ | ✅ | ✅ |
+| `nav-month-prev` | Mod+Alt+Shift+J | ✅ | ✅ | ✅ |
+| `nav-month-next` | Mod+Alt+Shift+K | ✅ | ✅ | ✅ |
 | `nav-picker-step` | Arrow keys in picker | ✅ | ✅ | 🟡 telemetry |
 | `nav-today` | T (keyup) | ✅ | ✅ | ✅ |
 | `nav-go-to-date` | Mod+G | ✅ | ✅ | ✅ |
