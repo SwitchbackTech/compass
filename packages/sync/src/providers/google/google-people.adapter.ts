@@ -5,9 +5,9 @@ import {
   type ContactSuggestion,
 } from "@core/types/contact.contracts";
 import {
-  googleErrorReasons,
   googleFailureCause,
   googleStatus,
+  hasGoogleRateLimitReason,
 } from "@sync/providers/google/google-error";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
@@ -167,24 +167,12 @@ function toSuggestions(match: GooglePeoplePersonMatch): ContactSuggestion[] {
     .filter((suggestion) => suggestion !== null);
 }
 
-// Google's quota refusals worth backing off on, as opposed to backendError /
-// internalError (transient server faults, classified searchFailed below).
-const RATE_LIMIT_REASONS = [
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-];
-
 function toContactsSearchError(error: unknown): ContactsSearchError {
   return classifyContactsSearchError(error, {
     status: googleStatus,
     cause: googleFailureCause,
     isRateLimited: (err, status) =>
-      status === 429 ||
-      googleErrorReasons(err).some((reason) =>
-        RATE_LIMIT_REASONS.includes(reason),
-      ),
+      status === 429 || hasGoogleRateLimitReason(err),
     rateLimitedMessage: "Google throttled the contact search",
     unauthorizedMessage:
       "Google refused the contact search credential or scope",

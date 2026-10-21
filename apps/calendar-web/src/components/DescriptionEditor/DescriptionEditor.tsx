@@ -16,7 +16,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
 import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
 import { DescriptionEditorLinkHints } from "@web/components/DescriptionEditor/DescriptionEditorLinkHints";
 import {
@@ -26,6 +25,7 @@ import {
 import {
   findLinkElement,
   focusAdjacentDescriptionLink,
+  openDescriptionLink,
 } from "@web/components/DescriptionEditor/description-link.util";
 import {
   looksLikeHtml,
@@ -237,7 +237,7 @@ export const DescriptionEditor = ({
     !isFocused && !suppressLinkShortcutHints,
   );
 
-  useDescriptionLinkPresentation(editor, editorRoot, true, isFocused);
+  useDescriptionLinkPresentation(editor, editorRoot, isFocused);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
@@ -280,17 +280,14 @@ export const DescriptionEditor = ({
   };
 
   const onDescriptionClickCapture = (event: MouseEvent<HTMLDivElement>) => {
-    if (!editable) return;
+    if (!editable || !editorRoot) return;
     if (!(event.metaKey || event.ctrlKey) || event.button !== 0) return;
 
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-
-    const link = target.closest("a");
+    const link = findLinkElement(editorRoot, event.target);
     if (!link?.href) return;
 
     event.preventDefault();
-    openExternalUrl(link.href);
+    openDescriptionLink(link.href);
   };
 
   if (!editor) return null;

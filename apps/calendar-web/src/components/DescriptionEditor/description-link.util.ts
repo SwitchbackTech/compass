@@ -18,6 +18,14 @@ export const displayHostForDescriptionLink = (url: string): string => {
   }
 };
 
+const looksLikeBareUrlLabel = (value: string): boolean =>
+  value.startsWith("http://") ||
+  value.startsWith("https://") ||
+  value.startsWith("www.");
+
+const stripTrailingLinkPunctuation = (value: string): string =>
+  value.replace(/[.,)>]+$/, "");
+
 /** True when the visible label is the URL itself (autolink or provider HTML). */
 export const shouldShortenDescriptionLinkLabel = (
   text: string,
@@ -28,26 +36,17 @@ export const shouldShortenDescriptionLinkLabel = (
   if (trimmed.includes(" ")) return false;
   try {
     const parsed = new URL(href);
-    const withoutTrail = (value: string) => value.replace(/[.,)>]+$/, "");
-    const normalizedHref = withoutTrail(parsed.href);
-    const normalizedText = withoutTrail(trimmed);
+    const normalizedHref = stripTrailingLinkPunctuation(parsed.href);
+    const normalizedText = stripTrailingLinkPunctuation(trimmed);
     if (
       normalizedText === normalizedHref ||
-      normalizedText === withoutTrail(href)
+      normalizedText === stripTrailingLinkPunctuation(href)
     ) {
       return true;
     }
-    return (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.startsWith("www.")
-    );
+    return looksLikeBareUrlLabel(trimmed);
   } catch {
-    return (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.startsWith("www.")
-    );
+    return looksLikeBareUrlLabel(trimmed);
   }
 };
 

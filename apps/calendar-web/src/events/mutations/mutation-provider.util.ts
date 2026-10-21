@@ -23,6 +23,16 @@ function providerForCalendar(
     : undefined;
 }
 
+/** Calendar id on a create/replace payload, when the mutation carried one. */
+export function calendarIdFromMutationInput(
+  input: unknown,
+): string | undefined {
+  if (typeof input !== "object" || input === null) return undefined;
+  if (!("calendarId" in input)) return undefined;
+  const calendarId = (input as { calendarId?: unknown }).calendarId;
+  return typeof calendarId === "string" ? calendarId : undefined;
+}
+
 /** Provider for an in-flight mutation when the API error omitted it. */
 export function resolveMutationProvider(
   queryClient: QueryClient,
