@@ -102,6 +102,55 @@ enum ParityViewSnapshotExporter {
             .appendingPathComponent("parity-window-id.txt")
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         try? String(windowNumber).write(to: file, atomically: true, encoding: .utf8)
+        let metrics = URL(fileURLWithPath: directory, isDirectory: true)
+            .appendingPathComponent("parity-window-metrics.txt")
+        let content = window.contentRect(forFrameRect: window.frame)
+        let metricsText =
+            "contentWidth=\(content.width)\nframeWidth=\(window.frame.width)\nframeHeight=\(window.frame.height)\n"
+        try? metricsText.write(to: metrics, atomically: true, encoding: .utf8)
+        writeTitleBarWindowPNG(window: window, directory: directory)
+    }
+
+    /// Title-band GPU capture (traffic lights + unified chrome) when Screen Recording allows it.
+    @MainActor
+    private static func writeTitleBarWindowPNG(window: NSWindow, directory: String) {
+        let windowID = CGWindowID(window.windowNumber)
+        guard windowID != 0 else { return }
+        let frame = window.frame
+        let bandPoints = MacTitleBarChromeMetrics.referenceCaptureHeight
+        guard let image = CGWindowListCreateImage(
+            frame,
+            .optionIncludingWindow,
+            windowID,
+            [.bestResolution]
+        ), let cropped = cropTopBand(from: image, frameHeight: frame.height, bandPoints: bandPoints)
+        else { return }
+
+        let rep = NSBitmapImageRep(cgImage: cropped)
+        rep.size = NSSize(width: frame.width, height: bandPoints)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return }
+        let out = URL(fileURLWithPath: directory, isDirectory: true)
+            .appendingPathComponent("parity-window-top.png")
+        try? png.write(to: out)
+    }
+
+    private static func cropTopBand(
+        from image: CGImage,
+        frameHeight: CGFloat,
+        bandPoints: CGFloat
+    ) -> CGImage? {
+        let scale = CGFloat(image.height) / max(frameHeight, 1)
+        let cropPixels = min(
+            image.height,
+            max(1, Int((bandPoints * scale).rounded(.up)))
+        )
+        let cropRect = CGRect(
+            x: 0,
+            y: image.height - cropPixels,
+            width: image.width,
+            height: cropPixels
+        )
+        return image.cropping(to: cropRect)
     }
 
     private static func enableLayerBackedDrawing(_ view: NSView) {

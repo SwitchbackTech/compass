@@ -121,6 +121,10 @@ enum NativeImageSnapshotSupport {
             sidebarToggle.frame.maxX,
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
+        let toggleMinX = sidebarToggle.frame.minX - window.frame.minX
+        let toggleMaxX = sidebarToggle.frame.maxX - window.frame.minX
+        let toggleMinY = sidebarToggle.frame.minY - window.frame.minY
+        let toggleMaxY = sidebarToggle.frame.maxY - window.frame.minY
         let headerTitle = window.buttons["compass-native-header-title"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(
@@ -136,32 +140,104 @@ enum NativeImageSnapshotSupport {
         }
         if let url = URL(string: "compass://debug/parity-apply-capture-window") {
             NSWorkspace.shared.open(url)
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
-        guard let exportURL = URL(string: "compass://debug/parity-export-title-bar-reference") else {
-            XCTFail("Invalid title bar reference export URL", file: file, line: line)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        attachToggleProbeBounds(
+            minX: toggleMinX,
+            maxX: toggleMaxX,
+            minY: toggleMinY,
+            maxY: toggleMaxY,
+            outDir: outDir
+        )
+        if let windowID = waitForParityWindowId(in: outDir),
+           let screencap = screencaptureWindowPNG(windowID: windowID, in: outDir)
+        {
+            writeTitleBarPNG(screencap, to: outDir)
+            attachPNG(screencap, named: "mac-title-bar-full-window")
             return
         }
-        NSWorkspace.shared.open(exportURL)
+        let png = window.screenshot().pngRepresentation
+        guard !png.isEmpty else {
+            XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
+            return
+        }
+        writeTitleBarPNG(png, to: outDir)
+        attachPNG(png, named: "mac-title-bar-full-window")
+    }
+
+    private static func writeTitleBarPNG(_ data: Data, to outDir: String) {
         let fileURL = URL(fileURLWithPath: outDir, isDirectory: true)
             .appendingPathComponent("mac-title-bar-full-window.png")
-        let deadline = Date().addingTimeInterval(15)
-        var png: Data?
+        try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? data.write(to: fileURL)
+    }
+
+    private static func attachToggleProbeBounds(
+        minX: CGFloat,
+        maxX: CGFloat,
+        minY: CGFloat,
+        maxY: CGFloat,
+        outDir: String?
+    ) {
+        let payload: [String: Double] = [
+            "minX": Double(minX),
+            "maxX": Double(maxX),
+            "minY": Double(minY),
+            "maxY": Double(maxY),
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload)
+        else { return }
+        if let outDir {
+            let dir = URL(fileURLWithPath: outDir, isDirectory: true)
+            try? data.write(to: dir.appendingPathComponent("parity-toggle-bounds.json"))
+            let metrics = dir.appendingPathComponent("parity-window-metrics.txt")
+            let line =
+                "toggleMinX=\(minX)\ntoggleMaxX=\(maxX)\ntoggleMinY=\(minY)\ntoggleMaxY=\(maxY)\n"
+            let existing = (try? String(contentsOf: metrics, encoding: .utf8)) ?? ""
+            try? (existing + line).write(to: metrics, atomically: true, encoding: .utf8)
+        }
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+        attachment.name = "parity-toggle-bounds.json"
+        attachment.lifetime = .keepAlways
+        XCTContext.runActivity(named: "Sidebar toggle probe bounds") { activity in
+            activity.add(attachment)
+        }
+    }
+
+    private static func waitForParityWindowId(in outDir: String, timeout: TimeInterval = 8) -> String? {
+        let path = (outDir as NSString).appendingPathComponent("parity-window-id.txt")
+        let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if FileManager.default.fileExists(atPath: fileURL.path),
-               let data = try? Data(contentsOf: fileURL),
-               !data.isEmpty
-            {
-                png = data
-                break
+            if let raw = try? String(contentsOf: URL(fileURLWithPath: path), encoding: .utf8) {
+                let id = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !id.isEmpty, id.allSatisfy(\.isNumber) {
+                    return id
+                }
             }
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
         }
-        guard let png, !png.isEmpty else {
-            XCTFail("Timed out waiting for title bar reference at \(fileURL.path)", file: file, line: line)
-            return
+        return nil
+    }
+
+    private static func screencaptureWindowPNG(windowID: String, in outDir: String) -> Data? {
+        let dest = (outDir as NSString).appendingPathComponent("_mac_title_bar_screencap.png")
+        try? FileManager.default.removeItem(atPath: dest)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/screencapture")
+        process.arguments = ["-l", windowID, "-x", dest]
+        do {
+            try process.run()
+            process.waitUntilExit()
+        } catch {
+            return nil
         }
-        attachPNG(png, named: "mac-title-bar-full-window")
+        guard process.terminationStatus == 0,
+              let data = try? Data(contentsOf: URL(fileURLWithPath: dest)),
+              !data.isEmpty
+        else { return nil }
+        return data
     }
 
     @MainActor
