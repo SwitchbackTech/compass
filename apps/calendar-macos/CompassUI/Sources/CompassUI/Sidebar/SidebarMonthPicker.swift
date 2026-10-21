@@ -11,6 +11,9 @@ public struct SidebarMonthPicker: View {
     public let focusedDate: Date?
     /// The calendar's clock (`referenceNow`), so fixtures and pinned zones agree on today.
     public let today: Date
+    /// Web sidebar days are keyboard targets only; the form's date popover
+    /// reuses this picker with clickable days.
+    public let daysAreClickable: Bool
     private let trailingHeader: AnyView?
 
     public init(
@@ -20,6 +23,7 @@ public struct SidebarMonthPicker: View {
         focusedDate: Date? = nil,
         visibleDayCount: Int = 1,
         today: Date = Date(),
+        daysAreClickable: Bool = false,
         trailingHeader: (() -> some View)? = nil
     ) {
         _displayedMonth = displayedMonth
@@ -28,11 +32,30 @@ public struct SidebarMonthPicker: View {
         self.visibleDayCount = visibleDayCount
         self.focusedDate = focusedDate
         self.today = today
+        self.daysAreClickable = daysAreClickable
         if let trailingHeader {
             self.trailingHeader = AnyView(trailingHeader())
         } else {
             self.trailingHeader = nil
         }
+    }
+
+    /// A picker with no trailing header content.
+    public init(
+        displayedMonth: Binding<Date>,
+        selectedDate: Date,
+        onSelectDate: @escaping (Date) -> Void,
+        today: Date = Date(),
+        daysAreClickable: Bool = false
+    ) {
+        _displayedMonth = displayedMonth
+        self.selectedDate = selectedDate
+        self.onSelectDate = onSelectDate
+        self.visibleDayCount = 1
+        self.focusedDate = nil
+        self.today = today
+        self.daysAreClickable = daysAreClickable
+        self.trailingHeader = nil
     }
 
     public var body: some View {
@@ -153,7 +176,7 @@ public struct SidebarMonthPicker: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .allowsHitTesting(false)
+        .allowsHitTesting(daysAreClickable)
         .accessibilityLabel(dayAccessibilityLabel(day))
         .accessibilityAddTraits(isInRange(day, from: selectedDate) ? .isSelected : [])
     }
