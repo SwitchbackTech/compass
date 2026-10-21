@@ -112,8 +112,16 @@ struct DescriptionEditorView: NSViewRepresentable {
         }
 
         private func linkHintSlotsReserved(for textView: DescriptionTextView) -> Bool {
-            guard textView.isEditable, !suppressLinkHintSlots, !descriptionContainsBookingLinks() else { return false }
-            if !DescriptionLinkPresentation.linkHrefs(in: html.wrappedValue).isEmpty { return true }
+            guard textView.isEditable, !suppressLinkHintSlots else { return false }
+            guard descriptionHasNonBookingLinks(in: textView) else { return false }
+            return true
+        }
+
+        private func descriptionHasNonBookingLinks(in textView: DescriptionTextView) -> Bool {
+            if BookingEventLinks.parse(html.wrappedValue) != nil { return false }
+            if !DescriptionLinkPresentation.linkHrefs(in: html.wrappedValue).isEmpty {
+                return true
+            }
             guard let storage = textView.textStorage, storage.length > 0 else { return false }
             var hasLink = false
             storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
@@ -122,18 +130,13 @@ struct DescriptionEditorView: NSViewRepresentable {
                     stop.pointee = true
                 }
             }
-            return hasLink
+            guard hasLink else { return false }
+            let serialized = HTMLFragmentAppKit.document(from: textView.attributedString()).serialize()
+            return BookingEventLinks.parse(serialized) == nil
         }
 
         private func shouldSyncLinkHintSlots(for textView: DescriptionTextView) -> Bool {
             linkHintSlotsReserved(for: textView) || textView.hasLinkHintSlotAttachments
-        }
-
-        private func descriptionContainsBookingLinks() -> Bool {
-            if BookingEventLinks.parse(html.wrappedValue) != nil { return true }
-            guard let textView else { return false }
-            let serialized = HTMLFragmentAppKit.document(from: textView.attributedString()).serialize()
-            return BookingEventLinks.parse(serialized) != nil
         }
 
         private var presentationShowsHosts = false
