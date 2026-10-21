@@ -14,6 +14,14 @@ final class WindowChromeLayoutTests: XCTestCase {
         let previous = window.buttons["Previous"]
         XCTAssertLessThan(previous.frame.minX - window.frame.minX, 96,
             "Previous week control should sit in the unified title bar beside traffic lights")
+        let sidebarToggle = window.buttons.matching(
+            NSPredicate(format: "label IN %@", ["Open sidebar", "Close sidebar"])
+        ).firstMatch
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(
+            sidebarToggle.frame.minX - window.frame.minX,
+            window.frame.width * 0.72,
+            "Sidebar toggle should align with the web header on the right")
         let evidence = XCTAttachment(screenshot: window.screenshot())
         evidence.name = "Calendar styling and top chrome"
         evidence.lifetime = .keepAlways
