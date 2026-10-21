@@ -13,23 +13,24 @@ extension NativeCalendarRootModel {
     }
 
     public func showAttendeeEditor(for draft: GridEventDraft) -> Bool {
-        guard !isEventFormReadOnly(for: draft) else { return false }
-        guard CalendarCapabilities.canInvite(on: attendeeCalendar(for: draft)) else { return false }
-        return organizesEvent(for: draft)
+        EventFormFieldVisibility.isVisible(
+            field: .attendees,
+            input: eventFormFieldVisibilityInput(for: draft)
+        )
     }
 
     public func showRsvpControl(for draft: GridEventDraft) -> Bool {
-        guard draft.kind == .edit, let baseline = baselineEvent(for: draft) else { return false }
-        guard case .details(let payload) = baseline.content else { return false }
-        guard let accountEmail = attendeeCalendar(for: draft)?.accountEmail else { return false }
-        let map = AttendeeRsvp.statusByEmail(payload.attendees)
-        return map[accountEmail.lowercased()] != nil
+        EventFormFieldVisibility.isVisible(
+            field: .rsvp,
+            input: eventFormFieldVisibilityInput(for: draft)
+        )
     }
 
     public func showCreateConferenceToggle(for draft: GridEventDraft) -> Bool {
-        draft.kind == .create
-            && !isEventFormReadOnly(for: draft)
-            && CalendarCapabilities.creatableConferenceKind(on: attendeeCalendar(for: draft)) != nil
+        EventFormFieldVisibility.isVisible(
+            field: .conference,
+            input: eventFormFieldVisibilityInput(for: draft)
+        )
     }
 
     public func isScheduleLocked(for draft: GridEventDraft) -> Bool {
@@ -100,17 +101,6 @@ extension NativeCalendarRootModel {
                 self.attendeeSuggestions = results
             }
         }
-    }
-
-    private func organizesEvent(for draft: GridEventDraft) -> Bool {
-        if draft.kind == .create { return true }
-        guard let baseline = baselineEvent(for: draft),
-            case .details(let payload) = baseline.content
-        else { return false }
-        return AttendeeRsvp.organizesEvent(
-            organizerEmail: payload.organizer?.email,
-            calendarAccountEmail: attendeeCalendar(for: draft)?.accountEmail
-        )
     }
 
     var contactSuggestionDebouncer: ContactSuggestionDebouncer {

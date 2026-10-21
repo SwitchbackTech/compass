@@ -14,6 +14,10 @@ public final class LeaderSequenceEngine: @unchecked Sendable {
     public private(set) var phase: LeaderSequencePhase = .idle
     public let leaderKey: Character
     public let fieldRows: [ShortcutRegistry.EditSequenceFieldRow]
+    /// When set, only visible fields appear in the menu and resolve on the second key.
+    public var isFieldVisible: ((String) -> Bool)?
+    /// When set, the leader key does not arm if this returns false.
+    public var canArm: (() -> Bool)?
 
     private let timer: DispatchTimer
     private let armWindowMs: TimeInterval
@@ -32,7 +36,10 @@ public final class LeaderSequenceEngine: @unchecked Sendable {
     }
 
     public var whichKeyRows: [ShortcutRegistry.EditSequenceFieldRow] {
-        fieldRows.filter { $0.secondKey != nil }
+        fieldRows.filter { row in
+            guard row.secondKey != nil else { return false }
+            return isFieldVisible?(row.field) ?? true
+        }
     }
 
     public func disarm() {
@@ -74,7 +81,10 @@ public final class LeaderSequenceEngine: @unchecked Sendable {
             return phase
         }
 
-        if let row = fieldRows.first(where: { $0.secondKey?.lowercased() == second.lowercased() }) {
+        if let row = fieldRows.first(where: { row in
+            guard row.secondKey?.lowercased() == second.lowercased() else { return false }
+            return isFieldVisible?(row.field) ?? true
+        }) {
             if let armToken {
                 timer.cancel(armToken)
                 self.armToken = nil
@@ -92,6 +102,7 @@ public final class LeaderSequenceEngine: @unchecked Sendable {
     }
 
     private func arm() {
+        if canArm?() == false { return }
         disarm()
         phase = .armedSilent
         armToken = timer.schedule(after: armWindowMs) { [weak self] in
