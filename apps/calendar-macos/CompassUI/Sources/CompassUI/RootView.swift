@@ -347,8 +347,10 @@ public struct RootView: View {
         } label: {
             Image(systemName: "sidebar.left")
                 .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(theme.textMutedColor)
+                .foregroundStyle(theme.textColor)
                 .frame(width: 24, height: 24)
+                .background(theme.surfaceRaisedColor)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

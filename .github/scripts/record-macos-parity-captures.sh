@@ -301,9 +301,27 @@ def assert_sidebar_toggle_icon(image: Image.Image) -> None:
                 dark_points.append((x, y))
 
     if len(dark_points) < 18 * scale:
+        best_x = 0
+        best_count = 0
+        window = 60 * scale
+        scan_start = max(0, width // 2)
+        for x0 in range(scan_start, max(scan_start + 1, width - window), max(1, 4 * scale)):
+            x1 = min(width, x0 + window)
+            count = 0
+            for y in range(8 * scale, band_bottom):
+                for x in range(x0, x1):
+                    r, g, b, a = px[x, y]
+                    if a < 128:
+                        continue
+                    if r + g + b < 430:
+                        count += 1
+            if count > best_count:
+                best_count = count
+                best_x = x0
         raise SystemExit(
             "missing sidebar toggle icon beside the content track "
-            f"(found {len(dark_points)} dark pixels in x=[{x_start},{x_end}) y=[{8 * scale},{band_bottom}))"
+            f"(found {len(dark_points)} dark pixels in x=[{x_start},{x_end}) y=[{8 * scale},{band_bottom})); "
+            f"best top-band cluster x≈{best_x} count={best_count})"
         )
 
     xs = {x for x, _ in dark_points}
