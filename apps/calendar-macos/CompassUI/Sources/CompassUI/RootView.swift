@@ -338,20 +338,31 @@ public struct RootView: View {
             .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .frame(width: mainTrackColumnWidth, alignment: .topLeading)
+    }
+
+    /// Width of the main calendar column (grid track + leading inset), excluding sidebar chrome.
+    private var mainTrackColumnWidth: CGFloat? {
+        guard UITestLaunchPolicy.isParityCapture else { return nil }
+        let sidebarChrome: CGFloat =
+            (model.isSidebarOpen || model.isEventFormVisible)
+            ? sidebarDividerWidth + model.sidebarWidth
+            : 0
+        return CGFloat(ParityCaptureGeometry.viewportWidth) - sidebarChrome
     }
 
     private var titleBarSidebarToggle: some View {
         Button {
             model.isSidebarOpen.toggle()
         } label: {
-            Image(systemName: "sidebar.left")
-                .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(theme.textColor)
-                .frame(width: 24, height: 24)
-                .background(theme.surfaceRaisedColor)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-                .contentShape(Rectangle())
+            PhosphorIconView(
+                icon: .sidebarSimple,
+                size: 21,
+                color: theme.textMutedColor,
+                mirrored: true
+            )
+            .frame(width: 24, height: 24)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
