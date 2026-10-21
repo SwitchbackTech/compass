@@ -289,13 +289,16 @@ ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280
 
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
+native_window_png = os.path.join(out, "mac-title-bar-full-window.png")
 attachment_window = find_attachment(raw, "mac-title-bar-full-window")
-full_window = attachment_window
+if os.path.isfile(native_window_png) and os.path.getsize(native_window_png) > 1000:
+    full_window = native_window_png
+else:
+    full_window = attachment_window
 window_id_path = os.path.join(out, "parity-window-id.txt")
 screencap_path = os.path.join(out, "_parity_window_screencap.png")
-# XCUITest window screenshots include traffic lights; `screencapture -l` on CI
-# often crops them out of the client area. Use screencapture only when the
-# attachment export is missing.
+# Prefer AppKit CGWindow capture (includes traffic lights). Fall back to the
+# xcresult attachment, then `screencapture -l` when both are missing.
 if full_window is None and os.path.isfile(window_id_path):
     with open(window_id_path) as handle:
         window_id = handle.read().strip()
