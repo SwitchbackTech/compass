@@ -17,9 +17,11 @@ enum ParityCaptureWindowPolicy {
         let target = contentSize
         let contentRect = NSRect(origin: .zero, size: target)
         let frame = window.frameRect(forContentRect: contentRect)
+        // minSize == maxSize already pins the window. Leave `.resizable` on so
+        // the zoom (green) traffic light stays enabled, like the real window:
+        // the title-bar reference capture must show a real green button.
         window.minSize = frame.size
         window.maxSize = frame.size
-        window.styleMask.remove(.resizable)
         let visible = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
         var origin = frame.origin
         if let visible {
