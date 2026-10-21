@@ -56,6 +56,14 @@ export function gridMarginLeftFor(hasSecondaryTimeZone: boolean): number {
 }
 export const GRID_TIME_STEP = 15;
 export const TIMED_VISIBLE_HOURS = 13;
+/** Pixel top inside the timed track (1 AM origin). */
+export function timedGridTopPx(
+  minutesFromCivilMidnight: number,
+  hourHeight: number,
+): number {
+  const minutesFromOneAm = Math.max(0, minutesFromCivilMidnight - 60);
+  return (minutesFromOneAm / 60) * hourHeight;
+}
 // One timed-grid hour. 100% is the viewport-tall parent (h-full), so each
 // slot is viewport / TIMED_VISIBLE_HOURS — the same basis events and hour
 // lines use. Do not put this on a 23-hour-tall parent.

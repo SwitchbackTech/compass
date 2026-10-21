@@ -9,10 +9,23 @@ final class PageJumpTargetsTests: XCTestCase {
                 (id: "cal-b", name: "Work"),
             ]
         )
+        XCTAssertEqual(targets.map(\.digit), ["1", "2", "3", "4", "5", "6"])
+        XCTAssertEqual(
+            targets.map(\.id),
+            [
+                "view-select",
+                PageJumpTargets.dayColumnJumpId(calendarId: "cal-a"),
+                PageJumpTargets.dayColumnJumpId(calendarId: "cal-b"),
+                "month-picker", "up-next", "calendars",
+            ])
+    }
+
+    /// Web week view: Mod+1 view dropdown, 2 month picker, 3 Up next, 4 calendar list.
+    func testWeekViewMatchesWebNumbering() {
+        let targets = PageJumpTargets.buildSidebarPageJumpTargets()
+        XCTAssertEqual(targets.map(\.id), ["view-select", "month-picker", "up-next", "calendars"])
         XCTAssertEqual(targets.map(\.digit), ["1", "2", "3", "4"])
-        XCTAssertEqual(targets[1].id, PageJumpTargets.dayColumnJumpId(calendarId: "cal-a"))
-        XCTAssertEqual(targets[2].id, PageJumpTargets.dayColumnJumpId(calendarId: "cal-b"))
-        XCTAssertEqual(targets.last?.id, "calendars")
+        XCTAssertEqual(targets.map(\.label), ["View dropdown", "Month picker", "Up next", "Calendar list"])
     }
 
     func testDayViewDropsSidebarWhenColumnsOverflowPhysicalKeys() {

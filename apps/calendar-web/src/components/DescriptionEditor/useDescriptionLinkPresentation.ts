@@ -10,30 +10,25 @@ import {
 export function useDescriptionLinkPresentation(
   editor: Editor | null,
   editorRoot: HTMLElement | null,
-  enabled: boolean,
   isFocused: boolean,
 ) {
-  const wasFocusedRef = useRef(false);
   const presentationAppliedRef = useRef(false);
 
   useEffect(() => {
-    if (!editor || !editorRoot || !enabled) return;
+    if (!editor || !editorRoot) return;
 
     if (isFocused) {
       if (presentationAppliedRef.current) {
         editor.view.dispatch(editor.state.tr);
         presentationAppliedRef.current = false;
       }
-      wasFocusedRef.current = true;
       return;
     }
 
     if (presentationAppliedRef.current) {
-      wasFocusedRef.current = false;
       return;
     }
     presentationAppliedRef.current = true;
-    wasFocusedRef.current = false;
 
     const domObserver = (
       editor.view as unknown as {
@@ -55,5 +50,5 @@ export function useDescriptionLinkPresentation(
     } finally {
       domObserver.start();
     }
-  }, [editor, editorRoot, enabled, isFocused]);
+  }, [editor, editorRoot, isFocused]);
 }

@@ -30,27 +30,32 @@ public enum PageJumpTargets {
         "\(dayColumnPrefix)\(calendarId)"
     }
 
-    /// Week-style sidebar map: month picker, then calendar list.
+    /// Web `VIEW_SELECT_TARGET`: the view dropdown always comes first.
+    static let viewSelect = Draft(id: "view-select", label: "View dropdown")
+
+    /// Web sidebar map: month picker, Up next, then the calendar list (web adds
+    /// one target per connected account; macOS keeps a single list slot).
+    private static let sidebarDrafts = [
+        Draft(id: "month-picker", label: "Month picker"),
+        Draft(id: "up-next", label: "Up next"),
+        Draft(id: "calendars", label: "Calendar list"),
+    ]
+
+    /// Week view (web `buildCalendarPageJumpTargets`): view dropdown, then the sidebar map.
     public static func buildSidebarPageJumpTargets() -> [Resolved] {
-        withPickDigits([
-            Draft(id: "month-picker", label: "Month picker"),
-            Draft(id: "calendars", label: "Calendars"),
-        ])
+        withPickDigits([viewSelect] + sidebarDrafts)
     }
 
-    /// Day view: month picker, each displayed column left to right, then sidebar.
-    /// When columns consume every physical key, sidebar targets at the end are omitted.
+    /// Day view (web `buildDayPageJumpTargets`): view dropdown, each displayed
+    /// column left to right, then the sidebar map. When columns consume every
+    /// physical key, sidebar targets at the end are omitted first.
     public static func buildDayPageJumpTargets(
         displayedCalendars: [(id: String, name: String)]
     ) -> [Resolved] {
         let columnTargets = displayedCalendars.map { calendar in
             Draft(id: dayColumnJumpId(calendarId: calendar.id), label: calendar.name)
         }
-        return withPickDigits([
-            Draft(id: "month-picker", label: "Month picker"),
-        ] + columnTargets + [
-            Draft(id: "calendars", label: "Calendars"),
-        ])
+        return withPickDigits([viewSelect] + columnTargets + sidebarDrafts)
     }
 
     public static func dayColumnJumpDigits(from targets: [Resolved]) -> [String: String] {

@@ -1,5 +1,8 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { gridMinutesFromCivilMidnight } from "@core/util/date/civil-day";
+import {
+  formatInstantInTimeZone,
+  gridMinutesFromCivilMidnight,
+} from "@core/util/date/civil-day";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -9,6 +12,7 @@ import {
   EVENT_ALLDAY_ROW_HEIGHT,
   EVENT_PADDING_RIGHT,
   TIMED_EVENT_COLUMN_INSET,
+  timedGridTopPx,
 } from "@web/grid/grid.constants";
 import { gridMarginLeftPx } from "@web/grid/grid-margin";
 import {
@@ -33,8 +37,13 @@ export const getTimedEventPosition = (
   event: GridEvent,
   input: EventPositionInput,
 ): EventPosition => {
-  const start = inEffectiveTimeZone(event.startDate);
-  const end = inEffectiveTimeZone(event.endDate);
+  const timeZone = getEffectiveTimeZone();
+  const start = inEffectiveTimeZone(
+    formatInstantInTimeZone(event.startDate, timeZone),
+  );
+  const end = inEffectiveTimeZone(
+    formatInstantInTimeZone(event.endDate, timeZone),
+  );
   const dateIndex =
     input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
@@ -43,7 +52,6 @@ export const getTimedEventPosition = (
 
   const columnLeft = sumWidthsBefore(input.measurements.colWidths, dateIndex);
   const columnWidth = input.measurements.colWidths[dateIndex] ?? 0;
-  const timeZone = getEffectiveTimeZone();
   const minutesFromStartOfDay = gridMinutesFromCivilMidnight(start, timeZone);
   const durationMinutes = Math.max(15, end.diff(start, "minute"));
   const widthMultiplier = input.isDraft
@@ -55,7 +63,7 @@ export const getTimedEventPosition = (
       (durationMinutes / 60) * input.measurements.hourHeight -
       DRAFT_PADDING_BOTTOM,
     left: gridMarginLeftPx() + columnLeft + TIMED_EVENT_COLUMN_INSET,
-    top: (minutesFromStartOfDay / 60) * input.measurements.hourHeight,
+    top: timedGridTopPx(minutesFromStartOfDay, input.measurements.hourHeight),
     width: Math.max(
       0,
       columnWidth * widthMultiplier - TIMED_EVENT_COLUMN_INSET * 2,
@@ -85,8 +93,13 @@ export const getBusyPeriodPosition = (
   segment: { start: string; end: string },
   input: BusyPeriodPositionInput,
 ): EventPosition => {
-  const start = inEffectiveTimeZone(segment.start);
-  const end = inEffectiveTimeZone(segment.end);
+  const timeZone = getEffectiveTimeZone();
+  const start = inEffectiveTimeZone(
+    formatInstantInTimeZone(segment.start, timeZone),
+  );
+  const end = inEffectiveTimeZone(
+    formatInstantInTimeZone(segment.end, timeZone),
+  );
   const dateIndex =
     input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
@@ -95,14 +108,13 @@ export const getBusyPeriodPosition = (
 
   const columnLeft = sumWidthsBefore(input.measurements.colWidths, dateIndex);
   const columnWidth = input.measurements.colWidths[dateIndex] ?? 0;
-  const timeZone = getEffectiveTimeZone();
   const minutesFromStartOfDay = gridMinutesFromCivilMidnight(start, timeZone);
   const durationMinutes = Math.max(1, end.diff(start, "minute"));
 
   return {
     height: (durationMinutes / 60) * input.measurements.hourHeight,
     left: gridMarginLeftPx() + columnLeft + TIMED_EVENT_COLUMN_INSET,
-    top: (minutesFromStartOfDay / 60) * input.measurements.hourHeight,
+    top: timedGridTopPx(minutesFromStartOfDay, input.measurements.hourHeight),
     width: Math.max(0, columnWidth - TIMED_EVENT_COLUMN_INSET * 2),
   };
 };

@@ -17,6 +17,7 @@ import {
   googleFailureCause,
   googleRequestBodyKeys,
   googleStatus,
+  hasGoogleRateLimitReason,
 } from "@sync/providers/google/google-error";
 import {
   mapConference,
@@ -629,14 +630,6 @@ function toSendUpdates(invitation: InvitationIntent): string {
   return invitation;
 }
 
-// Google 403 reasons that mean "slow down", not "forbidden" — retryable.
-const RETRYABLE_403_REASONS = new Set([
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-]);
-
 const GOOGLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
   status: googleStatus,
   cause: googleFailureCause,
@@ -692,7 +685,7 @@ function classifyWriteError(error: unknown): ProviderWriteError {
   }
   // A quota 403 is retryable. Every other 403 falls through to the shared
   // table, which reads it as a calendar this authorization cannot write.
-  if (googleStatus(error) === 403 && hasRetryable403Reason(error)) {
+  if (googleStatus(error) === 403 && hasGoogleRateLimitReason(error)) {
     return new ProviderWriteError(
       "transient",
       "Google rate limited the write",
@@ -704,17 +697,6 @@ function classifyWriteError(error: unknown): ProviderWriteError {
 
 function isNotFound(error: unknown): boolean {
   return isNotFoundStatus(googleStatus(error));
-}
-
-function hasRetryable403Reason(error: unknown): boolean {
-  const errors = (
-    error as {
-      response?: { data?: { error?: { errors?: Array<{ reason?: string }> } } };
-    }
-  )?.response?.data?.error?.errors;
-  return Boolean(
-    errors?.some((e) => e.reason && RETRYABLE_403_REASONS.has(e.reason)),
-  );
 }
 
 // Google event ids must be base32hex (0-9, a-v), 5-1024 chars. A Compass

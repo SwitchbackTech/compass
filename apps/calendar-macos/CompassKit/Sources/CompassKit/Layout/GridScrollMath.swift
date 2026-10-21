@@ -6,8 +6,7 @@ public enum GridScrollMath {
     public static let scrollTolerancePx = 2.0
 
     public static func minutesFromStartOfDay(referenceNow: Date, calendar: Calendar = EffectiveTimeZone.calendar) -> Double {
-        let startOfDay = calendar.startOfDay(for: referenceNow)
-        return referenceNow.timeIntervalSince(startOfDay) / 60
+        Double(CivilDay.minutesFromCivilMidnight(referenceNow, timeZone: calendar.timeZone))
     }
 
     public static func scrollToNowDocumentY(

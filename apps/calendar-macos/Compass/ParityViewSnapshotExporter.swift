@@ -5,6 +5,8 @@ import CoreGraphics
 
 /// Renders the main window content at the canonical parity viewport (1280×820 px).
 enum ParityViewSnapshotExporter {
+    static let titleBarReferenceFileName = "mac-title-bar-full-window.png"
+
     private static let pixelWidth = Int(ParityCaptureGeometry.viewportWidth)
     private static let pixelHeight = Int(ParityCaptureGeometry.viewportHeight)
 
@@ -69,6 +71,19 @@ enum ParityViewSnapshotExporter {
         guard let png = pngData else { return }
         try png.write(to: file)
         NativeAccessibilityProbes.publishParityExport(surface: surface, on: window)
+    }
+
+    /// Full window PNG including traffic lights for marketing title-bar crop (CI).
+    @MainActor
+    static func exportTitleBarReference(from window: NSWindow?) throws {
+        guard UITestLaunchPolicy.isParityCapture else { return }
+        guard let window, let directory = parityOutputDirectory else { return }
+        applyCaptureWindowSize(to: window)
+        guard let png = windowListPNG(window: window) else { return }
+        let file = URL(fileURLWithPath: directory, isDirectory: true)
+            .appendingPathComponent(titleBarReferenceFileName)
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try png.write(to: file)
     }
 
     /// Ensures the on-screen window matches parity dimensions before XCUITest screenshots.

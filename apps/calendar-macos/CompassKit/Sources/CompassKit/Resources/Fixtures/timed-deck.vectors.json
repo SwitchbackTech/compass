@@ -87,7 +87,7 @@
       "output": {
         "height": 57,
         "left": 55,
-        "top": 540,
+        "top": 480,
         "width": 310
       }
     },
@@ -170,7 +170,7 @@
       "output": {
         "height": 90,
         "left": 385,
-        "top": 540,
+        "top": 480,
         "width": 120
       }
     },
@@ -180,7 +180,7 @@
         "position": {
           "height": 57,
           "left": 55,
-          "top": 540,
+          "top": 480,
           "width": 310
         },
         "deckLayout": {
@@ -192,7 +192,7 @@
       "output": {
         "height": 57,
         "left": 55,
-        "top": 540,
+        "top": 480,
         "width": 212,
         "zIndex": 1
       }

@@ -61,7 +61,10 @@ import { noteFirstRealEventCreated } from "@web/components/FirstEventPrompt/firs
 import { EventApi } from "@web/events/event.api";
 import { editableContent } from "@web/events/grid-event-draft.adapter";
 import { eventSchedulesEqual } from "@web/events/mutations/event-schedule-equal";
-import { resolveMutationProvider } from "@web/events/mutations/mutation-provider.util";
+import {
+  calendarIdFromMutationInput,
+  resolveMutationProvider,
+} from "@web/events/mutations/mutation-provider.util";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -560,13 +563,9 @@ export function useEventMutations(
     const provider = variables
       ? resolveMutationProvider(queryClient, {
           writeKey: variables.writeKey,
-          calendarId:
-            "input" in variables &&
-            typeof variables.input === "object" &&
-            variables.input !== null &&
-            "calendarId" in variables.input
-              ? (variables.input as CreateEventInput).calendarId
-              : undefined,
+          calendarId: calendarIdFromMutationInput(
+            "input" in variables ? variables.input : undefined,
+          ),
         })
       : undefined;
     baseReportError(error, onRetry, { provider });

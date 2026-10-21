@@ -7,7 +7,6 @@ import SwiftUI
 struct ViewSwitcherView: View {
     @Environment(\.nativeWebTheme) private var theme
     @Bindable var model: NativeCalendarRootModel
-    @State private var isOpen = false
 
     private struct Option: Identifiable {
         let id: ShortcutId
@@ -33,7 +32,7 @@ struct ViewSwitcherView: View {
 
     var body: some View {
         Button {
-            isOpen.toggle()
+            model.isViewSwitcherOpen.toggle()
         } label: {
             HStack(spacing: 6) {
                 Text(model.headerTitle)
@@ -63,11 +62,12 @@ struct ViewSwitcherView: View {
         .accessibilityLabel(model.headerTitle)
         .accessibilityHint("Change view")
         .accessibilityIdentifier("compass-native-header-title")
-        .popover(isPresented: $isOpen, arrowEdge: .bottom) {
+        .pageJumpChipAnchor(id: "view-select")
+        .popover(isPresented: $model.isViewSwitcherOpen, arrowEdge: .bottom) {
             menu
         }
         .onChange(of: model.viewStore.view) { _, _ in
-            isOpen = false
+            model.isViewSwitcherOpen = false
         }
     }
 
@@ -75,7 +75,7 @@ struct ViewSwitcherView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(options) { option in
                 Button {
-                    isOpen = false
+                    model.isViewSwitcherOpen = false
                     model.handleShortcut(option.id)
                 } label: {
                     HStack(spacing: 8) {

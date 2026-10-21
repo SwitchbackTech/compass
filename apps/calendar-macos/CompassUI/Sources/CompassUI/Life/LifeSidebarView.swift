@@ -8,6 +8,10 @@ struct LifeSidebarView: View {
   @State private var birthDate = ""
   @State private var lifespan = ""
   @State private var invalidBirthDate = false
+  @State private var showsBirthDatePicker = false
+  @State private var pickerMonth = Date()
+  /// Web `LifeQuote`: one random quote per visit to the sidebar.
+  @State private var quote = LifeQuotes.random()
   @FocusState private var focusedField: Field?
   private enum Field { case birthDate, lifespan }
 
@@ -38,10 +42,26 @@ struct LifeSidebarView: View {
               .accessibilityLabel("Date of birth")
               .focused($focusedField, equals: .birthDate)
               .onSubmit { commitBirthDate() }
-              .help("Enter a date as yyyy-mm-dd")
+              .help("Enter a date like Jun 10, 2026")
               .padding(.vertical, 8).frame(width: 176)
               .background(theme.surfaceColor).foregroundStyle(theme.textColor)
               .clipShape(RoundedRectangle(cornerRadius: 4))
+              // Typing stays in the field; the button opens web's calendar picker.
+              .overlay(alignment: .trailing) {
+                Button {
+                  openBirthDatePicker()
+                } label: {
+                  PhosphorIconView(icon: .calendarDots, size: 16)
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Open calendar")
+                .help("Open calendar")
+                .popover(isPresented: $showsBirthDatePicker, arrowEdge: .bottom) {
+                  birthDatePopover
+                }
+              }
             if invalidBirthDate {
               Text("Enter a date from 1900 through today.")
                 .font(.rubik(11)).foregroundStyle(theme.textColor)
@@ -69,7 +89,7 @@ struct LifeSidebarView: View {
         }
         .textFieldStyle(.plain)
         .multilineTextAlignment(.center)
-        Text("“Lost time is never found again.” (Benjamin Franklin)").italic()
+        Text(quote).italic()
       }
       .font(.rubik(14))
       .foregroundStyle(theme.textMutedColor)
@@ -87,6 +107,43 @@ struct LifeSidebarView: View {
     }
   }
 
+  private var birthDateBounds: (min: Date, max: Date) {
+    let calendar = EffectiveTimeZone.calendar
+    let minimum = calendar.date(from: DateComponents(year: 1900, month: 1, day: 1, hour: 12)) ?? Date.distantPast
+    return (minimum, model.referenceNow)
+  }
+
+  private var storedBirthDate: Date? {
+    LifeMath.parseLifeDate(model.lifeStore.preferences.birthDate)
+  }
+
+  private func openBirthDatePicker() {
+    pickerMonth = storedBirthDate ?? model.referenceNow
+    showsBirthDatePicker = true
+  }
+
+  /// Web `DatePicker` with `captionPicker`: pick a year, then a month, then the day.
+  private var birthDatePopover: some View {
+    SidebarMonthPicker(
+      displayedMonth: $pickerMonth,
+      selectedDate: storedBirthDate ?? model.referenceNow,
+      onSelectDate: { picked in
+        invalidBirthDate = !model.lifeStore.updateBirthDate(LifeDateFormat.stored(from: picked))
+        refreshInputs()
+        showsBirthDatePicker = false
+      },
+      today: model.referenceNow,
+      daysAreClickable: true,
+      captionPicker: true,
+      minimumDate: birthDateBounds.min,
+      maximumDate: birthDateBounds.max
+    )
+    .frame(width: 252)
+    .padding(12)
+    .background(theme.surfacePanelColor)
+    .accessibilityIdentifier("compass-life-birth-date-picker")
+  }
+
   private func variationButton(_ label: String, symbol: String, direction: Int) -> some View {
     Button {
       model.lifeStore.cycleVariation(direction: direction)
@@ -97,12 +154,15 @@ struct LifeSidebarView: View {
   }
 
   private func refreshInputs() {
-    birthDate = model.lifeStore.preferences.birthDate
+    birthDate = LifeDateFormat.display(model.lifeStore.preferences.birthDate)
     lifespan = String(model.lifeStore.preferences.lifespan)
   }
 
   private func commitBirthDate() {
-    invalidBirthDate = !model.lifeStore.updateBirthDate(birthDate)
+    let typed = birthDate.trimmingCharacters(in: .whitespacesAndNewlines)
+    // An empty field clears the date; otherwise accept "Jun 10, 2026" or "2026-06-10".
+    invalidBirthDate = !model.lifeStore.updateBirthDate(
+      typed.isEmpty ? "" : (LifeDateFormat.storedValue(from: typed) ?? typed))
     refreshInputs()
   }
 
