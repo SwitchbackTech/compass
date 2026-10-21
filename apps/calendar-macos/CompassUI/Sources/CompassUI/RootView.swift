@@ -303,41 +303,29 @@ public struct RootView: View {
 
     /// Unified title bar: nav and view switcher beside traffic lights; sidebar toggle on the right.
     private var titleBarChrome: some View {
-        ZStack(alignment: .topLeading) {
-            theme.backgroundColor
-                .frame(maxWidth: .infinity)
-                .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
-                .accessibilityIdentifier("compass-native-header")
-
-            HStack(spacing: 12) {
-                titleBarNavButton(
-                    label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
-                    icon: .caretLeft
-                ) {
-                    model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
-                }
-                titleBarNavButton(
-                    label: model.viewStore.view == .life ? "Next life variation" : "Next",
-                    icon: .caretRight
-                ) {
-                    model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
-                }
-                ViewSwitcherView(model: model)
+        HStack(spacing: 12) {
+            titleBarNavButton(
+                label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
+                icon: .caretLeft
+            ) {
+                model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
             }
-            .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
-
-            // Web `CalendarHeader`: trailing cluster is its own row so Spacer/drawingGroup
-            // never clips the phosphor toggle in real window captures.
-            HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                titleBarSidebarToggle
+            titleBarNavButton(
+                label: model.viewStore.view == .life ? "Next life variation" : "Next",
+                icon: .caretRight
+            ) {
+                model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
             }
-            .padding(.trailing, 20)
-            .frame(maxWidth: .infinity)
-            .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
+            ViewSwitcherView(model: model)
+            Spacer(minLength: 0)
+            titleBarSidebarToggle
         }
+        .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
+        .padding(.trailing, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
+        .background(theme.backgroundColor)
+        .accessibilityIdentifier("compass-native-header")
         .frame(width: mainTrackColumnWidth, alignment: .topLeading)
     }
 
