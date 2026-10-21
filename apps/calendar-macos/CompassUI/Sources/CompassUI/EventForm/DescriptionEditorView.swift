@@ -133,6 +133,13 @@ public final class DescriptionTextView: NSTextView {
 
     var onLinkCopied: (() -> Void)?
 
+    public override func accessibilityValue() -> Any? {
+        guard let value = super.accessibilityValue() as? String else {
+            return super.accessibilityValue()
+        }
+        return value.replacingOccurrences(of: "\u{FFFC}", with: "")
+    }
+
     @objc func copyDescriptionLink(_ sender: Any?) {
         _ = copyDescriptionLink(to: .general)
     }
@@ -227,7 +234,7 @@ public final class DescriptionTextView: NSTextView {
         }
     }
 
-    public static func findInKeyWindow() -> DescriptionTextView? {
+    static func findInKeyWindow() -> DescriptionTextView? {
         find(in: NSApp.keyWindow?.contentView)
     }
 
