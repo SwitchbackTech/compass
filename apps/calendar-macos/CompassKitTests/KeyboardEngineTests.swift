@@ -172,6 +172,41 @@ final class KeyboardEngineTests: XCTestCase {
         }
     }
 
+    func testLeaderSequenceRespectsFieldVisibility() {
+        let timer = DispatchTimer()
+        let engine = LeaderSequenceEngine(
+            leaderKey: "e",
+            fieldRows: registry.editSequenceFields,
+            timer: timer,
+            armWindowMs: 0.6)
+        engine.isFieldVisible = { $0 != "rsvp" && $0 != "conference" }
+        engine.canArm = { true }
+
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        engine.advanceTime(by: 0.61)
+        XCTAssertFalse(engine.whichKeyRows.contains { $0.field == "rsvp" })
+
+        _ = engine.handleKeyDown(KeyEvent(character: "g"))
+        if case .resolved = engine.phase {
+            XCTFail("hidden rsvp should not resolve")
+        }
+        XCTAssertEqual(engine.phase, .idle)
+
+        engine.isFieldVisible = { $0 == "title" }
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        engine.advanceTime(by: 0.61)
+        XCTAssertEqual(engine.whichKeyRows.count, 1)
+    }
+
+    func testLeaderSequenceDoesNotArmWhenCanArmFalse() {
+        let engine = LeaderSequenceEngine(
+            leaderKey: "e",
+            fieldRows: registry.editSequenceFields)
+        engine.canArm = { false }
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        XCTAssertEqual(engine.phase, .idle)
+    }
+
     func testHoldModifierDetection() {
         let timer = DispatchTimer()
         var digits: [Character] = []

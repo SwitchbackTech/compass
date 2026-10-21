@@ -21,7 +21,7 @@ public struct WhichKeyPanelOverlay: View {
                     alignment: .leading,
                     spacing: 6
                 ) {
-                    ForEach(model.shortcutRegistry.editSequenceFields.filter { $0.secondKey != nil }, id: \.field) { row in
+                    ForEach(model.visibleEditSequenceLetterFields(), id: \.field) { row in
                         HStack(spacing: 6) {
                             if let key = row.secondKey {
                                 ShortcutHintChip(label: String(key).uppercased())

@@ -36,7 +36,7 @@ export function BookingBlockingAccountGroup({
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <button
-        aria-controls={panelId}
+        aria-controls={expanded ? panelId : undefined}
         aria-expanded={expanded}
         aria-label={`${heading}, ${summary}`}
         className="c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs py-0.5 text-left text-sm"
@@ -56,21 +56,18 @@ export function BookingBlockingAccountGroup({
         </span>
         <span className="shrink-0 text-text-muted text-xs">{summary}</span>
       </button>
-      <div
-        aria-hidden={!expanded}
-        className="c-disclosure-content flex flex-col gap-1 pl-4"
-        data-state={expanded ? "open" : "closed"}
-        id={panelId}
-      >
-        {group.calendars.map((calendar) => (
-          <BlockingCalendarRow
-            blockingCalendarIds={blockingCalendarIds}
-            calendar={calendar}
-            key={calendar.id}
-            onToggle={onToggleCalendar}
-          />
-        ))}
-      </div>
+      {expanded ? (
+        <div className="flex flex-col gap-1 pl-4" id={panelId}>
+          {group.calendars.map((calendar) => (
+            <BlockingCalendarRow
+              blockingCalendarIds={blockingCalendarIds}
+              calendar={calendar}
+              key={calendar.id}
+              onToggle={onToggleCalendar}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
