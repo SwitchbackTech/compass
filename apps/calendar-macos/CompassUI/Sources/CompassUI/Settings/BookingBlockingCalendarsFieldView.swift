@@ -93,7 +93,7 @@ private struct BookingBlockingAccountGroupView: View {
     init(
         blockingSet: Set<String>,
         defaultCollapsed: Bool,
-        group: CalendarAccountGrouping.AccountGroup,
+        group: CalendarAccountGroup,
         onToggle: @escaping (String, Bool) -> Void
     ) {
         self.blockingSet = blockingSet
