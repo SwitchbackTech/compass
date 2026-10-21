@@ -224,7 +224,7 @@ public final class DescriptionTextView: NSTextView {
     /// Web `DescriptionEditor` placeholder; NSTextView has none of its own.
     static let placeholder = "Description"
 
-    override func draw(_ dirtyRect: NSRect) {
+    public override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard string.isEmpty, !hasMarkedText() else { return }
         let origin = NSPoint(
