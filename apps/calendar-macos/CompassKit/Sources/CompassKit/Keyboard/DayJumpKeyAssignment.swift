@@ -62,7 +62,7 @@ public enum DayJumpKeyAssignment {
                 }
                 return a.eventId < b.eventId
             }
-            let weekday = dayTargets[0]?.weekday ?? 0
+            let weekday = dayTargets[0].weekday
             let dayPrefix = DayJumpPrefixes.prefix(forWeekday: weekday)
             for (index, target) in dayTargets.enumerated() {
                 let n = index + 1
