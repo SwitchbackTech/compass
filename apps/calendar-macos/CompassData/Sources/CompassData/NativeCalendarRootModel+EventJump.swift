@@ -25,15 +25,97 @@ extension NativeCalendarRootModel {
         return "Event jump · Esc"
     }
 
+    public func activateEventJumpMode() {
+        guard !eventJumpSelection.modeActive else { return }
+        eventJumpSelection.setModeActive(true)
+        recordShortcut(.focusShiftHold)
+        refreshEventJumpPresentation()
+    }
+
     public func toggleEventJumpMode() {
         if eventJumpSelection.modeActive {
             clearEventJumpSelection()
             draftStore.setQuickTimeDigits("")
             return
         }
-        eventJumpSelection.setModeActive(true)
-        recordShortcut(.focusShiftHold)
-        refreshEventJumpPresentation()
+        activateEventJumpMode()
+    }
+
+    @discardableResult
+    public func handleEventJumpKeystroke(_ key: Character) -> Bool {
+        guard eventJumpSelection.modeActive else { return false }
+        let dayKeyByPrefix = dayKeyByPrefixForJump()
+        guard
+            let match = DayJumpKeyAssignment.matchKeystroke(
+                assignments: eventJumpAssignments,
+                dayKeyByPrefix: dayKeyByPrefix,
+                key: key,
+                buffer: eventJumpSelection.dayJumpBuffer
+            )
+        else { return false }
+        applyEventJumpMatch(match)
+        return true
+    }
+
+    private func dayKeyByPrefixForJump() -> [String: String] {
+        let calendar = EffectiveTimeZone.calendar
+        var map: [String: String] = [:]
+        for dayKey in visibleDateKeys() {
+            guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { continue }
+            let weekday = calendar.component(.weekday, from: date) - 1
+            let prefix = DayJumpPrefixes.prefix(forWeekday: weekday)
+            map[prefix] = dayKey
+        }
+        return map
+    }
+
+    private func applyEventJumpMatch(_ match: DayJumpKeyAssignment.MatchResult) {
+        eventJumpAmbiguousTask?.cancel()
+        eventJumpAmbiguousTask = nil
+
+        switch match {
+        case let .selectDay(dayPrefix, dayKey, firstEventId, buffer):
+            let name = DayJumpPrefixes.displayName(forPrefix: dayPrefix)
+            eventJumpSelection.selectDay(
+                key: dayKey,
+                announcement: "\(name) selected",
+                buffer: buffer
+            )
+            recordShortcut(.focusWeekDay)
+            if let firstEventId {
+                focusEvent(eventId: firstEventId)
+            }
+            refreshEventJumpPresentation()
+
+        case let .prefix(buffer, dayKeys, pendingExactEventId):
+            if buffer == "s", dayKeys.isEmpty {
+                eventJumpSelection.setWeekendDisambiguation(announcement: "Weekend")
+            } else {
+                eventJumpSelection.setPrefixBuffer(buffer, dayKeys: dayKeys, announcement: nil)
+            }
+            if let pendingExactEventId {
+                scheduleAmbiguousEventJumpCommit(eventId: pendingExactEventId, buffer: buffer)
+            }
+            refreshEventJumpPresentation()
+
+        case let .focus(eventId, _, buffer):
+            eventJumpSelection.setPrefixBuffer(buffer, dayKeys: eventJumpSelection.activeDayKeys, announcement: nil)
+            focusEvent(eventId: eventId)
+            refreshEventJumpPresentation()
+        }
+    }
+
+    private func scheduleAmbiguousEventJumpCommit(eventId: String, buffer: String) {
+        eventJumpAmbiguousTask?.cancel()
+        eventJumpAmbiguousTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard let self, self.eventJumpSelection.dayJumpBuffer == buffer else { return }
+                self.focusEvent(eventId: eventId)
+                self.refreshEventJumpPresentation()
+            }
+        }
     }
 
     func refreshEventJumpPresentation() {
@@ -100,7 +182,10 @@ extension NativeCalendarRootModel {
     }
 
     public func clearEventJumpSelection() {
+        eventJumpAmbiguousTask?.cancel()
+        eventJumpAmbiguousTask = nil
         eventJumpSelection.clear()
+        eventJumpAssignments = []
         eventJumpHintLabels = []
         quickTimeSlotHintLabels = []
         applyFocusPresentation()

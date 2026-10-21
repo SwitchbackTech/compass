@@ -11,6 +11,8 @@ struct EventJumpChipsOverlay: View {
             GeometryReader { geometry in
                 ForEach(hints) { hint in
                     ShortcutHintChip(label: hint.label)
+                        .accessibilityIdentifier("compass-event-jump-chip")
+                        .accessibilityLabel(hint.label)
                         .position(
                             x: hint.frame.left + hint.frame.width - 14,
                             y: gridYOffset + hint.frame.top + 12

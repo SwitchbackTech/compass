@@ -120,6 +120,8 @@ public final class NativeCalendarRootModel {
     private var refreshTask: Task<Void, Never>?
     private var focusLayoutCards: [FocusLayoutCard] = []
     var eventJumpHintLabels: [EventJumpChipHint] = []
+    var eventJumpAssignments: [DayJumpKeyAssignment.Assignment] = []
+    var eventJumpAmbiguousTask: Task<Void, Never>?
     var quickTimeSlotHintLabels: [QuickTimeSlotHint] = []
     public var focusedDayColumnCalendarId: String?
     public var pendingFocusDayColumnCalendarId: String?
@@ -674,7 +676,11 @@ public final class NativeCalendarRootModel {
         case .focusNotice:
             focusNextNotice()
         case .focusShiftHold:
-            toggleEventJumpMode()
+            if eventJumpSelection.modeActive {
+                _ = handleEventJumpKeystroke("f")
+            } else {
+                activateEventJumpMode()
+            }
         case .otherSubscribe:
             openUpgradeConfirmation()
         case .navGoToDate:
@@ -792,17 +798,7 @@ public final class NativeCalendarRootModel {
     }
 
     public func focusEventJump(digit: Character) {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else { return }
-        focusEvent(eventId: hint.eventId)
-    }
-
-    @discardableResult
-    public func focusEventJumpIfAvailable(digit: Character) -> Bool {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else {
-            return false
-        }
-        focusEvent(eventId: hint.eventId)
-        return true
+        _ = handleEventJumpKeystroke(digit)
     }
 
     public func consumePendingScroll() -> TimeGridScrollRequest? {
@@ -1238,15 +1234,61 @@ public final class NativeCalendarRootModel {
     }
 
     func buildEventJumpHints() -> [EventJumpChipHint] {
-        let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        let timed = focusLayoutCards.filter { !$0.isAllDay }.sorted { $0.frame.top < $1.frame.top }
-        return timed.prefix(digits.count).enumerated().map { index, card in
-            EventJumpChipHint(
-                eventId: card.eventId,
-                label: digits[index],
-                frame: card.frame
+        let targets = buildEventJumpTargets()
+        eventJumpAssignments = DayJumpKeyAssignment.assign(targets)
+        let filtered = DayJumpKeyAssignment.filter(
+            eventJumpAssignments,
+            prefix: eventJumpSelection.dayJumpBuffer
+        )
+        let frameByEventId = Dictionary(
+            uniqueKeysWithValues: focusLayoutCards.map { ($0.eventId, $0.frame) }
+        )
+        return filtered.compactMap { assignment in
+            guard let frame = frameByEventId[assignment.eventId] else { return nil }
+            return EventJumpChipHint(
+                eventId: assignment.eventId,
+                label: assignment.hint,
+                frame: frame
             )
         }
+    }
+
+    private func buildEventJumpTargets() -> [DayJumpKeyAssignment.Target] {
+        let calendar = EffectiveTimeZone.calendar
+        let eventsById = Dictionary(uniqueKeysWithValues: loadedEvents.map { ($0.id.rawValue, $0) })
+        var targets: [DayJumpKeyAssignment.Target] = []
+        for card in focusLayoutCards {
+            guard let event = eventsById[card.eventId] else { continue }
+            switch event.schedule {
+            case .timed(let timed):
+                let start = CompassDateParsing.parseInEffectiveTimeZone(timed.start.rawValue) ?? referenceNow
+                let dayKey = CompassDateParsing.formatCalendarDay(start)
+                let weekday = calendar.component(.weekday, from: start) - 1
+                targets.append(
+                    DayJumpKeyAssignment.Target(
+                        eventId: card.eventId,
+                        startMs: Int64(start.timeIntervalSince1970 * 1000),
+                        eventType: .timed,
+                        dayKey: dayKey,
+                        weekday: weekday
+                    )
+                )
+            case .allDay(let allDay):
+                let start = CompassDateParsing.calendarDateInEffectiveTimeZone(allDay.start) ?? referenceNow
+                let dayKey = CompassDateParsing.formatCalendarDay(start)
+                let weekday = calendar.component(.weekday, from: start) - 1
+                targets.append(
+                    DayJumpKeyAssignment.Target(
+                        eventId: card.eventId,
+                        startMs: Int64(start.timeIntervalSince1970 * 1000),
+                        eventType: .allDay,
+                        dayKey: dayKey,
+                        weekday: weekday
+                    )
+                )
+            }
+        }
+        return targets
     }
 
     public func visibleCalendars() -> [CompassCalendar] {

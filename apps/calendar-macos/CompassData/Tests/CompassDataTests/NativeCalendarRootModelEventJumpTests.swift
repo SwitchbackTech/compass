@@ -19,6 +19,33 @@ final class NativeCalendarRootModelEventJumpTests: XCTestCase {
         XCTAssertTrue(model.timeGridState.quickTimeSlotHints.isEmpty)
     }
 
+    func testEventJumpHintsUseLowercaseDayPrefixLabels() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.activateEventJumpMode()
+        let labels = model.timeGridState.eventJumpHints.map(\.label)
+        XCTAssertFalse(labels.isEmpty)
+        for label in labels {
+            XCTAssertEqual(label, label.lowercased())
+            XCTAssertTrue(label.range(of: #"^(su|m|t|w|r|f|sa)[0-9]+$"#, options: .regularExpression) != nil)
+        }
+    }
+
+    func testBareFWhileJumpActiveSelectsFridayNotToggleOff() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.activateEventJumpMode()
+        XCTAssertTrue(model.handleEventJumpKeystroke("f"))
+        XCTAssertTrue(model.eventJumpSelection.modeActive)
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "f")
+    }
+
     func testShiftDayJumpSelectsMondayColumn() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)

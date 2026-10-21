@@ -26,6 +26,12 @@ public final class EventJumpSelectionStore {
         dayJumpBuffer = "s"
     }
 
+    public func setPrefixBuffer(_ buffer: String, dayKeys: [String], announcement: String?) {
+        dayJumpBuffer = buffer
+        activeDayKeys = dayKeys
+        self.announcement = announcement
+    }
+
     public func setModeActive(_ active: Bool) {
         modeActive = active
         if !active {
