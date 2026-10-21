@@ -21,6 +21,12 @@ struct EventFormToolbarView: View {
                         Task { await model.deleteFormEvent() }
                     }
                 }
+            } else if !model.isEventFormReadOnly(for: draft) {
+                // Web shows Delete on a new draft too; nothing is saved, so it
+                // closes the form (with the discard prompt if it was edited).
+                toolbarButton(label: "Delete", icon: .trash) {
+                    model.requestCloseEventForm()
+                }
             }
             toolbarButton(label: "Close", icon: .x) {
                 model.requestCloseEventForm()

@@ -110,6 +110,20 @@ struct DescriptionEditorView: NSViewRepresentable {
 final class DescriptionTextView: NSTextView {
     var onFormattingChange: (() -> Void)?
 
+    /// Web `DescriptionEditor` placeholder; NSTextView has none of its own.
+    static let placeholder = "Description"
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard string.isEmpty, !hasMarkedText() else { return }
+        let origin = NSPoint(
+            x: textContainerInset.width + (textContainer?.lineFragmentPadding ?? 0),
+            y: textContainerInset.height)
+        let color = (textColor ?? .labelColor).withAlphaComponent(0.6)
+        (Self.placeholder as NSString).draw(
+            at: origin, withAttributes: [.font: font ?? NSFont.systemFont(ofSize: 14), .foregroundColor: color])
+    }
+
     var onLinkCopied: (() -> Void)?
 
     @objc func copyDescriptionLink(_ sender: Any?) {
