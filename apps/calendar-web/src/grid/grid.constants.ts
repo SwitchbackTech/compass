@@ -56,13 +56,39 @@ export function gridMarginLeftFor(hasSecondaryTimeZone: boolean): number {
 }
 export const GRID_TIME_STEP = 15;
 export const TIMED_VISIBLE_HOURS = 13;
+/** Minutes from the timed track origin (1 AM civil time). */
+export function minutesFromTimedTrackOrigin(
+  minutesFromCivilMidnight: number,
+): number {
+  return Math.max(0, minutesFromCivilMidnight - 60);
+}
+
 /** Pixel top inside the timed track (1 AM origin). */
 export function timedGridTopPx(
   minutesFromCivilMidnight: number,
   hourHeight: number,
 ): number {
-  const minutesFromOneAm = Math.max(0, minutesFromCivilMidnight - 60);
-  return (minutesFromOneAm / 60) * hourHeight;
+  return (
+    (minutesFromTimedTrackOrigin(minutesFromCivilMidnight) / 60) * hourHeight
+  );
+}
+
+/** Vertical position inside the 13-hour timed track (percent of track height). */
+export function timedGridTopPercent(minutesFromCivilMidnight: number): number {
+  return (
+    (minutesFromTimedTrackOrigin(minutesFromCivilMidnight) /
+      60 /
+      TIMED_VISIBLE_HOURS) *
+    100
+  );
+}
+
+/** Horizontal offset inside the timed track (after the gutter margin). */
+export function timedTrackLeftPx(
+  columnLeft: number,
+  inset: number = TIMED_EVENT_COLUMN_INSET,
+): number {
+  return columnLeft + inset;
 }
 // One timed-grid hour. 100% is the viewport-tall parent (h-full), so each
 // slot is viewport / TIMED_VISIBLE_HOURS — the same basis events and hour
