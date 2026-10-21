@@ -217,7 +217,9 @@ final class NativeGridKeyboardRouter {
             }
             return false
         }
-        if editingText, model.viewStore.view == .life, !model.overlayKeyboardCaptureActive {
+        if editingText, model.viewStore.view == .life, !model.isLifeViewIntroActive,
+            !model.overlayKeyboardCaptureActive
+        {
             if let key = KeyEvent(nsEvent: event),
                 key.matches(KeyChord(modifiers: [.command], token: .character("k"))) {
                 model.toggleCommandPalette()
@@ -241,6 +243,10 @@ final class NativeGridKeyboardRouter {
         guard let keyEvent = KeyEvent(nsEvent: event) else { return false }
 
         if model.isWelcomeModalActive, handleWelcomeKeyDown(keyEvent) {
+            return true
+        }
+
+        if model.isLifeViewIntroActive, handleLifeViewIntroKeyDown(keyEvent) {
             return true
         }
 
@@ -667,6 +673,22 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    /// Web `LifeViewIntroModal`: Enter dismisses via primary, Esc dismisses.
+    private func handleLifeViewIntroKeyDown(_ keyEvent: KeyEvent) -> Bool {
+        guard keyEvent.modifiers.subtracting(.shift).isEmpty else { return false }
+        switch keyEvent.key {
+        case .named(.enter):
+            if !keyEvent.isRepeat {
+                model.dismissLifeViewIntro(reason: .primary)
+            }
+        case .named(.escape):
+            model.dismissLifeViewIntro(reason: .escape)
+        default:
+            break
+        }
+        return true
     }
 
     /// Web `WelcomeModal` keys. Bare keys never reach the grid behind the

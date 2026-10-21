@@ -112,6 +112,17 @@ public struct RootView: View {
             OnboardingOverlay(model: model)
         }
         .overlay {
+            if model.isLifeViewIntroActive {
+                LifeViewIntroModalView(model: model)
+            }
+        }
+        .onAppear {
+            model.refreshLifeViewIntro()
+        }
+        .onChange(of: model.viewStore.view) { _, _ in
+            model.refreshLifeViewIntro()
+        }
+        .overlay {
             if model.showsLocalModeConnectPrompt {
                 LocalModeConnectPromptView(model: model)
             }

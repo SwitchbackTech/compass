@@ -3,6 +3,7 @@ import Foundation
 /// Device-local onboarding keys; mirrors `STORAGE_KEYS` in `storage.constants.ts`.
 public enum OnboardingStorageKeys {
     public static let hasSeenWelcome = "compass.onboarding.has-seen-welcome"
+    public static let hasSeenLifeViewIntro = "compass.onboarding.has-seen-life-view-intro"
     public static let welcomeExit = "compass.onboarding.welcome-exit"
     public static let firstEventDone = "compass.onboarding.first-event-done"
     public static let connectCalendarPromptSnoozedAt =

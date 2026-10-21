@@ -28,6 +28,12 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
+    func testExportParitySurface_lifeViewIntro() throws {
+        try requireParityCapture()
+        captureLifeViewIntro()
+    }
+
+    @MainActor
     func testExportParitySurface_weekGrid() throws {
         try requireParityCapture()
         captureWeekGrid()
@@ -242,6 +248,32 @@ final class NativeParityCaptureTests: XCTestCase {
         XCTAssertTrue(
             window.descendants(matching: .any)["compass-native-settings"].waitForExistence(timeout: 8))
         NativeImageSnapshotSupport.captureWindow(window, named: "settings")
+    }
+
+    @MainActor
+    private func captureLifeViewIntro() {
+        let app = XCUIApplication.compassUITest()
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo",
+            "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+            "-\(OnboardingStorageKeys.hasSeenLifeViewIntro)", "false",
+            "-compass.theme", "light-beach",
+            "-COMPASS_UI_TEST_PARITY_CAPTURE",
+            "-PARITY_CAPTURE",
+        ]
+        app.launchEnvironment["PARITY_CAPTURE"] = "1"
+        if let outDir = NativeImageSnapshotSupport.parityOutputDirectory {
+            app.launchEnvironment["PARITY_OUTPUT_DIR"] = outDir
+        }
+        app.launch()
+        let window = app.windows["Compass"]
+        XCTAssertTrue(window.waitForExistence(timeout: 15))
+        window.typeKey("l", modifierFlags: [])
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
+                .waitForExistence(timeout: 10))
+        sleep(1)
+        NativeImageSnapshotSupport.captureWindow(window, named: "life-view-intro")
     }
 
     @MainActor

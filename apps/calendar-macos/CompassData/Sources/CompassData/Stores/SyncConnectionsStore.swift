@@ -7,6 +7,7 @@ public final class SyncConnectionsStore {
     public private(set) var isBusy = false
     public private(set) var lastError: String?
     public private(set) var connections: [UserMetadataConnections] = []
+    public private(set) var userMetadata: UserMetadata?
 
     private var sessionRevision = 0
 
@@ -34,6 +35,7 @@ public final class SyncConnectionsStore {
         sessionRevision += 1
         isBusy = false
         connections = []
+        userMetadata = nil
         lastError = nil
     }
 
@@ -42,9 +44,11 @@ public final class SyncConnectionsStore {
         do {
             let metadata = try await userAPI.metadata()
             guard revision == sessionRevision else { return }
+            userMetadata = metadata
             connections = metadata.connections ?? []
         } catch {
             guard revision == sessionRevision else { return }
+            userMetadata = nil
             connections = []
         }
     }

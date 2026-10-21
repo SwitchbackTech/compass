@@ -21,6 +21,7 @@ public final class NativeCalendarRootModel {
     public let onboardingStore: OnboardingStore
     public let blockPartyStore: BlockPartyStore
     public let lifeStore: LifeStore
+    public let lifeViewIntroStore: LifeViewIntroStore
     public let overlayStores: OverlayStores
     public private(set) var headerTitle = ""
     public private(set) var timeGridState: TimeGridState
@@ -183,6 +184,9 @@ public final class NativeCalendarRootModel {
         bookingStore = environment.bookingStore
         levelsStore = environment.levelsStore
         lifeStore = LifeStore(today: { demoPresentation?.referenceNow ?? now() })
+        lifeViewIntroStore = LifeViewIntroStore(
+            userAPI: UserAPI(client: environment.apiClient),
+            analytics: environment.productAnalytics)
         analyticsIdentity = environment.analyticsIdentity
 
         let anchor: Date = {
@@ -441,6 +445,7 @@ public final class NativeCalendarRootModel {
         await refreshSideband()
         await reloadCalendars()
         await syncConnectionsStore.reloadFromMetadata()
+        refreshLifeViewIntro()
     }
 
     public var onParityCapturePresentationApplied: (() -> Void)?
@@ -477,6 +482,7 @@ public final class NativeCalendarRootModel {
         guard revision == sessionRevision, isSignedIn else { return }
         onboardingStore.markUserMetadataLoaded()
         onboardingStore.refreshConnectCalendarSnooze()
+        refreshLifeViewIntro()
         await reloadCalendars()
         guard revision == sessionRevision, isSignedIn else { return }
         try? await hiddenEventsStore.load()

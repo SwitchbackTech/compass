@@ -42,6 +42,24 @@ final class NativeLaunchTests: XCTestCase {
     }
 
     @MainActor
+    func testLifeViewShowsIntroModalOnce() {
+        let app = XCUIApplication.compassUITest()
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo",
+            "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+            "-\(OnboardingStorageKeys.hasSeenLifeViewIntro)", "false",
+        ]
+        app.launch()
+
+        let window = app.windows["Compass"]
+        XCTAssertTrue(window.waitForExistence(timeout: 15))
+        window.typeKey("l", modifierFlags: [])
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
+                .waitForExistence(timeout: 10))
+    }
+
+    @MainActor
     func testFreshLaunchShowsWelcomeModal() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false"]
