@@ -8,4 +8,9 @@ public enum AccountChoiceCopy {
     public static let connectCalendarAccountLabel = "Connect a calendar account"
     public static let connectCalendarAccountHelper =
         "Pick a provider below. Or keep using this device only from the calendar list."
+
+    /// Matches web `welcomeTrialCardTermsLine` / `BillingGateModal` awaiting_checkout body.
+    public static func welcomeTrialCardTermsLine(trialLengthDays: Int = 7) -> String {
+        "Add a card to start your \(trialLengthDays)-day free trial. You will not be charged until it ends."
+    }
 }

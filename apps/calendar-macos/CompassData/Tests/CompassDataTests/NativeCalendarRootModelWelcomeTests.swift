@@ -28,7 +28,7 @@ final class NativeCalendarRootModelWelcomeTests: XCTestCase {
         }
     }
 
-    func testWelcomePrimaryActionAdvancesThenExplores() throws {
+    func testWelcomePrimaryActionAdvancesThenOpensSignUpWithoutProviders() throws {
         let model = try makeModel()
         model.onboardingStore.setWelcomeFirstVisitOpen(true)
         model.welcomePrimaryAction()
@@ -37,7 +37,7 @@ final class NativeCalendarRootModelWelcomeTests: XCTestCase {
         XCTAssertTrue(model.onboardingStore.isWelcomeFirstVisitOpen)
         model.welcomePrimaryAction()
         XCTAssertFalse(model.onboardingStore.isWelcomeFirstVisitOpen)
-        XCTAssertEqual(UserDefaults.standard.string(forKey: OnboardingStorageKeys.welcomeExit), "explore")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: OnboardingStorageKeys.welcomeExit), "sign_up")
     }
 
     func testWelcomeBackStopsAtFirstScreen() throws {
