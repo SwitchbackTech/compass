@@ -12,9 +12,13 @@ struct ModHoldChipsOverlay: View {
             GeometryReader { geometry in
                 ForEach(targets) { target in
                     if let anchor = anchors[target.id] {
+                        // Web `DigitHintChipOverlay`: chip's top-right corner
+                        // 2px below the anchor's, flush with its right edge.
                         let rect = geometry[anchor]
                         ShortcutHintChip(label: target.digit)
-                            .position(x: rect.maxX - 12, y: rect.minY + 12)
+                            .padding(.top, 2)
+                            .frame(width: rect.width, height: rect.height, alignment: .topTrailing)
+                            .position(x: rect.midX, y: rect.midY)
                     }
                 }
             }
