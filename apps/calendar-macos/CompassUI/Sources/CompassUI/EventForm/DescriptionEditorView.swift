@@ -49,7 +49,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
         context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
-        container.syncLinkHintSlots(reserved: isEditable)
+        context.coordinator.syncLinkHintSlotsSilently()
         container.updateLinkHintOverlay(visible: isEditable && !isFocused)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
@@ -98,6 +98,13 @@ struct DescriptionEditorView: NSViewRepresentable {
             suppressDelegate = false
         }
 
+        func syncLinkHintSlotsSilently() {
+            guard let textView else { return }
+            suppressDelegate = true
+            container?.syncLinkHintSlots(reserved: textView.isEditable)
+            suppressDelegate = false
+        }
+
         private var presentationShowsHosts = false
 
         func syncPresentation(isFocused: Bool, html: String, resetKey: String) {
@@ -107,8 +114,10 @@ struct DescriptionEditorView: NSViewRepresentable {
                     presentationShowsHosts = false
                 }
             } else if !presentationShowsHosts {
+                suppressDelegate = true
                 textView?.applyHostLinkPresentation()
                 container?.syncLinkHintSlots(reserved: textView?.isEditable == true)
+                suppressDelegate = false
                 presentationShowsHosts = true
             }
         }
@@ -118,7 +127,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             let edited = HTMLFragmentAppKit.document(from: textView.attributedString())
             html.wrappedValue = edited.serialize()
             presentationShowsHosts = false
-            container?.syncLinkHintSlots(reserved: textView.isEditable)
+            syncLinkHintSlotsSilently()
             container?.updateControls()
         }
 
