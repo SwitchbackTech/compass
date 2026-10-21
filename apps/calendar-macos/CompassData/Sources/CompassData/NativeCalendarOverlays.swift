@@ -30,7 +30,7 @@ extension NativeCalendarRootModel {
         } else {
             .setup
         }
-        return CommandPaletteCatalog.sections(CommandPaletteContext(
+        var sections = CommandPaletteCatalog.sections(CommandPaletteContext(
             view: viewStore.view,
             query: query,
             now: referenceNow,
@@ -50,6 +50,67 @@ extension NativeCalendarRootModel {
             timeZoneAbbreviation: TimeZoneFormatting.abbreviation(for: EffectiveTimeZone.identifier),
             billingBadge: BillingPlanBadgeResolver.badge(access: billingStore.appAccess)?.label,
             meetingPage: meetingPage))
+        if let eventForm = eventFormPaletteSection() {
+            sections.insert(eventForm, at: min(1, sections.count))
+        }
+        return sections
+    }
+
+    private func eventFormPaletteSection() -> CommandPaletteSection? {
+        guard draftStore.status.isFormOpen, let draft = draftStore.gridDraft else { return nil }
+        let entries = EventFormActions.list(
+            registry: shortcutRegistry,
+            options: eventFormActionsPaletteOptions(for: draft))
+        let items = entries.map { entry in
+            CommandPaletteItem(
+                id: EventFormActions.paletteCommandId(for: entry.id),
+                label: entry.label,
+                shortcut: EventFormActions.paletteShortcutString(for: entry.keycaps),
+                keywords: ["event form", "sidebar", entry.label.lowercased()],
+                systemImage: eventFormPaletteSystemImage(for: entry.id))
+        }
+        guard !items.isEmpty else { return nil }
+        return CommandPaletteSection(id: "event-form", heading: "Event form", items: items)
+    }
+
+    private func eventFormPaletteSystemImage(for actionId: String) -> String {
+        switch actionId {
+        case "edit-copy-meeting-link", "edit-duplicate":
+            return "doc.on.doc"
+        case "edit-delete":
+            return "trash"
+        case "edit-cancel-meeting":
+            return "calendar.badge.minus"
+        case "edit-reschedule-meeting":
+            return "arrow.triangle.2.circlepath"
+        case "edit-close-form":
+            return "xmark"
+        default:
+            return "square.and.pencil"
+        }
+    }
+
+    func runEventFormPaletteCommand(_ actionId: String) {
+        switch actionId {
+        case "edit-save":
+            Task { await saveDraft() }
+        case "edit-form-actions":
+            focusEventFormField(.actions)
+        case "edit-copy-meeting-link":
+            copyMeetingLinkFromForm()
+        case "edit-duplicate":
+            Task { await duplicateFocusedOrFormEvent() }
+        case "edit-delete":
+            Task { await deleteFormEvent() }
+        case "edit-cancel-meeting":
+            Task { await triggerBookedMeetingCancellation() }
+        case "edit-reschedule-meeting":
+            rescheduleBookedMeeting()
+        case "edit-close-form":
+            requestCloseEventForm()
+        default:
+            break
+        }
     }
 
     public func filteredPaletteSections() -> [CommandPaletteSection] {
@@ -201,7 +262,10 @@ extension NativeCalendarRootModel {
         case "book-personal-onboarding":
             openExternalURLHandler?(CommandPaletteCatalog.personalOnboardingURL)
         default:
-            if id.hasPrefix("event-") {
+            if id.hasPrefix("event-form-") {
+                let actionId = String(id.dropFirst("event-form-".count))
+                runEventFormPaletteCommand(actionId)
+            } else if id.hasPrefix("event-") {
                 let eventId = String(id.dropFirst("event-".count))
                 focusPaletteEvent(eventId: eventId)
             }

@@ -467,6 +467,12 @@ final class NativeGridKeyboardRouter {
         if matchesBinding(keyEvent, id: .editCopyDescriptionLink) {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
+        if matchesBinding(keyEvent, id: .editCopyMeetingLink) {
+            guard let draft = model.draftStore.gridDraft,
+                !model.isEventFormReadOnly(for: draft)
+            else { return false }
+            return model.copyMeetingLinkFromForm()
+        }
         if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
             guard isDescriptionFormEditorFocused() else { return false }
             let opened = NSApp.sendAction(
