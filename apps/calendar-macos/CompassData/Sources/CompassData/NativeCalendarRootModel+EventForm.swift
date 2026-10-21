@@ -144,15 +144,22 @@ extension NativeCalendarRootModel {
     }
 
     public func jumpEventFormField(digit: Character) {
-        guard let field = FormFieldDigitMapping.field(
-            forDigitCharacter: digit,
-            rows: shortcutRegistry.editSequenceFields
-        ) else { return }
+        guard let input = eventFormFieldVisibilityInput() else { return }
+        let rows = EventFormFieldVisibility.visibleDigitRows(
+            rows: shortcutRegistry.editSequenceFields,
+            input: input
+        )
+        guard let field = FormFieldDigitMapping.field(forDigitCharacter: digit, rows: rows) else { return }
         focusEventFormField(field)
     }
 
     public func formFieldDigitTargets() -> [PageJumpTarget] {
-        FormFieldDigitMapping.sortedRows(shortcutRegistry.editSequenceFields).compactMap { row in
+        guard let input = eventFormFieldVisibilityInput() else { return [] }
+        let rows = EventFormFieldVisibility.visibleDigitRows(
+            rows: shortcutRegistry.editSequenceFields,
+            input: input
+        )
+        return FormFieldDigitMapping.sortedRows(rows).compactMap { row in
             guard EventFormField(rawValue: row.field) != nil else { return nil }
             let anchorId = row.field == "actions" ? "form-actions" : "form-\(row.field)"
             return PageJumpTarget(id: anchorId, digit: row.digit, label: row.label)
