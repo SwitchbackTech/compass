@@ -1243,7 +1243,7 @@ export function useEventMutations(
         });
         deleteMutation.mutate({
           ...payload,
-          writeKey: payload.id,
+          writeKey: seriesWriteKey(original, payload.scope, payload.id),
           skipRepository: !existing,
           opportunityId,
           undoEntry: undoEntryForWrite(entry),
