@@ -317,6 +317,9 @@ final class NativeParityCaptureTests: XCTestCase {
             window.buttons["Morning standup"].waitForExistence(timeout: 20),
             "Expected demo-seed timed event on the week grid")
         XCTAssertTrue(
+            window.buttons["Lunch with Sam"].waitForExistence(timeout: 20),
+            "Expected Tuesday Lunch with Sam demo event after scroll-to-now parity setup")
+        XCTAssertTrue(
             window.buttons["Exercise"].waitForExistence(timeout: 20),
             "Expected Wednesday Exercise demo event after scroll-to-now parity setup")
         let dismissScrollHint = window.buttons["Dismiss"]
