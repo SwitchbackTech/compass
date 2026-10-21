@@ -121,6 +121,10 @@ enum NativeImageSnapshotSupport {
             sidebarToggle.frame.maxX,
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
+        XCTAssertLessThan(
+            sidebarToggle.frame.minY,
+            window.frame.maxY - window.frame.height * 0.85,
+            "Sidebar toggle should sit in the top title bar row")
         let headerTitle = window.buttons["compass-native-header-title"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(
@@ -138,6 +142,7 @@ enum NativeImageSnapshotSupport {
             NSWorkspace.shared.open(url)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
         }
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.4))
         guard let exportURL = URL(string: "compass://debug/parity-export-title-bar-reference") else {
             XCTFail("Invalid title bar reference export URL", file: file, line: line)
             return
@@ -157,8 +162,17 @@ enum NativeImageSnapshotSupport {
             }
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
         }
+        if png == nil {
+            let fallback = window.screenshot().pngRepresentation
+            guard !fallback.isEmpty else {
+                XCTFail("Timed out waiting for title bar reference at \(fileURL.path)", file: file, line: line)
+                return
+            }
+            png = fallback
+            try? png?.write(to: fileURL)
+        }
         guard let png, !png.isEmpty else {
-            XCTFail("Timed out waiting for title bar reference at \(fileURL.path)", file: file, line: line)
+            XCTFail("Missing title bar reference PNG", file: file, line: line)
             return
         }
         attachPNG(png, named: "mac-title-bar-full-window")
