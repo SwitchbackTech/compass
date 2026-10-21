@@ -116,12 +116,6 @@ public struct EventFormView: View {
                                 onLinkCopied: { model.didCopyDescriptionLink() }
                             )
                             .frame(minHeight: 72, maxHeight: 140)
-                            .overlay(alignment: .topTrailing) {
-                                DescriptionLinkDigitHintsOverlay(
-                                    linkCount: DescriptionLinkPresentation.linkHrefs(in: draft.description).count,
-                                    visible: model.eventFormFocusedField != .description
-                                )
-                            }
                         }
                         .pageJumpChipAnchor(id: "form-description")
                         .id(EventFormField.description)

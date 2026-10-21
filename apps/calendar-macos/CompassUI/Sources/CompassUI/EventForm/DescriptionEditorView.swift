@@ -49,6 +49,8 @@ struct DescriptionEditorView: NSViewRepresentable {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
         context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
+        container.syncLinkHintSlots(reserved: isEditable)
+        container.updateLinkHintOverlay(visible: isEditable && !isFocused)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
@@ -92,6 +94,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             )
             suppressDelegate = true
             textView.textStorage?.setAttributedString(attributed)
+            container?.syncLinkHintSlots(reserved: textView.isEditable)
             suppressDelegate = false
         }
 
@@ -105,6 +108,7 @@ struct DescriptionEditorView: NSViewRepresentable {
                 }
             } else if !presentationShowsHosts {
                 textView?.applyHostLinkPresentation()
+                container?.syncLinkHintSlots(reserved: textView?.isEditable == true)
                 presentationShowsHosts = true
             }
         }
@@ -114,6 +118,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             let edited = HTMLFragmentAppKit.document(from: textView.attributedString())
             html.wrappedValue = edited.serialize()
             presentationShowsHosts = false
+            container?.syncLinkHintSlots(reserved: textView.isEditable)
             container?.updateControls()
         }
 
@@ -189,6 +194,37 @@ public final class DescriptionTextView: NSTextView {
             storage.addAttribute(.toolTip, value: entry.href, range: newRange)
         }
         storage.endEditing()
+    }
+
+    func syncLinkHintSlots(reserved: Bool) {
+        guard let storage = textStorage else { return }
+        storage.beginEditing()
+        defer { storage.endEditing() }
+
+        var hintSlotRanges: [NSRange] = []
+        if storage.length > 0 {
+            storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+                if value is DescriptionLinkHintSlotAttachment {
+                    hintSlotRanges.append(range)
+                }
+            }
+        }
+        for range in hintSlotRanges.sorted(by: { $0.location > $1.location }) {
+            storage.deleteCharacters(in: range)
+        }
+        guard reserved, storage.length > 0 else { return }
+
+        var linkRanges: [NSRange] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { _, range, _ in
+            linkRanges.append(range)
+        }
+        for range in linkRanges.sorted(by: { $0.location > $1.location }) {
+            let insertAt = range.location + range.length
+            let attachment = DescriptionLinkHintSlotAttachment()
+            let slot = NSMutableAttributedString(attachment: attachment)
+            slot.addAttribute(HTMLFragmentAppKit.linkHintSlotKey, value: true, range: NSRange(location: 0, length: 1))
+            storage.insert(slot, at: insertAt)
+        }
     }
 
     static func findInKeyWindow() -> DescriptionTextView? {
