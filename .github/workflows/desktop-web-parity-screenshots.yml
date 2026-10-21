@@ -69,7 +69,11 @@ jobs:
       - name: Capture macOS parity surfaces
         run: bash .github/scripts/record-macos-parity-captures.sh
 
+      # Upload even when the script's post-capture checks fail (for example the
+      # title-bar traffic-light check): the PNGs it already wrote are what you
+      # need to see why it failed, and to review the surfaces that did capture.
       - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
         with:
           name: desktop-parity-macos
           path: build/desktop-parity/macos
