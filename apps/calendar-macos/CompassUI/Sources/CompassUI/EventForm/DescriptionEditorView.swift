@@ -137,11 +137,11 @@ public final class DescriptionTextView: NSTextView {
         _ = copyDescriptionLink(to: .general)
     }
 
-    @objc func openDescriptionLinkAtCaret(_ sender: Any?) {
+    @objc public func openDescriptionLinkAtCaret(_ sender: Any?) {
         _ = openDescriptionLinkAtCaret()
     }
 
-    @objc func openDescriptionLinkDigit(_ sender: Any?) {
+    @objc public func openDescriptionLinkDigit(_ sender: Any?) {
         guard let index = (sender as? NSNumber)?.intValue else { return }
         _ = openDescriptionLink(at: index)
     }
@@ -154,7 +154,7 @@ public final class DescriptionTextView: NSTextView {
     }
 
     @discardableResult
-    func openDescriptionLink(at index: Int) -> Bool {
+    public func openDescriptionLink(at index: Int) -> Bool {
         guard index >= 0, index < orderedLinkHrefs().count,
               let url = URL(string: orderedLinkHrefs()[index])
         else { return false }
@@ -227,7 +227,7 @@ public final class DescriptionTextView: NSTextView {
         }
     }
 
-    static func findInKeyWindow() -> DescriptionTextView? {
+    public static func findInKeyWindow() -> DescriptionTextView? {
         find(in: NSApp.keyWindow?.contentView)
     }
 
