@@ -35,12 +35,27 @@ export const RecurrenceToggle = ({
     </button>
   );
 
+  const withShortcut =
+    disabled || disabledMessage ? (
+      toggle
+    ) : (
+      <TooltipWrapper
+        description="Recurrence"
+        shortcut={["Mod+E", "R"]}
+        shortcutId="edit-focus-recurrence"
+      >
+        {toggle}
+      </TooltipWrapper>
+    );
+
   return (
     <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       {disabled && disabledMessage ? (
-        <TooltipWrapper description={disabledMessage}>{toggle}</TooltipWrapper>
+        <TooltipWrapper description={disabledMessage}>
+          {withShortcut}
+        </TooltipWrapper>
       ) : (
-        toggle
+        withShortcut
       )}
     </div>
   );

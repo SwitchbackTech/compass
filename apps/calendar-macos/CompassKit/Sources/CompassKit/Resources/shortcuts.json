@@ -559,6 +559,19 @@
       }
     },
     {
+      "id": "edit-copy-meeting-link",
+      "keys": [
+        "Mod",
+        "Shift",
+        "L"
+      ],
+      "label": "Copy meeting link",
+      "section": "edit",
+      "when": {
+        "isFormOpen": true
+      }
+    },
+    {
       "id": "edit-open-description-link",
       "keys": [
         "Mod",
@@ -976,6 +989,11 @@
       "Shift",
       "C"
     ],
+    "edit-copy-meeting-link": [
+      "Mod",
+      "Shift",
+      "L"
+    ],
     "edit-open-description-link": [
       "Mod",
       "Shift",
@@ -1209,6 +1227,14 @@
         "Mod",
         "Shift",
         "C"
+      ]
+    },
+    "copyMeetingLink": {
+      "hotkey": "Mod+Shift+L",
+      "keycaps": [
+        "Mod",
+        "Shift",
+        "L"
       ]
     },
     "openDescriptionLinkAtCaret": {

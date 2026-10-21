@@ -4,6 +4,7 @@ import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
 import { copyText } from "@web/common/utils/clipboard/clipboard.util";
 import IconButton from "@web/components/IconButton/IconButton";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 const COPIED_RESET_MS = 1500;
 const ICON_SIZE = 16;
@@ -16,6 +17,8 @@ export interface CopyButtonProps {
   className?: string;
   /** Called after a successful copy. */
   onCopied?: () => void;
+  /** Optional keycap hint rendered beside the icon (always visible). */
+  shortcutKeys?: readonly string[];
 }
 
 /**
@@ -27,6 +30,7 @@ export function CopyButton({
   label,
   className,
   onCopied,
+  shortcutKeys,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<number | null>(null);
@@ -60,33 +64,50 @@ export function CopyButton({
   const ariaLabel = copied ? "Copied" : label;
 
   return (
-    <IconButton
-      aria-label={ariaLabel}
+    <span
       className={classNames(
-        "shrink-0 opacity-25 transition-opacity hover:opacity-100 focus-visible:opacity-100",
+        "group inline-flex shrink-0 items-center gap-1",
         className,
       )}
-      disabled={!text.trim()}
-      onClick={(event) => {
-        event.stopPropagation();
-        handleCopy();
-      }}
-      onKeyDown={(event) => {
-        // Nested in chips/comboboxes, Enter/Space must not bubble to a parent
-        // that preventDefault's them (which would block the native button click).
-        if (event.key === "Enter" || event.key === " ") {
-          event.stopPropagation();
-        }
-      }}
-      onMouseDown={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
-      size="small"
-      tabIndex={0}
-      type="button"
     >
-      {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
-    </IconButton>
+      <IconButton
+        aria-label={ariaLabel}
+        aria-keyshortcuts={
+          shortcutKeys?.length
+            ? shortcutKeys
+                .map((key) => (key === "Mod" ? "Meta Control" : key))
+                .join(" ")
+            : undefined
+        }
+        className="opacity-25 transition-opacity hover:opacity-100 focus-visible:opacity-100"
+        disabled={!text.trim()}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleCopy();
+        }}
+        onKeyDown={(event) => {
+          // Nested in chips/comboboxes, Enter/Space must not bubble to a parent
+          // that preventDefault's them (which would block the native button click).
+          if (event.key === "Enter" || event.key === " ") {
+            event.stopPropagation();
+          }
+        }}
+        onMouseDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        size="small"
+        tabIndex={0}
+        type="button"
+      >
+        {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
+      </IconButton>
+      {shortcutKeys && shortcutKeys.length > 0 ? (
+        <ShortcutKeys
+          className="opacity-25 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+          keys={[...shortcutKeys]}
+        />
+      ) : null}
+    </span>
   );
 }

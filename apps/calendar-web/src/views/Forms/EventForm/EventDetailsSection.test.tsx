@@ -43,6 +43,7 @@ describe("EventDetailsSection", () => {
       "id",
       "event-form-conference",
     );
+    expect(screen.getByTestId("l-icon")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "copy meeting link" }));
     expect(await screen.findByRole("button", { name: "Copied" })).toBeVisible();
   });

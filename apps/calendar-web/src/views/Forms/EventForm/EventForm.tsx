@@ -43,6 +43,7 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
+  focusEventFormField,
   isComboboxInteraction,
   isEditableKeyboardTarget,
   shouldDeferEnterToTarget,
@@ -82,6 +83,7 @@ import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/Attendee
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
 import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
+import { copyMeetingLinkUrl } from "@web/views/Forms/EventForm/conference-link.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
@@ -93,6 +95,7 @@ import {
   EVENT_FORM_CONFERENCE_ID,
   EventDetailsSection,
 } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { eventFormCmdActions } from "@web/views/Forms/EventForm/event-form-cmd.store";
 import {
   FormActionsRow,
   type FormActionsRowHandle,
@@ -115,6 +118,7 @@ import {
   type GridEventFormProps,
   type OnEventFormScheduleChange,
 } from "@web/views/Forms/EventForm/types";
+import { useCopyMeetingLinkShortcut } from "@web/views/Forms/EventForm/useCopyMeetingLinkShortcut";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 
@@ -285,6 +289,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" ? (liveSource ?? draft.source) : null;
     const liveDetails =
       rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
+    const meetingLinkUrl =
+      (liveDetails ?? sourceDetails)?.conference?.url?.trim() || null;
     // Attendee-editor gate (WP-04): guests are editable everywhere the whole
     // write path can deliver them — a writable calendar that can invite and an
     // event the user organizes. Repeating events included: sync refuses
@@ -529,6 +535,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         (e.metaKey || e.ctrlKey) &&
         e.shiftKey &&
         keyboardKey(e).toLowerCase() === "e"
+      ) {
+        e.preventDefault();
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        keyboardKey(e).toLowerCase() === "l"
       ) {
         e.preventDefault();
       }
@@ -797,6 +811,50 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           formActionsRef.current?.consumeEscapeForCancelConfirm() ?? false,
       });
 
+    useCopyMeetingLinkShortcut(meetingLinkUrl, !isReadOnly);
+
+    const onSubmitFormRef = useRef(onSubmitForm);
+    onSubmitFormRef.current = onSubmitForm;
+
+    useEffect(() => {
+      eventFormCmdActions.register({
+        handlers: {
+          onSave: () => onSubmitFormRef.current("keyboard"),
+          onDuplicate: onDuplicateEvent,
+          onDelete: onDeleteEvent,
+          onClose: requestClose,
+          onCopyMeetingLink: () => {
+            if (meetingLinkUrl) void copyMeetingLinkUrl(meetingLinkUrl);
+          },
+          onJumpToActions: () => {
+            focusEventFormField("actions");
+          },
+          onCancelMeeting: () => {
+            formActionsRef.current?.triggerCancelShortcut();
+          },
+          onRescheduleMeeting: () => {
+            formActionsRef.current?.triggerRescheduleShortcut();
+          },
+        },
+        hasMeetingLink: Boolean(meetingLinkUrl),
+        isExistingEvent,
+        isReadOnly,
+        showBookingFormActions,
+      });
+
+      return () => {
+        eventFormCmdActions.clear();
+      };
+    }, [
+      isExistingEvent,
+      isReadOnly,
+      meetingLinkUrl,
+      onDeleteEvent,
+      onDuplicateEvent,
+      requestClose,
+      showBookingFormActions,
+    ]);
+
     const { areHintsVisible } = useFormDigitJumpShortcut({
       isFieldVisible: isFieldJumpVisible,
     });
@@ -1014,6 +1072,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       label={`Add ${CONFERENCE_KIND_LABEL[conferenceKind]}`}
                       labelClassName="text-text-muted"
                       rowClassName="w-full justify-between"
+                      shortcutKeys={["="]}
                     />
                   </FormCardIconRow>
                 )}
