@@ -100,12 +100,7 @@ struct ShortcutSidebarFooter: View {
                     .foregroundStyle(theme.textMutedColor)
             }
             .frame(maxWidth: .infinity)
-            Button("Hide tips") {
-                levelsStore.setTipsMuted(true)
-            }
-            .buttonStyle(.plain)
-            .font(.rubik(11))
-            .foregroundStyle(theme.textMutedColor)
+            hideTipsButton
         }
         .accessibilityIdentifier("compass-native-shortcut-tip")
     }

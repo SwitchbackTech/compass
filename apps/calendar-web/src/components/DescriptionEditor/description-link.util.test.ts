@@ -16,6 +16,9 @@ describe("description-link.util", () => {
   it("shortens autolink labels but keeps custom link text", () => {
     const href = "https://example.com/meet";
     expect(shouldShortenDescriptionLinkLabel(href, href)).toBe(true);
+    expect(
+      shouldShortenDescriptionLinkLabel("www.example.com/meet", href),
+    ).toBe(true);
     expect(shouldShortenDescriptionLinkLabel("Join meeting", href)).toBe(false);
   });
 });
