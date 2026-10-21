@@ -227,15 +227,16 @@ export class GoogleEventWriter implements ProviderEventWriter {
           throw classifyWriteError(getError);
         }
       }
-      if (googleStatus(error) === 400) {
-        throw classifyGoogle400(error, "Google declined to change this event", {
+      throw classifyWriteFailure(
+        error,
+        "Google declined to change this event",
+        {
           operation: "events.insert",
           requestBodyKeys: googleRequestBodyKeys(
             requestBody as Record<string, unknown>,
           ),
-        });
-      }
-      throw classifyWriteError(error);
+        },
+      );
     }
   }
 
@@ -264,17 +265,14 @@ export class GoogleEventWriter implements ProviderEventWriter {
           });
           if (cleared.etag) ifMatch = cleared.etag;
         } catch (error) {
-          if (googleStatus(error) === 400) {
-            throw classifyGoogle400(
-              error,
-              "Google declined to clear the event label",
-              {
-                operation: "events.patch(clearEventLabel)",
-                requestBodyKeys: ["eventLabelId"],
-              },
-            );
-          }
-          throw classifyWriteError(error);
+          throw classifyWriteFailure(
+            error,
+            "Google declined to clear the event label",
+            {
+              operation: "events.patch(clearEventLabel)",
+              requestBodyKeys: ["eventLabelId"],
+            },
+          );
         }
       }
       const mainBody = toGoogleBody(
@@ -294,22 +292,21 @@ export class GoogleEventWriter implements ProviderEventWriter {
         });
         return toResult(patched);
       } catch (error) {
-        if (googleStatus(error) === 400) {
-          throw classifyGoogle400(
-            error,
-            "Google declined to change this event",
-            {
-              operation: "events.patch",
-              requestBodyKeys: googleRequestBodyKeys(
-                mainBody as Record<string, unknown>,
-              ),
-            },
-          );
-        }
-        throw classifyWriteError(error);
+        throw classifyWriteFailure(
+          error,
+          "Google declined to change this event",
+          {
+            operation: "events.patch",
+            requestBodyKeys: googleRequestBodyKeys(
+              mainBody as Record<string, unknown>,
+            ),
+          },
+        );
       }
     } catch (error) {
-      if (error instanceof ProviderWriteError) throw error;
+      // Only a `toGoogleBody` throw reaches here unclassified: both patch
+      // calls above throw already-classified errors, which this passes
+      // through untouched.
       throw classifyWriteError(error);
     }
   }
@@ -333,13 +330,14 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // permanentProviderError surfaced a retryable 502 the client could
       // never resolve; a typed capability refusal maps to an honest,
       // non-retryable error instead.
-      if (googleStatus(error) === 400) {
-        throw classifyGoogle400(error, "Google declined to delete this event", {
+      throw classifyWriteFailure(
+        error,
+        "Google declined to delete this event",
+        {
           operation: "events.delete",
           requestBodyKeys: [],
-        });
-      }
-      throw classifyWriteError(error);
+        },
+      );
     }
   }
 
@@ -668,6 +666,22 @@ function classifyGoogle400(
   return new ProviderWriteError("providerRejectedChange", message, {
     cause: googleFailureCause(error),
   });
+}
+
+// Every Google write catch triages the same way: a 400 is Google declining
+// this particular change (logged with its `errors[]` entries and the request's
+// top-level body keys), anything else falls through to the shared table. One
+// funnel keeps the four call sites from drifting on which statuses get the 400
+// treatment.
+function classifyWriteFailure(
+  error: unknown,
+  declinedMessage: string,
+  context: { operation: string; requestBodyKeys: readonly string[] },
+): ProviderWriteError {
+  if (googleStatus(error) === 400) {
+    return classifyGoogle400(error, declinedMessage, context);
+  }
+  return classifyWriteError(error);
 }
 
 function classifyWriteError(error: unknown): ProviderWriteError {
