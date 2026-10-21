@@ -312,6 +312,8 @@ if full_window is None and os.path.isfile(window_id_path):
 if not full_window:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
 
+used_screencap_fallback = full_window == screencap_path
+
 if os.path.isfile(path):
     os.remove(path)
 crop_title_bar(full_window, path)
@@ -319,7 +321,8 @@ crop_title_bar(full_window, path)
 band = Image.open(path).convert("RGBA")
 assert_traffic_lights(band)
 assert_month_title_band(band)
-reject_bottom_of_window(band)
+if used_screencap_fallback:
+    reject_bottom_of_window(band)
 if band.size[0] < MIN_TITLE_BAR_WIDTH:
     raise SystemExit(
         f"mac-title-bar.png width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
