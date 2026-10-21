@@ -11,8 +11,10 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
+import { isEventFormFocusFieldVisible } from "@core/event/event-form-field-visibility";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { CONFERENCE_KIND_LABEL } from "@core/types/calendar.contracts";
@@ -21,10 +23,7 @@ import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { parseBookingEventLinks } from "@web/booking/booking-event-links";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import {
-  canInviteOnCalendar,
-  creatableConferenceKind,
-} from "@web/calendars/calendar.util";
+import { creatableConferenceKind } from "@web/calendars/calendar.util";
 import {
   isEventReadOnly,
   useCalendarLookup,
@@ -44,6 +43,7 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
+  focusEventFormField,
   isComboboxInteraction,
   isEditableKeyboardTarget,
   shouldDeferEnterToTarget,
@@ -63,6 +63,10 @@ import {
 } from "@web/events/attendee-rsvp";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
+  eventFormFieldVisibilityInputFromDraft,
+  visibleFormFieldDigitRows,
+} from "@web/events/event-form-field-visibility.util";
+import {
   patchGridDraftFields,
   replaceGridDraftSchedule,
   scheduleDatesFromDraft,
@@ -79,6 +83,7 @@ import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/Attendee
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
 import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
+import { copyMeetingLinkUrl } from "@web/views/Forms/EventForm/conference-link.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
@@ -90,6 +95,7 @@ import {
   EVENT_FORM_CONFERENCE_ID,
   EventDetailsSection,
 } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { eventFormCmdActions } from "@web/views/Forms/EventForm/event-form-cmd.store";
 import {
   FormActionsRow,
   type FormActionsRowHandle,
@@ -112,6 +118,7 @@ import {
   type GridEventFormProps,
   type OnEventFormScheduleChange,
 } from "@web/views/Forms/EventForm/types";
+import { useCopyMeetingLinkShortcut } from "@web/views/Forms/EventForm/useCopyMeetingLinkShortcut";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 
@@ -282,6 +289,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" ? (liveSource ?? draft.source) : null;
     const liveDetails =
       rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
+    const meetingLinkUrl =
+      (liveDetails ?? sourceDetails)?.conference?.url?.trim() || null;
     // Attendee-editor gate (WP-04): guests are editable everywhere the whole
     // write path can deliver them — a writable calendar that can invite and an
     // event the user organizes. Repeating events included: sync refuses
@@ -299,42 +308,34 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const scheduleManagedToast = providerManagedScheduleToast(attendeeCalendar);
     const recurrenceManagedToast =
       providerManagedRecurrenceToast(attendeeCalendar);
-    // The host auto-sets the organizer to the creating account, so "the user
-    // organizes this event" is organizer-email == calendar-account-email.
-    // A missing organizer means Compass created the event on this account
-    // (organizes it); a missing account email fails closed — sync refuses
-    // non-organizer guest edits anyway, so don't offer the editor.
-    const organizesEvent =
-      draft.kind === "create" ||
-      !sourceDetails?.organizer ||
-      (attendeeCalendar?.accountEmail !== undefined &&
-        sourceDetails.organizer.email.toLowerCase() ===
-          attendeeCalendar.accountEmail.toLowerCase());
-    const showAttendeeEditor =
-      !isReadOnly && canInviteOnCalendar(attendeeCalendar) && organizesEvent;
-    // Meeting-link gate: a create draft whose target calendar can mint a
-    // conference link (Google Meet, Microsoft Teams) offers an "Add <kind>"
-    // switch. Create only: sync has no conference channel on update, and an
-    // existing link is shown read-only by EventDetailsSection instead.
-    const conferenceKind =
-      draft.kind === "create" && !isReadOnly
-        ? creatableConferenceKind(attendeeCalendar)
-        : null;
+    const fieldVisibilityInput = useMemo(
+      () =>
+        eventFormFieldVisibilityInputFromDraft(
+          draft,
+          calendarLookup,
+          defaultTargetCalendar,
+        ),
+      [calendarLookup, defaultTargetCalendar, draft],
+    );
+    const formDigitRows = useMemo(
+      () => visibleFormFieldDigitRows(fieldVisibilityInput),
+      [fieldVisibilityInput],
+    );
+    const isFieldJumpVisible = useCallback(
+      (field: EventFormFocusField) =>
+        isEventFormFocusFieldVisible(field, fieldVisibilityInput),
+      [fieldVisibilityInput],
+    );
+    const showAttendeeEditor = isFieldJumpVisible("attendees");
+    const showCreateConference =
+      isFieldJumpVisible("conference") && draft.kind === "create";
+    const conferenceKind = showCreateConference
+      ? creatableConferenceKind(attendeeCalendar)
+      : null;
     const guestEditIsSeriesWide =
       draft.kind === "edit" && draft.source.recurrence.kind !== "single";
-    // RSVP gate (WP-08): show Going / Maybe / Decline when the calendar's
-    // connected account email appears in the attendee list (organizer
-    // included — organizers can answer their own event). Hidden when self is
-    // not an attendee or the event is local (no provider account email).
-    // Deliberately NOT gated on writability: answering an invitation is
-    // allowed on viewer-access calendars.
     const rsvpAccountEmail = attendeeCalendar?.accountEmail;
-    const showRsvpControl =
-      rsvpSource !== null &&
-      rsvpAccountEmail !== undefined &&
-      attendeeStatusByEmail(liveDetails?.attendees).has(
-        rsvpAccountEmail.toLowerCase(),
-      );
+    const showRsvpControl = isFieldJumpVisible("rsvp");
     // Contact suggestions (WP-06): live when a connected account granted the
     // optional contacts scopes; otherwise the field is a raw email input and
     // the combobox footer may carry the occasional enable-contacts nudge.
@@ -534,6 +535,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         (e.metaKey || e.ctrlKey) &&
         e.shiftKey &&
         keyboardKey(e).toLowerCase() === "e"
+      ) {
+        e.preventDefault();
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        keyboardKey(e).toLowerCase() === "l"
       ) {
         e.preventDefault();
       }
@@ -802,7 +811,53 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           formActionsRef.current?.consumeEscapeForCancelConfirm() ?? false,
       });
 
-    const { areHintsVisible } = useFormDigitJumpShortcut();
+    useCopyMeetingLinkShortcut(meetingLinkUrl, !isReadOnly);
+
+    const onSubmitFormRef = useRef(onSubmitForm);
+    onSubmitFormRef.current = onSubmitForm;
+
+    useEffect(() => {
+      eventFormCmdActions.register({
+        handlers: {
+          onSave: () => onSubmitFormRef.current("keyboard"),
+          onDuplicate: onDuplicateEvent,
+          onDelete: onDeleteEvent,
+          onClose: requestClose,
+          onCopyMeetingLink: () => {
+            if (meetingLinkUrl) void copyMeetingLinkUrl(meetingLinkUrl);
+          },
+          onJumpToActions: () => {
+            focusEventFormField("actions");
+          },
+          onCancelMeeting: () => {
+            formActionsRef.current?.triggerCancelShortcut();
+          },
+          onRescheduleMeeting: () => {
+            formActionsRef.current?.triggerRescheduleShortcut();
+          },
+        },
+        hasMeetingLink: Boolean(meetingLinkUrl),
+        isExistingEvent,
+        isReadOnly,
+        showBookingFormActions,
+      });
+
+      return () => {
+        eventFormCmdActions.clear();
+      };
+    }, [
+      isExistingEvent,
+      isReadOnly,
+      meetingLinkUrl,
+      onDeleteEvent,
+      onDuplicateEvent,
+      requestClose,
+      showBookingFormActions,
+    ]);
+
+    const { areHintsVisible } = useFormDigitJumpShortcut({
+      isFieldVisible: isFieldJumpVisible,
+    });
     const { digitFlashField, onFormFocusIn, onFormPointerDown } =
       usePointerFormFieldDigitTeach();
 
@@ -1017,6 +1072,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       label={`Add ${CONFERENCE_KIND_LABEL[conferenceKind]}`}
                       labelClassName="text-text-muted"
                       rowClassName="w-full justify-between"
+                      shortcutKeys={["="]}
                     />
                   </FormCardIconRow>
                 )}
@@ -1129,6 +1185,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onDiscard={onDiscardConfirm}
         />
         <FormDigitHintOverlay
+          digitRows={formDigitRows}
           highlightField={digitFlashField}
           visible={areHintsVisible}
         />

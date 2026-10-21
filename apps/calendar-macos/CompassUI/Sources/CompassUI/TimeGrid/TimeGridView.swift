@@ -460,17 +460,44 @@ public final class TimeGridView: NSView {
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
         let viewStartMonth = snapshot.columns.first.map { String($0.key.prefix(7)) }
         for column in snapshot.columns {
-            let header = NSTextField(
-                labelWithAttributedString: weekDayLabel(
+            let frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
+            let header: NSView
+            if state.showDayJumpPrefixes {
+                // Web `DayLabels` swaps the weekday for a ⇧SU / ⇧M keycap while
+                // Mod is held or event jump is active.
+                let control = WeekDayColumnHeaderControl(frame: frame)
+                control.apply(
                     dayKey: column.key,
                     viewStartMonth: viewStartMonth,
-                    color: column.key == todayKey ? themeAccentColor : palette.textMuted,
-                    trackWidth: state.trackWidth
+                    isToday: column.key == todayKey,
+                    isJumpDay: state.eventJumpActiveDayKeys.contains(column.key),
+                    showDayJumpPrefixes: true,
+                    dayJumpUseShiftPrefix: state.dayJumpUseShiftPrefix,
+                    numberSize: weekDayNumberSize(trackWidth: state.trackWidth),
+                    palette: (
+                        text: palette.text,
+                        textMuted: palette.textMuted,
+                        accent: themeAccentColor,
+                        surfacePanel: themeSurfacePanelColor,
+                        border: palette.border,
+                        background: palette.background
+                    )
                 )
-            )
+                header = control
+            } else {
+                let label = NSTextField(
+                    labelWithAttributedString: weekDayLabel(
+                        dayKey: column.key,
+                        viewStartMonth: viewStartMonth,
+                        color: column.key == todayKey ? themeAccentColor : palette.textMuted,
+                        trackWidth: state.trackWidth
+                    )
+                )
+                label.frame = frame
+                label.alignment = .center
+                header = label
+            }
             header.identifier = NSUserInterfaceItemIdentifier(column.key)
-            header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
-            header.alignment = .center
             header.setAccessibilityIdentifier(column.accessibilityIdentifier)
             if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
                 let formatter = DateFormatter()
@@ -507,7 +534,7 @@ public final class TimeGridView: NSView {
         formatter.dateFormat = "EEE"
         let weekday = formatter.string(from: date)
 
-        let numberSize = min(20.8, max(18, trackWidth * 0.027))
+        let numberSize = weekDayNumberSize(trackWidth: trackWidth)
         let weekdaySize = min(16, max(13, trackWidth * 0.02))
         let centered = NSMutableParagraphStyle()
         centered.alignment = .center
@@ -818,6 +845,19 @@ public final class TimeGridView: NSView {
                 ThemeTokens.darkAbyss.text.nsColor,
                 ThemeTokens.darkAbyss.textMuted.nsColor
             )
+        }
+    }
+
+    private func weekDayNumberSize(trackWidth: CGFloat) -> CGFloat {
+        min(20.8, max(18, trackWidth * 0.027))
+    }
+
+    private var themeSurfacePanelColor: NSColor {
+        switch theme {
+        case .lightBeach:
+            ThemeTokens.lightBeach.surfacePanel.nsColor
+        case .darkAbyss:
+            ThemeTokens.darkAbyss.surfacePanel.nsColor
         }
     }
 

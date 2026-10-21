@@ -27,7 +27,10 @@ import {
   type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
-import { decodeOccurrenceId } from "@core/util/occurrence-id";
+import {
+  decodeOccurrenceId,
+  rootSeriesMasterId,
+} from "@core/util/occurrence-id";
 import {
   getApiErrorCode,
   isAbortError,
@@ -451,10 +454,13 @@ function seriesWriteKey(
   fallbackId: EventId,
 ): EventId {
   if (scope === "this" || !original) return fallbackId;
-  if (original.recurrence.kind === "occurrence") {
-    return original.recurrence.seriesId;
-  }
-  return original.id;
+  const seriesId =
+    original.recurrence.kind === "occurrence"
+      ? original.recurrence.seriesId
+      : original.recurrence.kind === "series"
+        ? original.id
+        : fallbackId;
+  return EventIdSchema.parse(rootSeriesMasterId(seriesId));
 }
 
 // The envelope every serialized event mutation's variables carry: the write
@@ -1237,7 +1243,7 @@ export function useEventMutations(
         });
         deleteMutation.mutate({
           ...payload,
-          writeKey: payload.id,
+          writeKey: seriesWriteKey(original, payload.scope, payload.id),
           skipRepository: !existing,
           opportunityId,
           undoEntry: undoEntryForWrite(entry),

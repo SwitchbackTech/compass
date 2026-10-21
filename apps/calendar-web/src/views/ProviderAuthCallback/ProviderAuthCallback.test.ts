@@ -32,6 +32,7 @@ mock.module(
 const { completeProviderAuthCallback } = await import(
   "@web/views/ProviderAuthCallback/ProviderAuthCallback"
 );
+const oauthSignupFunnel = await import("@web/auth/posthog/oauth-signup-funnel");
 
 const GOOGLE_SCOPES_REQUIRED = PROVIDER_AUTH_SCOPES_REQUIRED.google;
 
@@ -152,6 +153,10 @@ describe("completeProviderAuthCallback (google)", () => {
 
   it("ignores a replayed callback when the user is already signed in", async () => {
     spyOn(session, "doesSessionExist").mockResolvedValue(true);
+    const trackOAuthSignupFailed = spyOn(
+      oauthSignupFunnel,
+      "trackOAuthSignupFailed",
+    ).mockImplementation(() => undefined);
 
     await completeProviderAuthCallback({
       provider: "google",
@@ -163,6 +168,8 @@ describe("completeProviderAuthCallback (google)", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mocks.error).not.toHaveBeenCalled();
+    expect(trackOAuthSignupFailed).not.toHaveBeenCalled();
+    trackOAuthSignupFailed.mockRestore();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
 });

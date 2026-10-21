@@ -75,3 +75,13 @@ export function composeOccurrenceIdFromSchedule(
       : new Date(schedule.start).toISOString();
   return composeOccurrenceId({ eventId, recurrenceId });
 }
+
+// The original 24-char series master at the root of a recurring lineage.
+// A this-and-following split reuses a composite occurrence id as the
+// remainder series' own id; writes and dedupe still serialize against this
+// root so rapid edits before the split lands do not fork queue keys.
+export function rootSeriesMasterId(id: string): string {
+  const parts = decodeOccurrenceId(id);
+  if (!parts) return id;
+  return rootSeriesMasterId(parts.eventId);
+}

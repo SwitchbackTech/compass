@@ -43,6 +43,7 @@ final class WeekDayColumnHeaderControl: NSView {
         isJumpDay: Bool,
         showDayJumpPrefixes: Bool,
         dayJumpUseShiftPrefix: Bool,
+        numberSize: CGFloat,
         palette: (text: NSColor, textMuted: NSColor, accent: NSColor, surfacePanel: NSColor, border: NSColor, background: NSColor)
     ) {
         guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { return }
@@ -54,6 +55,7 @@ final class WeekDayColumnHeaderControl: NSView {
         formatter.dateFormat = isNewMonth ? "MMM d" : "d"
         let number = formatter.string(from: date)
         numberField.stringValue = number
+        numberField.font = CompassFont.nsFont(size: numberSize)
 
         let ink = isToday ? palette.accent : palette.textMuted
         numberField.textColor = ink

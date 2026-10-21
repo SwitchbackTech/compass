@@ -1,11 +1,15 @@
 import AppKit
 
 final class DescriptionEditorContainerView: NSView {
+    /// Web `DescriptionEditor` placeholder; drawn on the container so `DescriptionTextView` stays unchanged.
+    static let descriptionPlaceholder = "Description"
+
     let textView = DescriptionTextView()
     private let linkHintOverlay = DescriptionLinkHintOverlayView()
     private let scrollView = NSScrollView()
     private let toolbar = NSStackView()
     private var buttons: [NSButton] = []
+    private let placeholderLabel = NSTextField(labelWithString: descriptionPlaceholder)
 
     override var isFlipped: Bool { true }
 
@@ -40,7 +44,18 @@ final class DescriptionEditorContainerView: NSView {
             toolbar.addArrangedSubview(button)
             buttons.append(button)
         }
-        textView.onFormattingChange = { [weak self] in self?.updateControls() }
+        textView.onFormattingChange = { [weak self] in
+            self?.updateControls()
+            self?.updateDescriptionPlaceholder()
+        }
+        placeholderLabel.isEditable = false
+        placeholderLabel.isBordered = false
+        placeholderLabel.drawsBackground = false
+        placeholderLabel.isEnabled = false
+        placeholderLabel.font = NSFont.systemFont(ofSize: 13)
+        placeholderLabel.alphaValue = 0.6
+        placeholderLabel.isHidden = true
+        textView.addSubview(placeholderLabel)
         linkHintOverlay.isHidden = true
         addSubview(toolbar)
         addSubview(scrollView)
@@ -85,6 +100,29 @@ final class DescriptionEditorContainerView: NSView {
         toolbar.frame = NSRect(x: 0, y: 0, width: 108, height: 24)
         scrollView.frame = NSRect(x: 0, y: 28, width: bounds.width, height: max(0, bounds.height - 28))
         linkHintOverlay.frame = scrollView.frame
+        layoutDescriptionPlaceholder()
+    }
+
+    func updateDescriptionPlaceholder() {
+        let show = textView.isEditable
+            && textView.string.isEmpty
+            && !textView.hasMarkedText()
+        placeholderLabel.isHidden = !show
+        if show { layoutDescriptionPlaceholder() }
+    }
+
+    private func layoutDescriptionPlaceholder() {
+        let inset = textView.textContainerInset
+        let padding = textView.textContainer?.lineFragmentPadding ?? 0
+        let size = placeholderLabel.sizeThatFits(
+            NSSize(width: max(0, scrollView.bounds.width - inset.width * 2), height: .greatestFiniteMagnitude)
+        )
+        placeholderLabel.frame = NSRect(
+            x: inset.width + padding,
+            y: inset.height,
+            width: size.width,
+            height: max(size.height, 18)
+        )
     }
 
     func updateControls(tint: NSColor? = nil) {
@@ -101,5 +139,11 @@ final class DescriptionEditorContainerView: NSView {
             button.isEnabled = textView.isEditable
             if let tint { button.contentTintColor = tint }
         }
+        if let tint {
+            placeholderLabel.textColor = tint
+        } else if let textColor = textView.textColor {
+            placeholderLabel.textColor = textColor
+        }
+        updateDescriptionPlaceholder()
     }
 }

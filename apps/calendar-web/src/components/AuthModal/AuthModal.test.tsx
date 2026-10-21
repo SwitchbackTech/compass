@@ -1238,11 +1238,16 @@ describe("Shortcut hints", () => {
     buttonName: RegExp | string,
     letter: string,
     visible: boolean,
+    hiddenMode: "invisible" | "hidden" = "invisible",
   ) => {
     const hint = within(
       screen.getByRole("button", { name: buttonName }),
     ).getByText(letter);
     if (visible) {
+      expect(hint.className).not.toMatch(/\binvisible\b/);
+      expect(hint.className).not.toMatch(/\bhidden\b/);
+    } else if (hiddenMode === "hidden") {
+      expect(hint.className).toMatch(/\bhidden\b/);
       expect(hint.className).not.toMatch(/\binvisible\b/);
     } else {
       expect(hint.className).toMatch(/\binvisible\b/);
@@ -1254,7 +1259,7 @@ describe("Shortcut hints", () => {
     await waitForAuthModal();
 
     expect(screen.getByLabelText(/email/i)).toHaveFocus();
-    expectBareLetterHintVisible(/^sign up$/i, "U", false);
+    expectBareLetterHintVisible(/^sign up$/i, "U", false, "hidden");
     expectBareLetterHintVisible("Continue with Google", "G", false);
     expectBareLetterHintVisible(/^log in$/i, "Enter", true);
   });
@@ -1314,7 +1319,7 @@ describe("Shortcut hints", () => {
     await renderWithProviders(<div />, "/?auth=signup");
     await waitForAuthModal(/nice to meet you/i);
 
-    expectBareLetterHintVisible(/^log in$/i, "i", false);
+    expectBareLetterHintVisible(/^log in$/i, "i", false, "hidden");
 
     await blurAuthFields();
     await waitFor(() => {

@@ -83,6 +83,10 @@ export const APP_SHORTCUT_BINDINGS = {
     hotkey: KEYMAP.copyDescriptionLink.hotkey,
     keycaps: [...KEYMAP.copyDescriptionLink.keycaps],
   },
+  editCopyMeetingLink: {
+    hotkey: KEYMAP.copyMeetingLink.hotkey,
+    keycaps: [...KEYMAP.copyMeetingLink.keycaps],
+  },
   editOpenDescriptionLink: {
     hotkey: KEYMAP.openDescriptionLinkAtCaret.hotkey,
     keycaps: [...KEYMAP.openDescriptionLinkAtCaret.keycaps],
@@ -146,6 +150,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
     APP_SHORTCUT_BINDINGS.editRescheduleMeeting.keycaps,
   "edit-copy-description-link":
     APP_SHORTCUT_BINDINGS.editCopyDescriptionLink.keycaps,
+  "edit-copy-meeting-link": APP_SHORTCUT_BINDINGS.editCopyMeetingLink.keycaps,
   "edit-open-description-link":
     APP_SHORTCUT_BINDINGS.editOpenDescriptionLink.keycaps,
   "edit-open-description-link-digit":

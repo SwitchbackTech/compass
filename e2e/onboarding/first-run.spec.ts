@@ -3,7 +3,6 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
-  openTimedEventFormWithKeyboard,
 } from "../utils/event-test-utils";
 
 // Most E2E coverage skips onboarding to keep the calendar tests focused. This
@@ -65,11 +64,10 @@ test("welcomes a first-time user and seeds sample events", async ({
     name: "Create your first event",
   });
   await expect(prompt).toBeVisible();
-  await expect(prompt).toContainText("Add your first event");
-
-  const title = createEventTitle("First-run event");
-  await openTimedEventFormWithKeyboard(page);
+  await expect(prompt).toContainText("Your calendar is ready");
+  await prompt.getByRole("button", { name: "Add event" }).click();
   await expect(prompt).toBeHidden();
+  const title = createEventTitle("First-run event");
   await fillTitleAndSaveEventForm(page, title);
 
   // The prompt celebrates the first real event, then retires.

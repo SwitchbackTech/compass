@@ -1,6 +1,7 @@
 import { UsersIcon } from "@phosphor-icons/react/dist/csr/Users";
 import { VideoCameraIcon } from "@phosphor-icons/react/dist/csr/VideoCamera";
 import { useState } from "react";
+import { KEYMAP } from "@core/shortcuts/keymap";
 import { type EventContent } from "@core/types/event.contracts";
 import { CopyButton } from "@web/components/CopyButton/CopyButton";
 import {
@@ -68,7 +69,11 @@ export const EventDetailsSection = ({
               {conference.label ?? "Join meeting"}
             </span>
           </a>
-          <CopyButton label="copy meeting link" text={conference.url} />
+          <CopyButton
+            label="copy meeting link"
+            shortcutKeys={[...KEYMAP.copyMeetingLink.keycaps]}
+            text={conference.url}
+          />
         </div>
       )}
 

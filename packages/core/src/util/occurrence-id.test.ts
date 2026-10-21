@@ -4,6 +4,7 @@ import {
   composeOccurrenceIdFromSchedule,
   decodeOccurrenceId,
   looksLikeOccurrenceId,
+  rootSeriesMasterId,
 } from "@core/util/occurrence-id";
 import { describe, expect, it } from "bun:test";
 
@@ -51,6 +52,22 @@ describe("occurrence id codec", () => {
     // "eventId", so this must fail to decode rather than partially parse.
     const nested = `${objectId()}::2026-07-14T15:00:00.000Z::2026-07-21T15:00:00.000Z`;
     expect(decodeOccurrenceId(nested)).toBeNull();
+  });
+});
+
+describe("rootSeriesMasterId", () => {
+  it("returns a plain series master id unchanged", () => {
+    const master = objectId();
+    expect(rootSeriesMasterId(master)).toBe(master);
+  });
+
+  it("walks a composite occurrence id back to the root master", () => {
+    const master = objectId();
+    const composite = composeOccurrenceId({
+      eventId: master,
+      recurrenceId: "2026-10-22T11:00:00.000Z",
+    });
+    expect(rootSeriesMasterId(composite)).toBe(master);
   });
 });
 
