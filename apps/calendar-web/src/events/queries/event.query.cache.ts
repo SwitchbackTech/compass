@@ -2,6 +2,10 @@ import { type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
+import {
+  decodeOccurrenceId,
+  rootSeriesMasterId,
+} from "@core/util/occurrence-id";
 import { type RecurringEditProjection } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { eventQueryKeys } from "./event.query.keys";
@@ -249,6 +253,45 @@ export function upsertEventAcrossQueries(
   });
 }
 
+type OccurrenceIdentity = { root: string; recurrenceId: string };
+
+const occurrenceIdentity = (event: Event): OccurrenceIdentity | null => {
+  const parts = decodeOccurrenceId(event.id);
+  if (!parts) return null;
+  return {
+    root: rootSeriesMasterId(parts.eventId),
+    recurrenceId: parts.recurrenceId,
+  };
+};
+
+/** Drop stale head/remainder copies that share one provider occurrence slot. */
+const dedupeSupersededOccurrenceCopies = (
+  entities: NormalizedEventQueryData["entities"],
+  ids: EventId[],
+  upserts: readonly Event[],
+): { entities: NormalizedEventQueryData["entities"]; ids: EventId[] } => {
+  let nextIds = ids;
+  const nextEntities = { ...entities };
+  for (const upserted of upserts) {
+    const identity = occurrenceIdentity(upserted);
+    if (!identity) continue;
+    for (const id of [...nextIds]) {
+      if (id === upserted.id) continue;
+      const other = nextEntities[id];
+      const otherIdentity = other ? occurrenceIdentity(other) : null;
+      if (
+        otherIdentity &&
+        otherIdentity.root === identity.root &&
+        otherIdentity.recurrenceId === identity.recurrenceId
+      ) {
+        nextIds = nextIds.filter((entryId) => entryId !== id);
+        delete nextEntities[id];
+      }
+    }
+  }
+  return { entities: nextEntities, ids: nextIds };
+};
+
 export function applyEventProjectionAcrossQueries(
   queryClient: QueryClient,
   projection: RecurringEditProjection,
@@ -271,7 +314,13 @@ export function applyEventProjectionAcrossQueries(
       entities[id] = entities[id] ? { ...entities[id], ...event } : event;
     }
 
-    return { ...current, ids, entities };
+    const deduped = dedupeSupersededOccurrenceCopies(
+      entities,
+      ids,
+      projection.upserts,
+    );
+
+    return { ...current, ids: deduped.ids, entities: deduped.entities };
   });
 }
 

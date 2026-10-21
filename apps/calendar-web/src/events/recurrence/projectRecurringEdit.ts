@@ -210,13 +210,26 @@ export function projectRecurringEdit({
     return { removeIds: new Set(), upserts: [edited] };
   }
 
-  const affected =
+  const filteredOccurrences =
     scope === "all"
       ? seriesEvents
       : seriesEvents.filter(
           (event) =>
             event.id === edited.id || isAtOrAfter(event, original.schedule),
         );
+
+  // findSeriesEventsInCache returns occurrences only; after a this-and-following
+  // split the remainder series master is a separate cached row that must move
+  // with the same edit (including a second rapid edit before the split settles).
+  const affected =
+    seriesMaster?.recurrence.kind === "series" &&
+    (scope === "all" ||
+      (scope === "thisAndFollowing" &&
+        (seriesMaster.id === edited.id ||
+          isAtOrAfter(seriesMaster, original.schedule)))) &&
+    !filteredOccurrences.some((event) => event.id === seriesMaster.id)
+      ? [seriesMaster, ...filteredOccurrences]
+      : filteredOccurrences;
 
   // Downgrading a series/occurrence to a standalone single event: drop every
   // other affected instance and keep only the edited one.
