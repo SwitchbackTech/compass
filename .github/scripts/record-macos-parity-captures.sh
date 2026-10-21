@@ -170,7 +170,9 @@ def find_attachment(raw_dir: str, wanted_name: str) -> str | None:
                 continue
             name = attachment.get("suggestedHumanReadableName", attachment.get("exportedFileName", ""))
             name = re.sub(r"_\d+_[0-9A-F-]{36}(\.\w+)?$", "", name)
-            if name != wanted_name:
+            wanted_stem = os.path.splitext(wanted_name)[0]
+            name_stem = os.path.splitext(name)[0]
+            if name != wanted_name and name_stem != wanted_stem:
                 continue
             src = os.path.join(raw_dir, attachment["exportedFileName"])
             if os.path.isfile(src):
