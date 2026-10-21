@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  DESCRIPTION_LINK_HINT_SLOT_PX,
   DESCRIPTION_LINK_SHORTCUT_COUNT,
   listDescriptionLinks,
 } from "@web/components/DescriptionEditor/description-link.util";
@@ -54,8 +55,8 @@ const DescriptionEditorLinkHintChip = ({
       const rect = anchor.getBoundingClientRect();
       setStyle({
         position: "fixed",
-        left: rect.right + 2,
-        top: rect.top,
+        left: rect.right - DESCRIPTION_LINK_HINT_SLOT_PX + 2,
+        top: rect.top + Math.max(0, (rect.height - 18) / 2),
         zIndex: 10,
       });
     };

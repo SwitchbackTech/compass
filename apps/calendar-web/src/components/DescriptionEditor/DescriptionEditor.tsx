@@ -352,6 +352,7 @@ export const DescriptionEditor = ({
         editor={editor}
         className={classNames(
           "c-rich-text relative w-full text-sm text-text",
+          !suppressLinkShortcutHints && "c-description-link-hints",
           !editable && "cursor-default",
         )}
         onKeyDown={handleDescriptionKeyDown}
