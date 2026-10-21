@@ -150,6 +150,24 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertTrue(editor.openDescriptionLink(at: 1))
     }
 
+    func testBookingManagementLinksSkipHintSlotAttachments() {
+        let cancel = "https://compass.invalid/meet/cancel/reservation-1?token=secret"
+        let reschedule = "https://compass.invalid/meet/reschedule/reservation-1?token=secret"
+        let html =
+            "<p><a href=\"\(cancel)\">Cancel</a> <a href=\"\(reschedule)\">Reschedule</a></p>"
+        var bound = html
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { bound }, set: { bound = $0 }))
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
+        coordinator.textView = editor
+        coordinator.container = container
+        coordinator.suppressLinkHintSlots = true
+        coordinator.load(html: html, resetKey: "event")
+        coordinator.syncLinkHintSlotsSilently()
+        XCTAssertEqual(editor.string, "Cancel Reschedule")
+        XCTAssertNotNil(BookingEventLinks.parse(bound))
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))

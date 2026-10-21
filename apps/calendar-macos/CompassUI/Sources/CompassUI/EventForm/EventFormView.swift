@@ -113,6 +113,8 @@ public struct EventFormView: View {
                                 resetKey: draft.persistedEventId?.rawValue ?? draft.clientId.rawValue,
                                 isFocused: model.eventFormFocusedField == .description,
                                 isEditable: !isReadOnly,
+                                suppressLinkHintSlots: model.hasBookedMeetingActions
+                                    || BookingEventLinks.parse(draft.description) != nil,
                                 onLinkCopied: { model.didCopyDescriptionLink() }
                             )
                             .frame(minHeight: 72, maxHeight: 140)

@@ -8,6 +8,8 @@ struct DescriptionEditorView: NSViewRepresentable {
     var resetKey: String
     var isFocused: Bool
     var isEditable = true
+    /// Web `suppressLinkShortcutHints`: booking management links keep full inline layout.
+    var suppressLinkHintSlots = false
     var onLinkCopied: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
@@ -48,9 +50,10 @@ struct DescriptionEditorView: NSViewRepresentable {
         if context.coordinator.resetKey != resetKey {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
+        context.coordinator.suppressLinkHintSlots = suppressLinkHintSlots
         context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
         context.coordinator.syncLinkHintSlotsSilently()
-        container.updateLinkHintOverlay(visible: isEditable && !isFocused)
+        container.updateLinkHintOverlay(visible: isEditable && !isFocused && !suppressLinkHintSlots)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
@@ -62,6 +65,7 @@ struct DescriptionEditorView: NSViewRepresentable {
         weak var textView: DescriptionTextView?
         weak var container: DescriptionEditorContainerView?
         var resetKey: String = ""
+        var suppressLinkHintSlots = false
         private var suppressDelegate = false
 
         init(html: Binding<String>) {
@@ -94,15 +98,27 @@ struct DescriptionEditorView: NSViewRepresentable {
             )
             suppressDelegate = true
             textView.textStorage?.setAttributedString(attributed)
-            container?.syncLinkHintSlots(reserved: textView.isEditable)
+            container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
             suppressDelegate = false
         }
 
         func syncLinkHintSlotsSilently() {
             guard let textView else { return }
             suppressDelegate = true
-            container?.syncLinkHintSlots(reserved: textView.isEditable)
+            container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
             suppressDelegate = false
+        }
+
+        private func linkHintSlotsReserved(for textView: DescriptionTextView) -> Bool {
+            guard textView.isEditable, !suppressLinkHintSlots, !descriptionContainsBookingLinks() else { return false }
+            return true
+        }
+
+        private func descriptionContainsBookingLinks() -> Bool {
+            if BookingEventLinks.parse(html.wrappedValue) != nil { return true }
+            guard let textView else { return false }
+            let serialized = HTMLFragmentAppKit.document(from: textView.attributedString()).serialize()
+            return BookingEventLinks.parse(serialized) != nil
         }
 
         private var presentationShowsHosts = false
@@ -116,7 +132,9 @@ struct DescriptionEditorView: NSViewRepresentable {
             } else if !presentationShowsHosts {
                 suppressDelegate = true
                 textView?.applyHostLinkPresentation()
-                container?.syncLinkHintSlots(reserved: textView?.isEditable == true)
+                if let textView {
+                    container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+                }
                 suppressDelegate = false
                 presentationShowsHosts = true
             }
