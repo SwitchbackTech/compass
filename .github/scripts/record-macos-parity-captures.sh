@@ -365,6 +365,9 @@ ParityCaptureGeometry = type("ParityCaptureGeometry", (), {"viewportWidth": 1280
 
 raw = os.path.join(out, "_title_bar_attachments")
 export_attachments(raw)
+bounds_attachment = find_attachment(raw, "parity-toggle-bounds.json")
+if bounds_attachment and not os.path.isfile(os.path.join(out, "parity-toggle-bounds.json")):
+    shutil.copyfile(bounds_attachment, os.path.join(out, "parity-toggle-bounds.json"))
 full_window = find_attachment(raw, "mac-title-bar-full-window")
 window_top = os.path.join(out, "parity-window-top.png")
 window_id_path = os.path.join(out, "parity-window-id.txt")

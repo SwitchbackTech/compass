@@ -155,15 +155,13 @@ enum NativeImageSnapshotSupport {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
-        if let outDir = parityOutputDirectory {
-            writeToggleProbeBounds(
-                minX: toggleMinX,
-                maxX: toggleMaxX,
-                minY: toggleMinY,
-                maxY: toggleMaxY,
-                in: outDir
-            )
-        }
+        attachToggleProbeBounds(
+            minX: toggleMinX,
+            maxX: toggleMaxX,
+            minY: toggleMinY,
+            maxY: toggleMaxY,
+            outDir: parityOutputDirectory
+        )
         if let outDir = parityOutputDirectory,
            let windowID = waitForParityWindowId(in: outDir),
            let screencap = screencaptureWindowPNG(windowID: windowID, in: outDir)
@@ -179,12 +177,12 @@ enum NativeImageSnapshotSupport {
         attachPNG(png, named: "mac-title-bar-full-window")
     }
 
-    private static func writeToggleProbeBounds(
+    private static func attachToggleProbeBounds(
         minX: CGFloat,
         maxX: CGFloat,
         minY: CGFloat,
         maxY: CGFloat,
-        in outDir: String
+        outDir: String?
     ) {
         let payload: [String: Double] = [
             "minX": Double(minX),
@@ -195,19 +193,20 @@ enum NativeImageSnapshotSupport {
         guard JSONSerialization.isValidJSONObject(payload),
               let data = try? JSONSerialization.data(withJSONObject: payload)
         else { return }
-        let dir = URL(fileURLWithPath: outDir, isDirectory: true)
-        try? data.write(to: dir.appendingPathComponent("parity-toggle-bounds.json"))
-        let metrics = dir.appendingPathComponent("parity-window-metrics.txt")
-        let line =
-            "toggleMinX=\(minX)\ntoggleMaxX=\(maxX)\ntoggleMinY=\(minY)\ntoggleMaxY=\(maxY)\n"
-        if FileManager.default.fileExists(atPath: metrics.path),
-           let handle = try? FileHandle(forWritingTo: metrics)
-        {
-            try? handle.seekToEnd()
-            try? handle.write(contentsOf: Data(line.utf8))
-            try? handle.close()
-        } else {
-            try? line.write(to: metrics, atomically: true, encoding: .utf8)
+        if let outDir {
+            let dir = URL(fileURLWithPath: outDir, isDirectory: true)
+            try? data.write(to: dir.appendingPathComponent("parity-toggle-bounds.json"))
+            let metrics = dir.appendingPathComponent("parity-window-metrics.txt")
+            let line =
+                "toggleMinX=\(minX)\ntoggleMaxX=\(maxX)\ntoggleMinY=\(minY)\ntoggleMaxY=\(maxY)\n"
+            let existing = (try? String(contentsOf: metrics, encoding: .utf8)) ?? ""
+            try? (existing + line).write(to: metrics, atomically: true, encoding: .utf8)
+        }
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "public.json")
+        attachment.name = "parity-toggle-bounds.json"
+        attachment.lifetime = .keepAlways
+        XCTContext.runActivity(named: "Sidebar toggle probe bounds") { activity in
+            activity.add(attachment)
         }
     }
 
