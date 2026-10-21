@@ -128,17 +128,38 @@ describe("installIndexManifest", () => {
     expect(indexes.some((i) => i.name === "principal_resource_calendar")).toBe(
       true,
     );
-    const lastSuccess = indexes.find((i) => i.name === "resource_last_success");
-    expect(lastSuccess?.key).toEqual({ resourceKind: 1, lastSuccessAt: 1 });
-    const lastAttempt = indexes.find((i) => i.name === "resource_last_attempt");
-    expect(lastAttempt?.key).toEqual({ resourceKind: 1, lastAttemptAt: 1 });
-    expect(indexes.some((i) => i.name === "last_success")).toBe(false);
-    expect(indexes.some((i) => i.name === "last_attempt")).toBe(false);
+    const lastSuccess = indexes.find(
+      (i) => i.name === "resource_usable_last_success",
+    );
+    expect(lastSuccess?.key).toEqual({
+      resourceKind: 1,
+      credentialUsable: 1,
+      lastSuccessAt: 1,
+    });
+    const lastAttempt = indexes.find(
+      (i) => i.name === "resource_usable_last_attempt",
+    );
+    expect(lastAttempt?.key).toEqual({
+      resourceKind: 1,
+      credentialUsable: 1,
+      lastAttemptAt: 1,
+    });
+    const lastFullList = indexes.find(
+      (i) => i.name === "resource_usable_last_full_list",
+    );
+    expect(lastFullList?.key).toEqual({
+      resourceKind: 1,
+      credentialUsable: 1,
+      lastFullListAt: 1,
+    });
+    expect(indexes.some((i) => i.name === "resource_last_success")).toBe(false);
+    expect(indexes.some((i) => i.name === "resource_last_attempt")).toBe(false);
     const bootstrapStalled = indexes.find(
-      (i) => i.name === "resource_bootstrap_stalled",
+      (i) => i.name === "resource_usable_bootstrap_stalled",
     );
     expect(bootstrapStalled?.key).toEqual({
       resourceKind: 1,
+      credentialUsable: 1,
       bootstrapState: 1,
       updatedAt: 1,
     });

@@ -41,6 +41,10 @@ describe("BookingBlockingCalendarsField", () => {
       name: `host@example.com (Google), 0 of ${calendars.length} blocking`,
     });
     expect(header).toHaveAttribute("aria-expanded", "false");
+    expect(header.getAttribute("aria-controls")).toBeNull();
+    expect(
+      screen.queryByRole("checkbox", { name: "Calendar 1" }),
+    ).not.toBeInTheDocument();
 
     await user.click(header);
     expect(header).toHaveAttribute("aria-expanded", "true");

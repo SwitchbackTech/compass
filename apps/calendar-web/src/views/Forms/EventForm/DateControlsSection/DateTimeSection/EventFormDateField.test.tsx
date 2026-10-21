@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { EventFormDateField } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/EventFormDateField";
@@ -253,6 +253,38 @@ describe("EventFormDateField", () => {
     expect(screen.getByTitle("Pick Start Date")).toHaveFocus();
     await user.tab();
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
+  });
+
+  it("shows an in-field ArrowDown keycap while the input is focused", () => {
+    render(<Harness />);
+
+    const input = screen.getByTitle("Pick Start Date");
+    act(() => {
+      input.focus();
+    });
+
+    const hint = screen.getByTestId("event-form-control-hint");
+    expect(hint.querySelector(".c-keycap")).toBeTruthy();
+    expect(hint.className).toMatch(/right-1\.5/);
+  });
+
+  it("shows calendar navigation keycaps in the popover header when open", () => {
+    render(
+      <EventFormDateField
+        isOpen
+        onCalendarClose={() => undefined}
+        onCalendarOpen={() => undefined}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    expect(screen.getByTestId("event-form-calendar-hint")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("event-form-control-hint"),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the calendar on a bare ArrowDown", async () => {

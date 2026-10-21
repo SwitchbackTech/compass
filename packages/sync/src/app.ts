@@ -76,6 +76,7 @@ import {
   type JobRecord,
   resourceJob,
 } from "@sync/storage/contracts/job.contracts";
+import { reconcileCredentialUsable } from "@sync/storage/reconcile-credential-usable";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
@@ -298,6 +299,13 @@ async function start(): Promise<void> {
     service.shutdown.register("retention", () => retention.stop());
     retention.start();
 
+    const credentialUsableReconcile =
+      buildCredentialUsableReconcileSweep(mongo);
+    service.shutdown.register("credentialUsableReconcile", () =>
+      credentialUsableReconcile.stop(),
+    );
+    credentialUsableReconcile.start();
+
     // Sanitized sync_health_snapshot every five minutes (S44). Runs in passive
     // mode too so the heartbeat stays alive before provider work is enabled.
     const registry = buildProviderRegistry(config);
@@ -334,7 +342,7 @@ async function start(): Promise<void> {
       );
     } else {
       logger.info(
-        "Sync retention + health snapshot started (passive / unconfigured)",
+        "Sync retention, credentialUsable reconcile, and health snapshot started (passive / unconfigured)",
       );
     }
   } catch (error) {
@@ -364,6 +372,9 @@ const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
 // How often to look for soft-disconnected connections past the 30-day cache
 // window. Daily is enough for the retention SLA; hourly keeps catch-up snappy.
 const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
+// Drift self-heal for sync_resources.credentialUsable. Primary-key batched;
+// cheap at a few thousand rows and avoids a credentials-led full scan.
+const CREDENTIAL_USABLE_RECONCILE_INTERVAL_MS = 6 * 60 * 60_000;
 // A connection whose calendar list has not been fully re-discovered within
 // this window is swept: a calendar deleted or unshared at the provider is
 // otherwise never retired, because calendarListSync only ever runs once, at
@@ -484,6 +495,30 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
       windowMs: -CONNECTION_CACHE_RETENTION_MS,
       onError: (error) =>
         logSyncLoopError("Sync disconnect retention sweep failed", error),
+    },
+  );
+}
+
+function buildCredentialUsableReconcileSweep(
+  mongo: SyncMongoService,
+): SweepScheduler {
+  return new SweepScheduler(
+    {
+      sweep: async () => {
+        const result = await reconcileCredentialUsable(mongo.db);
+        if (result.corrected > 0) {
+          logger.info(
+            `Sync credentialUsable reconcile corrected ${result.corrected} of ${result.scanned} sync_resources row(s)`,
+          );
+        }
+        return result.corrected;
+      },
+    },
+    {
+      intervalMs: CREDENTIAL_USABLE_RECONCILE_INTERVAL_MS,
+      jitterRatio: 0.05,
+      onError: (error) =>
+        logSyncLoopError("Sync credentialUsable reconcile failed", error),
     },
   );
 }

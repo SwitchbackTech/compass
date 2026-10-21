@@ -12,12 +12,9 @@ export function HourLabelColumn({
   return (
     // Block flow, not flex-col: hour labels must overflow this viewport-tall
     // column at one grid-hour each. Flex-shrink would compress them into the
-    // visible 13 hours. The stack sits one hour above its box so row bands and
-    // gutter labels share the same origin as timed events (see boot-timed rows).
-    <div
-      className="h-full -translate-y-[calc(100%/var(--calendar-visible-hours))]"
-      style={{ width }}
-    >
+    // visible 13 hours. Row bands, gutter labels, events, and the now line share
+    // the 1 AM grid origin via timedGridTopPx (no extra translate here).
+    <div className="h-full" style={{ width }}>
       {labels.map((label, hour) => (
         <div
           className={`${TIMED_HOUR_SLOT_HEIGHT_CLASS} text-text-muted`}

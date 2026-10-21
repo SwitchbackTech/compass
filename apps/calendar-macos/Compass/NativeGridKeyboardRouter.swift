@@ -389,6 +389,7 @@ final class NativeGridKeyboardRouter {
         }
 
         dispatcher.shortcutContext = model.shortcutContext
+        syncEditSequenceFieldGating()
         if let id = dispatcher.dispatch(keyEvent) {
             model.syncEditSequencePhase(dispatcher.leaderEngine.phase)
             performShortcut(id)
@@ -532,6 +533,7 @@ final class NativeGridKeyboardRouter {
         }
 
         dispatcher.shortcutContext = model.shortcutContext
+        syncEditSequenceFieldGating()
         if let id = dispatcher.dispatch(keyEvent) {
             performShortcut(id)
             return true
@@ -543,6 +545,16 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    private func syncEditSequenceFieldGating() {
+        dispatcher.leaderEngine.isFieldVisible = { [model] field in
+            guard let formField = EventFormField(rawValue: field) else { return false }
+            return model.isEventFormFocusFieldVisible(formField)
+        }
+        dispatcher.leaderEngine.canArm = { [model] in
+            !model.visibleEditSequenceLetterFields().isEmpty
+        }
     }
 
     private func isDescriptionFormEditorFocused() -> Bool {
@@ -562,7 +574,9 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEditSequenceField(_ fieldName: String) {
-        guard let field = EventFormField(rawValue: fieldName) else { return }
+        guard let field = EventFormField(rawValue: fieldName),
+            model.isEventFormFocusFieldVisible(field)
+        else { return }
         if model.isEventFormVisible {
             model.focusEventFormField(field)
             return

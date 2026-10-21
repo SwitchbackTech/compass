@@ -103,18 +103,16 @@ function alignmentPayload() {
   if (!timeColumn) {
     return { ok: false, reason: "missing time column" };
   }
-  const labelSpans = [
-    ...timeColumn.querySelectorAll<HTMLSpanElement>("span"),
-  ].filter((node) => node.classList.contains("text-[10px]"));
-  const labelIndex = (text: string) =>
-    labelSpans.findIndex((node) => node.textContent?.trim() === text);
-  const labelTop = (text: string) => {
-    const index = labelIndex(text);
-    if (index === -1) {
-      return null;
-    }
-    return labelSpans[index]!.getBoundingClientRect().top;
-  };
+  const rows = [
+    ...grid.querySelectorAll<HTMLElement>(
+      '[data-calendar-timed-grid-row="true"]',
+    ),
+  ];
+  // Wall-clock 4 AM / 6 AM use rows 3 and 5 from the 1 AM origin (see
+  // denver-grid-alignment.test.ts). Compare cards to row bands, not label text,
+  // because fall-back Sunday gutter copy can disagree with wall clock.
+  const fourAmTop = rows[3]?.getBoundingClientRect().top ?? null;
+  const sixAmTop = rows[5]?.getBoundingClientRect().top ?? null;
 
   const layers = document.querySelector("#timedEvents");
   if (!layers) {
@@ -135,15 +133,10 @@ function alignmentPayload() {
     };
   }
 
-  const fourAmIndex = labelIndex("4 AM");
-  const sixAmIndex = labelIndex("6 AM");
-  const fourAmTop = fourAmIndex === -1 ? null : labelTop("4 AM");
-  const sixAmTop = sixAmIndex === -1 ? null : labelTop("6 AM");
   if (fourAmTop === null || sixAmTop === null) {
     return {
       ok: false,
-      reason: "missing 4 AM or 6 AM gutter label",
-      labels: labelSpans.map((node) => node.textContent?.trim()),
+      reason: "missing 4 AM or 6 AM timed row band",
     };
   }
 

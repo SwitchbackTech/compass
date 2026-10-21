@@ -102,6 +102,7 @@ struct CalendarListView: View {
                     .allowsHitTesting(false)
             }
         }
+        .pageJumpChipAnchor(id: PageJumpTargets.calendarAccountJumpId(accountKey: group.id))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(group.account.map { "Calendars for \($0)" } ?? "Calendars")
     }
