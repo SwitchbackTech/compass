@@ -58,6 +58,8 @@ struct UpNextCard: View {
                 }
                 .onHover { isHovered = $0 }
                 .accessibilityIdentifier("compass-native-up-next-card")
+                // Web leaves the anchor unmounted when Up next is empty, so no chip.
+                .pageJumpChipAnchor(id: "up-next")
             } else {
                 Text("All clear")
                     .font(.rubik(14, weight: .medium))
