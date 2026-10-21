@@ -17,5 +17,6 @@ describe("HourLabelColumn", () => {
     );
     expect(column).not.toHaveClass("flex");
     expect(column).not.toHaveClass("flex-col");
+    expect(column?.className).not.toContain("translate-y");
   });
 });

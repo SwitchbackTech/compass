@@ -9,6 +9,11 @@ import {
   EVENT_FORM_DATE_INPUT_FORMAT,
   formatEventFormDateLabel,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
+import {
+  EventFormCalendarPopoverHints,
+  EventFormHintKeys,
+  EventFormInfieldHint,
+} from "@web/views/Forms/EventForm/EventFormFocusedHint";
 
 const DATE_FIELD_CLASSNAME =
   "c-event-form-date-field flex min-w-0 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
@@ -187,7 +192,7 @@ export const EventFormDateField = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: stops date picker mouse events from bubbling to the form.
     <div
       ref={containerRef}
-      className={DATE_FIELD_CLASSNAME}
+      className={`${DATE_FIELD_CLASSNAME} group/control ${isOpen ? "" : "group-focus-within/control:[&_.c-event-form-date-field__input]:pr-8"}`}
       id={jumpId}
       onBlur={(event) => {
         // react-datepicker skips onBlur while its calendar is open, so listen
@@ -214,6 +219,9 @@ export const EventFormDateField = ({
         onCalendarClose={onCalendarClose}
         onCalendarOpen={onCalendarOpen}
         onChange={() => null}
+        headerEndContent={
+          isOpen ? <EventFormCalendarPopoverHints /> : undefined
+        }
         onInputClick={onCalendarOpen}
         onFocus={(event) => {
           if (event.target instanceof HTMLInputElement) event.target.select();
@@ -229,6 +237,12 @@ export const EventFormDateField = ({
         view="grid"
         withUnderline={false}
       />
+      <EventFormInfieldHint visible={!isOpen}>
+        <EventFormHintKeys
+          keys="ArrowDown"
+          label="Arrow down opens the calendar"
+        />
+      </EventFormInfieldHint>
     </div>
   );
 };

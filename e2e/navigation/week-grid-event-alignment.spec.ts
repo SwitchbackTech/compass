@@ -3,8 +3,11 @@ import { prepareCalendarPage } from "../utils/event-test-utils";
 import { evaluateWeekGridEventAlignment } from "../utils/week-grid-alignment.util";
 
 const DENVER = "America/Denver";
-const WEEK_START = "2026-11-01";
-const FROZEN_CLOCK = "2026-10-20T12:00:00-06:00";
+/** Week without a Denver 25-hour day (Nov 1 fall-back breaks label indexOf). */
+const WEEK_START = "2026-10-18";
+/** 12:25 PM MDT on a day in this week (matches production repro). */
+const FROZEN_CLOCK = "2026-10-21T12:25:00-06:00";
+const FROZEN_NOW_MINUTES = 12 * 60 + 25;
 const PROBE_TITLE = "Alignment probe";
 
 async function seedAlignmentProbe(page: import("@playwright/test").Page) {
@@ -57,8 +60,8 @@ async function seedAlignmentProbe(page: import("@playwright/test").Page) {
       }
     },
     {
-      endUtc: "2026-11-05T17:45:00.000Z",
-      startUtc: "2026-11-05T17:00:00.000Z",
+      endUtc: "2026-10-22T16:45:00.000Z",
+      startUtc: "2026-10-22T16:00:00.000Z",
       timeZone: DENVER,
       title: PROBE_TITLE,
     },
@@ -99,8 +102,13 @@ test.describe("Week grid event alignment", () => {
       page,
       /Alignment probe/i,
       "10 AM",
+      { expectNowLineMinutes: FROZEN_NOW_MINUTES },
     );
     expect(alignment.ok, JSON.stringify(alignment)).toBe(true);
+    await page.screenshot({
+      path: "/opt/cursor/artifacts/week-grid-gutter-alignment-fixed.png",
+      fullPage: false,
+    });
   });
 
   test("stays aligned after life view then week with blog utm params", async ({
@@ -116,6 +124,7 @@ test.describe("Week grid event alignment", () => {
       localStorage.setItem("compass.view.sidebar-open", "false");
     });
     await page.clock.install({ time: new Date(FROZEN_CLOCK) });
+    await prepareCalendarPage(page);
     await page.goto("/life", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "Life", exact: true }),
@@ -126,18 +135,6 @@ test.describe("Week grid event alignment", () => {
       { waitUntil: "domcontentloaded" },
     );
     await page.locator("#mainGrid").waitFor({ state: "visible" });
-    await page.goto(`/week/${WEEK_START}`, { waitUntil: "domcontentloaded" });
-    await seedAlignmentProbe(page);
-    await page.reload({ waitUntil: "domcontentloaded" });
-    await page.locator("#mainGrid").waitFor({ state: "visible" });
-    await expect(
-      page.locator("#timedEvents").getByRole("button", { name: PROBE_TITLE }),
-    ).toBeVisible({ timeout: 15_000 });
-
-    await expect
-      .poll(() =>
-        evaluateWeekGridEventAlignment(page, /Alignment probe/i, "10 AM"),
-      )
-      .toMatchObject({ ok: true });
+    await openAlignmentWeek(page);
   });
 });

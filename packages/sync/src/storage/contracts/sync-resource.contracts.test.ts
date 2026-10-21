@@ -62,6 +62,11 @@ describe("SyncResourceReadSchema", () => {
     expect(parsed.calendarActive).toBe(true);
   });
 
+  it("defaults a missing credentialUsable to false so pre-field rows stay out of sweeps", () => {
+    const parsed = SyncResourceReadSchema.parse(record);
+    expect(parsed.credentialUsable).toBe(false);
+  });
+
   it("still rejects an unknown key on write, so this build cannot persist a typo", () => {
     const result = SyncResourceRecordSchema.safeParse({
       ...record,
