@@ -33,6 +33,12 @@ const { resetBillingWriteLockForTests } = await import(
 const { resetShortcutUpgradePromptForTests } = await import(
   "@web/billing/prompt-shortcut-upgrade"
 );
+const { resetTrialStepRequestForTests } = await import(
+  "@web/billing/trial-step-request"
+);
+const { resetOpenStartTrialStepForTests } = await import(
+  "@web/components/AuthModal/auth-modal-runtime"
+);
 const { clearAppLockReasons } = await import("@web/shortcuts/app-lock");
 const { clearFloatingLayerReasons } = await import(
   "@web/shortcuts/floating-layer"
@@ -49,6 +55,8 @@ function resetDocument() {
   clearFloatingLayerReasons();
   resetBillingWriteLockForTests();
   resetShortcutUpgradePromptForTests();
+  resetTrialStepRequestForTests();
+  resetOpenStartTrialStepForTests();
   document.documentElement.removeAttribute("style");
 }
 

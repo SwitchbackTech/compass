@@ -17,10 +17,6 @@ import {
   initialCheckoutPanelState,
   useCheckoutPanelStore,
 } from "@web/billing/checkout-panel.store";
-import {
-  type EmbeddedCheckoutProps,
-  setEmbeddedCheckoutForTests,
-} from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -51,14 +47,6 @@ const anonymousSession = {
   authenticated: false,
   setAuthenticated: () => {},
 };
-
-function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
-  return (
-    <button type="button" onClick={onComplete}>
-      Complete checkout
-    </button>
-  );
-}
 
 const renderShell = async (
   initialPath = "/",
@@ -114,23 +102,19 @@ describe("RootShell billing gates", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
-  it("shows the billing gate when the account cannot write", async () => {
+  it("shows the explore banner instead of the billing gate while awaiting checkout", async () => {
     access = awaitingCheckout;
     await renderShell();
 
     expect(
-      screen.getByRole("dialog", { name: "Finish starting your trial" }),
+      screen.getByText("Start your 7-day free trial to plan your week."),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Manage billing" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Log out/ }),
+      screen.queryByRole("dialog", { name: "Finish starting your trial" }),
     ).not.toBeInTheDocument();
   });
 
-  it("starts checkout with S from the billing gate", async () => {
-    setEmbeddedCheckoutForTests(FakeCheckout);
+  it("opens the trial step from the explore banner", async () => {
     const queryClient = createCompassQueryClient();
     queryClient.setQueryData(billingQueryKeys.config, {
       providers: {
@@ -146,17 +130,14 @@ describe("RootShell billing gates", () => {
       },
     });
     access = awaitingCheckout;
-    await renderShell("/week", { queryClient });
+    const router = await renderShell("/week", { queryClient });
     const user = userEvent.setup();
 
-    await user.keyboard("s");
+    await user.click(screen.getByRole("button", { name: /Start free trial/i }));
 
-    expect(
-      screen.getByRole("button", { name: "Complete checkout" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("dialog", { name: "Finish starting your trial" }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.searchStr).toContain("auth=trial");
+    });
   });
 
   it("dismisses the checkout celebration with Start planning", async () => {
@@ -226,30 +207,6 @@ describe("RootShell billing gates", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Add a card to keep creating events/),
-    ).not.toBeInTheDocument();
-  });
-
-  it("does not show pointer hints or onboarding prompts under the billing gate", async () => {
-    access = awaitingCheckout;
-    await renderShell("/week");
-
-    act(() => {
-      pointerHintActions.pulse({ shortcutKey: "?", source: "palette" });
-    });
-
-    expect(
-      screen.getByRole("dialog", { name: "Finish starting your trial" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Compass works from the keyboard/i),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("complementary", {
-        name: "Create your first event",
-      }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
     ).not.toBeInTheDocument();
   });
 

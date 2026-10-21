@@ -6,6 +6,7 @@ import {
   isBillingWriteLocked,
 } from "@web/billing/billing-write-lock";
 import { type CheckoutPanelSource } from "@web/billing/checkout-panel.store";
+import { requestTrialStep } from "@web/billing/trial-step-request";
 import { importOrReload } from "@web/common/utils/browser/missing-chunk-reload.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { hasAppLockReason } from "@web/shortcuts/app-lock";
@@ -82,6 +83,11 @@ export function promptShortcutUpgrade(
 ): void {
   if (!isBillingWriteLocked()) return;
   if (hasAppLockReason("billingGate")) return;
+
+  if (getBillingWriteLockStatus() === "awaiting_checkout") {
+    void requestTrialStep({ trigger: "write" });
+    return;
+  }
 
   const copy = promptCopy(input);
   const presentationKey = `${input.featureArea}:${input.actionId ?? ""}:${input.source}`;

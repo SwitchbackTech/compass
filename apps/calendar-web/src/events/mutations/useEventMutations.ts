@@ -41,6 +41,8 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { billingQueryKeys } from "@web/billing/billing.query";
+import { blockAwaitingCheckoutEventWrite } from "@web/billing/billing-write-guard";
+import { requestTrialStep } from "@web/billing/trial-step-request";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -706,6 +708,7 @@ export function useEventMutations(
         void queryClient.invalidateQueries({
           queryKey: billingQueryKeys.status,
         });
+        void requestTrialStep({ trigger: "write" });
       }
       reportError(
         error,
@@ -1104,6 +1107,9 @@ export function useEventMutations(
   return useMemo(
     () => ({
       create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => {
+        if (blockAwaitingCheckoutEventWrite()) {
+          return;
+        }
         if (blockReconnectRequiredCalendar(input.calendarId)) {
           return;
         }
@@ -1134,6 +1140,9 @@ export function useEventMutations(
         },
         callbacks?: EventMutationCallbacks,
       ): boolean => {
+        if (blockAwaitingCheckoutEventWrite()) {
+          return false;
+        }
         const original = findEventInCache(queryClient, payload.id, source);
         if (isTargetReadOnly(original)) {
           console.warn(
@@ -1209,6 +1218,9 @@ export function useEventMutations(
         return true;
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
+        if (!isRestoringHistory() && blockAwaitingCheckoutEventWrite()) {
+          return;
+        }
         const original = findEventInCache(queryClient, payload.id, source);
         if (!isRestoringHistory() && isTargetReadOnly(original)) {
           console.warn(
@@ -1245,6 +1257,9 @@ export function useEventMutations(
         });
       },
       rsvp: ({ id, responseStatus, scope, accountEmail }: RsvpPayload) => {
+        if (blockAwaitingCheckoutEventWrite()) {
+          return;
+        }
         const original = findEventInCache(queryClient, id, source);
         // No isTargetReadOnly gate on purpose (finish line 5: RSVP works on
         // viewer-access calendars) — but a reconnect-required Google account

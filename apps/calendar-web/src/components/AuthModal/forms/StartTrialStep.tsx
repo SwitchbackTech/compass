@@ -18,6 +18,10 @@ import {
   EmbeddedCheckoutPanel,
 } from "@web/billing/EmbeddedCheckoutPanel";
 import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
+import {
+  consumeTrialStepTrigger,
+  TRIAL_STEP_WRITE_LEAD,
+} from "@web/billing/trial-step-request";
 
 type BillingPrice = NonNullable<BillingSubscriptionResponse["price"]>;
 
@@ -55,6 +59,7 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
     subscriptionQuery.data?.price,
   );
   const viewedRef = useRef(false);
+  const writeLeadRef = useRef(consumeTrialStepTrigger() === "write");
 
   useEffect(() => {
     checkoutPanelActions.holdSource({ kind: "signup_trial_step" });
@@ -81,9 +86,13 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
     <div
       className={`flex w-full flex-col items-center gap-4 ${EMBEDDED_CHECKOUT_PANEL_CLASSNAME}`}
     >
-      <p className="text-sm text-text-muted">
-        Your card will not be charged until {chargeDateLabel}. Cancel anytime
-        from Settings and you will not be billed.
+      {writeLeadRef.current ? (
+        <p className="text-center text-sm text-text">{TRIAL_STEP_WRITE_LEAD}</p>
+      ) : null}
+      <p className="text-center text-sm text-text-muted">
+        A card is required to start your trial. Your card will not be charged
+        until {chargeDateLabel}. Cancel anytime from Settings and you will not
+        be billed.
       </p>
       {planPriceLine ? (
         <p className="text-sm text-text">{planPriceLine}</p>

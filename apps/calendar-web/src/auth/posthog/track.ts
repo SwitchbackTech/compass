@@ -62,6 +62,7 @@ export type ProductEvent =
   | "billing_gate_shown"
   | "billing_gate_cta_clicked"
   | "billing_gate_shortcut_converted"
+  | "trial_gate_triggered"
   | "billing_cancel_scheduled"
   | "billing_resumed"
   | "billing_card_update_completed"
