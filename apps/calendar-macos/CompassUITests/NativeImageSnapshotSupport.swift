@@ -132,9 +132,9 @@ enum NativeImageSnapshotSupport {
             "Month title should sit in the top band of the window screenshot")
         if let url = URL(string: "compass://debug/parity-apply-capture-window") {
             NSWorkspace.shared.open(url)
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
         let png = window.screenshot().pngRepresentation
         guard !png.isEmpty else {
             XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
