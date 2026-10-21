@@ -123,6 +123,17 @@ enum NativeImageSnapshotSupport {
             "Sidebar toggle should sit inside the captured window width")
         let toggleMinX = sidebarToggle.frame.minX - window.frame.minX
         let toggleMaxX = sidebarToggle.frame.maxX - window.frame.minX
+        let toggleMinY = sidebarToggle.frame.minY - window.frame.minY
+        let toggleMaxY = sidebarToggle.frame.maxY - window.frame.minY
+        if let outDir = parityOutputDirectory {
+            writeToggleProbeBounds(
+                minX: toggleMinX,
+                maxX: toggleMaxX,
+                minY: toggleMinY,
+                maxY: toggleMaxY,
+                in: outDir
+            )
+        }
         let windowWidth = window.frame.width
         // Web: toggle is on the main column's right edge, left of the open sidebar (~345+32).
         let sidebarChrome: CGFloat = 345 + 32
@@ -166,6 +177,27 @@ enum NativeImageSnapshotSupport {
             return
         }
         attachPNG(png, named: "mac-title-bar-full-window")
+    }
+
+    private static func writeToggleProbeBounds(
+        minX: CGFloat,
+        maxX: CGFloat,
+        minY: CGFloat,
+        maxY: CGFloat,
+        in outDir: String
+    ) {
+        let payload: [String: Double] = [
+            "minX": Double(minX),
+            "maxX": Double(maxX),
+            "minY": Double(minY),
+            "maxY": Double(maxY),
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload)
+        else { return }
+        let path = URL(fileURLWithPath: outDir, isDirectory: true)
+            .appendingPathComponent("parity-toggle-bounds.json")
+        try? data.write(to: path)
     }
 
     private static func waitForParityWindowId(in outDir: String, timeout: TimeInterval = 8) -> String? {

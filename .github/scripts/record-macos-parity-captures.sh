@@ -279,20 +279,30 @@ def reject_bottom_of_window(image: Image.Image) -> None:
         )
 
 
-def assert_sidebar_toggle_icon(image: Image.Image) -> None:
+def assert_sidebar_toggle_icon(image: Image.Image, out_dir: str) -> None:
     """Require a phosphor-style icon cluster beside the content track (web CalendarHeader)."""
     px = image.load()
     width, height = image.size
     scale = max(1, width // 1280)
     band_bottom = min(height, 52 * scale)
-    # Parity captures keep the sidebar open @ 345px + 32px divider (see ParityCaptureGeometry).
-    sidebar_chrome = int((32 + 345) * scale)
-    track_right = max(0, width - sidebar_chrome)
-    x_end = max(0, track_right - 8 * scale)
-    x_start = max(0, track_right - 60 * scale)
+    bounds_path = os.path.join(out_dir, "parity-toggle-bounds.json")
+    if os.path.isfile(bounds_path):
+        with open(bounds_path) as handle:
+            bounds = json.load(handle)
+        x_start = max(0, int(float(bounds["minX"]) * scale) - 2 * scale)
+        x_end = min(width, int(float(bounds["maxX"]) * scale) + 2 * scale)
+        y_start = max(0, int(float(bounds["minY"]) * scale) - 2 * scale)
+        band_bottom = min(height, int(float(bounds["maxY"]) * scale) + 2 * scale)
+    else:
+        y_start = 8 * scale
+        # Parity captures keep the sidebar open @ 345px + 32px divider (see ParityCaptureGeometry).
+        sidebar_chrome = int((32 + 345) * scale)
+        track_right = max(0, width - sidebar_chrome)
+        x_end = max(0, track_right - 8 * scale)
+        x_start = max(0, track_right - 60 * scale)
 
     dark_points: list[tuple[int, int]] = []
-    for y in range(8 * scale, band_bottom):
+    for y in range(y_start, band_bottom):
         for x in range(x_start, x_end):
             r, g, b, a = px[x, y]
             if a < 128:
@@ -320,7 +330,7 @@ def assert_sidebar_toggle_icon(image: Image.Image) -> None:
                 best_x = x0
         raise SystemExit(
             "missing sidebar toggle icon beside the content track "
-            f"(found {len(dark_points)} dark pixels in x=[{x_start},{x_end}) y=[{8 * scale},{band_bottom})); "
+            f"(found {len(dark_points)} dark pixels in x=[{x_start},{x_end}) y=[{y_start},{band_bottom})); "
             f"best top-band cluster x≈{best_x} count={best_count})"
         )
 
@@ -352,7 +362,7 @@ def validate_title_bar_band(band: Image.Image) -> None:
         raise SystemExit(
             f"width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
         )
-    assert_sidebar_toggle_icon(band)
+    assert_sidebar_toggle_icon(band, out)
 
 candidates: list[tuple[str, str]] = []
 if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
