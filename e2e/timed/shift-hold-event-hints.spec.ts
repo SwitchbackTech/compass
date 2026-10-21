@@ -232,7 +232,11 @@ test("lowercase day prefix plus digit targets an event without a typed-time draf
     await page.keyboard.press(char);
   }
 
-  await expect(fourthButton).toBeFocused();
+  await expect
+    .poll(async () =>
+      fourthButton.evaluate((el) => el === document.activeElement),
+    )
+    .toBe(true);
 });
 
 test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
