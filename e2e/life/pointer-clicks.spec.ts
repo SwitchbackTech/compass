@@ -5,6 +5,9 @@ import { expect, test } from "@playwright/test";
 test("life page allows pointer clicks without the keyboard-only hint", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("compass.onboarding.has-seen-life-view-intro", "true");
+  });
   await page.goto("/life", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Life" })).toBeVisible();
 
