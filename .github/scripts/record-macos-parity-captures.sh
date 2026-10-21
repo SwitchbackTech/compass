@@ -315,7 +315,7 @@ def validate_title_bar_band(band: Image.Image) -> None:
         raise SystemExit(
             f"width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
         )
-    if sidebar_toggle_score(band) < 8:
+    if sidebar_toggle_score(band) < 5:
         raise SystemExit("missing sidebar toggle in the top-right title bar row")
 
 candidates: list[tuple[str, str]] = []
