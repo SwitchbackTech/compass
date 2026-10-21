@@ -1,11 +1,13 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { resolveUpNextJoinUrl } from "@web/components/Sidebar/UpNextCard/resolve-up-next-join-url";
 import { upNextAvailabilityActions } from "@web/components/Sidebar/UpNextCard/up-next.availability.store";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { useHiddenEventIds } from "@web/events/hidden/hidden-events.query";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
+import { filterEventsVisibleOnGrid } from "@web/events/visibility/filter-events-visible-on-grid";
 import { notifiableEventQueryRange } from "@web/notifications/upcoming-notifier.logic";
 
 /**
@@ -15,6 +17,7 @@ import { notifiableEventQueryRange } from "@web/notifications/upcoming-notifier.
  */
 export function useTodayTimedEvents() {
   const now = useMinuteTick();
+  const hiddenEventIds = useHiddenEventIds();
   const { startDate, endDate } = notifiableEventQueryRange(now);
   const { events, timedEvents, allDayEvents } = useDayEventViewModel({
     startDate,
@@ -37,7 +40,16 @@ export function useTodayTimedEvents() {
       ];
     });
 
-  return { now, events, allTimedEvents: [...timedEvents, ...multiDayTimed] };
+  const allTimedEvents = useMemo(
+    () =>
+      filterEventsVisibleOnGrid(
+        [...timedEvents, ...multiDayTimed],
+        hiddenEventIds,
+      ),
+    [hiddenEventIds, multiDayTimed, timedEvents],
+  );
+
+  return { now, events, allTimedEvents };
 }
 
 export function useUpNextEvent() {

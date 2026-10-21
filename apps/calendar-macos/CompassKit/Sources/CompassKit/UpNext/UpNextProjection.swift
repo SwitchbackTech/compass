@@ -25,6 +25,18 @@ public struct UpNextSnapshot: Equatable, Sendable {
 }
 
 public enum UpNextProjection {
+    /// Drop events hidden on the grid (hidden calendar or individually hidden id).
+    public static func filterGridVisibleEvents(
+        _ events: [Event],
+        hiddenEventIds: Set<String>,
+        isCalendarVisible: (String) -> Bool
+    ) -> [Event] {
+        events.filter { event in
+            isCalendarVisible(event.calendarId.rawValue)
+                && !hiddenEventIds.contains(event.id.rawValue)
+        }
+    }
+
     public static func snapshot(
         now: Date,
         timedCandidates: [UpcomingNotifierLogic.TimedCandidate]
