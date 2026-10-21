@@ -535,6 +535,48 @@ describe("projectRecurringEdit", () => {
     ]);
   });
 
+  test("thisAndFollowing on a remainder series master updates the master row", () => {
+    const splitStart = "2026-07-06T16:00:00.000Z";
+    const remainderId = `${SERIES_ID}::${splitStart}` as EventId;
+    const remainderMaster = createMockEvent({
+      id: remainderId,
+      schedule: {
+        kind: "timed",
+        start: "2026-07-06T16:30:00.000Z",
+        end: "2026-07-06T17:30:00.000Z",
+        timeZone: "UTC",
+      } as never,
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=4"] },
+    });
+    const following = occurrence(7);
+    const edited = {
+      ...remainderMaster,
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+    };
+
+    const projection = projectRecurringEdit({
+      scope: "thisAndFollowing",
+      edited,
+      original: remainderMaster,
+      seriesEvents: [following],
+      seriesMaster: remainderMaster,
+    });
+
+    expect(
+      projection.upserts.find((event) => event.id === remainderId)?.schedule,
+    ).toEqual(edited.schedule);
+    expect(
+      projection.upserts.find((event) => event.id === following.id)?.schedule,
+    ).toMatchObject({
+      start: "2026-07-07T15:30:00+00:00",
+    });
+  });
+
   test("thisAndFollowing split removes stale occurrence ids before re-upserting", () => {
     const master = seriesBase();
     const events = [occurrence(1), occurrence(2), occurrence(3)];
