@@ -7,10 +7,10 @@ import {
 } from "@floating-ui/react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { EDIT_SEQUENCE_LETTER_FIELDS } from "@core/shortcuts/edit-sequence.fields";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
+  selectEditSequenceMenuLetterFields,
   selectEditSequenceMenuVisible,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
@@ -66,6 +66,7 @@ export function EditSequenceMenu({
   getAnchor: () => HTMLElement | null;
 }) {
   const menuVisible = useEditSequenceStore(selectEditSequenceMenuVisible);
+  const letterFields = useEditSequenceStore(selectEditSequenceMenuLetterFields);
   const isVisible = menuVisible;
   // Read through a ref: the owners rebuild `getAnchor` every render, so using
   // it as an effect dependency would re-seat the reference constantly.
@@ -116,14 +117,14 @@ export function EditSequenceMenu({
         role="status"
       >
         <span className="sr-only">
-          {srText("Edit which field?", EDIT_SEQUENCE_LETTER_FIELDS)}
+          {srText("Edit which field?", letterFields)}
         </span>
         <div aria-hidden className="flex flex-col gap-1">
           <span className="px-0.5 text-text-muted text-xs">
             Edit which field?
           </span>
           <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-            {EDIT_SEQUENCE_LETTER_FIELDS.map((option) => (
+            {letterFields.map((option) => (
               <span
                 key={option.key}
                 className="flex items-center gap-1.5 text-text text-xs"
