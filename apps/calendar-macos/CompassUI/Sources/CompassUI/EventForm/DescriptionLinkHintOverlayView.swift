@@ -38,7 +38,7 @@ final class DescriptionLinkHintOverlayView: NSView {
             )
 
             let chip = NSHostingView(
-                root: ShortcutHintChip(label: String(linkIndex + 1))
+                rootView: ShortcutHintChip(label: String(linkIndex + 1))
             )
             chip.frame = CGRect(
                 x: slotOrigin.x + 2,
@@ -46,12 +46,14 @@ final class DescriptionLinkHintOverlayView: NSView {
                 width: DescriptionLinkHintSlotAttachment.slotWidth - 2,
                 height: 18
             )
-            chip.accessibilityIdentifier = "compass-description-link-digit-\(linkIndex + 1)"
+            chip.setAccessibilityIdentifier("compass-description-link-digit-\(linkIndex + 1)")
             addSubview(chip)
             linkIndex += 1
         }
-        accessibilityIdentifier = hintsVisible && linkIndex > 0
-            ? "compass-description-link-digit-hints"
-            : nil
+        if hintsVisible, linkIndex > 0 {
+            setAccessibilityIdentifier("compass-description-link-digit-hints")
+        } else {
+            setAccessibilityIdentifier("")
+        }
     }
 }
