@@ -16,8 +16,10 @@ public struct RootView: View {
 
     public var body: some View {
         ZStack(alignment: .top) {
-            HStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
                 VStack(spacing: 0) {
+                    // Web `CalendarHeader`: header lives in the main column only.
+                    titleBarChrome
                     if model.viewStore.view != .life, model.showsDemoEventsBanner {
                         DemoEventsBannerView {
                             model.dismissDemoEventsBanner()
@@ -32,7 +34,6 @@ public struct RootView: View {
                                 : 0
                         )
                 }
-                .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.
                 if model.isSidebarOpen || model.isEventFormVisible {
@@ -40,11 +41,8 @@ public struct RootView: View {
                         sidebarResizeHandle
                         sidebar
                     }
-                    .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 }
             }
-            titleBarChrome
-                .zIndex(10)
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -336,7 +334,7 @@ public struct RootView: View {
                 Spacer(minLength: 0)
                 titleBarSidebarToggle
             }
-            .padding(.trailing, titleBarTrailingInset)
+            .padding(.trailing, 20)
             .frame(maxWidth: .infinity)
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
@@ -352,16 +350,8 @@ public struct RootView: View {
         ) {
             model.isSidebarOpen.toggle()
         }
+        .scaleEffect(x: -1, y: 1)
         .accessibilityIdentifier("compass-native-sidebar-toggle")
-    }
-
-    /// Web `CalendarHeader`: toggle sits on the right of the main column, not over the sidebar.
-    private var titleBarTrailingInset: CGFloat {
-        let sidebarGutter: CGFloat =
-            (model.isSidebarOpen || model.isEventFormVisible)
-            ? sidebarDividerWidth + model.sidebarWidth
-            : 0
-        return sidebarGutter + 20
     }
 
     private var content: some View {
