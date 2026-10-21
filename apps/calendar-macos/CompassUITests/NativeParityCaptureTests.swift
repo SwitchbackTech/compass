@@ -82,6 +82,12 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
+    func testExportParitySurface_eventFormMeetingLink() throws {
+        try requireParityCapture()
+        captureEventFormMeetingLink()
+    }
+
+    @MainActor
     func testExportParitySurface_commandPalette() throws {
         try requireParityCapture()
         captureCommandPalette()
@@ -180,6 +186,18 @@ final class NativeParityCaptureTests: XCTestCase {
         let startTimeMenu = window.descendants(matching: .any)["compass-event-form-start-menu"]
         XCTAssertTrue(startTimeMenu.waitForExistence(timeout: 12))
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-time-picker")
+    }
+
+    @MainActor
+    private func captureEventFormMeetingLink() {
+        let window = launchDemoWindow(extraLaunchArgs: [
+            "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
+            "-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM",
+        ]).window
+        prepareParityGrid(window, dismissDemoBanner: true)
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-event-form-conference"].waitForExistence(timeout: 8))
+        NativeImageSnapshotSupport.captureWindow(window, named: "event-form-meeting-link")
     }
 
     @MainActor

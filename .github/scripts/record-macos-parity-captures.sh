@@ -15,6 +15,7 @@ SURFACES=(
   event-form
   event-form-date-picker
   event-form-time-picker
+  event-form-meeting-link
   command-palette
   settings
   onboarding-welcome

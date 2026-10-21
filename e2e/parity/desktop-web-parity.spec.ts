@@ -114,6 +114,18 @@ test.describe("Desktop web parity captures", () => {
     });
   });
 
+  test("event-form-meeting-link", async ({ page }) => {
+    await prepareParityDemoWeek(page);
+    await page.getByRole("button", { name: "Morning standup" }).click();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("link", { name: "Google Meet" })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.screenshot({
+      path: join(outputDir, "event-form-meeting-link.png"),
+    });
+  });
+
   test("command-palette", async ({ page }) => {
     await prepareParityDemoWeek(page);
     await page.keyboard.press(`${modKey}+K`);

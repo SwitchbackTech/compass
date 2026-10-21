@@ -48,6 +48,7 @@ SURFACES = (
     "event-form",
     "event-form-date-picker",
     "event-form-time-picker",
+    "event-form-meeting-link",
     "command-palette",
     "settings",
     "onboarding-welcome",
@@ -68,6 +69,7 @@ SIDEBAR_REGION_SURFACES = frozenset(
         "event-form",
         "event-form-date-picker",
         "event-form-time-picker",
+        "event-form-meeting-link",
     }
 )
 MODAL_REGION_SURFACES = frozenset(
