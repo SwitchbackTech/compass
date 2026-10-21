@@ -2968,10 +2968,14 @@ describe("BookingSettingsSection", () => {
 
     const blocking = screen.getByRole("group", { name: "Blocking calendars" });
     expect(
-      within(blocking).getByText("host@example.com (Google)"),
+      within(blocking).getByRole("button", {
+        name: "host@example.com (Google), 1 of 1 blocking",
+      }),
     ).toBeInTheDocument();
     expect(
-      within(blocking).getByText("second@example.com (Google)"),
+      within(blocking).getByRole("button", {
+        name: "second@example.com (Google), 1 of 1 blocking",
+      }),
     ).toBeInTheDocument();
     expect(
       within(blocking).getByRole("checkbox", { name: "Work" }),
@@ -2979,6 +2983,37 @@ describe("BookingSettingsSection", () => {
     expect(
       within(blocking).getByRole("checkbox", { name: "Personal" }),
     ).toBeInTheDocument();
+  });
+
+  it("lists notice and horizon before blocking calendars in More options", async () => {
+    const user = userEvent.setup({ delay: null });
+    userMetadataActions.set(healthyGoogleMetadata);
+    server.use(
+      http.get(bookingPageUrl, () => HttpResponse.json(savedOffPage())),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await user.click(await screen.findByText(BOOKING_MORE_OPTIONS_LABEL));
+
+    const notice = screen.getByLabelText("Minimum notice (hours)");
+    const horizon = screen.getByLabelText("Maximum horizon (days)");
+    const blocking = screen.getByRole("group", { name: "Blocking calendars" });
+    expect(
+      notice.compareDocumentPosition(blocking) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      horizon.compareDocumentPosition(blocking) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("checks a newly connected availability calendar as a blocker", async () => {

@@ -195,6 +195,10 @@ public struct SettingsBookingSectionView: View {
                     }
                 }
             }
+            HStack {
+                labeledNumberField("Min notice (hours)", text: minNoticeBinding)
+                labeledNumberField("Horizon (days)", text: horizonBinding)
+            }
             BookingBlockingCalendarsFieldView(
                 availabilityCalendars: availabilityCalendars,
                 blockingCalendarIds: model.bookingStore.form.blockingCalendarIds,
@@ -206,10 +210,6 @@ public struct SettingsBookingSectionView: View {
                     )
                 }
             )
-            HStack {
-                labeledNumberField("Min notice (hours)", text: minNoticeBinding)
-                labeledNumberField("Horizon (days)", text: horizonBinding)
-            }
             let previewCount = model.bookingStore.previewSlotStarts().count
             Text("Slot preview (next 7 days): \(previewCount) starts")
                 .font(.rubik(12))
