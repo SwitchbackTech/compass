@@ -89,6 +89,8 @@ struct DescriptionEditorView: NSViewRepresentable {
         func load(html: String, resetKey: String) {
             guard let textView else { return }
             self.resetKey = resetKey
+            presentationShowsHosts = false
+            wasDescriptionFocused = false
             let sourceDocument = HTMLFragmentDocument.parse(html)
             let attributed = HTMLFragmentAppKit.attributedString(
                 from: sourceDocument,
@@ -134,18 +136,18 @@ struct DescriptionEditorView: NSViewRepresentable {
         }
 
         private var presentationShowsHosts = false
+        private var wasDescriptionFocused = false
 
         func syncPresentation(isFocused: Bool, html: String, resetKey: String) {
+            defer { wasDescriptionFocused = isFocused }
             guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else {
                 presentationShowsHosts = false
                 return
             }
-            if isFocused {
-                if presentationShowsHosts {
-                    load(html: html, resetKey: resetKey)
-                    presentationShowsHosts = false
-                }
-            } else if !presentationShowsHosts {
+            if isFocused, !wasDescriptionFocused, presentationShowsHosts {
+                load(html: html, resetKey: resetKey)
+                presentationShowsHosts = false
+            } else if !isFocused, wasDescriptionFocused, !presentationShowsHosts {
                 suppressDelegate = true
                 textView?.applyHostLinkPresentation()
                 if let textView {
