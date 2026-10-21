@@ -85,7 +85,7 @@ private struct BookingBlockingAccountGroupView: View {
     @Environment(\.nativeWebTheme) private var theme
     let blockingSet: Set<String>
     let defaultCollapsed: Bool
-    let group: CalendarAccountGrouping.AccountGroup
+    let group: CalendarAccountGroup
     let onToggle: (String, Bool) -> Void
 
     @State private var isExpanded: Bool
