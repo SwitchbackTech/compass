@@ -285,15 +285,34 @@ def assert_sidebar_toggle_icon(image: Image.Image, out_dir: str) -> None:
     width, height = image.size
     scale = max(1, width // 1280)
     band_bottom = min(height, 52 * scale)
+    bounds = None
     bounds_path = os.path.join(out_dir, "parity-toggle-bounds.json")
     if os.path.isfile(bounds_path):
         with open(bounds_path) as handle:
             bounds = json.load(handle)
+    else:
+        metrics_path = os.path.join(out_dir, "parity-window-metrics.txt")
+        if os.path.isfile(metrics_path):
+            metrics: dict[str, str] = {}
+            for line in open(metrics_path):
+                if "=" in line:
+                    key, value = line.strip().split("=", 1)
+                    metrics[key] = value
+            if {"toggleMinX", "toggleMaxX", "toggleMinY", "toggleMaxY"} <= metrics.keys():
+                bounds = {
+                    "minX": float(metrics["toggleMinX"]),
+                    "maxX": float(metrics["toggleMaxX"]),
+                    "minY": float(metrics["toggleMinY"]),
+                    "maxY": float(metrics["toggleMaxY"]),
+                }
+    if bounds is not None:
+        print(f"toggle probe bounds: {bounds}", file=sys.stderr)
         x_start = max(0, int(float(bounds["minX"]) * scale) - 2 * scale)
         x_end = min(width, int(float(bounds["maxX"]) * scale) + 2 * scale)
         y_start = max(0, int(float(bounds["minY"]) * scale) - 2 * scale)
         band_bottom = min(height, int(float(bounds["maxY"]) * scale) + 2 * scale)
     else:
+        print(f"toggle probe bounds missing under {out_dir}", file=sys.stderr)
         y_start = 8 * scale
         # Parity captures keep the sidebar open @ 345px + 32px divider (see ParityCaptureGeometry).
         sidebar_chrome = int((32 + 345) * scale)
