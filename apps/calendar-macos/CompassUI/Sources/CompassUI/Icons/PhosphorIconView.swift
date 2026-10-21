@@ -31,42 +31,20 @@ public struct PhosphorIconView: View {
             .frame(width: size, height: size)
             .scaleEffect(x: mirrored ? -1 : 1, y: 1)
 
-        if UITestLaunchPolicy.isParityCapture {
-            MacRasterizedIcon(size: size, content: vector)
+        if UITestLaunchPolicy.isParityCapture, let bitmap = Self.rasterize(vector, size: size) {
+            Image(nsImage: bitmap)
+                .resizable()
+                .interpolation(.high)
+                .antialiased(true)
+                .frame(width: size, height: size)
         } else {
             vector
         }
     }
-}
 
-/// Vector `Shape` fills can be absent from `screencapture`/XCUITest window PNGs while
-/// accessibility still reports the control. Rasterize to an `NSImage` on macOS.
-private struct MacRasterizedIcon<Content: View>: View {
-    let size: CGFloat
-    let content: Content
-    @State private var image: NSImage?
-
-    var body: some View {
-        Group {
-            if let image {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .frame(width: size, height: size)
-            } else {
-                Color.clear
-                    .frame(width: size, height: size)
-                    .onAppear(perform: render)
-            }
-        }
-    }
-
-    private func render() {
-        let renderer = ImageRenderer(
-            content: content.frame(width: size, height: size)
-        )
+    private static func rasterize<V: View>(_ content: V, size: CGFloat) -> NSImage? {
+        let renderer = ImageRenderer(content: content.frame(width: size, height: size))
         renderer.scale = 2
-        image = renderer.nsImage
+        return renderer.nsImage
     }
 }
