@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { join } from "node:path";
 
+// Other life/navigation specs seed HAS_SEEN_LIFE_VIEW_INTRO so grid probes do not match the intro title.
+
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1600, height: 900 } });
 
