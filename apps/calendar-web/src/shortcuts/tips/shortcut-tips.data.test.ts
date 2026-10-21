@@ -26,7 +26,7 @@ describe("getHintPlainText", () => {
     expect(plainTextById["create-event"]).toBe("C creates an event");
     expect(plainTextById["page-jump"]).toBe(`Hold ${mod} to see jump targets`);
     expect(plainTextById["event-jump"]).toBe(
-      "F shows event and open-time shortcuts",
+      "f shows event and open-time shortcuts",
     );
     expect(plainTextById["week-day-focus"]).toBe("Shift+M jumps to Monday");
     expect(plainTextById.nudge).toBe("Shift and an arrow moves the event");
@@ -46,10 +46,10 @@ describe("getHintPlainText", () => {
       "Shift+R jumps to Thursday",
     );
     expect(getHintPlainText(weekDayFocusHint("su"))).toBe(
-      "Shift+S then U jumps to Sunday",
+      "Shift+S then u jumps to Sunday",
     );
     expect(getHintPlainText(weekDayFocusHint("sa"))).toBe(
-      "Shift+S then A jumps to Saturday",
+      "Shift+S then a jumps to Saturday",
     );
   });
 
