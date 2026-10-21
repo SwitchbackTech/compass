@@ -66,6 +66,8 @@ public enum ProductEvent: String, Codable, Hashable, Sendable, CaseIterable {
     case shortcutLevelBadgeToggled = "shortcut_level_badge_toggled"
     case pointerHintShown = "pointer_hint_shown"
     case pointerHintDismissed = "pointer_hint_dismissed"
+    case lifeViewIntroShown = "life_view_intro_shown"
+    case lifeViewIntroDismissed = "life_view_intro_dismissed"
     case bookingSettingsOpened = "booking_settings_opened"
     case bookingPageEnabled = "booking_page_enabled"
     case bookingLinkCopied = "booking_link_copied"
