@@ -342,15 +342,21 @@ public struct RootView: View {
     }
 
     private var titleBarSidebarToggle: some View {
-        titleBarNavButton(
-            label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-            icon: .sidebarSimple,
-            iconSize: 21,
-            iconColor: theme.textMutedColor
-        ) {
+        Button {
             model.isSidebarOpen.toggle()
+        } label: {
+            PhosphorIconView(
+                icon: .sidebarSimple,
+                size: 21,
+                color: theme.textMutedColor,
+                mirrored: true
+            )
+            .frame(width: 24, height: 24)
+            .contentShape(Rectangle())
         }
-        .scaleEffect(x: -1, y: 1)
+        .buttonStyle(.plain)
+        .help(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
+        .accessibilityLabel(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
         .accessibilityIdentifier("compass-native-sidebar-toggle")
     }
 
