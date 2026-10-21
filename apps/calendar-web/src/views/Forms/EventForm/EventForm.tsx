@@ -11,8 +11,10 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
+import { isEventFormFocusFieldVisible } from "@core/event/event-form-field-visibility";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { CONFERENCE_KIND_LABEL } from "@core/types/calendar.contracts";
@@ -21,10 +23,7 @@ import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { parseBookingEventLinks } from "@web/booking/booking-event-links";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import {
-  canInviteOnCalendar,
-  creatableConferenceKind,
-} from "@web/calendars/calendar.util";
+import { creatableConferenceKind } from "@web/calendars/calendar.util";
 import {
   isEventReadOnly,
   useCalendarLookup,
@@ -63,6 +62,10 @@ import {
   statusForEmail,
 } from "@web/events/attendee-rsvp";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  eventFormFieldVisibilityInputFromDraft,
+  visibleFormFieldDigitRows,
+} from "@web/events/event-form-field-visibility.util";
 import {
   patchGridDraftFields,
   replaceGridDraftSchedule,
@@ -105,6 +108,7 @@ import { LocationField } from "@web/views/Forms/EventForm/LocationField/Location
 import { ProviderManagedFieldShield } from "@web/views/Forms/EventForm/ProviderManagedFieldShield";
 import {
   providerManagedRecurrenceToast,
+  providerManagedScheduleNote,
   providerManagedScheduleToast,
 } from "@web/views/Forms/EventForm/provider-managed-field.util";
 import { setEventFormProviderManagedFocusGuard } from "@web/views/Forms/EventForm/provider-managed-focus-guard";
@@ -304,42 +308,34 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const scheduleManagedToast = providerManagedScheduleToast(attendeeCalendar);
     const recurrenceManagedToast =
       providerManagedRecurrenceToast(attendeeCalendar);
-    // The host auto-sets the organizer to the creating account, so "the user
-    // organizes this event" is organizer-email == calendar-account-email.
-    // A missing organizer means Compass created the event on this account
-    // (organizes it); a missing account email fails closed — sync refuses
-    // non-organizer guest edits anyway, so don't offer the editor.
-    const organizesEvent =
-      draft.kind === "create" ||
-      !sourceDetails?.organizer ||
-      (attendeeCalendar?.accountEmail !== undefined &&
-        sourceDetails.organizer.email.toLowerCase() ===
-          attendeeCalendar.accountEmail.toLowerCase());
-    const showAttendeeEditor =
-      !isReadOnly && canInviteOnCalendar(attendeeCalendar) && organizesEvent;
-    // Meeting-link gate: a create draft whose target calendar can mint a
-    // conference link (Google Meet, Microsoft Teams) offers an "Add <kind>"
-    // switch. Create only: sync has no conference channel on update, and an
-    // existing link is shown read-only by EventDetailsSection instead.
-    const conferenceKind =
-      draft.kind === "create" && !isReadOnly
-        ? creatableConferenceKind(attendeeCalendar)
-        : null;
+    const fieldVisibilityInput = useMemo(
+      () =>
+        eventFormFieldVisibilityInputFromDraft(
+          draft,
+          calendarLookup,
+          defaultTargetCalendar,
+        ),
+      [calendarLookup, defaultTargetCalendar, draft],
+    );
+    const formDigitRows = useMemo(
+      () => visibleFormFieldDigitRows(fieldVisibilityInput),
+      [fieldVisibilityInput],
+    );
+    const isFieldJumpVisible = useCallback(
+      (field: EventFormFocusField) =>
+        isEventFormFocusFieldVisible(field, fieldVisibilityInput),
+      [fieldVisibilityInput],
+    );
+    const showAttendeeEditor = isFieldJumpVisible("attendees");
+    const showCreateConference =
+      isFieldJumpVisible("conference") && draft.kind === "create";
+    const conferenceKind = showCreateConference
+      ? creatableConferenceKind(attendeeCalendar)
+      : null;
     const guestEditIsSeriesWide =
       draft.kind === "edit" && draft.source.recurrence.kind !== "single";
-    // RSVP gate (WP-08): show Going / Maybe / Decline when the calendar's
-    // connected account email appears in the attendee list (organizer
-    // included — organizers can answer their own event). Hidden when self is
-    // not an attendee or the event is local (no provider account email).
-    // Deliberately NOT gated on writability: answering an invitation is
-    // allowed on viewer-access calendars.
     const rsvpAccountEmail = attendeeCalendar?.accountEmail;
-    const showRsvpControl =
-      rsvpSource !== null &&
-      rsvpAccountEmail !== undefined &&
-      attendeeStatusByEmail(liveDetails?.attendees).has(
-        rsvpAccountEmail.toLowerCase(),
-      );
+    const showRsvpControl = isFieldJumpVisible("rsvp");
     // Contact suggestions (WP-06): live when a connected account granted the
     // optional contacts scopes; otherwise the field is a raw email input and
     // the combobox footer may carry the occasional enable-contacts nudge.
@@ -859,7 +855,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       showBookingFormActions,
     ]);
 
-    const { areHintsVisible } = useFormDigitJumpShortcut();
+    const { areHintsVisible } = useFormDigitJumpShortcut({
+      isFieldVisible: isFieldJumpVisible,
+    });
     const { digitFlashField, onFormFocusIn, onFormPointerDown } =
       usePointerFormFieldDigitTeach();
 
@@ -1152,9 +1150,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
             {isScheduleLocked && !IS_EVENT_SIDEBAR_STAGING_UX && (
               <p role="note" className="text-text-muted text-xs">
-                Your calendar provider keeps this event updated (for example
-                from an email), so its time follows the provider. Changes to the
-                title, notes, and location stay in Compass.
+                {providerManagedScheduleNote(attendeeCalendar)}
               </p>
             )}
 
@@ -1189,6 +1185,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onDiscard={onDiscardConfirm}
         />
         <FormDigitHintOverlay
+          digitRows={formDigitRows}
           highlightField={digitFlashField}
           visible={areHintsVisible}
         />

@@ -14,6 +14,7 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
+import { providerManagedScheduleNote } from "@web/views/Forms/EventForm/provider-managed-field.util";
 import {
   afterAll,
   beforeAll,
@@ -228,8 +229,12 @@ describe("EventForm read-only gate", () => {
 });
 
 describe("EventForm provider-managed schedule lock", () => {
-  const providerManagedNote =
-    "Your calendar provider keeps this event updated (for example from an email), so its time follows the provider. Changes to the title, notes, and location stay in Compass.";
+  const providerManagedNote = providerManagedScheduleNote(
+    makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    }),
+  );
 
   const renderStagingEventForm = async (
     draft: GridEventDraft,

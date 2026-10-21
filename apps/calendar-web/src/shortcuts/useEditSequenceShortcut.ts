@@ -1,6 +1,9 @@
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { useEffect, useRef } from "react";
-import { EDIT_SEQUENCE_FIELD_BY_KEY } from "@core/shortcuts/edit-sequence.fields";
+import {
+  EDIT_SEQUENCE_FIELD_BY_KEY,
+  EDIT_SEQUENCE_LETTER_FIELDS,
+} from "@core/shortcuts/edit-sequence.fields";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { isBillingWriteLocked } from "@web/billing/billing-write-lock";
 import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
@@ -74,6 +77,8 @@ export function useEditSequenceShortcut<
   canArm,
   onSequence,
   fieldByKey = EDIT_SEQUENCE_FIELD_BY_KEY as unknown as Record<string, TField>,
+  resolveFieldByKey,
+  getLetterFields,
   scope = "event",
   ignoreAppLock = false,
 }: {
@@ -83,6 +88,10 @@ export function useEditSequenceShortcut<
   onSequence: (field: TField) => void;
   /** Second key -> field. Defaults to the event form's table. */
   fieldByKey?: Record<string, TField>;
+  /** When set, resolves the dispatch map at keydown/arm time instead of render time. */
+  resolveFieldByKey?: () => Record<string, TField>;
+  /** When set, resolves which-key rows at arm time (e.g. after grid focus). */
+  getLetterFields?: () => readonly { key: string; label: string }[];
   scope?: EditSequenceScope;
   /**
    * Run while the app is locked. Surfaces that live inside a modal need this:
@@ -97,6 +106,10 @@ export function useEditSequenceShortcut<
   canArmRef.current = canArm;
   const fieldByKeyRef = useRef(fieldByKey);
   fieldByKeyRef.current = fieldByKey;
+  const resolveFieldByKeyRef = useRef(resolveFieldByKey);
+  resolveFieldByKeyRef.current = resolveFieldByKey;
+  const getLetterFieldsRef = useRef(getLetterFields);
+  getLetterFieldsRef.current = getLetterFields;
 
   useEffect(() => {
     const isMac = resolveModifier("Mod") === "Meta";
@@ -122,7 +135,9 @@ export function useEditSequenceShortcut<
 
     const arm = () => {
       disarm();
-      editSequenceActions.arm(scope);
+      const menuLetterFields =
+        getLetterFieldsRef.current?.() ?? EDIT_SEQUENCE_LETTER_FIELDS;
+      editSequenceActions.arm(scope, menuLetterFields);
       menuTimeoutId = setTimeout(() => {
         menuTimeoutId = null;
         if (isEditSequenceArmed()) {
@@ -176,7 +191,9 @@ export function useEditSequenceShortcut<
         }
 
         const key = normalizedKeyboardKey(event);
-        const field = fieldByKeyRef.current[key] ?? null;
+        const dispatchMap =
+          resolveFieldByKeyRef.current?.() ?? fieldByKeyRef.current;
+        const field = dispatchMap[key] ?? null;
 
         if (field) {
           event.preventDefault();

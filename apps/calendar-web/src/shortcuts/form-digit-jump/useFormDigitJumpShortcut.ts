@@ -21,12 +21,14 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
 export type FormDigitJumpOptions = {
   /** Return false to block the jump (after showing any UI you need). */
   onBeforeFocus?: (field: EventFormFocusField) => boolean;
+  /** When set, digits for hidden fields are ignored (same gating as the e-menu). */
+  isFieldVisible?: (field: EventFormFocusField) => boolean;
 };
 
 export function useFormDigitJumpShortcut(options: FormDigitJumpOptions = {}): {
   areHintsVisible: boolean;
 } {
-  const { onBeforeFocus } = options;
+  const { isFieldVisible, onBeforeFocus } = options;
   return useModHoldHintShortcut({
     onHintsRevealed: () =>
       shortcutHintProgressActions.demonstrate("save-draft"),
@@ -35,6 +37,9 @@ export function useFormDigitJumpShortcut(options: FormDigitJumpOptions = {}): {
       const field =
         index !== null ? FORM_FIELD_DIGITS[index]?.field : undefined;
       if (!field) return false;
+      if (isFieldVisible && !isFieldVisible(field)) {
+        return false;
+      }
 
       if (onBeforeFocus && !onBeforeFocus(field)) {
         return true;
