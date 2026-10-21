@@ -119,8 +119,10 @@ final class DescriptionEditorTests: XCTestCase {
     func testBlurredPresentationShortensAutolinkLabelsWithoutChangingHTML() {
         var html = "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>"
         let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
-        let editor = DescriptionTextView()
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
         coordinator.textView = editor
+        coordinator.container = container
         editor.delegate = coordinator
         coordinator.load(html: html, resetKey: "event")
         coordinator.wasDescriptionFocused = true

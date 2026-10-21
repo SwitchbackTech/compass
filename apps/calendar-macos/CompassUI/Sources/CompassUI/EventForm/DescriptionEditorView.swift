@@ -171,7 +171,7 @@ struct DescriptionEditorView: NSViewRepresentable {
         func applyInitialBlurPresentationIfNeeded(isFocused: Bool, html: String) {
             guard !presentationShowsHosts, !isFocused, !wasDescriptionFocused else { return }
             guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else { return }
-            guard textView?.window != nil else { return }
+            guard textView != nil else { return }
             suppressDelegate = true
             textView?.applyHostLinkPresentation()
             if let textView {
@@ -191,7 +191,8 @@ struct DescriptionEditorView: NSViewRepresentable {
             if isFocused, presentationShowsHosts {
                 load(html: html, resetKey: resetKey)
                 presentationShowsHosts = false
-            } else if !isFocused, textView?.window != nil {
+            } else if !isFocused {
+                guard textView != nil else { return }
                 suppressDelegate = true
                 textView?.applyHostLinkPresentation()
                 if let textView {
