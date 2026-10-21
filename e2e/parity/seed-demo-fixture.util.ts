@@ -78,26 +78,39 @@ export async function prepareParityDemoWeek(
   await page.reload({ waitUntil: "domcontentloaded" });
   await expectDemoGrid(page);
   if (dismissDemoBanner) {
-    const okay = page.getByRole("button", { name: "Okay" });
+    const banner = page
+      .getByRole("status")
+      .filter({ hasText: "Sample events to help you explore" });
+    const okay = banner.getByText("Okay", { exact: true });
     if (await okay.isVisible().catch(() => false)) {
       await okay.click();
+      await banner.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {});
     }
   }
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("t");
   // Match macOS instant scroll-to-now during parity capture (no mid-animation PNGs).
-  await page.evaluate(() => {
-    const timedGrid = document.getElementById("timedColumns");
-    if (!(timedGrid instanceof HTMLElement)) return;
-    const timedVisibleHours = 13;
-    const scrollToNowBufferPx = 150;
-    const minuteHeight = timedGrid.clientHeight / timedVisibleHours / 60;
-    const now = new Date();
-    const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-    const targetTop = Math.max(0, minutes * minuteHeight - scrollToNowBufferPx);
-    timedGrid.scrollTo({ top: targetTop, behavior: "instant" });
-  });
+  await page.evaluate(
+    ({ referenceNowIso }) => {
+      const timedGrid = document.getElementById("timedColumns");
+      if (!(timedGrid instanceof HTMLElement)) return;
+      const timedVisibleHours = 13;
+      const scrollToNowBufferPx = 150;
+      const minuteHeight = timedGrid.clientHeight / timedVisibleHours / 60;
+      const now = new Date(referenceNowIso);
+      const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+      const targetTop = Math.max(
+        0,
+        minutes * minuteHeight - scrollToNowBufferPx,
+      );
+      timedGrid.scrollTo({ top: targetTop, behavior: "instant" });
+    },
+    { referenceNowIso: demoFixture.referenceNow },
+  );
   await page.waitForTimeout(400);
+  await page
+    .getByRole("button", { name: "Lunch with Sam" })
+    .waitFor({ timeout: 15_000 });
   await page
     .getByRole("button", { name: /Exercise|Morning standup/i })
     .first()
