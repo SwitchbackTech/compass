@@ -43,10 +43,7 @@ extension NativeCalendarRootModel {
 
     /// Same visibility as the time grid: hidden calendars and individually hidden events drop out.
     func upNextEligibleSidebandEvents() -> [Event] {
-        UpNextProjection.filterGridVisibleEvents(
-            sidebandEvents,
-            hiddenEventIds: Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue)),
-            isCalendarVisible: calendarVisibilityStore.isVisible)
+        eventsEligibleForUpNext(sidebandEvents)
     }
 
     func syncSidebandWithLoadedEvents() {

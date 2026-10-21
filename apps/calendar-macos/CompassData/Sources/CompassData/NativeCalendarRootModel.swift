@@ -1102,7 +1102,7 @@ public final class NativeCalendarRootModel {
             return
         }
         headerTitle = CalendarHeadingLabel.format(start: startOfView, end: endOfView, now: referenceNow)
-        let hiddenIds = Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue))
+        let hiddenIds = gridHiddenEventIdStrings
         let demoIds = demoEventIds
         let referenceNow = self.referenceNow
         var scenario = GridLayoutScenarioBuilder.build(
@@ -1251,6 +1251,19 @@ public final class NativeCalendarRootModel {
 
     public func visibleCalendars() -> [CompassCalendar] {
         calendars.filter { $0.isActive && calendarVisibilityStore.isVisible($0.id) }
+    }
+
+    /// Individually hidden event ids for grid layout and Up Next (same set as web hidden-events).
+    var gridHiddenEventIdStrings: Set<String> {
+        Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue))
+    }
+
+    /// Timed/all-day candidates visible on the grid: visible calendar and not individually hidden.
+    func eventsEligibleForUpNext(_ events: [Event]) -> [Event] {
+        UpNextProjection.filterGridVisibleEvents(
+            events,
+            hiddenEventIds: gridHiddenEventIdStrings,
+            isCalendarVisible: calendarVisibilityStore.isVisible)
     }
 
     /// Active calendars for the sidebar list, hidden ones included.
