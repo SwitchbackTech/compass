@@ -16,13 +16,14 @@ public struct NativeUpNextState: Equatable, Sendable {
 extension NativeCalendarRootModel {
     public var upNextState: NativeUpNextState {
         let now = referenceNow
+        let eligible = upNextEligibleSidebandEvents()
         let candidates = UpNextProjection.timedCandidates(
-            from: sidebandEvents,
+            from: eligible,
             demoEventIds: demoEventIds)
         let snapshot = UpNextProjection.snapshot(now: now, timedCandidates: candidates)
         let conferenceURL: String? = {
             guard let upNext = snapshot.upNext,
-                  let event = sidebandEvents.first(where: { $0.id.rawValue == upNext.id })
+                  let event = eligible.first(where: { $0.id.rawValue == upNext.id })
             else {
                 return nil
             }
@@ -35,7 +36,17 @@ extension NativeCalendarRootModel {
     }
 
     public func sidebandTimedCandidates() -> [UpcomingNotifierLogic.TimedCandidate] {
-        UpNextProjection.timedCandidates(from: sidebandEvents, demoEventIds: demoEventIds)
+        UpNextProjection.timedCandidates(
+            from: upNextEligibleSidebandEvents(),
+            demoEventIds: demoEventIds)
+    }
+
+    /// Same visibility as the time grid: hidden calendars and individually hidden events drop out.
+    func upNextEligibleSidebandEvents() -> [Event] {
+        UpNextProjection.filterGridVisibleEvents(
+            sidebandEvents,
+            hiddenEventIds: Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue)),
+            isCalendarVisible: calendarVisibilityStore.isVisible)
     }
 
     func syncSidebandWithLoadedEvents() {
