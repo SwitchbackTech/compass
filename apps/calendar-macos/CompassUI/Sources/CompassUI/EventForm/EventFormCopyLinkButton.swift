@@ -28,6 +28,7 @@ struct EventFormCopyLinkButton: View {
             .opacity(isEnabled ? (copied ? 1 : 0.25) : 0.15)
             .disabled(!isEnabled)
             .accessibilityLabel(copied ? "Copied" : label)
+            .accessibilityIdentifier("compass-event-form-meeting-link-copy")
 
             if !shortcutKeycaps.isEmpty {
                 HStack(spacing: 4) {
@@ -36,10 +37,9 @@ struct EventFormCopyLinkButton: View {
                     }
                 }
                 .opacity(isEnabled ? 0.25 : 0.15)
+                .accessibilityHidden(true)
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("compass-event-form-meeting-link-copy")
     }
 
     private func copy() {

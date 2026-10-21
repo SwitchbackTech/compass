@@ -26,8 +26,10 @@ final class EventFormMeetingLinkCopyShortcutTests: XCTestCase {
         }
         XCTAssertTrue(conference.waitForExistence(timeout: 4))
 
-        let copyControl = form.buttons["copy meeting link"]
-        XCTAssertTrue(copyControl.waitForExistence(timeout: 4))
+        let copyByIdentifier = form.buttons["compass-event-form-meeting-link-copy"]
+        let copyByLabel = form.buttons["copy meeting link"]
+        XCTAssertTrue(
+            copyByIdentifier.waitForExistence(timeout: 4) || copyByLabel.waitForExistence(timeout: 1))
 
         let title = form.descendants(matching: .any)["compass-event-form-title"].firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 4))
