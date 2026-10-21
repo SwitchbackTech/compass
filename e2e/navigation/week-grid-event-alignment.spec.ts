@@ -117,7 +117,9 @@ test.describe("Week grid event alignment", () => {
     });
     await page.clock.install({ time: new Date(FROZEN_CLOCK) });
     await page.goto("/life", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Life" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Life", exact: true }),
+    ).toBeVisible();
 
     await page.goto(
       "/week?utm_source=blog&utm_medium=cta&utm_campaign=try_app&utm_content=star_button",
