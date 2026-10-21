@@ -24,6 +24,10 @@ CONTENT_TRACK_WIDTH = (
 )
 # Web keeps calendar header inside the 1280×820 viewport; macOS uses a unified title bar.
 WEB_CALENDAR_HEADER_HEIGHT = 48
+# Web week view keeps CalendarHeader inside the 1280×820 viewport; macOS uses a
+# unified title bar above the content track. Grid-region crops skip the web header
+# so both sides start at the day-label band (demo banner dismissed before capture).
+WEB_GRID_REGION_TOP = WEB_CALENDAR_HEADER_HEIGHT + 48
 MAC_MAIN_CONTENT_TOP = 52
 GRID_CROP = (0, 0, CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, VIEWPORT_HEIGHT)
 SIDEBAR_CROP = (CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT)
@@ -31,7 +35,7 @@ SIDEBAR_CROP = (CONTENT_LEADING_INSET + CONTENT_TRACK_WIDTH, 0, VIEWPORT_WIDTH, 
 
 def grid_region_crop(*, macos: bool) -> tuple[int, int, int, int]:
     left, _, right, bottom = GRID_CROP
-    top = MAC_MAIN_CONTENT_TOP if macos else WEB_CALENDAR_HEADER_HEIGHT
+    top = MAC_MAIN_CONTENT_TOP if macos else WEB_GRID_REGION_TOP
     return (left, top, right, bottom)
 
 SURFACES = (
