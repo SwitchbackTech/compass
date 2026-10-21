@@ -68,6 +68,10 @@ export const KEYMAP = {
     hotkey: "Mod+Shift+C",
     keycaps: ["Mod", "Shift", "C"],
   },
+  copyMeetingLink: {
+    hotkey: "Mod+Shift+L",
+    keycaps: ["Mod", "Shift", "L"],
+  },
   // Mod+Enter saves the event form; open the link under the caret instead.
   openDescriptionLinkAtCaret: {
     hotkey: "Mod+Shift+Enter",

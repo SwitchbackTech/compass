@@ -373,6 +373,13 @@ export const SHORTCUTS_REGISTRY = [
     when: { isFormOpen: true },
   },
   {
+    id: "edit-copy-meeting-link",
+    keys: [...B.editCopyMeetingLink.keycaps],
+    label: "Copy meeting link",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
+  {
     id: "edit-open-description-link",
     keys: [...B.editOpenDescriptionLink.keycaps],
     label: "Open link under description caret",
