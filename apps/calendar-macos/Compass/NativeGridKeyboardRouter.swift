@@ -1,7 +1,6 @@
 import AppKit
 import CompassData
 import CompassKit
-import CompassUI
 
 @MainActor
 final class NativeGridKeyboardRouter {
@@ -469,9 +468,9 @@ final class NativeGridKeyboardRouter {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
         if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
-            guard NSApp.keyWindow?.firstResponder is DescriptionTextView else { return false }
+            guard isDescriptionFormEditorFocused() else { return false }
             let opened = NSApp.sendAction(
-                #selector(DescriptionTextView.openDescriptionLinkAtCaret(_:)),
+                NSSelectorFromString("openDescriptionLinkAtCaret:"),
                 to: nil,
                 from: nil
             )
@@ -485,7 +484,7 @@ final class NativeGridKeyboardRouter {
             !isEditableNonDescriptionTextInputFocused()
         {
             let opened = NSApp.sendAction(
-                #selector(DescriptionTextView.openDescriptionLinkDigit(_:)),
+                NSSelectorFromString("openDescriptionLinkDigit:"),
                 to: nil,
                 from: NSNumber(value: digit - 1)
             )
@@ -544,6 +543,11 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    private func isDescriptionFormEditorFocused() -> Bool {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView else { return false }
+        return textView.accessibilityIdentifier() == "compass-event-form-description"
     }
 
     private func isEditableNonDescriptionTextInputFocused() -> Bool {
