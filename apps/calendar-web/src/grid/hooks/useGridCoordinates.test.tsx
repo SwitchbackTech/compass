@@ -67,7 +67,7 @@ describe("useGridCoordinates", () => {
       ]),
     );
 
-    expect(result.current.getDateByXY(10, 74).format("HH:mm")).toBe("01:00");
+    expect(result.current.getDateByXY(10, 0).format("HH:mm")).toBe("01:00");
   });
 
   it("computes Y position correctly for aligned times (hour:00, hour:15, etc.) and non-aligned times", () => {

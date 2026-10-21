@@ -121,6 +121,10 @@ enum NativeImageSnapshotSupport {
             sidebarToggle.frame.maxX,
             window.frame.maxX - 2,
             "Sidebar toggle should sit inside the captured window width")
+        XCTAssertLessThan(
+            sidebarToggle.frame.minY,
+            window.frame.maxY - window.frame.height * 0.85,
+            "Sidebar toggle should sit in the top title bar row")
         let headerTitle = window.buttons["compass-native-header-title"]
         XCTAssertTrue(headerTitle.waitForExistence(timeout: 5))
         XCTAssertTrue(
@@ -130,14 +134,45 @@ enum NativeImageSnapshotSupport {
             headerTitle.frame.minY,
             window.frame.maxY - window.frame.height * 0.85,
             "Month title should sit in the top band of the window screenshot")
+        guard let outDir = parityOutputDirectory else {
+            XCTFail("PARITY_OUTPUT_DIR is required for title bar reference export", file: file, line: line)
+            return
+        }
         if let url = URL(string: "compass://debug/parity-apply-capture-window") {
             NSWorkspace.shared.open(url)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
         }
-        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.35))
-        let png = window.screenshot().pngRepresentation
-        guard !png.isEmpty else {
-            XCTFail("Empty window screenshot for title bar reference", file: file, line: line)
+        RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.4))
+        guard let exportURL = URL(string: "compass://debug/parity-export-title-bar-reference") else {
+            XCTFail("Invalid title bar reference export URL", file: file, line: line)
+            return
+        }
+        NSWorkspace.shared.open(exportURL)
+        let fileURL = URL(fileURLWithPath: outDir, isDirectory: true)
+            .appendingPathComponent("mac-title-bar-full-window.png")
+        let deadline = Date().addingTimeInterval(15)
+        var png: Data?
+        while Date() < deadline {
+            if FileManager.default.fileExists(atPath: fileURL.path),
+               let data = try? Data(contentsOf: fileURL),
+               !data.isEmpty
+            {
+                png = data
+                break
+            }
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        }
+        if png == nil {
+            let fallback = window.screenshot().pngRepresentation
+            guard !fallback.isEmpty else {
+                XCTFail("Timed out waiting for title bar reference at \(fileURL.path)", file: file, line: line)
+                return
+            }
+            png = fallback
+            try? png?.write(to: fileURL)
+        }
+        guard let png, !png.isEmpty else {
+            XCTFail("Missing title bar reference PNG", file: file, line: line)
             return
         }
         attachPNG(png, named: "mac-title-bar-full-window")

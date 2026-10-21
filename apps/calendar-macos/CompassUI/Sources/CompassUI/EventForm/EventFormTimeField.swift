@@ -25,7 +25,6 @@ struct EventFormTimeField: View {
                     .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
                     .foregroundStyle(theme.textColor)
                     .lineLimit(1)
-                PhosphorIconView(icon: .caretUpDown, size: 12)
             }
             .padding(.horizontal, 8)
             .frame(minWidth: 72, idealWidth: 76, maxWidth: 88)

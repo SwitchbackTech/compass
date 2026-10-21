@@ -17,6 +17,7 @@ import {
   googleFailureCause,
   googleRequestBodyKeys,
   googleStatus,
+  hasGoogleRateLimitReason,
 } from "@sync/providers/google/google-error";
 import {
   mapConference,
@@ -226,15 +227,16 @@ export class GoogleEventWriter implements ProviderEventWriter {
           throw classifyWriteError(getError);
         }
       }
-      if (googleStatus(error) === 400) {
-        throw classifyGoogle400(error, "Google declined to change this event", {
+      throw classifyWriteFailure(
+        error,
+        "Google declined to change this event",
+        {
           operation: "events.insert",
           requestBodyKeys: googleRequestBodyKeys(
             requestBody as Record<string, unknown>,
           ),
-        });
-      }
-      throw classifyWriteError(error);
+        },
+      );
     }
   }
 
@@ -263,17 +265,14 @@ export class GoogleEventWriter implements ProviderEventWriter {
           });
           if (cleared.etag) ifMatch = cleared.etag;
         } catch (error) {
-          if (googleStatus(error) === 400) {
-            throw classifyGoogle400(
-              error,
-              "Google declined to clear the event label",
-              {
-                operation: "events.patch(clearEventLabel)",
-                requestBodyKeys: ["eventLabelId"],
-              },
-            );
-          }
-          throw classifyWriteError(error);
+          throw classifyWriteFailure(
+            error,
+            "Google declined to clear the event label",
+            {
+              operation: "events.patch(clearEventLabel)",
+              requestBodyKeys: ["eventLabelId"],
+            },
+          );
         }
       }
       const mainBody = toGoogleBody(
@@ -293,22 +292,21 @@ export class GoogleEventWriter implements ProviderEventWriter {
         });
         return toResult(patched);
       } catch (error) {
-        if (googleStatus(error) === 400) {
-          throw classifyGoogle400(
-            error,
-            "Google declined to change this event",
-            {
-              operation: "events.patch",
-              requestBodyKeys: googleRequestBodyKeys(
-                mainBody as Record<string, unknown>,
-              ),
-            },
-          );
-        }
-        throw classifyWriteError(error);
+        throw classifyWriteFailure(
+          error,
+          "Google declined to change this event",
+          {
+            operation: "events.patch",
+            requestBodyKeys: googleRequestBodyKeys(
+              mainBody as Record<string, unknown>,
+            ),
+          },
+        );
       }
     } catch (error) {
-      if (error instanceof ProviderWriteError) throw error;
+      // Only a `toGoogleBody` throw reaches here unclassified: both patch
+      // calls above throw already-classified errors, which this passes
+      // through untouched.
       throw classifyWriteError(error);
     }
   }
@@ -332,13 +330,14 @@ export class GoogleEventWriter implements ProviderEventWriter {
       // permanentProviderError surfaced a retryable 502 the client could
       // never resolve; a typed capability refusal maps to an honest,
       // non-retryable error instead.
-      if (googleStatus(error) === 400) {
-        throw classifyGoogle400(error, "Google declined to delete this event", {
+      throw classifyWriteFailure(
+        error,
+        "Google declined to delete this event",
+        {
           operation: "events.delete",
           requestBodyKeys: [],
-        });
-      }
-      throw classifyWriteError(error);
+        },
+      );
     }
   }
 
@@ -629,14 +628,6 @@ function toSendUpdates(invitation: InvitationIntent): string {
   return invitation;
 }
 
-// Google 403 reasons that mean "slow down", not "forbidden" — retryable.
-const RETRYABLE_403_REASONS = new Set([
-  "rateLimitExceeded",
-  "userRateLimitExceeded",
-  "quotaExceeded",
-  "dailyLimitExceeded",
-]);
-
 const GOOGLE_WRITE_ERROR_POLICY: ProviderWriteErrorPolicy = {
   status: googleStatus,
   cause: googleFailureCause,
@@ -677,6 +668,22 @@ function classifyGoogle400(
   });
 }
 
+// Every Google write catch triages the same way: a 400 is Google declining
+// this particular change (logged with its `errors[]` entries and the request's
+// top-level body keys), anything else falls through to the shared table. One
+// funnel keeps the four call sites from drifting on which statuses get the 400
+// treatment.
+function classifyWriteFailure(
+  error: unknown,
+  declinedMessage: string,
+  context: { operation: string; requestBodyKeys: readonly string[] },
+): ProviderWriteError {
+  if (googleStatus(error) === 400) {
+    return classifyGoogle400(error, declinedMessage, context);
+  }
+  return classifyWriteError(error);
+}
+
 function classifyWriteError(error: unknown): ProviderWriteError {
   // An already-classified error (e.g. a missing-identity result) must not be
   // re-wrapped as transient just because it carries no HTTP status.
@@ -692,7 +699,7 @@ function classifyWriteError(error: unknown): ProviderWriteError {
   }
   // A quota 403 is retryable. Every other 403 falls through to the shared
   // table, which reads it as a calendar this authorization cannot write.
-  if (googleStatus(error) === 403 && hasRetryable403Reason(error)) {
+  if (googleStatus(error) === 403 && hasGoogleRateLimitReason(error)) {
     return new ProviderWriteError(
       "transient",
       "Google rate limited the write",
@@ -704,17 +711,6 @@ function classifyWriteError(error: unknown): ProviderWriteError {
 
 function isNotFound(error: unknown): boolean {
   return isNotFoundStatus(googleStatus(error));
-}
-
-function hasRetryable403Reason(error: unknown): boolean {
-  const errors = (
-    error as {
-      response?: { data?: { error?: { errors?: Array<{ reason?: string }> } } };
-    }
-  )?.response?.data?.error?.errors;
-  return Boolean(
-    errors?.some((e) => e.reason && RETRYABLE_403_REASONS.has(e.reason)),
-  );
 }
 
 // Google event ids must be base32hex (0-9, a-v), 5-1024 chars. A Compass

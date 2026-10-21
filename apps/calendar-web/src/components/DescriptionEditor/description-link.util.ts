@@ -6,6 +6,8 @@ import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 
 const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
 export const DESCRIPTION_LINK_SHORTCUT_COUNT = 9;
+/** Inline space reserved after each link for digit keycaps (matches c-description-link-hints). */
+export const DESCRIPTION_LINK_HINT_SLOT_PX = 28;
 
 const LINK_SELECTOR = "a[href]";
 
@@ -18,6 +20,14 @@ export const displayHostForDescriptionLink = (url: string): string => {
   }
 };
 
+const looksLikeBareUrlLabel = (value: string): boolean =>
+  value.startsWith("http://") ||
+  value.startsWith("https://") ||
+  value.startsWith("www.");
+
+const stripTrailingLinkPunctuation = (value: string): string =>
+  value.replace(/[.,)>]+$/, "");
+
 /** True when the visible label is the URL itself (autolink or provider HTML). */
 export const shouldShortenDescriptionLinkLabel = (
   text: string,
@@ -28,26 +38,17 @@ export const shouldShortenDescriptionLinkLabel = (
   if (trimmed.includes(" ")) return false;
   try {
     const parsed = new URL(href);
-    const withoutTrail = (value: string) => value.replace(/[.,)>]+$/, "");
-    const normalizedHref = withoutTrail(parsed.href);
-    const normalizedText = withoutTrail(trimmed);
+    const normalizedHref = stripTrailingLinkPunctuation(parsed.href);
+    const normalizedText = stripTrailingLinkPunctuation(trimmed);
     if (
       normalizedText === normalizedHref ||
-      normalizedText === withoutTrail(href)
+      normalizedText === stripTrailingLinkPunctuation(href)
     ) {
       return true;
     }
-    return (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.startsWith("www.")
-    );
+    return looksLikeBareUrlLabel(trimmed);
   } catch {
-    return (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.startsWith("www.")
-    );
+    return looksLikeBareUrlLabel(trimmed);
   }
 };
 

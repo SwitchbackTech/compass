@@ -355,7 +355,7 @@ export const handleError = (
     const message = mutationToastMessage(mutationError, context.provider);
 
     // The backend already decided whether the same request could succeed
-    // (RETRYABLE_BY_CODE in event.error.ts). When it can, hand the user the
+    // (POLICY_BY_CODE in event.error.ts). When it can, hand the user the
     // retry instead of making them redo the edit. Retrying is safe: the
     // command's idempotency key is a hash of the payload, so a replay
     // dedupes rather than applying twice.

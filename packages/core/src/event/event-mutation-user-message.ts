@@ -1,7 +1,7 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 
 /** User-facing calendar product names for provider save failures. */
-export const PROVIDER_CALENDAR_PRODUCT_NAME: Record<ProviderKind, string> = {
+const PROVIDER_CALENDAR_PRODUCT_NAME: Record<ProviderKind, string> = {
   google: "Google Calendar",
   microsoft: "Microsoft Calendar",
   apple: "Apple Calendar",

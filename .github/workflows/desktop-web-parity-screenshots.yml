@@ -3,12 +3,15 @@ name: Desktop web parity screenshots
 # Captures the same Compass surfaces on macOS (XCUITest) and web (Playwright),
 # then composes side-by-side PNGs for parity review. Re-run after each desktop
 # UI PR via workflow_dispatch.
+#
+# On pull requests it runs only when the PR carries the `parity-screenshots`
+# label. It used to run on every PR touching apps/calendar-web, which started a
+# macOS capture (the scarce runner) for web-only changes; that was about a third
+# of all macOS minutes. Add the label to a desktop UI PR to get the comparison.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "cursor/desktop-parity-screenshots-2ef3"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - "apps/calendar-macos/CompassUI/**"
       - "apps/calendar-macos/CompassUITests/**"
@@ -27,6 +30,7 @@ concurrency:
 
 jobs:
   web-capture:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'parity-screenshots') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -53,6 +57,7 @@ jobs:
           retention-days: 30
 
   macos-capture:
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'parity-screenshots') }}
     runs-on: macos-latest
     timeout-minutes: 45
     steps:
@@ -64,7 +69,11 @@ jobs:
       - name: Capture macOS parity surfaces
         run: bash .github/scripts/record-macos-parity-captures.sh
 
+      # Upload even when the script's post-capture checks fail (for example the
+      # title-bar traffic-light check): the PNGs it already wrote are what you
+      # need to see why it failed, and to review the surfaces that did capture.
       - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
         with:
           name: desktop-parity-macos
           path: build/desktop-parity/macos
@@ -73,6 +82,7 @@ jobs:
 
   compose:
     needs: [web-capture, macos-capture]
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'parity-screenshots') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

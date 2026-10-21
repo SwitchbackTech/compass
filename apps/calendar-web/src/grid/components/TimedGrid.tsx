@@ -155,9 +155,8 @@ export const TimedGrid: FC<TimedGridProps> = ({
             {...{ [DATA_TIMED_GRID_ROW]: "true" }}
           />
         ))}
+        {eventsLayer}
       </div>
-
-      {eventsLayer}
     </ScrollableRegion>
   );
 };

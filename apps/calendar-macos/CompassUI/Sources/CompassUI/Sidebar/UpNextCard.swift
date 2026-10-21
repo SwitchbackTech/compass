@@ -20,10 +20,12 @@ struct UpNextCard: View {
                         .font(.rubik(12))
                         .foregroundStyle(theme.accentColor)
                         .allowsHitTesting(false)
+                        .padding(.trailing, 32)
                     Text(upNext.title)
                         .font(.rubik(14, weight: .medium))
                         .foregroundStyle(theme.textColor)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                         .allowsHitTesting(false)
                     if state.conferenceURL != nil {
                         Button { model.joinUpNextMeeting() } label: {
@@ -39,7 +41,7 @@ struct UpNextCard: View {
                         .accessibilityLabel("Join \(upNext.title)")
                     }
                 }
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background {
@@ -58,11 +60,13 @@ struct UpNextCard: View {
                 }
                 .onHover { isHovered = $0 }
                 .accessibilityIdentifier("compass-native-up-next-card")
+                // Web leaves the anchor unmounted when Up next is empty, so no chip.
+                .pageJumpChipAnchor(id: "up-next")
             } else {
                 Text("All clear")
                     .font(.rubik(14, weight: .medium))
                     .foregroundStyle(theme.textMutedColor)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 6)
                     .background(theme.surfaceColor)

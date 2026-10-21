@@ -1,10 +1,11 @@
 import { type gSchema$Event } from "@core/types/gcal";
 import { redactedCause } from "@sync/safety/redact-error";
 
-// Shared triage primitives for googleapis/gaxios failures, used by the read,
-// discovery, and watch paths (the writer keeps its own narrower 403 set).
+// Shared triage primitives for googleapis/gaxios failures. Quota/rate-limit
+// reasons are retryable on writes and contact search; backend/internal faults
+// are transient on reads but not treated as a write-side "slow down".
 
-export type GoogleErrorEntry = {
+type GoogleErrorEntry = {
   domain?: string;
   reason?: string;
   message?: string;
@@ -33,20 +34,7 @@ function googleErrorEntriesRaw(error: unknown): unknown[] {
   return [...(fromBody ?? []), ...(fromError ?? [])];
 }
 
-// Google's machine-readable reasons for a failed call (e.g. "notFound",
-// "rateLimitExceeded"), from the standard error body; googleapis may put the
-// errors array on the response body OR on the error object itself — check
-// both. Response-derived only.
-export function googleErrorReasons(error: unknown): string[] {
-  const reasons: string[] = [];
-  for (const entry of googleErrorEntriesRaw(error)) {
-    const reason = (entry as { reason?: unknown })?.reason;
-    if (typeof reason === "string") reasons.push(reason);
-  }
-  return reasons;
-}
-
-export function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
+function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
   const entries: GoogleErrorEntry[] = [];
   for (const raw of googleErrorEntriesRaw(error)) {
     const entry = raw as {
@@ -63,6 +51,16 @@ export function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
     });
   }
   return entries;
+}
+
+// Google's machine-readable reasons for a failed call (e.g. "notFound",
+// "rateLimitExceeded"), from the standard error body; googleapis may put the
+// errors array on the response body OR on the error object itself — check
+// both. Response-derived only.
+export function googleErrorReasons(error: unknown): string[] {
+  return googleErrorEntries(error).flatMap((entry) =>
+    entry.reason === undefined ? [] : [entry.reason],
+  );
 }
 
 /** Top-level keys on a Google request body, for logs only (no values/PII). */
@@ -107,18 +105,26 @@ export function summarizeGoogleEventFieldsForLog(item: gSchema$Event): string {
   ].join(", ");
 }
 
-// Reasons Google's 403 can carry for a quota/rate problem rather than a
-// genuine permission refusal — status alone cannot tell them apart. Without
-// this, a momentary quota blip would settle a job to polling (or a durable
-// failure) instead of retrying.
-export const GOOGLE_TRANSIENT_REASONS = [
+// Quota/rate 403s mean "slow down", not "forbidden".
+export const GOOGLE_RATE_LIMIT_REASONS = [
   "rateLimitExceeded",
   "userRateLimitExceeded",
   "quotaExceeded",
   "dailyLimitExceeded",
+];
+
+// Read-path transients also include Google's own backend/internal faults.
+export const GOOGLE_TRANSIENT_REASONS = [
+  ...GOOGLE_RATE_LIMIT_REASONS,
   "backendError",
   "internalError",
 ];
+
+export function hasGoogleRateLimitReason(error: unknown): boolean {
+  return googleErrorReasons(error).some((reason) =>
+    GOOGLE_RATE_LIMIT_REASONS.includes(reason),
+  );
+}
 
 // 429 / 5xx / no HTTP response, plus Google's 403-shaped rate-limit and quota
 // reasons, are the only cases worth burning retries on. Everything else is a

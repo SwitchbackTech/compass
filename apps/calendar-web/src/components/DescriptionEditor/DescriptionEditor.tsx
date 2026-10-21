@@ -16,9 +16,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { openExternalUrl } from "@web/common/utils/browser/open-external-url.util";
 import { DescriptionEditorLinkChrome } from "@web/components/DescriptionEditor/DescriptionEditorLinkChrome";
 import { DescriptionEditorLinkHints } from "@web/components/DescriptionEditor/DescriptionEditorLinkHints";
+import { DescriptionToolbarButton } from "@web/components/DescriptionEditor/DescriptionToolbarButton";
 import {
   DESCRIPTION_HTML_ALLOWED_ATTR,
   DESCRIPTION_HTML_ALLOWED_TAGS,
@@ -26,6 +26,7 @@ import {
 import {
   findLinkElement,
   focusAdjacentDescriptionLink,
+  openDescriptionLink,
 } from "@web/components/DescriptionEditor/description-link.util";
 import {
   looksLikeHtml,
@@ -98,8 +99,7 @@ interface DescriptionEditorProps {
   suppressLinkShortcutHints?: boolean;
 }
 
-const TOOLBAR_BUTTON_CLASSNAME =
-  "c-focus-ring flex size-6 items-center justify-center rounded text-text-muted hover:bg-border aria-pressed:bg-border aria-pressed:text-text";
+const TOOLBAR_ICON_SIZE = 14;
 
 const DescriptionListSelectionExtension = Extension.create({
   name: "descriptionListSelection",
@@ -116,13 +116,6 @@ const DescriptionListSelectionExtension = Extension.create({
     };
   },
 });
-
-/** Keep the contenteditable focused so the next keystroke applies inside it. */
-const keepEditorFocusedOnToolbarPress = (
-  event: MouseEvent<HTMLButtonElement>,
-) => {
-  event.preventDefault();
-};
 
 export const DescriptionEditor = ({
   value,
@@ -230,14 +223,19 @@ export const DescriptionEditor = ({
   const editorRoot =
     editor?.view.dom instanceof HTMLElement ? editor.view.dom : null;
 
+  // Booking descriptions opt out of the hint affordances entirely; everything
+  // else shows them only while the editor is blurred, so bare digits and the
+  // reserved inline slots belong to one owner at a time. Derived once here:
+  // the keycap chips, the digit shortcut, and the slot-reserving class have to
+  // agree, or a chip renders for a digit nothing is listening to.
+  const linkHintsEnabled = !suppressLinkShortcutHints;
+  const linkHintsVisible = linkHintsEnabled && !isFocused;
+
   useDescriptionEditorCopyLinkShortcut(editor, editorRoot, editable);
   useDescriptionEditorOpenLinkAtCaretShortcut(editor, editorRoot, editable);
-  useDescriptionLinkDigitShortcut(
-    editorRoot,
-    !isFocused && !suppressLinkShortcutHints,
-  );
+  useDescriptionLinkDigitShortcut(editorRoot, linkHintsVisible);
 
-  useDescriptionLinkPresentation(editor, editorRoot, true, isFocused);
+  useDescriptionLinkPresentation(editor, editorRoot, isFocused);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
@@ -280,17 +278,14 @@ export const DescriptionEditor = ({
   };
 
   const onDescriptionClickCapture = (event: MouseEvent<HTMLDivElement>) => {
-    if (!editable) return;
+    if (!editable || !editorRoot) return;
     if (!(event.metaKey || event.ctrlKey) || event.button !== 0) return;
 
-    const target = event.target;
-    if (!(target instanceof HTMLElement)) return;
-
-    const link = target.closest("a");
+    const link = findLinkElement(editorRoot, event.target);
     if (!link?.href) return;
 
     event.preventDefault();
-    openExternalUrl(link.href);
+    openDescriptionLink(link.href);
   };
 
   if (!editor) return null;
@@ -306,61 +301,50 @@ export const DescriptionEditor = ({
           role="toolbar"
           aria-label="Description formatting"
         >
-          <button
-            type="button"
-            aria-label="Bold"
-            aria-pressed={activeMarks.bold}
-            className={TOOLBAR_BUTTON_CLASSNAME}
-            onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => editor.chain().focus().toggleBold().run()}
+          <DescriptionToolbarButton
+            label="Bold"
+            pressed={activeMarks.bold}
+            onPress={() => editor.chain().focus().toggleBold().run()}
           >
-            <TextBIcon size={14} weight="bold" />
-          </button>
-          <button
-            type="button"
-            aria-label="Italic"
-            aria-pressed={activeMarks.italic}
-            className={TOOLBAR_BUTTON_CLASSNAME}
-            onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
+            <TextBIcon size={TOOLBAR_ICON_SIZE} weight="bold" />
+          </DescriptionToolbarButton>
+          <DescriptionToolbarButton
+            label="Italic"
+            pressed={activeMarks.italic}
+            onPress={() => editor.chain().focus().toggleItalic().run()}
           >
-            <TextItalicIcon size={14} weight="bold" />
-          </button>
-          <button
-            type="button"
-            aria-label="Numbered list"
-            aria-pressed={activeMarks.orderedList}
-            className={TOOLBAR_BUTTON_CLASSNAME}
-            onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => toggleDescriptionList(editor, "ordered")}
+            <TextItalicIcon size={TOOLBAR_ICON_SIZE} weight="bold" />
+          </DescriptionToolbarButton>
+          <DescriptionToolbarButton
+            label="Numbered list"
+            pressed={activeMarks.orderedList}
+            onPress={() => toggleDescriptionList(editor, "ordered")}
           >
-            <ListNumbersIcon size={14} weight="bold" />
-          </button>
-          <button
-            type="button"
-            aria-label="Bullet list"
-            aria-pressed={activeMarks.bulletList}
-            className={TOOLBAR_BUTTON_CLASSNAME}
-            onMouseDown={keepEditorFocusedOnToolbarPress}
-            onClick={() => toggleDescriptionList(editor, "bullet")}
+            <ListNumbersIcon size={TOOLBAR_ICON_SIZE} weight="bold" />
+          </DescriptionToolbarButton>
+          <DescriptionToolbarButton
+            label="Bullet list"
+            pressed={activeMarks.bulletList}
+            onPress={() => toggleDescriptionList(editor, "bullet")}
           >
-            <ListBulletsIcon size={14} weight="bold" />
-          </button>
+            <ListBulletsIcon size={TOOLBAR_ICON_SIZE} weight="bold" />
+          </DescriptionToolbarButton>
         </div>
       )}
       <EditorContent
         editor={editor}
         className={classNames(
           "c-rich-text relative w-full text-sm text-text",
+          linkHintsEnabled && "c-description-link-hints",
           !editable && "cursor-default",
         )}
         onKeyDown={handleDescriptionKeyDown}
       />
       <DescriptionEditorLinkHints
         editorRoot={editorRoot}
-        visible={!isFocused && !suppressLinkShortcutHints}
+        visible={linkHintsVisible}
       />
-      {!suppressLinkShortcutHints && (
+      {linkHintsEnabled && (
         <DescriptionEditorLinkChrome editorRoot={editorRoot} />
       )}
       <Divider color={underlineColor} toggled={isFocused} />

@@ -1,12 +1,12 @@
 import { type MutableRefObject } from "react";
 import {
   civilDayLengthMinutes,
-  minutesFromCivilMidnight,
+  gridMinutesFromCivilMidnight,
   startOfCivilDay,
 } from "@core/util/date/civil-day";
 import dayjs from "@core/util/date/dayjs";
 import { roundToPrev } from "@web/common/utils/round/round.util";
-import { GRID_TIME_STEP } from "@web/grid/grid.constants";
+import { GRID_TIME_STEP, timedGridTopPx } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
 import {
   type GridMeasurements,
@@ -46,7 +46,7 @@ export const useGridCoordinates = (
 
     const scrollTop = mainGridRef.current?.scrollTop || 0;
     const gridY = y - measurements.mainGrid.top + scrollTop;
-    const decimalMinute = (gridY / measurements.hourHeight) * 60;
+    const decimalMinute = 60 + (gridY / measurements.hourHeight) * 60;
     const flooredMinute = roundToPrev(decimalMinute, GRID_TIME_STEP);
 
     return Math.max(0, flooredMinute);
@@ -73,8 +73,8 @@ export const useGridCoordinates = (
 
   const getYByDate = (date: string) => {
     const timeZone = getEffectiveTimeZone();
-    const minutes = minutesFromCivilMidnight(date, timeZone);
-    return measurements.hourHeight * (minutes / 60);
+    const minutes = gridMinutesFromCivilMidnight(date, timeZone);
+    return timedGridTopPx(minutes, measurements.hourHeight);
   };
 
   return {

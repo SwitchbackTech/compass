@@ -56,6 +56,9 @@ describe("gridMinutesFromCivilMidnight", () => {
     expect(
       gridMinutesFromCivilMidnight("2026-11-01T01:30:00-07:00", denver),
     ).toBe(150);
+    expect(
+      gridMinutesFromCivilMidnight("2026-11-01T04:00:00-07:00", denver),
+    ).toBe(240);
   });
 });
 

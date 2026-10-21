@@ -399,7 +399,8 @@ public final class NativeCalendarRootModel {
         let today = referenceNow
         viewStore.setAnchorDate(CalendarWindowMath.sundayWeekViewStart(containing: today))
         monthPickerMonth = today
-        levelsStore.pinShortcutTip(id: "focus-shift-hold")
+        draftStore.discard()
+        levelsStore.pinShortcutTip(id: "focus-page-jump")
         pendingScroll = .scrollToNowOrPulse
         rebuildPresentation()
         scheduleRefreshVisibleRange()
@@ -573,7 +574,7 @@ public final class NativeCalendarRootModel {
     /// Records a shortcut invocation for the levels/tips telemetry, if the id
     /// belongs to a section. Every shortcut handler funnels through here so the
     /// `section(for:)` lookup lives in one place.
-    func recordShortcut(_ id: ShortcutId) {
+    public func recordShortcut(_ id: ShortcutId) {
         guard let section = ShortcutTelemetrySection.section(for: id) else { return }
         levelsStore.recordShortcutInvocation(id, section: section)
         noteShortcutEngagementIfAnonymous()
@@ -765,11 +766,19 @@ public final class NativeCalendarRootModel {
         showPointerHint(for: .gridScroll, registry: registry)
     }
 
+    /// Web `view-select` page jump opens the view dropdown, like clicking it.
+    public var isViewSwitcherOpen = false
+
     public func focusPageJump(digit: Character) {
         guard let target = focusStore.pageJumpTargets.first(where: { $0.digit == String(digit) }) else {
             return
         }
         switch target.id {
+        case "view-select":
+            isViewSwitcherOpen = true
+        case "up-next":
+            // Web focuses the Up next card so Enter opens it; with no event the digit does nothing.
+            openUpNextEvent()
         case "month-picker":
             monthPickerMonth = viewStore.anchorDate
         case "calendars":

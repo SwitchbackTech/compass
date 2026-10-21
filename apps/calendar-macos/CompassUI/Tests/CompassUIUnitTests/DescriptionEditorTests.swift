@@ -116,6 +116,85 @@ final class DescriptionEditorTests: XCTestCase {
         XCTAssertTrue(font.map { NSFontManager.shared.traits(of: $0).contains(.boldFontMask) } ?? false)
     }
 
+    func testBlurredPresentationShortensAutolinkLabelsWithoutChangingHTML() {
+        var html = "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>"
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
+        coordinator.textView = editor
+        coordinator.container = container
+        editor.delegate = coordinator
+        coordinator.load(html: html, resetKey: "event")
+        coordinator.wasDescriptionFocused = true
+        coordinator.syncPresentationOnFocusChange(isFocused: false, html: html, resetKey: "event")
+
+        XCTAssertEqual(editor.string, "example.com")
+        XCTAssertEqual(
+            editor.textStorage?.attribute(.toolTip, at: 0, effectiveRange: nil) as? String,
+            "https://example.com/path"
+        )
+
+        coordinator.syncPresentationOnFocusChange(isFocused: true, html: html, resetKey: "event")
+        XCTAssertEqual(html, "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>")
+    }
+
+    func testOpenDescriptionLinkUsesDocumentOrder() {
+        let editor = DescriptionTextView()
+        editor.textStorage?.setAttributedString(
+            NSAttributedString(string: "ab", attributes: [
+                .link: URL(string: "https://one.example/a")!,
+            ])
+        )
+        editor.textStorage?.append(
+            NSAttributedString(string: "cd", attributes: [
+                .link: URL(string: "https://two.example/b")!,
+            ])
+        )
+        XCTAssertTrue(editor.openDescriptionLink(at: 1))
+    }
+
+    func testBookingManagementLinksSkipHintSlotAttachments() {
+        let cancel = "https://compass.invalid/meet/cancel/reservation-1?token=secret"
+        let reschedule = "https://compass.invalid/meet/reschedule/reservation-1?token=secret"
+        let html =
+            "<p><a href=\"\(cancel)\">Cancel</a> <a href=\"\(reschedule)\">Reschedule</a></p>"
+        var bound = html
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { bound }, set: { bound = $0 }))
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
+        coordinator.textView = editor
+        coordinator.container = container
+        coordinator.suppressLinkHintSlots = true
+        coordinator.load(html: html, resetKey: "event")
+        coordinator.syncLinkHintSlotsSilently()
+        XCTAssertEqual(editor.string, "Cancel Reschedule")
+        XCTAssertNotNil(BookingEventLinks.parse(bound))
+    }
+
+    func testPlainBoldDescriptionSaveReopenCycleDoesNotShowLinkHintOverlay() {
+        var html = "<p><strong>Formatted note</strong></p>"
+        let coordinator = DescriptionEditorView.Coordinator(html: Binding(get: { html }, set: { html = $0 }))
+        let container = DescriptionEditorContainerView()
+        let editor = container.textView
+        coordinator.textView = editor
+        coordinator.container = container
+        editor.delegate = coordinator
+
+        coordinator.load(html: html, resetKey: "demo-morning-standup")
+        coordinator.syncPresentationOnFocusChange(isFocused: false, html: html, resetKey: "demo-morning-standup")
+        XCTAssertFalse(
+            coordinator.shouldShowLinkHintOverlay(isFocused: false, html: html, isEditable: true)
+        )
+        container.updateLinkHintOverlay(visible: false)
+        container.layoutSubtreeIfNeeded()
+
+        coordinator.load(html: html, resetKey: "demo-morning-standup")
+        coordinator.syncPresentationOnFocusChange(isFocused: true, html: html, resetKey: "demo-morning-standup")
+        XCTAssertEqual(editor.string, "Formatted note")
+        coordinator.teardown()
+        container.teardownLinkHintOverlay()
+    }
+
     func testReadOnlyEditorRejectsFormatting() {
         let editor = DescriptionTextView()
         editor.textStorage?.setAttributedString(NSAttributedString(string: "Read only"))

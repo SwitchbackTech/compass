@@ -31,7 +31,7 @@ python3 .github/scripts/compose-desktop-parity-shots.py \
 
 Workflow: [`.github/workflows/desktop-web-parity-screenshots.yml`](../../.github/workflows/desktop-web-parity-screenshots.yml)
 
-- **workflow_dispatch** or PRs touching desktop UI / `e2e/parity/`
+- **workflow_dispatch**, or a PR touching desktop UI / `e2e/parity/` that carries the `parity-screenshots` label (without the label the workflow is skipped, so web-only and unrelated PRs do not use a macOS runner)
 - Artifacts: `desktop-parity-web`, `desktop-parity-macos`, `desktop-parity-compare`
 
 Surfaces: `week-grid`, `mini-calendar`, `event-form`, `command-palette`, `settings`, `onboarding-welcome`.

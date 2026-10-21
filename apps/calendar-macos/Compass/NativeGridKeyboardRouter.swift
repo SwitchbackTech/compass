@@ -467,6 +467,32 @@ final class NativeGridKeyboardRouter {
         if matchesBinding(keyEvent, id: .editCopyDescriptionLink) {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
+        if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
+            guard isDescriptionFormEditorFocused() else { return false }
+            let opened = NSApp.sendAction(
+                NSSelectorFromString("openDescriptionLinkAtCaret:"),
+                to: nil,
+                from: nil
+            )
+            if opened { model.recordShortcut(.editOpenDescriptionLink) }
+            return opened
+        }
+        if keyEvent.modifiers.isEmpty,
+            case .character(let char) = keyEvent.key,
+            let digit = Int(String(char)),
+            (1...9).contains(digit),
+            !isEditableNonDescriptionTextInputFocused()
+        {
+            let opened = NSApp.sendAction(
+                NSSelectorFromString("openDescriptionLinkDigit:"),
+                to: nil,
+                from: NSNumber(value: digit - 1)
+            )
+            if opened {
+                model.recordShortcut(.editOpenDescriptionLinkDigit)
+                return true
+            }
+        }
         if keyEvent.modifiers == [.command], keyEvent.key == .named(.enter) {
             Task { await model.saveDraft() }
             return true
@@ -517,6 +543,18 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    private func isDescriptionFormEditorFocused() -> Bool {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView else { return false }
+        return textView.accessibilityIdentifier() == "compass-event-form-description"
+    }
+
+    private func isEditableNonDescriptionTextInputFocused() -> Bool {
+        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView, textView.isEditable else {
+            return false
+        }
+        return textView.accessibilityIdentifier() != "compass-event-form-description"
     }
 
     private func matchesBinding(_ keyEvent: KeyEvent, id: ShortcutId) -> Bool {

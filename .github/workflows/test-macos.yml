@@ -12,12 +12,12 @@ on:
   # trigger the required `macos` check never reports on merge_group and the
   # queue stalls.
   merge_group:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/calendar-macos/**"
-      - ".github/workflows/test-macos.yml"
+  # No `push: main` trigger. The merge queue already tested exactly the tree
+  # that lands (squash), release-macos-dev.yml builds every main push touching
+  # the app, and the agent-loop merge guard does not read this workflow. A
+  # post-merge run was a duplicate full UI suite (about 15 macOS minutes) per
+  # merged PR, and it queued behind the PRs still waiting to merge.
+  workflow_dispatch:
 
 permissions:
   contents: read
