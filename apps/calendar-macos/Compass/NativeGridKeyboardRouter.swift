@@ -583,7 +583,7 @@ final class NativeGridKeyboardRouter {
         }
 
         if keyEvent.modifiers.isEmpty, case .character(let digit) = keyEvent.key, digit.isNumber {
-            if model.eventJumpSelection.modeActive, model.focusEventJumpIfAvailable(digit: digit) {
+            if model.eventJumpSelection.modeActive, model.handleEventJumpDigit(digit) {
                 return true
             }
             model.handleQuickTimeDigit(digit)

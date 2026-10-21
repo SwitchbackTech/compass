@@ -131,6 +131,7 @@ public final class NativeCalendarRootModel {
     var quickAddPanelSession: QuickAddPanelSession?
     public internal(set) var quickAddError: String?
     var blockPartyModHoldTask: Task<Void, Never>?
+    var eventJumpCommitTask: Task<Void, Never>?
 
     public var referenceNow: Date {
         demoPresentation?.referenceNow ?? now()
@@ -791,20 +792,6 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    public func focusEventJump(digit: Character) {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else { return }
-        focusEvent(eventId: hint.eventId)
-    }
-
-    @discardableResult
-    public func focusEventJumpIfAvailable(digit: Character) -> Bool {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else {
-            return false
-        }
-        focusEvent(eventId: hint.eventId)
-        return true
-    }
-
     public func consumePendingScroll() -> TimeGridScrollRequest? {
         defer { pendingScroll = nil }
         return pendingScroll
@@ -1237,16 +1224,39 @@ public final class NativeCalendarRootModel {
         )
     }
 
+    /// Web `ShiftHintOverlay`: W1, SU2, ... on every grid card, narrowed to
+    /// the typed day prefix.
     func buildEventJumpHints() -> [EventJumpChipHint] {
-        let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        let timed = focusLayoutCards.filter { !$0.isAllDay }.sorted { $0.frame.top < $1.frame.top }
-        return timed.prefix(digits.count).enumerated().map { index, card in
-            EventJumpChipHint(
+        let cards = Dictionary(focusLayoutCards.map { ($0.eventId, $0) }, uniquingKeysWith: { first, _ in first })
+        let assignments = DayJumpKeys.filter(dayJumpAssignments(), prefix: eventJumpSelection.dayJumpBuffer)
+        return assignments.compactMap { assignment in
+            cards[assignment.eventId].map { card in
+                EventJumpChipHint(
+                    eventId: assignment.eventId,
+                    label: assignment.hint.uppercased(),
+                    frame: card.frame,
+                    isAllDay: card.isAllDay
+                )
+            }
+        }
+    }
+
+    func dayJumpAssignments() -> [DayJumpKeys.Assignment] {
+        let eventsById = Dictionary(loadedEvents.map { ($0.id.rawValue, $0) }, uniquingKeysWith: { first, _ in first })
+        var seen = Set<String>()
+        let targets: [DayJumpKeys.Target] = focusLayoutCards.compactMap { card in
+            guard seen.insert(card.eventId).inserted, let event = eventsById[card.eventId] else { return nil }
+            let dayKey = eventJumpDayKey(for: event)
+            guard let day = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { return nil }
+            return DayJumpKeys.Target(
                 eventId: card.eventId,
-                label: digits[index],
-                frame: card.frame
+                start: eventStart(event),
+                isAllDay: card.isAllDay,
+                dayKey: dayKey,
+                weekday: EffectiveTimeZone.calendar.component(.weekday, from: day) - 1
             )
         }
+        return DayJumpKeys.assign(targets)
     }
 
     public func visibleCalendars() -> [CompassCalendar] {
