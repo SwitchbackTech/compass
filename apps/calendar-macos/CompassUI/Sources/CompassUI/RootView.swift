@@ -16,8 +16,9 @@ public struct RootView: View {
 
     public var body: some View {
         ZStack(alignment: .top) {
-            HStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 0) {
                 VStack(spacing: 0) {
+                    titleBarChrome
                     if let banner = model.connectionBanner {
                         CalendarConnectionBannerView(banner: banner) {
                             model.runConnectionBannerAction()
@@ -47,7 +48,6 @@ public struct RootView: View {
                                 : 0
                         )
                 }
-                .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 // Web: Day/Week keep the panel mounted for event details even
                 // when the sidebar preference is closed.
                 if model.isSidebarOpen || model.isEventFormVisible {
@@ -55,11 +55,8 @@ public struct RootView: View {
                         sidebarResizeHandle
                         sidebar
                     }
-                    .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset)
                 }
             }
-            titleBarChrome
-                .frame(maxWidth: .infinity, alignment: .leading)
             pointerHintLayer
             GridFocusAccessibilityOverlay(focusedLabel: model.gridFocusAccessibilityLabel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -331,55 +328,39 @@ public struct RootView: View {
 
     /// Unified title bar: nav and view switcher beside traffic lights; sidebar toggle on the right.
     private var titleBarChrome: some View {
-        ZStack(alignment: .top) {
-            theme.backgroundColor
-                .frame(maxWidth: .infinity)
-                .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
-                .accessibilityIdentifier("compass-native-header")
+        HStack(spacing: 12) {
             HStack(spacing: 12) {
-                HStack(spacing: 12) {
-                    titleBarNavButton(
-                        label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
-                        icon: .caretLeft
-                    ) {
-                        model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
-                    }
-                    titleBarNavButton(
-                        label: model.viewStore.view == .life ? "Next life variation" : "Next",
-                        icon: .caretRight
-                    ) {
-                        model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
-                    }
-                    ViewSwitcherView(model: model)
-                }
-                .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
-
-                Spacer(minLength: 0)
-
                 titleBarNavButton(
-                    label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-                    icon: .sidebarSimple,
-                    mirrored: true
+                    label: model.viewStore.view == .life ? "Previous life variation" : "Previous",
+                    icon: .caretLeft
                 ) {
-                    model.isSidebarOpen.toggle()
+                    model.handleShortcut(model.viewStore.view == .life ? .navLifePrev : .navPrevious)
                 }
-                .padding(.trailing, 20)
-                .compositingGroup()
+                titleBarNavButton(
+                    label: model.viewStore.view == .life ? "Next life variation" : "Next",
+                    icon: .caretRight
+                ) {
+                    model.handleShortcut(model.viewStore.view == .life ? .navLifeNext : .navNext)
+                }
+                ViewSwitcherView(model: model)
             }
-            .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
-        }
-        .frame(maxWidth: .infinity, alignment: .top)
-        .frame(width: mainTrackColumnWidth, alignment: .topLeading)
-    }
 
-    /// Main calendar column width during parity capture (excludes open sidebar chrome).
-    private var mainTrackColumnWidth: CGFloat? {
-        guard UITestLaunchPolicy.isParityCapture else { return nil }
-        let sidebarChrome: CGFloat =
-            (model.isSidebarOpen || model.isEventFormVisible)
-            ? sidebarDividerWidth + model.sidebarWidth
-            : 0
-        return CGFloat(ParityCaptureGeometry.viewportWidth) - sidebarChrome
+            Spacer(minLength: 0)
+
+            titleBarNavButton(
+                label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
+                icon: .sidebarSimple,
+                mirrored: true
+            ) {
+                model.isSidebarOpen.toggle()
+            }
+        }
+        .padding(.leading, MacTitleBarChromeMetrics.trafficLightLeadingInset)
+        .padding(.trailing, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
+        .background(theme.backgroundColor)
+        .accessibilityIdentifier("compass-native-header")
     }
 
     private var content: some View {
