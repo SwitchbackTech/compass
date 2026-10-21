@@ -133,7 +133,7 @@ public final class DescriptionTextView: NSTextView {
 
     var onLinkCopied: (() -> Void)?
 
-    public override func accessibilityValue() -> Any? {
+    override func accessibilityValue() -> Any? {
         guard let value = super.accessibilityValue() as? String else {
             return super.accessibilityValue()
         }
