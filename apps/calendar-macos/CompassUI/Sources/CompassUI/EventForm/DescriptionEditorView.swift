@@ -128,6 +128,7 @@ struct DescriptionEditorView: NSViewRepresentable {
                 container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
             }
             suppressDelegate = false
+            container?.updateDescriptionPlaceholder()
         }
 
         func syncLinkHintSlotsSilently() {
@@ -210,6 +211,7 @@ struct DescriptionEditorView: NSViewRepresentable {
             presentationShowsHosts = false
             syncLinkHintSlotsSilently()
             container?.updateControls()
+            container?.updateDescriptionPlaceholder()
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
