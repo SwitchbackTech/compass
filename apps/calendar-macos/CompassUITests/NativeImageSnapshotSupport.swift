@@ -125,15 +125,6 @@ enum NativeImageSnapshotSupport {
         let toggleMaxX = sidebarToggle.frame.maxX - window.frame.minX
         let toggleMinY = sidebarToggle.frame.minY - window.frame.minY
         let toggleMaxY = sidebarToggle.frame.maxY - window.frame.minY
-        if let outDir = parityOutputDirectory {
-            writeToggleProbeBounds(
-                minX: toggleMinX,
-                maxX: toggleMaxX,
-                minY: toggleMinY,
-                maxY: toggleMaxY,
-                in: outDir
-            )
-        }
         let windowWidth = window.frame.width
         // Web: toggle is on the main column's right edge, left of the open sidebar (~345+32).
         let sidebarChrome: CGFloat = 345 + 32
@@ -164,6 +155,15 @@ enum NativeImageSnapshotSupport {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 1.2))
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.5))
+        if let outDir = parityOutputDirectory {
+            writeToggleProbeBounds(
+                minX: toggleMinX,
+                maxX: toggleMaxX,
+                minY: toggleMinY,
+                maxY: toggleMaxY,
+                in: outDir
+            )
+        }
         if let outDir = parityOutputDirectory,
            let windowID = waitForParityWindowId(in: outDir),
            let screencap = screencaptureWindowPNG(windowID: windowID, in: outDir)
