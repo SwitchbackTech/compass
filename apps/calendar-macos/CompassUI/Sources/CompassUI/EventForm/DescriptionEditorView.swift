@@ -51,7 +51,8 @@ struct DescriptionEditorView: NSViewRepresentable {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
         context.coordinator.suppressLinkHintSlots = suppressLinkHintSlots
-        context.coordinator.syncPresentation(isFocused: isFocused, html: html, resetKey: resetKey)
+        context.coordinator.applyInitialBlurPresentationIfNeeded(isFocused: isFocused, html: html)
+        context.coordinator.syncPresentationOnFocusChange(isFocused: isFocused, html: html, resetKey: resetKey)
         container.updateLinkHintOverlay(visible: isEditable && !isFocused && !suppressLinkHintSlots)
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
@@ -136,18 +137,31 @@ struct DescriptionEditorView: NSViewRepresentable {
         }
 
         private var presentationShowsHosts = false
-        private var wasDescriptionFocused = false
+        var wasDescriptionFocused = false
 
-        func syncPresentation(isFocused: Bool, html: String, resetKey: String) {
+        func applyInitialBlurPresentationIfNeeded(isFocused: Bool, html: String) {
+            guard !presentationShowsHosts, !isFocused, !wasDescriptionFocused else { return }
+            guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else { return }
+            suppressDelegate = true
+            textView?.applyHostLinkPresentation()
+            if let textView {
+                container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            }
+            suppressDelegate = false
+            presentationShowsHosts = true
+        }
+
+        func syncPresentationOnFocusChange(isFocused: Bool, html: String, resetKey: String) {
             defer { wasDescriptionFocused = isFocused }
+            guard isFocused != wasDescriptionFocused else { return }
             guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else {
                 presentationShowsHosts = false
                 return
             }
-            if isFocused, !wasDescriptionFocused, presentationShowsHosts {
+            if isFocused, presentationShowsHosts {
                 load(html: html, resetKey: resetKey)
                 presentationShowsHosts = false
-            } else if !isFocused, wasDescriptionFocused, !presentationShowsHosts {
+            } else if !isFocused {
                 suppressDelegate = true
                 textView?.applyHostLinkPresentation()
                 if let textView {

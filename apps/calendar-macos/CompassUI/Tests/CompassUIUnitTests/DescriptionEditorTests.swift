@@ -123,7 +123,8 @@ final class DescriptionEditorTests: XCTestCase {
         coordinator.textView = editor
         editor.delegate = coordinator
         coordinator.load(html: html, resetKey: "event")
-        coordinator.syncPresentation(isFocused: false, html: html, resetKey: "event")
+        coordinator.wasDescriptionFocused = true
+        coordinator.syncPresentationOnFocusChange(isFocused: false, html: html, resetKey: "event")
 
         XCTAssertEqual(editor.string, "example.com")
         XCTAssertEqual(
@@ -131,7 +132,7 @@ final class DescriptionEditorTests: XCTestCase {
             "https://example.com/path"
         )
 
-        coordinator.syncPresentation(isFocused: true, html: html, resetKey: "event")
+        coordinator.syncPresentationOnFocusChange(isFocused: true, html: html, resetKey: "event")
         XCTAssertEqual(html, "<p><a href=\"https://example.com/path\">https://example.com/path</a></p>")
     }
 
