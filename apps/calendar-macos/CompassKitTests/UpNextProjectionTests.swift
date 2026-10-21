@@ -16,29 +16,44 @@ final class UpNextProjectionTests: XCTestCase {
     }
 
     func testFilterGridVisibleEventsDropsHiddenIdsAndCalendars() throws {
-        let visible = try decodeEvent(id: "visible", calendarId: "cal-on")
-        let hiddenId = try decodeEvent(id: "hidden-id", calendarId: "cal-on")
-        let hiddenCal = try decodeEvent(id: "other", calendarId: "cal-off")
+        let calendarOn = "507f1f77bcf86cd799439011"
+        let calendarOff = "507f1f77bcf86cd799439012"
+        let visible = try decodeTimedEvent(
+            id: "visible",
+            calendarId: calendarOn,
+            start: "2026-03-10T10:00:00.000-06:00",
+            end: "2026-03-10T11:00:00.000-06:00")
+        let hiddenId = try decodeTimedEvent(
+            id: "hidden-id",
+            calendarId: calendarOn,
+            start: "2026-03-10T10:00:00.000-06:00",
+            end: "2026-03-10T11:00:00.000-06:00")
+        let hiddenCal = try decodeTimedEvent(
+            id: "other",
+            calendarId: calendarOff,
+            start: "2026-03-10T10:00:00.000-06:00",
+            end: "2026-03-10T11:00:00.000-06:00")
 
         let filtered = UpNextProjection.filterGridVisibleEvents(
             [visible, hiddenId, hiddenCal],
             hiddenEventIds: ["hidden-id"],
-            isCalendarVisible: { $0 == "cal-on" })
+            isCalendarVisible: { $0 == calendarOn })
 
         XCTAssertEqual(filtered.map(\.id.rawValue), ["visible"])
     }
 
     func testSnapshotUsesNextVisibleCurrentEventAfterHiddenFilteredOut() throws {
-        let now = isoDate("2026-03-10T15:00:00.000Z")
-        let hidden = try decodeEvent(
+        let now = isoDate("2026-03-10T21:00:00.000Z")
+        let calendarId = "507f1f77bcf86cd799439011"
+        let hidden = try decodeTimedEvent(
             id: "hidden",
-            calendarId: "cal",
+            calendarId: calendarId,
             title: "Flight",
             start: "2026-03-10T14:50:00.000-06:00",
             end: "2026-03-10T16:00:00.000-06:00")
-        let visible = try decodeEvent(
+        let visible = try decodeTimedEvent(
             id: "visible",
-            calendarId: "cal",
+            calendarId: calendarId,
             title: "Write",
             start: "2026-03-10T14:55:00.000-06:00",
             end: "2026-03-10T16:30:00.000-06:00")
@@ -61,18 +76,13 @@ final class UpNextProjectionTests: XCTestCase {
         XCTAssertFalse(snapshot.isCurrentEvent)
     }
 
-    private func decodeEvent(
+    private func decodeTimedEvent(
         id: String,
         calendarId: String,
         title: String = "Event",
-        start: String? = nil,
-        end: String? = nil
+        start: String,
+        end: String
     ) throws -> Event {
-        let formatter = ISO8601DateFormatter()
-        formatter.timeZone = EffectiveTimeZone.timeZone
-        let startDate = start.map { formatter.date(from: $0) ?? Date() } ?? Date()
-        let endDate = end.map { formatter.date(from: $0) ?? startDate.addingTimeInterval(3600) }
-            ?? startDate.addingTimeInterval(3600)
         let json = """
         {
           "id": "\(id)",
@@ -83,8 +93,8 @@ final class UpNextProjectionTests: XCTestCase {
           "recurrence": { "kind": "single" },
           "schedule": {
             "kind": "timed",
-            "start": "\(formatter.string(from: startDate))",
-            "end": "\(formatter.string(from: endDate))",
+            "start": "\(start)",
+            "end": "\(end)",
             "timeZone": "\(EffectiveTimeZone.identifier)"
           }
         }
