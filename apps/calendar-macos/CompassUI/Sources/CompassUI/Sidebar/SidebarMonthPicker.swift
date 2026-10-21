@@ -14,6 +14,13 @@ public struct SidebarMonthPicker: View {
     /// Web sidebar days are keyboard targets only; the form's date popover
     /// reuses this picker with clickable days.
     public let daysAreClickable: Bool
+    /// Web `captionPicker`: the caption opens a year grid, then a month grid.
+    public let captionPicker: Bool
+    /// Web `minDate` / `maxDate`: days, months, and years outside are disabled.
+    public let minimumDate: Date?
+    public let maximumDate: Date?
+    @State private var captionView: DatePickerCaption.View = .day
+    @State private var yearPageYear = 0
     private let trailingHeader: AnyView?
 
     public init(
@@ -33,6 +40,9 @@ public struct SidebarMonthPicker: View {
         self.focusedDate = focusedDate
         self.today = today
         self.daysAreClickable = daysAreClickable
+        self.captionPicker = false
+        self.minimumDate = nil
+        self.maximumDate = nil
         if let trailingHeader {
             self.trailingHeader = AnyView(trailingHeader())
         } else {
@@ -46,7 +56,10 @@ public struct SidebarMonthPicker: View {
         selectedDate: Date,
         onSelectDate: @escaping (Date) -> Void,
         today: Date = Date(),
-        daysAreClickable: Bool = false
+        daysAreClickable: Bool = false,
+        captionPicker: Bool = false,
+        minimumDate: Date? = nil,
+        maximumDate: Date? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
@@ -55,6 +68,9 @@ public struct SidebarMonthPicker: View {
         self.focusedDate = nil
         self.today = today
         self.daysAreClickable = daysAreClickable
+        self.captionPicker = captionPicker
+        self.minimumDate = minimumDate
+        self.maximumDate = maximumDate
         self.trailingHeader = nil
     }
 
@@ -70,6 +86,9 @@ public struct SidebarMonthPicker: View {
                     if let trailingHeader { trailingHeader }
                 }
             }
+            if captionView != .day {
+                captionGrid
+            } else {
             VStack(spacing: 0) {
                 HStack(spacing: 4) {
                     ForEach(0 ..< 7, id: \.self) { index in
@@ -104,6 +123,7 @@ public struct SidebarMonthPicker: View {
                     }
                 }
             }
+            }
         }
         .frame(height: 252, alignment: .top)
         .accessibilityElement(children: .contain)
@@ -113,14 +133,14 @@ public struct SidebarMonthPicker: View {
 
     private var monthHeader: some View {
         HStack(spacing: 8) {
-            Text(monthTitle)
-                .font(.rubik(14, weight: .medium))
-                .foregroundStyle(theme.textColor)
-                .fixedSize()
-                .frame(minWidth: 64, alignment: .leading)
+            captionTitle
             HStack(spacing: 4) {
-                monthButton("Previous month", symbol: "chevron.left") { shiftMonth(-1) }
-                monthButton("Next month", symbol: "chevron.right") { shiftMonth(1) }
+                monthButton(captionView == .day ? "Previous month" : "Previous years", symbol: "chevron.left") {
+                    navigate(-1)
+                }
+                monthButton(captionView == .day ? "Next month" : "Next years", symbol: "chevron.right") {
+                    navigate(1)
+                }
             }
             // Web "Go to this month": a small circle, hidden on the current month.
             Button {
@@ -135,8 +155,8 @@ public struct SidebarMonthPicker: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Go to this month")
             .help("Go to this month")
-            .opacity(isCurrentMonth ? 0 : 1)
-            .disabled(isCurrentMonth)
+            .opacity(isCurrentMonth || captionView != .day ? 0 : 1)
+            .disabled(isCurrentMonth || captionView != .day)
             Spacer(minLength: 0)
         }
     }
@@ -151,6 +171,8 @@ public struct SidebarMonthPicker: View {
             ? isInSelectedWeek(day)
             : isInRange(day, from: focusedDate ?? selectedDate)
         let ink = weekMode ? selected && isToday : selected
+        let dayAllowed = DatePickerCaption.isDayAllowed(
+            day, minimum: minimumDate, maximum: maximumDate, calendar: calendar)
         return Button {
             onSelectDate(day)
         } label: {
@@ -176,7 +198,8 @@ public struct SidebarMonthPicker: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .allowsHitTesting(daysAreClickable)
+        .allowsHitTesting(daysAreClickable && dayAllowed)
+        .opacity(dayAllowed ? 1 : 0.35)
         .accessibilityLabel(dayAccessibilityLabel(day))
         .accessibilityAddTraits(isInRange(day, from: selectedDate) ? .isSelected : [])
     }
@@ -254,6 +277,128 @@ public struct SidebarMonthPicker: View {
         .buttonStyle(.plain)
         .accessibilityLabel(label)
         .help(label)
+    }
+
+    // MARK: Caption picker (web `captionPicker`)
+
+    private var displayedYear: Int {
+        EffectiveTimeZone.calendar.component(.year, from: displayedMonth)
+    }
+
+    @ViewBuilder
+    private var captionTitle: some View {
+        let label = DatePickerCaption.caption(view: captionView, monthTitle: monthTitle, year: displayedYear)
+        if captionPicker, captionView == .day {
+            Button {
+                yearPageYear = displayedYear
+                captionView = .year
+            } label: {
+                Text(label)
+                    .font(.rubik(14, weight: .medium))
+                    .foregroundStyle(theme.textColor)
+                    .fixedSize()
+                    .padding(.horizontal, 2)
+                    .frame(minWidth: 64, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Choose month and year")
+        } else {
+            Text(label)
+                .font(.rubik(14, weight: .medium))
+                .foregroundStyle(theme.textColor)
+                .fixedSize()
+                .frame(minWidth: 64, alignment: .leading)
+        }
+    }
+
+    /// Chevrons step months on the day grid, 12-year pages on the year grid,
+    /// and single years on the month grid.
+    private func navigate(_ direction: Int) {
+        let calendar = EffectiveTimeZone.calendar
+        switch captionView {
+        case .day:
+            shiftMonth(direction)
+        case .year:
+            yearPageYear += direction * DatePickerCaption.yearsPerPage
+        case .month:
+            if let next = calendar.date(byAdding: .year, value: direction, to: displayedMonth) {
+                displayedMonth = next
+            }
+        }
+    }
+
+    private var captionGrid: some View {
+        let calendar = EffectiveTimeZone.calendar
+        let columns = Array(
+            repeating: GridItem(.flexible(), spacing: 4),
+            count: captionView == .year ? 3 : 4)
+        return LazyVGrid(columns: columns, spacing: 4) {
+            if captionView == .year {
+                ForEach(DatePickerCaption.yearPage(containing: yearPageYear), id: \.self) { year in
+                    captionCell(
+                        label: String(year),
+                        isSelected: year == calendar.component(.year, from: selectedDate),
+                        isAllowed: DatePickerCaption.isYearAllowed(
+                            year, minimum: minimumDate, maximum: maximumDate, calendar: calendar)
+                    ) { chooseYear(year) }
+                }
+            } else {
+                ForEach(1 ... 12, id: \.self) { month in
+                    captionCell(
+                        label: DatePickerCaption.monthLabels[month - 1],
+                        isSelected: displayedYear == calendar.component(.year, from: selectedDate)
+                            && month == calendar.component(.month, from: selectedDate),
+                        isAllowed: DatePickerCaption.isMonthAllowed(
+                            year: displayedYear, month: month,
+                            minimum: minimumDate, maximum: maximumDate, calendar: calendar)
+                    ) { chooseMonth(month) }
+                }
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private func captionCell(
+        label: String, isSelected: Bool, isAllowed: Bool, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.rubik(12, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? theme.backgroundColor : theme.textColor)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .background {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 4).fill(theme.textColor)
+                    }
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!isAllowed)
+        .opacity(isAllowed ? 1 : 0.35)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func chooseYear(_ year: Int) {
+        let calendar = EffectiveTimeZone.calendar
+        var parts = calendar.dateComponents([.month], from: displayedMonth)
+        parts.year = year
+        parts.day = 1
+        parts.hour = 12
+        if let next = calendar.date(from: parts) { displayedMonth = next }
+        captionView = DatePickerCaption.View.year.afterSelect ?? .day
+    }
+
+    private func chooseMonth(_ month: Int) {
+        let calendar = EffectiveTimeZone.calendar
+        var parts = DateComponents()
+        parts.year = displayedYear
+        parts.month = month
+        parts.day = 1
+        parts.hour = 12
+        if let next = calendar.date(from: parts) { displayedMonth = next }
+        captionView = DatePickerCaption.View.month.afterSelect ?? .day
     }
 
     private func dayNumber(_ date: Date) -> String {
