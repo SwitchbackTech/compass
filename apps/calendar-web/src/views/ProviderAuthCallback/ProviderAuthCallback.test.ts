@@ -1,5 +1,6 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { AuthApi } from "@web/api/auth.api";
+import { session } from "@web/auth/compass/session/Session";
 import { PROVIDER_AUTH_SCOPES_REQUIRED } from "@web/auth/providers/authorization/provider-authorization.constants";
 import {
   readProviderAuthorizationIntent,
@@ -11,7 +12,15 @@ import {
   useMissingPermissionsStore,
 } from "@web/auth/providers/missing-permissions.store";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 mock.module(
   "@web/auth/providers/authorization/relay-provider-oauth-callback-telemetry",
@@ -123,6 +132,8 @@ describe("completeProviderAuthCallback (google)", () => {
   });
 
   it("rejects a Google callback without a saved intent", async () => {
+    spyOn(session, "doesSessionExist").mockResolvedValue(false);
+
     await completeProviderAuthCallback({
       provider: "google",
       completeAuthentication,
@@ -136,6 +147,22 @@ describe("completeProviderAuthCallback (google)", () => {
       "We couldn't connect your Google account. Please try again.",
       expect.any(Object),
     );
+    expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
+  });
+
+  it("ignores a replayed callback when the user is already signed in", async () => {
+    spyOn(session, "doesSessionExist").mockResolvedValue(true);
+
+    await completeProviderAuthCallback({
+      provider: "google",
+      completeAuthentication,
+      navigate,
+      search: callbackSearch("consumed-state"),
+    });
+
+    expect(mockLoginOrSignup).not.toHaveBeenCalled();
+    expect(completeAuthentication).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
 });

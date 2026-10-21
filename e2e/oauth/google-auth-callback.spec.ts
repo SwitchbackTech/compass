@@ -103,6 +103,36 @@ const prepareGoogleAuthCallbackPage = async (
   return { loginOrSignupRequests };
 };
 
+test("ignores a replayed Google callback when already signed in", async ({
+  page,
+}) => {
+  const state = "replay-state";
+  const apiMocks = await prepareGoogleAuthCallbackPage(page);
+
+  await page.goto("/week");
+  await page.evaluate(
+    ({ key, value }) => {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    },
+    {
+      key: getIntentStorageKey(state),
+      value: {
+        intent: "signIn",
+        returnPath: "/week",
+        createdAt: Date.now(),
+      },
+    },
+  );
+
+  await page.goto(getCallbackUrl(state));
+  await expect(page).toHaveURL(/\/week$/);
+  expect(apiMocks.loginOrSignupRequests).toHaveLength(1);
+
+  await page.goto(getCallbackUrl(state));
+  await expect(page).toHaveURL(/\/week$/);
+  expect(apiMocks.loginOrSignupRequests).toHaveLength(1);
+});
+
 test("finishes a saved Google sign-in callback", async ({ page }) => {
   const state = "sign-in-state";
   const apiMocks = await prepareGoogleAuthCallbackPage(page);
