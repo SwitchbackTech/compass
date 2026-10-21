@@ -345,14 +345,11 @@ public struct RootView: View {
         Button {
             model.isSidebarOpen.toggle()
         } label: {
-            PhosphorIconView(
-                icon: .sidebarSimple,
-                size: 21,
-                color: theme.textMutedColor,
-                mirrored: true
-            )
-            .frame(width: 24, height: 24)
-            .contentShape(Rectangle())
+            Image(systemName: "sidebar.left")
+                .font(.system(size: 21, weight: .regular))
+                .foregroundStyle(theme.textMutedColor)
+                .frame(width: 24, height: 24)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(model.isSidebarOpen ? "Close sidebar" : "Open sidebar")
