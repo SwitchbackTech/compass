@@ -5,7 +5,7 @@ import { redactedCause } from "@sync/safety/redact-error";
 // reasons are retryable on writes and contact search; backend/internal faults
 // are transient on reads but not treated as a write-side "slow down".
 
-export type GoogleErrorEntry = {
+type GoogleErrorEntry = {
   domain?: string;
   reason?: string;
   message?: string;
@@ -34,7 +34,7 @@ function googleErrorEntriesRaw(error: unknown): unknown[] {
   return [...(fromBody ?? []), ...(fromError ?? [])];
 }
 
-export function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
+function googleErrorEntries(error: unknown): GoogleErrorEntry[] {
   const entries: GoogleErrorEntry[] = [];
   for (const raw of googleErrorEntriesRaw(error)) {
     const entry = raw as {
