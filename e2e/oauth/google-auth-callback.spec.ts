@@ -106,6 +106,11 @@ const prepareGoogleAuthCallbackPage = async (
 test("ignores a replayed Google callback when already signed in", async ({
   page,
 }) => {
+  test.info().annotations.push({
+    type: "note",
+    description:
+      "Covers a second hit on the same callback URL (refresh, back-then-forward, or a duplicate redirect) after sign-in finished.",
+  });
   const state = "replay-state";
   const apiMocks = await prepareGoogleAuthCallbackPage(page);
 
@@ -131,6 +136,51 @@ test("ignores a replayed Google callback when already signed in", async ({
   await page.goto(getCallbackUrl(state));
   await expect(page).toHaveURL(/\/week$/);
   expect(apiMocks.loginOrSignupRequests).toHaveLength(1);
+  await expect(
+    page.getByText("We couldn't connect your Google account"),
+  ).toHaveCount(0);
+});
+
+test("returns to the calendar when the browser back button revisits the consumed callback URL", async ({
+  page,
+}) => {
+  const state = "back-replay-state";
+  const callbackUrl = getCallbackUrl(state);
+  const apiMocks = await prepareGoogleAuthCallbackPage(page);
+
+  await page.goto("/week");
+  await page.evaluate(
+    ({ key, value }) => {
+      sessionStorage.setItem(key, JSON.stringify(value));
+    },
+    {
+      key: getIntentStorageKey(state),
+      value: {
+        intent: "signIn",
+        returnPath: "/week",
+        createdAt: Date.now(),
+      },
+    },
+  );
+
+  await page.goto(callbackUrl);
+  await expect(page).toHaveURL(/\/week$/);
+  expect(apiMocks.loginOrSignupRequests).toHaveLength(1);
+
+  await page.evaluate(
+    ({ url }) => {
+      history.pushState(null, "", url);
+    },
+    { url: callbackUrl },
+  );
+  await page.goBack();
+  await page.goForward();
+
+  await expect(page).toHaveURL(/\/week$/);
+  expect(apiMocks.loginOrSignupRequests).toHaveLength(1);
+  await expect(
+    page.getByText("We couldn't connect your Google account"),
+  ).toHaveCount(0);
 });
 
 test("finishes a saved Google sign-in callback", async ({ page }) => {
