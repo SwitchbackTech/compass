@@ -3,6 +3,7 @@ import CompassKit
 
 enum HTMLFragmentAppKit {
     static let listKindKey = NSAttributedString.Key("CompassDescriptionListKind")
+    static let linkHintSlotKey = NSAttributedString.Key("CompassDescriptionLinkHintSlot")
     private static let verbatimKey = NSAttributedString.Key("CompassDescriptionVerbatim")
     static func attributedString(
         from document: HTMLFragmentDocument,
@@ -190,8 +191,13 @@ enum HTMLFragmentAppKit {
     ) -> [HTMLFragmentInline] {
         var inlines: [HTMLFragmentInline] = []
         attributedString.enumerateAttributes(in: range, options: []) { attrs, subRange, _ in
+            if attrs[.attachment] is DescriptionLinkHintSlotAttachment
+                || attrs[linkHintSlotKey] != nil
+            {
+                return
+            }
             let substring = (attributedString.string as NSString).substring(with: subRange)
-            if substring.isEmpty { return }
+            if substring.isEmpty || substring == "\u{FFFC}" { return }
             var children: [HTMLFragmentInline] = []
             for (index, piece) in substring.components(separatedBy: "\u{2028}").enumerated() {
                 if index > 0 { children.append(.lineBreak) }

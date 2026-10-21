@@ -8,6 +8,8 @@ struct DescriptionEditorView: NSViewRepresentable {
     var resetKey: String
     var isFocused: Bool
     var isEditable = true
+    /// Web `suppressLinkShortcutHints`: booking management links keep full inline layout.
+    var suppressLinkHintSlots = false
     var onLinkCopied: () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
@@ -40,6 +42,11 @@ struct DescriptionEditorView: NSViewRepresentable {
         return container
     }
 
+    static func dismantleNSView(_ container: DescriptionEditorContainerView, coordinator: Coordinator) {
+        coordinator.teardown()
+        container.teardownLinkHintOverlay()
+    }
+
     func updateNSView(_ container: DescriptionEditorContainerView, context: Context) {
         let textView = container.textView
         textView.onLinkCopied = onLinkCopied
@@ -48,6 +55,16 @@ struct DescriptionEditorView: NSViewRepresentable {
         if context.coordinator.resetKey != resetKey {
             context.coordinator.load(html: html, resetKey: resetKey)
         }
+        context.coordinator.suppressLinkHintSlots = suppressLinkHintSlots
+        context.coordinator.applyInitialBlurPresentationIfNeeded(isFocused: isFocused, html: html)
+        context.coordinator.syncPresentationOnFocusChange(isFocused: isFocused, html: html, resetKey: resetKey)
+        container.updateLinkHintOverlay(
+            visible: context.coordinator.shouldShowLinkHintOverlay(
+                isFocused: isFocused,
+                html: html,
+                isEditable: isEditable
+            )
+        )
         if isFocused, textView.window != nil {
             textView.window?.makeFirstResponder(textView)
         }
@@ -59,10 +76,24 @@ struct DescriptionEditorView: NSViewRepresentable {
         weak var textView: DescriptionTextView?
         weak var container: DescriptionEditorContainerView?
         var resetKey: String = ""
+        var suppressLinkHintSlots = false
         private var suppressDelegate = false
 
         init(html: Binding<String>) {
             self.html = html
+        }
+
+        func teardown() {
+            textView?.delegate = nil
+            textView = nil
+            container = nil
+        }
+
+        func shouldShowLinkHintOverlay(isFocused: Bool, html: String, isEditable: Bool) -> Bool {
+            guard isEditable, !isFocused, !suppressLinkHintSlots, container?.window != nil else { return false }
+            if !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty { return true }
+            guard let textView else { return false }
+            return linkHintSlotsReserved(for: textView)
         }
 
         func applyTheme(_ theme: NativeWebTheme) {
@@ -83,6 +114,8 @@ struct DescriptionEditorView: NSViewRepresentable {
         func load(html: String, resetKey: String) {
             guard let textView else { return }
             self.resetKey = resetKey
+            presentationShowsHosts = false
+            wasDescriptionFocused = false
             let sourceDocument = HTMLFragmentDocument.parse(html)
             let attributed = HTMLFragmentAppKit.attributedString(
                 from: sourceDocument,
@@ -91,13 +124,91 @@ struct DescriptionEditorView: NSViewRepresentable {
             )
             suppressDelegate = true
             textView.textStorage?.setAttributedString(attributed)
+            if shouldSyncLinkHintSlots(for: textView) {
+                container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            }
             suppressDelegate = false
+        }
+
+        func syncLinkHintSlotsSilently() {
+            guard let textView, shouldSyncLinkHintSlots(for: textView) else { return }
+            suppressDelegate = true
+            container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            suppressDelegate = false
+        }
+
+        private func linkHintSlotsReserved(for textView: DescriptionTextView) -> Bool {
+            guard textView.isEditable, !suppressLinkHintSlots else { return false }
+            guard descriptionHasNonBookingLinks(in: textView) else { return false }
+            return true
+        }
+
+        private func descriptionHasNonBookingLinks(in textView: DescriptionTextView) -> Bool {
+            if BookingEventLinks.parse(html.wrappedValue) != nil { return false }
+            if !DescriptionLinkPresentation.linkHrefs(in: html.wrappedValue).isEmpty {
+                return true
+            }
+            guard let storage = textView.textStorage, storage.length > 0 else { return false }
+            var hasLink = false
+            storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+                if value != nil {
+                    hasLink = true
+                    stop.pointee = true
+                }
+            }
+            guard hasLink else { return false }
+            let serialized = HTMLFragmentAppKit.document(from: textView.attributedString()).serialize()
+            return BookingEventLinks.parse(serialized) == nil
+        }
+
+        private func shouldSyncLinkHintSlots(for textView: DescriptionTextView) -> Bool {
+            linkHintSlotsReserved(for: textView) || textView.hasLinkHintSlotAttachments
+        }
+
+        private var presentationShowsHosts = false
+        var wasDescriptionFocused = false
+
+        func applyInitialBlurPresentationIfNeeded(isFocused: Bool, html: String) {
+            guard !presentationShowsHosts, !isFocused, !wasDescriptionFocused else { return }
+            guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else { return }
+            guard textView != nil else { return }
+            suppressDelegate = true
+            textView?.applyHostLinkPresentation()
+            if let textView {
+                container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+            }
+            suppressDelegate = false
+            presentationShowsHosts = true
+        }
+
+        func syncPresentationOnFocusChange(isFocused: Bool, html: String, resetKey: String) {
+            defer { wasDescriptionFocused = isFocused }
+            guard isFocused != wasDescriptionFocused else { return }
+            guard !DescriptionLinkPresentation.linkHrefs(in: html).isEmpty else {
+                presentationShowsHosts = false
+                return
+            }
+            if isFocused, presentationShowsHosts {
+                load(html: html, resetKey: resetKey)
+                presentationShowsHosts = false
+            } else if !isFocused {
+                guard textView != nil else { return }
+                suppressDelegate = true
+                textView?.applyHostLinkPresentation()
+                if let textView {
+                    container?.syncLinkHintSlots(reserved: linkHintSlotsReserved(for: textView))
+                }
+                suppressDelegate = false
+                presentationShowsHosts = true
+            }
         }
 
         func textDidChange(_ notification: Notification) {
             guard !suppressDelegate, let textView else { return }
             let edited = HTMLFragmentAppKit.document(from: textView.attributedString())
             html.wrappedValue = edited.serialize()
+            presentationShowsHosts = false
+            syncLinkHintSlotsSilently()
             container?.updateControls()
         }
 
@@ -107,13 +218,137 @@ struct DescriptionEditorView: NSViewRepresentable {
     }
 }
 
-final class DescriptionTextView: NSTextView {
+public final class DescriptionTextView: NSTextView {
     var onFormattingChange: (() -> Void)?
 
     var onLinkCopied: (() -> Void)?
 
+    public override func accessibilityValue() -> String? {
+        guard let value = super.accessibilityValue() else { return nil }
+        return value.replacingOccurrences(of: "\u{FFFC}", with: "")
+    }
+
     @objc func copyDescriptionLink(_ sender: Any?) {
         _ = copyDescriptionLink(to: .general)
+    }
+
+    @objc public func openDescriptionLinkAtCaret(_ sender: Any?) {
+        _ = openDescriptionLinkAtCaret()
+    }
+
+    @objc public func openDescriptionLinkDigit(_ sender: Any?) {
+        guard let index = (sender as? NSNumber)?.intValue else { return }
+        _ = openDescriptionLink(at: index)
+    }
+
+    @discardableResult
+    public func openDescriptionLinkAtCaret() -> Bool {
+        guard let href = descriptionLinkToCopy(), let url = URL(string: href) else { return false }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+
+    @discardableResult
+    func openDescriptionLink(at index: Int) -> Bool {
+        guard index >= 0, index < orderedLinkHrefs().count,
+              let url = URL(string: orderedLinkHrefs()[index])
+        else { return false }
+        NSWorkspace.shared.open(url)
+        return true
+    }
+
+    func orderedLinkHrefs() -> [String] {
+        guard let storage = textStorage, storage.length > 0 else { return [] }
+        var hrefs: [String] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, _, _ in
+            let href = (value as? URL)?.absoluteString ?? value as? String
+            if let href, !href.isEmpty { hrefs.append(href) }
+        }
+        return hrefs
+    }
+
+    func applyHostLinkPresentation() {
+        guard let storage = textStorage, storage.length > 0 else { return }
+        let fullString = storage.string as NSString
+        var replacements: [(range: NSRange, href: String, host: String)] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+            let href = (value as? URL)?.absoluteString ?? value as? String ?? ""
+            guard !href.isEmpty else { return }
+            let visible = fullString.substring(with: range)
+            guard DescriptionLinkPresentation.shouldShortenVisibleLabel(text: visible, href: href) else { return }
+            let host = DescriptionLinkPresentation.displayHost(for: href)
+            guard visible != host else { return }
+            replacements.append((range, href, host))
+        }
+        guard !replacements.isEmpty else { return }
+        storage.beginEditing()
+        for entry in replacements.sorted(by: { $0.range.location > $1.range.location }) {
+            storage.replaceCharacters(in: entry.range, with: entry.host)
+            let newRange = NSRange(location: entry.range.location, length: (entry.host as NSString).length)
+            storage.addAttribute(.link, value: URL(string: entry.href) ?? entry.href, range: newRange)
+            storage.addAttribute(.toolTip, value: entry.href, range: newRange)
+        }
+        storage.endEditing()
+    }
+
+    var hasLinkHintSlotAttachments: Bool {
+        guard let storage = textStorage, storage.length > 0 else { return false }
+        var found = false
+        storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { value, _, stop in
+            if value is DescriptionLinkHintSlotAttachment {
+                found = true
+                stop.pointee = true
+            }
+        }
+        return found
+    }
+
+    func syncLinkHintSlots(reserved: Bool) {
+        guard let storage = textStorage else { return }
+        storage.beginEditing()
+        defer { storage.endEditing() }
+
+        var hintSlotRanges: [NSRange] = []
+        if storage.length > 0 {
+            storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+                if value is DescriptionLinkHintSlotAttachment {
+                    hintSlotRanges.append(range)
+                }
+            }
+        }
+        for range in hintSlotRanges.sorted(by: { $0.location > $1.location }) {
+            storage.deleteCharacters(in: range)
+        }
+        guard reserved, storage.length > 0 else { return }
+
+        var linkRanges: [NSRange] = []
+        storage.enumerateAttribute(.link, in: NSRange(location: 0, length: storage.length)) { _, range, _ in
+            linkRanges.append(range)
+        }
+        for range in linkRanges.sorted(by: { $0.location > $1.location }) {
+            let insertAt = range.location + range.length
+            let attachment = DescriptionLinkHintSlotAttachment()
+            let slot = NSMutableAttributedString(attachment: attachment)
+            slot.addAttribute(HTMLFragmentAppKit.linkHintSlotKey, value: true, range: NSRange(location: 0, length: 1))
+            storage.insert(slot, at: insertAt)
+        }
+    }
+
+    static func findInKeyWindow() -> DescriptionTextView? {
+        find(in: NSApp.keyWindow?.contentView)
+    }
+
+    private static func find(in root: NSView?) -> DescriptionTextView? {
+        guard let root else { return nil }
+        if let editor = root as? DescriptionTextView,
+           editor.accessibilityIdentifier() == "compass-event-form-description"
+        {
+            return editor
+        }
+        for subview in root.subviews {
+            if let found = find(in: subview) { return found }
+        }
+        return nil
     }
 
     @discardableResult
@@ -150,7 +385,7 @@ final class DescriptionTextView: NSTextView {
     @objc func toggleNumberedList(_ sender: Any?) { toggleList(ordered: true) }
     @objc func toggleBulletList(_ sender: Any?) { toggleList(ordered: false) }
 
-    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+    public override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if event.modifierFlags.contains(.command) {
             switch event.charactersIgnoringModifiers?.lowercased() {
             case "b":
@@ -169,7 +404,7 @@ final class DescriptionTextView: NSTextView {
         return super.performKeyEquivalent(with: event)
     }
 
-    override func mouseDown(with event: NSEvent) {
+    public override func mouseDown(with event: NSEvent) {
         if event.modifierFlags.contains(.command),
             let link = link(at: event.locationInWindow)
         {
@@ -217,7 +452,7 @@ final class DescriptionTextView: NSTextView {
         onFormattingChange?()
     }
 
-    override func insertNewline(_ sender: Any?) {
+    public override func insertNewline(_ sender: Any?) {
         guard isEditable, let storage = textStorage else { return }
         let range = paragraphRange(containing: NSRange(location: selectedRange().location, length: 0))
         guard range.length > 0,

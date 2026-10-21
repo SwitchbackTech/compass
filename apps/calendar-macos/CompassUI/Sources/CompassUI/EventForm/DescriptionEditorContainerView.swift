@@ -2,6 +2,7 @@ import AppKit
 
 final class DescriptionEditorContainerView: NSView {
     let textView = DescriptionTextView()
+    private let linkHintOverlay = DescriptionLinkHintOverlayView()
     private let scrollView = NSScrollView()
     private let toolbar = NSStackView()
     private var buttons: [NSButton] = []
@@ -40,8 +41,40 @@ final class DescriptionEditorContainerView: NSView {
             buttons.append(button)
         }
         textView.onFormattingChange = { [weak self] in self?.updateControls() }
+        linkHintOverlay.isHidden = true
         addSubview(toolbar)
         addSubview(scrollView)
+        addSubview(linkHintOverlay)
+    }
+
+    func updateLinkHintOverlay(visible: Bool) {
+        guard window != nil else {
+            teardownLinkHintOverlay()
+            return
+        }
+        linkHintOverlay.textView = textView
+        linkHintOverlay.hintsVisible = visible
+        linkHintOverlay.isHidden = !visible
+        if visible {
+            linkHintOverlay.needsLayout = true
+        } else {
+            linkHintOverlay.subviews.forEach { $0.removeFromSuperview() }
+        }
+    }
+
+    func teardownLinkHintOverlay() {
+        linkHintOverlay.textView = nil
+        linkHintOverlay.hintsVisible = false
+        linkHintOverlay.isHidden = true
+        linkHintOverlay.subviews.forEach { $0.removeFromSuperview() }
+    }
+
+    func syncLinkHintSlots(reserved: Bool) {
+        guard textView.window != nil else { return }
+        textView.syncLinkHintSlots(reserved: reserved)
+        if linkHintOverlay.hintsVisible {
+            linkHintOverlay.needsLayout = true
+        }
     }
 
     @available(*, unavailable)
@@ -51,6 +84,7 @@ final class DescriptionEditorContainerView: NSView {
         super.layout()
         toolbar.frame = NSRect(x: 0, y: 0, width: 108, height: 24)
         scrollView.frame = NSRect(x: 0, y: 28, width: bounds.width, height: max(0, bounds.height - 28))
+        linkHintOverlay.frame = scrollView.frame
     }
 
     func updateControls(tint: NSColor? = nil) {
