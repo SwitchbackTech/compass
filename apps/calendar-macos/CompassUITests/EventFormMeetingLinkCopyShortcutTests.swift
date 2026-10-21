@@ -3,14 +3,10 @@ import XCTest
 
 final class EventFormMeetingLinkCopyShortcutTests: XCTestCase {
     @MainActor
-    func testMeetingLinkRowShowsKeycapsAndShortcutCopiesURL() throws {
+    func testMeetingLinkRowShowsKeycapsAndShortcutCopiesURL() {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        addTeardownBlock {
-            await MainActor.run {
-                NSPasteboard.general.clearContents()
-            }
-        }
+        defer { pasteboard.clearContents() }
 
         let app = XCUIApplication.compassUITest()
         app.launchArguments += [
