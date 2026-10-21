@@ -17,6 +17,16 @@ public enum LifeDateFormat {
         return "\(months[month - 1]) \(day), \(year)"
     }
 
+    /// The stored `yyyy-MM-dd` for a picked day, in the calendar's effective zone.
+    public static func stored(from date: Date) -> String {
+        let calendar = EffectiveTimeZone.calendar
+        return String(
+            format: "%04d-%02d-%02d",
+            calendar.component(.year, from: date),
+            calendar.component(.month, from: date),
+            calendar.component(.day, from: date))
+    }
+
     /// Accepts `yyyy-MM-dd` or `MMM d, yyyy` (comma optional) and returns `yyyy-MM-dd`.
     public static func storedValue(from typed: String) -> String? {
         let trimmed = typed.trimmingCharacters(in: .whitespacesAndNewlines)
