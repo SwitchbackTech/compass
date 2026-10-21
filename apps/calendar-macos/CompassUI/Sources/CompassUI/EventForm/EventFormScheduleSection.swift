@@ -29,8 +29,9 @@ struct EventFormScheduleSection: View {
 
             if scheduleLocked {
                 Text(
-                    "Your calendar provider keeps this event updated (for example from an email), "
-                        + "so its time follows the provider. Changes to the title, notes, and location stay in Compass."
+                    ProviderManagedScheduleCopy.note(
+                        for: model.attendeeCalendar(for: draft)
+                    )
                 )
                 .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)

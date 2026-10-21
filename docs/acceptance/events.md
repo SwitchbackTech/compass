@@ -365,9 +365,10 @@ still works.
 - The form keeps the title, location, description, and color controls enabled
   and shows a Save button.
 - Schedule and recurrence controls are disabled.
-- A note reads: "Your calendar provider keeps this event updated (for example
-  from an email), so its time follows the provider. Changes to the title,
-  notes, and location stay in Compass."
+- A note reads: "{Provider} keeps this event's time updated. Your title, notes,
+  and location edits stay in Compass." where `{Provider}` is the event
+  calendar's provider (for example Google, Microsoft Outlook, or Apple), or
+  "Your calendar" when the provider is unknown.
 - After a title-only save, the new title appears in Compass and the sync log
   shows no `patchEvent` call for that update (the overlay is stored locally in
   Sync).
