@@ -147,7 +147,7 @@ public final class DescriptionTextView: NSTextView {
     }
 
     @discardableResult
-    func openDescriptionLinkAtCaret() -> Bool {
+    public func openDescriptionLinkAtCaret() -> Bool {
         guard let href = descriptionLinkToCopy(), let url = URL(string: href) else { return false }
         NSWorkspace.shared.open(url)
         return true

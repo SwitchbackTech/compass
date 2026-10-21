@@ -573,7 +573,7 @@ public final class NativeCalendarRootModel {
     /// Records a shortcut invocation for the levels/tips telemetry, if the id
     /// belongs to a section. Every shortcut handler funnels through here so the
     /// `section(for:)` lookup lives in one place.
-    func recordShortcut(_ id: ShortcutId) {
+    public func recordShortcut(_ id: ShortcutId) {
         guard let section = ShortcutTelemetrySection.section(for: id) else { return }
         levelsStore.recordShortcutInvocation(id, section: section)
         noteShortcutEngagementIfAnonymous()
