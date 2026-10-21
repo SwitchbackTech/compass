@@ -15,12 +15,15 @@ final class DayJumpKeyAssignmentTests: XCTestCase {
     }
 
     func testMatchFocusesWithDayPrefixAndIndex() {
-        let assignments = DayJumpKeyAssignment.assign([
-            .init(
-                eventId: "fri-4", startMs: 400, eventType: .timed, dayKey: "2026-08-07", weekday: 5),
-            .init(
-                eventId: "fri-1", startMs: 100, eventType: .timed, dayKey: "2026-08-07", weekday: 5),
-        ])
+        let assignments = DayJumpKeyAssignment.assign(
+            (1 ... 4).map { index in
+                DayJumpKeyAssignment.Target(
+                    eventId: "fri-\(index)",
+                    startMs: Int64(index * 100),
+                    eventType: .timed,
+                    dayKey: "2026-08-07",
+                    weekday: 5)
+            })
         let map = ["f": "2026-08-07"]
         let match = DayJumpKeyAssignment.matchKeystroke(
             assignments: assignments, dayKeyByPrefix: map, key: "4", buffer: "f")
@@ -37,7 +40,7 @@ final class DayJumpKeyAssignmentTests: XCTestCase {
             assignments: assignments, dayKeyByPrefix: map, key: "s", buffer: "")
         XCTAssertEqual(
             first,
-            .prefix(buffer: "s", dayKeys: ["2026-08-02"], pendingExactEventId: nil))
+            .prefix(buffer: "s", dayKeys: ["2026-08-02", "2026-08-08"], pendingExactEventId: nil))
         let second = DayJumpKeyAssignment.matchKeystroke(
             assignments: assignments, dayKeyByPrefix: map, key: "u", buffer: "s")
         XCTAssertEqual(
