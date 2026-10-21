@@ -12,6 +12,7 @@ import {
   PICK_KEY_LABELS,
 } from "@web/shortcuts/digit-pick.util";
 import { recordHandledShortcutInvocation } from "@web/shortcuts/tips/shortcut-telemetry";
+import { EventFormHintKeys } from "@web/views/Forms/EventForm/EventFormFocusedHint";
 
 const COLOR_SLOTS = EventColorSlotSchema.options;
 
@@ -29,7 +30,7 @@ export interface EventColorPickerProps {
 }
 
 const swatchClassName =
-  "h-5 w-5 cursor-pointer appearance-none rounded-sm border border-transparent checked:border-text checked:outline checked:outline-2 checked:outline-offset-1 checked:outline-text focus-visible:ring-2 focus-visible:ring-accent";
+  "c-focus-ring h-5 w-5 cursor-pointer appearance-none rounded-sm border border-transparent checked:border-text checked:outline checked:outline-2 checked:outline-offset-1 checked:outline-text";
 
 const ColorSwatch = ({
   label,
@@ -81,11 +82,59 @@ export const EventColorPicker = ({
     recordHandledShortcutInvocation("edit-pick-by-number");
   };
 
+  const moveSwatchFocus = (delta: number, current: HTMLInputElement) => {
+    const radios = [
+      ...(current
+        .closest("fieldset")
+        ?.querySelectorAll<HTMLInputElement>('input[type="radio"]') ?? []),
+    ];
+    const index = radios.indexOf(current);
+    if (index === -1) return;
+    const next = radios[index + delta];
+    if (next) next.focus();
+  };
+
+  const handleFieldsetKeyDown = (event: KeyboardEvent<HTMLFieldSetElement>) => {
+    handleKeyDown(event);
+    if (event.defaultPrevented) return;
+
+    const target = document.activeElement;
+    if (!(target instanceof HTMLInputElement) || target.type !== "radio") {
+      return;
+    }
+
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown": {
+        event.preventDefault();
+        moveSwatchFocus(1, target);
+        break;
+      }
+      case "ArrowLeft":
+      case "ArrowUp": {
+        event.preventDefault();
+        moveSwatchFocus(-1, target);
+        break;
+      }
+      case " ": {
+        event.preventDefault();
+        target.click();
+        break;
+      }
+      case "Enter": {
+        if (event.metaKey || event.ctrlKey) return;
+        event.preventDefault();
+        target.click();
+        break;
+      }
+    }
+  };
+
   return (
     <fieldset
       id={id}
-      className="group/picker m-0 min-w-0 border-0 p-0"
-      onKeyDown={handleKeyDown}
+      className="group/color-control group/picker m-0 min-w-0 border-0 p-0"
+      onKeyDown={handleFieldsetKeyDown}
     >
       <legend className="sr-only">Event color</legend>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -122,6 +171,27 @@ export const EventColorPicker = ({
             </ColorSwatch>
           );
         })}
+        <span
+          className="ml-auto inline-flex pointer-coarse:hidden max-w-full shrink-0 items-center gap-1 self-center whitespace-nowrap"
+          title="Mod+6 or Mod+E then C jumps to color"
+        >
+          <span className="inline-flex items-center gap-1 group-focus-within/color-control:hidden">
+            <EventFormHintKeys
+              keys={["Mod", "6"]}
+              label="Mod+6 jumps to color"
+            />
+          </span>
+          <span className="hidden items-center gap-1 group-focus-within/color-control:inline-flex">
+            <EventFormHintKeys
+              keys={["ArrowLeft", "ArrowRight"]}
+              label="Arrow keys move between swatches"
+            />
+            <span aria-hidden className="text-text-muted">
+              ·
+            </span>
+            <EventFormHintKeys keys="Enter" label="Enter selects a swatch" />
+          </span>
+        </span>
       </div>
     </fieldset>
   );

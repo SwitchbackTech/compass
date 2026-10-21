@@ -112,18 +112,33 @@ describeColorPicker("EventColorPicker", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("leaves arrow-key navigation untouched", () => {
+  it("moves focus between swatches with arrow keys without changing color", () => {
     const onChange = mock();
     render(<EventColorPicker value={null} onChange={onChange} />);
 
     const defaultRadio = screen.getByRole("radio", {
       name: "Calendar default",
     });
+    const lavenderRadio = screen.getByRole("radio", { name: "Lavender" });
     defaultRadio.focus();
 
     fireEvent.keyDown(defaultRadio, { code: "ArrowRight", key: "ArrowRight" });
 
     expect(onChange).not.toHaveBeenCalled();
+    expect(lavenderRadio).toHaveFocus();
+  });
+
+  it("shows jump keycaps before focus and navigation keycaps after focus", () => {
+    render(<EventColorPicker value={null} onChange={mock()} />);
+
+    const jumpHints = document.querySelector(".ml-auto");
+    expect(jumpHints?.textContent).toMatch(/6/);
+    expect(jumpHints).toHaveClass("whitespace-nowrap");
+
+    screen.getByRole("radio", { name: "Calendar default" }).focus();
+
+    expect(jumpHints?.textContent).toMatch(/Enter/);
+    expect(jumpHints?.textContent).not.toMatch(/Space/i);
   });
 
   it("shows a pick-key chip on every swatch, hidden until the group is focused", () => {
