@@ -103,39 +103,42 @@ struct WelcomeModalView: View {
         default:
             VStack(alignment: .leading, spacing: 8) {
                 heading("Let's get started")
-                Text("Connect a calendar or start fresh")
-                    .font(.rubik(16))
-                    .foregroundStyle(theme.textMutedColor)
             }
             VStack(spacing: 12) {
-                primaryButton(title: AccountChoiceCopy.localDeviceOnlyLabel, hint: "S") {
+                let providers = model.authStore.availableSignInProviders()
+                let trialPrimary = model.authStore.welcomeTrialPrimaryProvider()
+                let secondaryProviders = trialPrimary.map { primary in
+                    providers.filter { $0 != primary }
+                } ?? providers
+                if let trialPrimary {
+                    primaryButton(
+                        title: trialPrimary.welcomeTrialPrimaryLabel,
+                        hint: "Enter"
+                    ) {
+                        model.welcomeSignIn(with: trialPrimary)
+                    }
+                    Text(AccountChoiceCopy.welcomeTrialCardTermsLine())
+                        .font(.rubik(12))
+                        .foregroundStyle(theme.textMutedColor)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    primaryButton(title: "Sign up", hint: "Enter") {
+                        model.welcomeSignUp()
+                    }
+                }
+                quietTextButton(title: AccountChoiceCopy.localDeviceOnlyLabel, hint: "S") {
                     model.welcomeExplore()
                 }
-                Text(AccountChoiceCopy.localDeviceOnlySubtitle)
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textMutedColor)
-                VStack(spacing: 4) {
-                    Text(AccountChoiceCopy.connectCalendarAccountLabel)
-                        .font(.rubik(14, weight: .semibold))
-                        .foregroundStyle(theme.textColor)
-                    Text(AccountChoiceCopy.connectCalendarAccountHelper)
-                        .font(.rubik(14))
-                        .foregroundStyle(theme.textMutedColor)
-                }
-                .frame(maxWidth: .infinity)
-                Text("Ready to keep it? Start your free 7-day trial.")
-                    .font(.rubik(14))
-                    .foregroundStyle(theme.textMutedColor)
-                ForEach(model.authStore.availableSignInProviders(), id: \.self) { provider in
+                ForEach(secondaryProviders, id: \.self) { provider in
                     secondaryButton(title: provider.continueLabel, hint: String(provider.shortcutLetter).uppercased()) {
                         model.welcomeSignIn(with: provider)
                     }
                 }
-                secondaryButton(
-                    title: model.authStore.availableSignInProviders().isEmpty ? "Sign up" : "Sign up with email",
-                    hint: "U"
-                ) {
-                    model.welcomeSignUp()
+                if !providers.isEmpty {
+                    secondaryButton(title: "Sign up with email", hint: "U") {
+                        model.welcomeSignUp()
+                    }
                 }
             }
         }
@@ -188,6 +191,19 @@ struct WelcomeModalView: View {
             .background(theme.surfaceColor)
             .clipShape(Capsule())
             .overlay(Capsule().stroke(theme.borderColor, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func quietTextButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.rubik(14, weight: .medium))
+                ShortcutHintChip(label: hint)
+            }
+            .foregroundStyle(theme.textMutedColor)
+            .frame(maxWidth: .infinity, minHeight: 36)
         }
         .buttonStyle(.plain)
     }

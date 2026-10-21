@@ -7,11 +7,8 @@ import {
 } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
 import {
-  CONNECT_CALENDAR_ACCOUNT_HELPER,
-  CONNECT_CALENDAR_ACCOUNT_LABEL,
   CONNECT_CALENDAR_LABEL,
   LOCAL_DEVICE_ONLY_LABEL,
-  LOCAL_DEVICE_ONLY_SUBTITLE,
 } from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useIsProviderAvailable } from "@web/auth/providers/useIsProviderAvailable";
@@ -32,6 +29,11 @@ import { WelcomeLinks } from "./WelcomeLinks";
 import { WelcomeSteps } from "./WelcomeSteps";
 import { welcomeGuideActions } from "./welcome.guide.store";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
+import {
+  welcomeTrialCardTermsLine,
+  welcomeTrialPrimaryLabel,
+  welcomeTrialPrimaryProvider,
+} from "./welcome-account-choice.util";
 import { shouldDelegateEnterToWelcomePrimary } from "./welcome-modal-enter.util";
 import {
   nextWelcomeStep,
@@ -45,6 +47,8 @@ const SECONDARY_CTA_CLASS =
   "c-button c-button-secondary inline-flex h-10 w-full items-center justify-center rounded-full data-busy:pointer-events-none data-busy:opacity-60";
 const COMPACT_PILL_CLASS =
   "c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs data-busy:pointer-events-none data-busy:opacity-60";
+const QUIET_TEXT_CTA_CLASS =
+  "c-button inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm text-text-muted hover:text-text data-busy:pointer-events-none data-busy:opacity-60";
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -85,9 +89,11 @@ export function WelcomeModal() {
   // clicks "Log in" three times while the auth modal is still on its way.
   const [handingOff, setHandingOff] = useState(false);
   // Each screen has one primary button, and Enter is its native activation.
-  // On the last screen that is Explore: Enter must not start OAuth and send a
-  // first-time visitor off-site before they try the calendar.
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const trialPrimaryProvider = welcomeTrialPrimaryProvider(available);
+  const secondarySignInProviders = trialPrimaryProvider
+    ? available.filter((kind) => kind !== trialPrimaryProvider)
+    : available;
   const faqHintId = `${useId()}-faq-hint`;
   const faq = useFaqDisclosure();
   // Digits 1-5 only toggle FAQ on the screen that shows it; 6-0 no-op until
@@ -228,7 +234,7 @@ export function WelcomeModal() {
     }
     if (
       e.key === "Enter" &&
-      (step === 1 || step === 2) &&
+      (step === 1 || step === 2 || step === 3) &&
       shouldDelegateEnterToWelcomePrimary(
         document.activeElement,
         primaryRef.current,
@@ -236,7 +242,15 @@ export function WelcomeModal() {
     ) {
       if (isAuthShortcutBlocked() || closing) return;
       e.preventDefault();
-      advance();
+      if (step === 3) {
+        if (trialPrimaryProvider) {
+          handOffToProvider(trialPrimaryProvider);
+        } else {
+          handOffToAuth("sign_up");
+        }
+      } else {
+        advance();
+      }
       return;
     }
     if (isAuthShortcutBlocked()) return;
@@ -391,38 +405,48 @@ export function WelcomeModal() {
               <h2 className="font-bold text-2xl text-text leading-snug">
                 Let's get started
               </h2>
-              <p className="text-text-muted">
-                Connect a calendar or start fresh
-              </p>
             </div>
             <div className="flex w-full flex-col items-center gap-3">
+              {trialPrimaryProvider ? (
+                <>
+                  <button
+                    type="button"
+                    ref={primaryRef}
+                    onClick={() => handOffToProvider(trialPrimaryProvider)}
+                    className={PRIMARY_CTA_CLASS}
+                    {...authBusyProps}
+                  >
+                    {welcomeTrialPrimaryLabel(trialPrimaryProvider)}
+                    <ShortcutHint className="ml-2">Enter</ShortcutHint>
+                  </button>
+                  <p className="text-center text-text-muted text-xs">
+                    {welcomeTrialCardTermsLine()}
+                  </p>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  ref={primaryRef}
+                  onClick={() => handOffToAuth("sign_up")}
+                  className={PRIMARY_CTA_CLASS}
+                  {...authBusyProps}
+                >
+                  Sign up
+                  <ShortcutHint className="ml-2">Enter</ShortcutHint>
+                </button>
+              )}
               <button
                 type="button"
-                ref={primaryRef}
                 onClick={explore}
-                className={PRIMARY_CTA_CLASS}
+                className={QUIET_TEXT_CTA_CLASS}
                 {...navigationBusyProps}
               >
                 {LOCAL_DEVICE_ONLY_LABEL}
                 <ShortcutHint className="ml-2">S</ShortcutHint>
               </button>
-              <p className="text-center text-sm text-text-muted">
-                {LOCAL_DEVICE_ONLY_SUBTITLE}
-              </p>
-              <div className="flex w-full flex-col gap-1 text-center">
-                <p className="font-semibold text-sm text-text">
-                  {CONNECT_CALENDAR_ACCOUNT_LABEL}
-                </p>
-                <p className="text-sm text-text-muted">
-                  {CONNECT_CALENDAR_ACCOUNT_HELPER}
-                </p>
-              </div>
-              <p className="text-center text-sm text-text-muted">
-                Ready to keep it? Start your free 7-day trial.
-              </p>
-              {hasSignInProviders ? (
+              {secondarySignInProviders.length > 0 ? (
                 <SignInProviderButtons
-                  available={available}
+                  available={secondarySignInProviders}
                   loadingKind={isLoading ? loadingKind : null}
                   onSignIn={handOffToProvider}
                 />
@@ -442,15 +466,17 @@ export function WelcomeModal() {
                   </p>
                 </>
               ) : null}
-              <button
-                type="button"
-                onClick={() => handOffToAuth("sign_up")}
-                className={SECONDARY_CTA_CLASS}
-                {...authBusyProps}
-              >
-                {hasSignInProviders ? "Sign up with email" : "Sign up"}
-                <ShortcutHint className="ml-2">U</ShortcutHint>
-              </button>
+              {hasSignInProviders ? (
+                <button
+                  type="button"
+                  onClick={() => handOffToAuth("sign_up")}
+                  className={SECONDARY_CTA_CLASS}
+                  {...authBusyProps}
+                >
+                  Sign up with email
+                  <ShortcutHint className="ml-2">U</ShortcutHint>
+                </button>
+              ) : null}
             </div>
           </>
         )}
