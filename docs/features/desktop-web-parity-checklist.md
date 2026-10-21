@@ -119,6 +119,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | 🟡 | macOS save bar matches accent + Mod+Enter keycap (#4610); sidebar shows web save-draft tip (#4614) |
 | Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots |
 | Hold-Mod day header keycaps (⇧SU, ⇧M, ...) | ✅ | Week headers swap the weekday for `WeekDayColumnHeaderControl` keycaps while Mod is held; bare letters in event-jump mode |
+| Hold-Mod sidebar chips (month picker, Up next, calendar list) | ✅ | Anchors merge with nested ones, so the sidebar no longer hides the month picker and Up next chips; the calendar list digit sits on the list, not the sidebar corner. Per-account targets still ❌ (macOS keeps one list slot) |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
 
 ### 2.4 Mini-calendar (month picker)
@@ -335,6 +336,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-20 | Palette: web sections, rows, disabled state, keycap chips |
 | 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
 | 2026-10-21 | Week grid: hold-Mod day header keycaps (⇧SU, ⇧M, ...) now render; the header control existed but the grid never used it (compare run 39597000570) |
+| 2026-10-21 | Hold-Mod sidebar chips: month picker and Up next chips render, calendar list chip moved onto the list (compare run 39634795849) |
 
 ---
 
