@@ -6,6 +6,8 @@ import { physicalDigitIndex } from "@web/shortcuts/digit-pick.util";
 
 const DESCRIPTION_LINK_COPIED_TOAST_ID = "description-link-copied";
 export const DESCRIPTION_LINK_SHORTCUT_COUNT = 9;
+/** Inline space reserved after each link for digit keycaps (matches c-description-link-hints). */
+export const DESCRIPTION_LINK_HINT_SLOT_PX = 28;
 
 const LINK_SELECTOR = "a[href]";
 
