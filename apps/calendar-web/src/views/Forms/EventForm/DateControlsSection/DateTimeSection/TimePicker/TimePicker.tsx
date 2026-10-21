@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
@@ -12,6 +12,11 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { resolveFormControlJumpIds } from "@web/common/utils/form/form.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import {
+  EventFormFocusedHint,
+  EventFormHintKeys,
+  EventFormHintSeparator,
+} from "@web/views/Forms/EventForm/EventFormFocusedHint";
 import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
 import { TIME_PICKER_COMMIT_DRAFT_EVENT } from "./timePickerCommitDraft";
 
@@ -137,6 +142,7 @@ export const TimePicker = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRafRef = useRef<number | null>(null);
   const userAdjustedRef = useRef(false);
+  const [hasDraftAdjustment, setHasDraftAdjustment] = useState(false);
   const remapEnterRef = useRef(false);
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
@@ -218,7 +224,7 @@ export const TimePicker = ({
   const { jumpId, resolvedInputId } = resolveFormControlJumpIds(id, inputId);
 
   return (
-    <div ref={containerRef} className="c-time-picker" id={jumpId}>
+    <div ref={containerRef} className="c-time-picker group/control" id={jumpId}>
       <CreatableSelect
         {...props}
         inputId={resolvedInputId}
@@ -247,6 +253,7 @@ export const TimePicker = ({
           const key = e.key;
           if (MENU_NAV_KEYS.has(key)) {
             userAdjustedRef.current = true;
+            setHasDraftAdjustment(true);
           }
 
           if (
@@ -274,6 +281,7 @@ export const TimePicker = ({
 
           if (key === "Escape" && isMenuOpen) {
             userAdjustedRef.current = false;
+            setHasDraftAdjustment(false);
             setIsMenuOpen(false);
             e.stopPropagation();
           }
@@ -293,16 +301,19 @@ export const TimePicker = ({
         onInputChange={(_inputValue, { action }) => {
           if (action === "input-change") {
             userAdjustedRef.current = true;
+            setHasDraftAdjustment(true);
           }
         }}
         onMenuOpen={() => {
           userAdjustedRef.current = false;
+          setHasDraftAdjustment(false);
           setIsMenuOpen(true);
           scheduleScrollToSelected();
         }}
         onMenuClose={() => {
           remapEnterRef.current = false;
           cancelScrollToSelected();
+          setHasDraftAdjustment(false);
           setIsMenuOpen(false);
         }}
         openMenuOnFocus={true}
@@ -352,6 +363,35 @@ export const TimePicker = ({
         }}
         createOptionPosition="first"
       />
+      <EventFormFocusedHint pinned={isMenuOpen}>
+        {isMenuOpen ? (
+          <>
+            <EventFormHintKeys
+              keys={["ArrowUp", "ArrowDown"]}
+              label="Up and down arrows choose a time"
+            />
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Enter" label="Enter selects the time" />
+            {hasDraftAdjustment ? (
+              <>
+                <EventFormHintSeparator />
+                <EventFormHintKeys keys="Tab" label="Tab confirms the time" />
+              </>
+            ) : null}
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Esc" label="Escape closes the menu" />
+          </>
+        ) : (
+          <>
+            <EventFormHintKeys
+              keys="Enter"
+              label="Enter closes the time field"
+            />
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Tab" label="Tab moves to the next field" />
+          </>
+        )}
+      </EventFormFocusedHint>
     </div>
   );
 };

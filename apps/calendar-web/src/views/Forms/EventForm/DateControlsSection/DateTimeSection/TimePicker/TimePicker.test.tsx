@@ -447,6 +447,19 @@ describe("TimePicker Enter commit", () => {
     expect(screen.queryByText("1 PM")).not.toBeInTheDocument();
   });
 
+  it("shows menu navigation keycaps while the list is open", async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);
+
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole("combobox", { name: "Start time" })).toHaveFocus();
+
+    const hint = screen.getByTestId("event-form-control-hint");
+    expect(hint.textContent).toMatch(/Enter/i);
+    expect(hint.querySelector(".c-keycap")).toBeTruthy();
+  });
+
   it("keeps the original time when Enter is pressed without changing the draft", async () => {
     const user = userEvent.setup();
     render(<Harness initialValue={onePm} options={dayOptions} freshOptions />);

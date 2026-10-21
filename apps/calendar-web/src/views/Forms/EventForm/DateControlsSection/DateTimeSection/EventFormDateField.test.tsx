@@ -255,6 +255,18 @@ describe("EventFormDateField", () => {
     expect(screen.getByRole("button", { name: "After" })).toHaveFocus();
   });
 
+  it("shows commit keycaps while the input is focused", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    const input = screen.getByTitle("Pick Start Date");
+    await user.click(input);
+
+    const hint = screen.getByTestId("event-form-control-hint");
+    expect(hint.textContent).toMatch(/Enter/i);
+    expect(hint.querySelector(".c-keycap")).toBeTruthy();
+  });
+
   it("opens the calendar on a bare ArrowDown", async () => {
     const user = userEvent.setup();
     const onCalendarOpen = mock();

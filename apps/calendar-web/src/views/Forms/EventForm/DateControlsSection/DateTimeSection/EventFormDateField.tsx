@@ -9,6 +9,11 @@ import {
   EVENT_FORM_DATE_INPUT_FORMAT,
   formatEventFormDateLabel,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
+import {
+  EventFormFocusedHint,
+  EventFormHintKeys,
+  EventFormHintSeparator,
+} from "@web/views/Forms/EventForm/EventFormFocusedHint";
 
 const DATE_FIELD_CLASSNAME =
   "c-event-form-date-field flex min-w-0 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
@@ -187,7 +192,7 @@ export const EventFormDateField = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: stops date picker mouse events from bubbling to the form.
     <div
       ref={containerRef}
-      className={DATE_FIELD_CLASSNAME}
+      className={`${DATE_FIELD_CLASSNAME} group/control`}
       id={jumpId}
       onBlur={(event) => {
         // react-datepicker skips onBlur while its calendar is open, so listen
@@ -229,6 +234,36 @@ export const EventFormDateField = ({
         view="grid"
         withUnderline={false}
       />
+      <EventFormFocusedHint pinned={isOpen}>
+        {isOpen ? (
+          <>
+            <EventFormHintKeys
+              keys={["ArrowUp", "ArrowDown"]}
+              label="Up and down arrows move in the calendar"
+            />
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Enter" label="Enter selects the day" />
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Esc" label="Escape closes the calendar" />
+          </>
+        ) : (
+          <>
+            <EventFormHintKeys keys="ArrowUp" label="Arrow up nudges the day" />
+            <EventFormHintSeparator />
+            <EventFormHintKeys
+              keys="ArrowDown"
+              label="Arrow down opens the calendar"
+            />
+            <EventFormHintSeparator />
+            <EventFormHintKeys
+              keys="Enter"
+              label="Enter commits or opens the calendar"
+            />
+            <EventFormHintSeparator />
+            <EventFormHintKeys keys="Tab" label="Tab commits the date" />
+          </>
+        )}
+      </EventFormFocusedHint>
     </div>
   );
 };
