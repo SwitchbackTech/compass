@@ -173,6 +173,7 @@ enum NativeImageSnapshotSupport {
         try? data.write(to: fileURL)
     }
 
+    @MainActor
     private static func attachToggleProbeBounds(
         minX: CGFloat,
         maxX: CGFloat,

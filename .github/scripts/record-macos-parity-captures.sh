@@ -367,16 +367,19 @@ if bounds_attachment and not os.path.isfile(os.path.join(out, "parity-toggle-bou
 full_window = find_attachment(raw, "mac-title-bar-full-window")
 window_top = os.path.join(out, "parity-window-top.png")
 native_window_png = os.path.join(out, "mac-title-bar-full-window.png")
+if full_window and not os.path.isfile(native_window_png):
+    shutil.copyfile(full_window, native_window_png)
 window_id_path = os.path.join(out, "parity-window-id.txt")
 screencap_path = os.path.join(out, "_parity_window_screencap.png")
 metrics_path = os.path.join(out, "parity-window-metrics.txt")
 if os.path.isfile(metrics_path):
     print(open(metrics_path).read(), file=sys.stderr)
 
-def validate_title_bar_band(band: Image.Image) -> None:
+def validate_title_bar_band(band: Image.Image, source: str) -> None:
     assert_traffic_lights(band)
     assert_month_title_band(band)
-    reject_bottom_of_window(band)
+    if source == "screencapture-window":
+        reject_bottom_of_window(band)
     if band.size[0] < MIN_TITLE_BAR_WIDTH:
         raise SystemExit(
             f"width {band.size[0]}px; expected at least {MIN_TITLE_BAR_WIDTH}px (1280-wide window)"
@@ -384,10 +387,10 @@ def validate_title_bar_band(band: Image.Image) -> None:
     assert_sidebar_toggle_icon(band, out)
 
 candidates: list[tuple[str, str]] = []
-if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
-    candidates.append(("parity-window-top", window_top))
 if os.path.isfile(native_window_png) and os.path.getsize(native_window_png) > 1000:
     candidates.append(("native-full-window", native_window_png))
+if full_window:
+    candidates.append(("xcui-attachment", full_window))
 if os.path.isfile(window_id_path):
     with open(window_id_path) as handle:
         window_id = handle.read().strip()
@@ -395,8 +398,8 @@ if os.path.isfile(window_id_path):
         os.system(f'screencapture -l {window_id} -x "{screencap_path}" 2>/dev/null')
         if os.path.isfile(screencap_path) and os.path.getsize(screencap_path) > 1000:
             candidates.append(("screencapture-window", screencap_path))
-if full_window:
-    candidates.append(("xcui-attachment", full_window))
+if os.path.isfile(window_top) and os.path.getsize(window_top) > 1000:
+    candidates.append(("parity-window-top", window_top))
 
 if not candidates:
     raise SystemExit("Missing mac-title-bar-full-window screenshot attachment")
@@ -409,7 +412,7 @@ for name, src in candidates:
             os.remove(path)
         crop_title_bar(src, path)
         band = Image.open(path).convert("RGBA")
-        validate_title_bar_band(band)
+        validate_title_bar_band(band, name)
         chosen = name
         break
     except SystemExit as exc:

@@ -119,10 +119,10 @@ enum ParityViewSnapshotExporter {
         let frame = window.frame
         let bandPoints = MacTitleBarChromeMetrics.referenceCaptureHeight
         guard let image = CGWindowListCreateImage(
-            frame,
+            .null,
             .optionIncludingWindow,
             windowID,
-            [.bestResolution]
+            [.boundsIgnoreFraming, .bestResolution]
         ), let cropped = cropTopBand(from: image, frameHeight: frame.height, bandPoints: bandPoints)
         else { return }
 
