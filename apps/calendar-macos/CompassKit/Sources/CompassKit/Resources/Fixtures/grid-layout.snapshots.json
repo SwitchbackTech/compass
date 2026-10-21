@@ -19,7 +19,7 @@
             "fillColorHex": "#3b82f6",
             "frame": {
               "height": 60,
-              "left": 5,
+              "left": 55,
               "top": 570,
               "width": 310
             },
@@ -55,7 +55,7 @@
             "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
-              "left": 5,
+              "left": 55,
               "top": 600,
               "width": 8
             },
@@ -73,7 +73,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 5,
+              "left": 55,
               "top": 480,
               "width": 212,
               "zIndex": 1
@@ -92,7 +92,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 49,
+              "left": 99,
               "top": 510,
               "width": 212,
               "zIndex": 2
@@ -153,7 +153,7 @@
             "fillColorHex": "#3b82f6",
             "frame": {
               "height": 60,
-              "left": 325,
+              "left": 375,
               "top": 570,
               "width": 310
             },
@@ -189,7 +189,7 @@
             "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
-              "left": 325,
+              "left": 375,
               "top": 600,
               "width": 8
             },
@@ -207,7 +207,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 325,
+              "left": 375,
               "top": 480,
               "width": 212,
               "zIndex": 1
@@ -226,7 +226,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 369,
+              "left": 419,
               "top": 510,
               "width": 212,
               "zIndex": 2
@@ -309,7 +309,7 @@
             "fillColorHex": "#3b82f6",
             "frame": {
               "height": 60,
-              "left": 335,
+              "left": 385,
               "top": 570,
               "width": 120
             },
@@ -345,7 +345,7 @@
             "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
-              "left": 335,
+              "left": 385,
               "top": 600,
               "width": 8
             },
@@ -363,7 +363,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 335,
+              "left": 385,
               "top": 480,
               "width": 72,
               "zIndex": 1
@@ -382,7 +382,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 379,
+              "left": 429,
               "top": 510,
               "width": 72,
               "zIndex": 2
@@ -482,7 +482,7 @@
             "fillColorHex": "#3b82f6",
             "frame": {
               "height": 60,
-              "left": 5,
+              "left": 55,
               "top": 570,
               "width": 310
             },
@@ -518,7 +518,7 @@
             "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
-              "left": 325,
+              "left": 375,
               "top": 600,
               "width": 8
             },
@@ -536,7 +536,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 5,
+              "left": 55,
               "top": 480,
               "width": 212,
               "zIndex": 1
@@ -555,7 +555,7 @@
             "focusColorHex": "#3b82f6",
             "frame": {
               "height": 57,
-              "left": 49,
+              "left": 99,
               "top": 510,
               "width": 212,
               "zIndex": 2
