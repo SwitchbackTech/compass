@@ -241,7 +241,6 @@ public struct RootView: View {
                 .padding(.bottom, 8)
             sidebarActions
         }
-        .pageJumpChipAnchor(id: "calendars")
         .frame(width: model.sidebarWidth)
         .frame(maxHeight: .infinity)
         .background(theme.surfacePanelColor)
@@ -277,6 +276,7 @@ public struct RootView: View {
             .pageJumpChipAnchor(id: "month-picker")
             UpNextCard(model: model, onOpen: { model.openUpNextEvent() })
             CalendarListView(model: model)
+                .pageJumpChipAnchor(id: "calendars")
             if model.showsMeetingPageNudge {
                 MeetingPageNudgeView(model: model)
             }
