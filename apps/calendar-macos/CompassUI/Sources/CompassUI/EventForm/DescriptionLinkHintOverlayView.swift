@@ -1,5 +1,4 @@
 import AppKit
-import SwiftUI
 
 /// Per-link digit keycaps aligned to reserved inline slots after each link.
 final class DescriptionLinkHintOverlayView: NSView {
@@ -37,9 +36,8 @@ final class DescriptionLinkHintOverlayView: NSView {
                 to: self
             )
 
-            let chip = NSHostingView(
-                rootView: ShortcutHintChip(label: String(linkIndex + 1))
-            )
+            let chip = DescriptionLinkHintChipView()
+            chip.label = String(linkIndex + 1)
             chip.frame = CGRect(
                 x: slotOrigin.x + 2,
                 y: slotOrigin.y + max(0, (linkRect.height - 18) / 2),
