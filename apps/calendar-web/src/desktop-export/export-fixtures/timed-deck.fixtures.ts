@@ -8,6 +8,7 @@ import { BusyPeriodSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { eventPositionInParityGridFrame } from "@web/desktop-export/export-fixtures/parity-grid-frame";
 import { splitBusyPeriodsByDay } from "@web/grid/layout/busy-period.layout";
 import {
   getAllDayEventPosition,
@@ -139,6 +140,9 @@ export const buildTimedDeckFixtures = () => {
     { order: 0, groupSize: 2 },
     false,
   );
+  const parityTimedPosition = eventPositionInParityGridFrame(timedPosition);
+  const parityBusyPosition = eventPositionInParityGridFrame(busyPosition);
+  const parityDisplayPosition = eventPositionInParityGridFrame(displayPosition);
 
   return {
     cases: [
@@ -174,7 +178,7 @@ export const buildTimedDeckFixtures = () => {
           measurements,
           visibleDates: visibleDates.map(({ key }) => key),
         },
-        output: timedPosition,
+        output: parityTimedPosition,
       },
       {
         id: "getAllDayEventPosition",
@@ -194,16 +198,16 @@ export const buildTimedDeckFixtures = () => {
           measurements: weekMeasurements,
           visibleDates: weekVisibleDates.map(({ key }) => key),
         },
-        output: busyPosition,
+        output: parityBusyPosition,
       },
       {
         id: "applyTimedEventDisplayPosition",
         input: {
-          position: timedPosition,
+          position: parityTimedPosition,
           deckLayout: { order: 0, groupSize: 2 },
           isHidden: false,
         },
-        output: displayPosition,
+        output: parityDisplayPosition,
       },
     ],
   };

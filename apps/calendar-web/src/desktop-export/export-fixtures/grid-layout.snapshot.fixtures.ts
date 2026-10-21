@@ -12,6 +12,7 @@ import {
   resolveCalendarFocusColor,
 } from "@web/calendars/useCalendarLookup";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { eventPositionInParityGridFrame } from "@web/desktop-export/export-fixtures/parity-grid-frame";
 import {
   EVENT_ALLDAY_GAP,
   EVENT_ALLDAY_ROW_HEIGHT,
@@ -270,10 +271,8 @@ const buildSnapshot = ({
         visibleDates,
       },
     );
-    const frame = applyTimedEventDisplayPosition(
-      base,
-      item.deckLayout,
-      item.isHidden,
+    const frame = eventPositionInParityGridFrame(
+      applyTimedEventDisplayPosition(base, item.deckLayout, item.isHidden),
     );
     cards.push({
       accessibilityIdentifier: eventIdentifier(timed.eventId),
@@ -310,11 +309,13 @@ const buildSnapshot = ({
       layoutMode === "day"
         ? columnIndexForCalendar(segment.calendarId)
         : visibleDates.findIndex((visible) => visible.key === "2026-05-20");
-    const frame = getBusyPeriodPosition(segment, {
-      columnIndex: layoutMode === "day" ? columnIndex : undefined,
-      measurements,
-      visibleDates,
-    });
+    const frame = eventPositionInParityGridFrame(
+      getBusyPeriodPosition(segment, {
+        columnIndex: layoutMode === "day" ? columnIndex : undefined,
+        measurements,
+        visibleDates,
+      }),
+    );
     cards.push({
       accessibilityIdentifier: eventIdentifier(segment.key),
       eventId: segment.key,

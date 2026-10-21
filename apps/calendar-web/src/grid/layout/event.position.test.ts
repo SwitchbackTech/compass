@@ -399,7 +399,8 @@ describe("event position", () => {
     });
 
     expect(after.top).toBe(before.top);
-    expect(after.left).toBe(before.left + 50);
+    // Gutter width is on the timed track container; cards stay column-relative.
+    expect(after.left).toBe(before.left);
     act(() => {
       setTimeTravelZone(null);
     });

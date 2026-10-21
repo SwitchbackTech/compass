@@ -3,9 +3,10 @@ import { type FC, type ReactNode, type RefCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   civilHourSlotCount,
+  gridMinutesFromCivilMidnight,
   maxCivilHourSlotCount,
 } from "@core/util/date/civil-day";
-import { type Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { PH_NO_RAGECLICK_CLASS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import {
   DATA_TIMED_GRID_ROW,
@@ -17,13 +18,13 @@ import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { accentGradient } from "@web/common/styles/theme.util";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
-import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
 import { ScrollableRegion } from "@web/components/ScrollableRegion/ScrollableRegion";
 import { CalendarTimeColumn } from "@web/grid/components/CalendarTimeColumn";
 import {
   EVENT_WIDTH_MINIMUM,
   TIMED_HOUR_SLOT_HEIGHT_CLASS,
   TIMED_VISIBLE_HOURS,
+  timedGridTopPercent,
 } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
 import { useNowCuePulse } from "@web/grid/now-cue/useNowCuePulse";
@@ -104,14 +105,6 @@ export const TimedGrid: FC<TimedGridProps> = ({
         id={columnsId}
         ref={timedColumnsRef}
       >
-        {todayColumnIndexes.map((columnIndex) => (
-          <CalendarNowLine
-            columnCount={visibleDates.length}
-            columnIndex={columnIndex}
-            effectiveTimeZone={effectiveTimeZone}
-            key={visibleDates[columnIndex]?.key}
-          />
-        ))}
         <table className="contents">
           <thead className="contents">
             <tr className="contents">
@@ -156,6 +149,14 @@ export const TimedGrid: FC<TimedGridProps> = ({
           />
         ))}
         {eventsLayer}
+        {todayColumnIndexes.map((columnIndex) => (
+          <CalendarNowLine
+            columnCount={visibleDates.length}
+            columnIndex={columnIndex}
+            effectiveTimeZone={effectiveTimeZone}
+            key={visibleDates[columnIndex]?.key}
+          />
+        ))}
       </div>
     </ScrollableRegion>
   );
@@ -171,7 +172,10 @@ const CalendarNowLine = ({
   effectiveTimeZone: string;
 }) => {
   useMinuteTick();
-  const percentOfDay = getCurrentPercentOfDay(effectiveTimeZone);
+  const minutesFromMidnight = gridMinutesFromCivilMidnight(
+    dayjs(),
+    effectiveTimeZone,
+  );
   const { pulsing: pulseNowLine, pulseKey } = useNowCuePulse();
 
   return (
@@ -184,7 +188,7 @@ const CalendarNowLine = ({
       key={pulseKey("now-line")}
       style={{
         background: accentGradient,
-        top: `${percentOfDay}%`,
+        top: `${timedGridTopPercent(minutesFromMidnight)}%`,
         left: `calc(${columnIndex} * 100% / ${columnCount})`,
         width: `calc(100% / ${columnCount})`,
         zIndex: ZIndex.LAYER_2,
