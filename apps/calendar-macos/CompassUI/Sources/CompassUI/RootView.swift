@@ -355,13 +355,9 @@ public struct RootView: View {
 
                 Spacer(minLength: 0)
 
-                titleBarNavButton(
-                    label: model.isSidebarOpen ? "Close sidebar" : "Open sidebar",
-                    icon: .sidebarSimple
-                ) {
-                    model.isSidebarOpen.toggle()
-                }
-                .padding(.trailing, 20)
+                TitleBarSidebarToggle(model: model)
+                    .frame(width: 24, height: 24)
+                    .padding(.trailing, 20)
             }
             .frame(height: MacTitleBarChromeMetrics.contentBandHeight)
         }
