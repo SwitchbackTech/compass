@@ -264,6 +264,7 @@ export const AuthModal: FC = () => {
             <ShortcutHint
               className="shrink-0"
               visible={showBareLetterShortcutHints}
+              reserveSpaceWhenHidden={false}
             >
               {isLoginView ? "U" : "i"}
             </ShortcutHint>
