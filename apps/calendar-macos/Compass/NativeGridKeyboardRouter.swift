@@ -68,6 +68,7 @@ final class NativeGridKeyboardRouter {
             .navGoToDate,
             .otherSidebar,
             .focusSidebar,
+            .focusShiftHold,
             .focusNotice,
             .otherSubscribe,
         ]
