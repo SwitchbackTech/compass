@@ -1,4 +1,7 @@
-import { FORM_FIELD_DIGITS } from "@core/shortcuts/edit-sequence.fields";
+import {
+  type EDIT_SEQUENCE_FIELDS,
+  FORM_FIELD_DIGITS,
+} from "@core/shortcuts/edit-sequence.fields";
 import {
   type EventFormFocusField,
   getEventFormFieldAnchor,
@@ -14,12 +17,16 @@ import {
  * own, which is how the pointer-teach hint points at one control.
  */
 export function FormDigitHintOverlay({
+  digitRows,
   visible,
   highlightField = null,
 }: {
+  /** When set, only these fields are eligible (same gating as the e-menu). */
+  digitRows?: readonly (typeof EDIT_SEQUENCE_FIELDS)[number][];
   visible: boolean;
   highlightField?: EventFormFocusField | null;
 }) {
+  const fieldTable = digitRows ?? FORM_FIELD_DIGITS;
   // Chip the visible control, not a hidden inner input. Only targets whose
   // anchor is currently rendered get announced or chipped, e.g. the calendar
   // picker (digit 5) isn't rendered on an edit draft, so the shortcut
@@ -27,8 +34,8 @@ export function FormDigitHintOverlay({
   const resolveChips = (): DigitHintChip[] => {
     const fieldEntries =
       highlightField !== null
-        ? FORM_FIELD_DIGITS.filter((entry) => entry.field === highlightField)
-        : FORM_FIELD_DIGITS;
+        ? fieldTable.filter((entry) => entry.field === highlightField)
+        : fieldTable;
 
     return fieldEntries.flatMap((entry) => {
       const anchor = getEventFormFieldAnchor(entry.field);

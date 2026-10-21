@@ -5,6 +5,10 @@ import {
   focusEventFormField,
   getEventFormElement,
 } from "@web/common/utils/form/form.util";
+import {
+  editSequenceFieldByKey,
+  visibleEditSequenceLetterFields,
+} from "@web/events/event-form-field-visibility.util";
 import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
@@ -12,6 +16,7 @@ import {
   isEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { useActiveEventFormFieldVisibility } from "@web/events/useActiveEventFormFieldVisibility";
 import {
   type FocusableGridEventTarget,
   findCalendarEventForTarget,
@@ -99,15 +104,33 @@ export function useGridEventFormFieldSequences({
   // Plain functions, not useCallback: `targeting` is rebuilt every render by
   // the owners, so memoizing on it would be a lie. The hook reads both through
   // refs, and the menu only calls the anchor getter during render.
-  const canArm = () => targeting.getFocused() !== null || isEventFormOpen();
+  const { letterFields, resolveVisibilityInput } =
+    useActiveEventFormFieldVisibility({
+      allDayEvents,
+      getFocused: targeting.getFocused,
+      timedEvents,
+    });
 
   const getMenuAnchor = () =>
     targeting.getFocused()?.element ?? getEventFormElement();
 
   useEditSequenceShortcut({
-    canArm,
+    canArm: () => {
+      const input = resolveVisibilityInput();
+      return (
+        input !== null && visibleEditSequenceLetterFields(input).length > 0
+      );
+    },
+    getLetterFields: () => {
+      const input = resolveVisibilityInput();
+      return input ? visibleEditSequenceLetterFields(input) : [];
+    },
+    resolveFieldByKey: () => {
+      const input = resolveVisibilityInput();
+      return input ? editSequenceFieldByKey(input) : {};
+    },
     onSequence: openFocusedEventFormField,
   });
 
-  return { getMenuAnchor };
+  return { getMenuAnchor, letterFields };
 }
