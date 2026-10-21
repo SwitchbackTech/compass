@@ -133,10 +133,8 @@ public final class DescriptionTextView: NSTextView {
 
     var onLinkCopied: (() -> Void)?
 
-    override func accessibilityValue() -> Any? {
-        guard let value = super.accessibilityValue() as? String else {
-            return super.accessibilityValue()
-        }
+    public override func accessibilityValue() -> String? {
+        guard let value = super.accessibilityValue() else { return nil }
         return value.replacingOccurrences(of: "\u{FFFC}", with: "")
     }
 
