@@ -367,6 +367,21 @@ final class NativeGridKeyboardRouter {
             return true
         }
 
+        if keyEvent.modifiers.isEmpty,
+            case .character(let char) = keyEvent.key,
+            char.lowercased() == "f",
+            model.viewStore.view != .life
+        {
+            if model.eventJumpSelection.modeActive {
+                if model.handleEventJumpKeystroke("f") {
+                    return true
+                }
+            } else {
+                model.activateEventJumpMode()
+                return true
+            }
+        }
+
         if handleDraftKeys(keyEvent) {
             return true
         }
