@@ -68,7 +68,7 @@ public struct RootView: View {
         }
     }
 
-    public var body: some View {
+    private var calendarWithBanners: some View {
         calendarShell
         .background(theme.backgroundColor)
         .font(.rubik(14))
@@ -107,6 +107,10 @@ public struct RootView: View {
                     .noticeFocusRing(model.focusedNotice == .billingPastDue)
             }
         }
+    }
+
+    private var calendarWithOnboarding: some View {
+        calendarWithBanners
         .overlay {
             if model.authStore.isModalPresented, model.activeOnboardingSurface != .welcomeModal {
                 AuthModalOverlay(authStore: model.authStore, billingStore: model.billingStore)
@@ -145,6 +149,10 @@ public struct RootView: View {
         .overlay {
             BillingUpgradeConfirmationSheet(billingStore: model.billingStore)
         }
+    }
+
+    private var calendarWithTools: some View {
+        calendarWithOnboarding
         .overlay {
             CommandPaletteOverlay(model: model)
         }
@@ -160,6 +168,10 @@ public struct RootView: View {
         .overlay {
             StatusToastOverlay(model: model)
         }
+    }
+
+    public var body: some View {
+        calendarWithTools
         .overlay {
             DedicationDialogView(
                 isPresented: model.dedicationDialogVisible,

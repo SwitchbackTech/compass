@@ -54,9 +54,14 @@ final class NativeLaunchTests: XCTestCase {
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         window.typeKey("l", modifierFlags: [])
-        XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
-                .waitForExistence(timeout: 10))
+        let intro = window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
+        XCTAssertTrue(intro.waitForExistence(timeout: 10))
+        window.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(intro.waitForNonExistence(timeout: 5))
+
+        window.typeKey("w", modifierFlags: [])
+        window.typeKey("l", modifierFlags: [])
+        XCTAssertFalse(intro.exists)
     }
 
     @MainActor
