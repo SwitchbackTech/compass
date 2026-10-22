@@ -27,7 +27,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Web | macOS | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Light Beach / Dark Abyss palettes | `[data-theme]` in `index.css` | `ThemeTokens.lightBeach` / `darkAbyss` | ✅ | Generated from same CSS |
-| SwiftUI accessor coverage | Tailwind `color-*` for all 22 roles | `NativeWebTheme` exposes subset on `ThemeTokenColor+SwiftUI.swift` | 🟡 | Missing convenience colors: `surfaceRaised`, `textSubtle`, `borderStrong`, `accentHover`, `accentStrong`, `accentSecondaryHover`, `onAccent`, `info`, `shadowDefault` |
+| SwiftUI accessor coverage | Tailwind `color-*` for all 22 roles | `NativeWebTheme` exposes all roles on `ThemeTokenColor+SwiftUI.swift` | ✅ | `NativeWebTheme` exposes all 22 generated palette roles, including raised surfaces, strong borders, accent variants, on-accent text, info and shadow |
 | Panel modal backdrop | `OverlayPanel` / `bg-background/85` + `backdrop-blur-sm` | `PanelBackdropView`: `panelBackdropColor` (`background` @ 85%) over a within-window blur | ✅ | Settings and welcome used the dark `overlayBackdrop` dim and read as solid gray; that dim stays for menus and confirm dialogs. Welcome centers vertically like web |
 | Event default fill hex | `theme.util.ts` / deck | `EventCardView.swift` literals `#454442`, `#82A0B2` | 🟡 | Values align; not read from tokens |
 | Event focus ring color | `--event-focus-color` + outline | `EventCardView` CALayer border from fill-aware helper | 🟡 | Same intent, different paint model |
@@ -59,7 +59,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Web | macOS | Status | Notes |
 | --- | --- | --- | --- | --- |
 | `--shadow-default` on elevated buttons | `c-button-elevated` | Limited native elevation | 🟡 | Save bar / primary buttons |
-| Command palette panel shadow | Floating overlay | Stroke only, no shadow | 🟡 | `CommandPaletteOverlay.swift` |
+| Command palette panel shadow | Floating overlay | Token-colored shadow, 24pt radius and 16pt vertical offset | ✅ | `CommandPaletteOverlay.swift`; native paint parameters remain platform-specific |
 
 ### 1.5 Focus rings
 
@@ -195,7 +195,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Separate placeholder when creating from hotkey | 🟡 | Web `DESKTOP_QUICK_ADD_PALETTE_PLACEHOLDER`; verify native quick-add panel |
+| Separate placeholder when creating from hotkey | ✅ | Both native Quick Add field implementations match web `DESKTOP_QUICK_ADD_PALETTE_PLACEHOLDER`: “Add an event, or type a time like 1130” |
 
 ### 2.12 Life view
 
@@ -254,8 +254,8 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `focus-sidebar` | I | ✅ | Month picker |
 | `focus-event` | U | ✅ | `focusFirstCalendarEvent()` seeds nearest grid event |
 | `focus-shift-hold` | F (+ digits) | ✅ | Jump mode: W1 / SU2 chips, bare day letters, digits after a day pick, typed time on the picked column |
-| `focus-week-day` | Shift+M… | 🟡 | Column select + first event; weekend S→U/A; digit hints after day pick ❌ |
-| `focus-notice` | P | 🟡 | Subset of notices |
+| `focus-week-day` | Shift+M… | ✅ | Column select + first event; weekend S→U/A; day-prefix digit targeting and typed-time creation wired |
+| `focus-notice` | P | ✅ | Connection, sample events, meeting nudge, trial, update and past-due notices; see §2.9 |
 | `focus-calendar-digit` | 1–9 in list | ✅ | |
 | `focus-page-jump` | Mod+digit (hold hints) | ✅ | |
 | `focus-find-event` | Mod+K | ✅ | Palette search |
@@ -265,7 +265,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | ID | Status | Notes |
 | --- | --- | --- |
 | `edit-open` | ✅ | Enter / E sequence |
-| `edit-save` | 🟡 | Mod+Enter works; save **button** teaches Enter only |
+| `edit-save` | ✅ | Mod+Enter saves; save button shows separate ⌘ and Enter keycaps |
 | `edit-delete` | ✅ | |
 | `edit-duplicate` | ✅ | |
 | `edit-copy` / `edit-paste` | ✅ | |
@@ -294,7 +294,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | --- | --- |
 | Tab order through form fields | 🟡 |
 | Keycaps on view switcher, footer, welcome | ✅ |
-| Keycaps on save bar, Up Next, palette rows | ❌ / 🟡 |
+| Keycaps on save bar, Up Next, palette rows | ✅ |
 | Which-key overlay | ✅ |
 
 ---
@@ -309,7 +309,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `CompassUITests` | Launch, palette keyboard, form save, snapshots (macOS CI) |
 | Web `theme-css.test.ts` | CSS ↔ TS color roles |
 
-**Not automated today:** side-by-side screenshots web vs macOS (except recorded native snapshots), palette row inventory, MM.DD.YY, gradient now line.
+**Visual automation:** `desktop-web-parity-screenshots.yml` captures web and macOS surfaces and produces side-by-side comparisons (see §7). These captures support visual review; they do not establish pixel equality or signed-in flow parity.
 
 ---
 
@@ -369,3 +369,7 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
 Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).
+
+### 2026-10-22 source reconciliation
+
+Rechecked against `main` at `7a44b191a` after the overnight merge batch. Corrected stale entries for theme accessor coverage, palette shadow, Quick Add placeholder, weekday targeting, notice focus, save keycaps and screenshot automation. These are source-backed findings, not a new signed-in acceptance run. Remaining partial visual and live-flow entries still require direct verification. Existing Life intro (#4709) and title-bar capture (#4667) PRs must be reconciled before duplicating their changes.
