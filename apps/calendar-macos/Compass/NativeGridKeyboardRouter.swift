@@ -491,6 +491,9 @@ final class NativeGridKeyboardRouter {
             if opened { model.recordShortcut(.editOpenDescriptionLink) }
             return opened
         }
+        if handleColorSwatchKeys(keyEvent) {
+            return true
+        }
         if keyEvent.modifiers.isEmpty,
             case .character(let char) = keyEvent.key,
             let digit = Int(String(char)),
@@ -558,6 +561,35 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    /// Web `EventColorPicker` keys while the color field has focus: arrows move
+    /// between swatches, Space / Enter pick the focused one, and a pick key
+    /// (1-9, 0, -, =) picks that swatch directly.
+    private func handleColorSwatchKeys(_ keyEvent: KeyEvent) -> Bool {
+        guard model.eventFormFocusedField == .color,
+            keyEvent.modifiers.isEmpty,
+            !(NSApp.keyWindow?.firstResponder is NSTextView),
+            let draft = model.draftStore.gridDraft,
+            !model.isEventFormReadOnly(for: draft)
+        else { return false }
+        switch keyEvent.key {
+        case .named(.arrowRight), .named(.arrowDown):
+            model.moveColorSwatchFocus(by: 1)
+        case .named(.arrowLeft), .named(.arrowUp):
+            model.moveColorSwatchFocus(by: -1)
+        case .named(.enter), .character(" "):
+            model.pickColorSwatch(at: model.colorSwatchFocusIndex)
+        case .character(let char):
+            guard let index = FormFieldDigitMapping.pickKeyLabels.firstIndex(of: String(char)),
+                index < NativeCalendarRootModel.colorSwatchOptions.count
+            else { return false }
+            model.pickColorSwatch(at: index)
+            model.recordShortcut(.editPickByNumber)
+        default:
+            return false
+        }
+        return true
     }
 
     private func syncEditSequenceFieldGating() {
