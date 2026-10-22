@@ -1196,6 +1196,7 @@ describe("GET /sync/google", () => {
         provider: "google",
         outcome: "connected",
         intent: "connect",
+        environment: NodeEnv.Test,
       }),
     );
     expect(captured[0]!.properties).not.toHaveProperty("errorClass");
