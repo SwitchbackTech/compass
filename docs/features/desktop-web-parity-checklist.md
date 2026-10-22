@@ -341,6 +341,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-21 | Hold-Mod sidebar chips: month picker and Up next chips render, calendar list chip moved onto the list (compare run 39634795849) |
 | 2026-10-21 | Per-account page-jump targets (web `calendar-account:` ids) |
 | 2026-10-21 | Event jump chips use web day-prefix labels (W1, SU2) and digits after a day pick |
+| 2026-10-22 | Week/day hour gutter labels use web's 1 AM track origin (#4686); they sat two hours below their events (a 5 PM event drew on the 3 PM row) |
 
 ---
 
