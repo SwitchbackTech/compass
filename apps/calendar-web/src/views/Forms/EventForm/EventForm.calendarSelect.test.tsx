@@ -99,7 +99,7 @@ describe("EventForm calendar selection", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
     await user.type(titleField, "Plan launch");
-    await user.keyboard("{Enter}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);

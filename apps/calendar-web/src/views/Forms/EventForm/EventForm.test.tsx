@@ -936,7 +936,7 @@ describe("EventForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("submits when Enter is pressed in the location field", async () => {
+  it("does not submit when Enter is pressed in the location field", async () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
@@ -956,7 +956,7 @@ describe("EventForm", () => {
     await user.click(screen.getByRole("textbox", { name: "Location" }));
     await user.keyboard("{Enter}");
 
-    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("submits when Enter is pressed on the focused Save button", async () => {
@@ -1414,7 +1414,7 @@ describe("EventForm", () => {
     expect(eventResult.defaultPrevented).toBe(false);
   });
 
-  it("submits a typed draft title when Enter is pressed", async () => {
+  it("submits a typed draft title when Mod+Enter is pressed", async () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
@@ -1455,7 +1455,7 @@ describe("EventForm", () => {
     act(() => titleField.focus());
 
     await user.type(titleField, "Plan");
-    await user.keyboard("{Enter}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith(

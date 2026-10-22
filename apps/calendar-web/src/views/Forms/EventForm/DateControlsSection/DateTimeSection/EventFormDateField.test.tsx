@@ -111,6 +111,12 @@ describe("EventFormDateField", () => {
     const input = screen.getByTitle("Pick Start Date");
     await user.click(input);
     await user.clear(input);
+    await user.keyboard("{Escape}");
+    expect(onCommit).not.toHaveBeenCalled();
+
+    act(() => {
+      input.focus();
+    });
     await user.keyboard("{Enter}");
 
     expect(onCommit).not.toHaveBeenCalled();
@@ -285,6 +291,56 @@ describe("EventFormDateField", () => {
     expect(
       screen.queryByTestId("event-form-control-hint"),
     ).not.toBeInTheDocument();
+  });
+
+  it("moves the keyboard highlight by week with arrows while the calendar is open", async () => {
+    const user = userEvent.setup();
+    render(
+      <EventFormDateField
+        isOpen
+        onCalendarClose={() => undefined}
+        onCalendarOpen={() => undefined}
+        onCommit={() => undefined}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    input.focus();
+    await user.keyboard("{ArrowDown}");
+
+    const highlighted = document.querySelector(
+      ".react-datepicker__day--keyboard-selected",
+    );
+    expect(highlighted?.textContent?.trim()).toBe("20");
+    expect(input).toHaveFocus();
+  });
+
+  it("selects the highlighted day on Enter without submitting through the form", async () => {
+    const user = userEvent.setup();
+    const onCommit = mock();
+    const onCalendarClose = mock();
+    render(
+      <EventFormDateField
+        isOpen
+        onCalendarClose={onCalendarClose}
+        onCalendarOpen={() => undefined}
+        onCommit={onCommit}
+        selected={START}
+        sideLabel="start"
+        title="Pick Start Date"
+      />,
+    );
+
+    const input = screen.getByTitle("Pick Start Date");
+    input.focus();
+    await user.keyboard("{ArrowDown}{Enter}");
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit.mock.calls[0]?.[0].getDate()).toBe(20);
+    expect(onCalendarClose).toHaveBeenCalledTimes(1);
   });
 
   it("opens the calendar on a bare ArrowDown", async () => {

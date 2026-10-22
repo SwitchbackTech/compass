@@ -539,19 +539,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     };
 
     const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (
-        isDraft &&
-        !isExistingEvent &&
-        e.key === "Enter" &&
-        !e.metaKey &&
-        !e.ctrlKey
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        onSubmitForm();
-        return;
-      }
-
       handleIgnoredKeys(e);
     };
 
