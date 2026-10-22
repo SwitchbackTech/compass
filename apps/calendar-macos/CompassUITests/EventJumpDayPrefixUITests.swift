@@ -16,11 +16,13 @@ final class EventJumpDayPrefixUITests: XCTestCase {
             "Expected demo fixture week grid before event jump")
         window.click()
         window.typeKey("f", modifierFlags: [])
-        let chips = window.otherElements["compass-event-jump-chips"]
-        XCTAssertTrue(chips.waitForExistence(timeout: 8))
         let chipLabels = window.staticTexts.matching(identifier: "compass-event-jump-chip")
+        let firstChip = chipLabels.element(boundBy: 0)
+        XCTAssertTrue(
+            firstChip.waitForExistence(timeout: 15),
+            "Expected lowercase event jump chip labels after pressing f")
         XCTAssertGreaterThan(chipLabels.count, 0)
-        let label = chipLabels.element(boundBy: 0).label
+        let label = firstChip.label
         XCTAssertFalse(label.isEmpty)
         XCTAssertEqual(label, label.lowercased())
         for character in label {

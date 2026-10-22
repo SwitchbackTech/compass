@@ -29,6 +29,7 @@ final class EventJumpChipsAccessibilityProbeView: AccessibilityProbeView {
         var x: CGFloat = 0
         for hint in hints {
             let field = NSTextField(labelWithString: hint.label)
+            field.isAccessibilityElement = true
             field.setAccessibilityIdentifier("compass-event-jump-chip")
             field.setAccessibilityLabel(hint.label)
             field.setAccessibilityRole(.staticText)
@@ -37,6 +38,7 @@ final class EventJumpChipsAccessibilityProbeView: AccessibilityProbeView {
             chipFields.append(field)
             x += field.frame.width + 6
         }
+        setAccessibilityChildren(chipFields)
         frame = NSRect(x: 200, y: 200, width: max(x, 40), height: 24)
         syncAccessibilityFrame()
     }
