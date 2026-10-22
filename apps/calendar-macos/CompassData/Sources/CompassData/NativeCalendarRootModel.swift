@@ -92,6 +92,8 @@ public final class NativeCalendarRootModel {
     var pendingSaveInvitation: InvitationEnum?
     public var isGuestEmailInputFocused = false
     public var eventFormFocusedField: EventFormField = .title
+    /// Keyboard focus inside the color swatches while `eventFormFocusedField == .color`.
+    public internal(set) var colorSwatchFocusIndex = 0
     public var formFieldDigitHintsVisible = false
     /// Set when Sparkle has staged an update; cleared after restart prompt dismisses.
     public var desktopUpdateReadyVersion: String?

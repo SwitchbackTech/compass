@@ -12,7 +12,25 @@ extension NativeCalendarRootModel {
     }
 
     public func focusEventFormField(_ field: EventFormField) {
+        if field == .color {
+            colorSwatchFocusIndex = Self.colorSwatchOptions.firstIndex(of: draftStore.gridDraft?.color) ?? 0
+        }
         eventFormFocusedField = field
+    }
+
+    /// Web `EventColorPicker` order: the calendar-default swatch, then each slot.
+    public static let colorSwatchOptions: [EventColorSlot?] = [nil] + EventColorSlot.allCases.map(Optional.some)
+
+    /// Web picker arrows: move focus between swatches without changing the color.
+    public func moveColorSwatchFocus(by delta: Int) {
+        colorSwatchFocusIndex = min(max(colorSwatchFocusIndex + delta, 0), Self.colorSwatchOptions.count - 1)
+    }
+
+    /// Web picker Space / Enter on the focused swatch, or a pick key naming one.
+    public func pickColorSwatch(at index: Int) {
+        guard Self.colorSwatchOptions.indices.contains(index) else { return }
+        colorSwatchFocusIndex = index
+        updateDraftFromForm(color: .some(Self.colorSwatchOptions[index]))
     }
 
     public func openKeyboardEditForFocusedEvent() {
