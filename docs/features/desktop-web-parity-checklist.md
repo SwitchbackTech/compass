@@ -163,7 +163,9 @@ Found a separate capture reliability defect with multiple installed Compass buil
 | --- | --- | --- |
 | Accounts, default calendar, timezone, theme | ✅ | WP-29 |
 | Launch at login, global Quick Add | ✅ | macOS-only (expected) |
-| Visual match to web settings overlay | 🟡 | Section spacing, toggles |
+| Visual match to web settings overlay | 🟡 | Web background tint and 4pt blur verified locally in both themes; section spacing and navigation focus still differ |
+
+2026-10-22: Settings uses the existing background tint at 85% opacity with a 4pt blur on the content behind the panel. Both-theme native tests verify outside-click and Escape dismissal. Native window captures show the blur; view-level parity exports render background compositing differently, so they do not establish full visual equality.
 
 ### 2.8 Onboarding / welcome
 
@@ -371,7 +373,7 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Mini-calendar | ✅ | ✅ | ✅ | Selected-day ring and selected-week wash match; web also shows a transient ↑ ↓ move-by-week hint |
 | Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; local 2026-10-22 native flow and export checks confirm both popovers open below their fields; guest row only on macOS (demo fixture) |
 | Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
-| Settings | ✅ | ✅ | 🟡 | Both modal on a light backdrop (#4718); timezone reads Auto (UTC) vs UTC (UTC) only because the web fixture pins UTC; web shows a focus ring on Accounts |
+| Settings | ✅ | ✅ | 🟡 | Local 2026-10-22 native captures verify the background tint and blur in both themes; view-level export does not reproduce the blur faithfully. Timezone fixture and Accounts focus-ring differences remain |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
 
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
