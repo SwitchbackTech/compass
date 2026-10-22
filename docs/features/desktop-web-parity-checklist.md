@@ -112,7 +112,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
-| Date field **MM.DD.YY** closed display | 🟡 | `EventFormCompactDateField` + `EventFormDateFormat`; verify parity capture after merge |
+| Date field **MM.DD.YY** closed display | ✅ | `EventFormCompactDateField` shows 06.10.26 like web (compare run 39732173380) |
 | Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
 | Time pickers | 🟡 | The list opens centered on the selected time (or the quarter hour before it) like web. Still differs: macOS shows the list and the date picker as AppKit popovers that can open to the side of the field, while web drops them below it |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
@@ -345,6 +345,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-22 | Parity capture draws popover windows (form date picker, time list) over the window render, so those surfaces stop showing a closed field |
 | 2026-10-22 | macOS capture: register `onboarding-welcome-account-choice` so the welcome account step exports instead of timing out |
 | 2026-10-22 | Color swatches and pick keys follow web slot order (lavender, mint, plum, ...) instead of the alphabetical generated enum; time list popover fills its inset with the panel color |
+| 2026-10-22 | §7 refreshed from compare run 39732173380; MM.DD.YY date row ✅ |
 
 ---
 
@@ -352,14 +353,14 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 
 Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
 
-| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39331068008 on `main` post-#4607) |
+| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39732173380, #4725 branch after the 2026-10-22 merges) |
 | --- | --- | --- | --- | --- |
-| Week grid | ✅ | ✅ | 🟡 | Capture uses macOS day view vs web week; demo events only on web shot; sidebar lacks web “Hold Mod jump targets” tip line |
-| Mini-calendar | ✅ | ✅ | 🟡 | Selected-day ring OK; web shows selected-week wash + denser header type |
-| Event form | ✅ | ✅ | 🟡 | Logistics card grouped (#4607); dates still locale steppers vs MM.DD.YY; save bar / Enter hint gaps |
+| Week grid | ✅ | ✅ | 🟡 | Both week view; hour labels sit on their events (#4719). macOS shot has no demo events banner, scrolls about an hour later, and the sidebar tip rotates to a different line |
+| Mini-calendar | ✅ | ✅ | ✅ | Selected-day ring and selected-week wash match; web also shows a transient ↑ ↓ move-by-week hint |
+| Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; date and time popovers draw beside the field instead of below it; guest row only on macOS (demo fixture) |
 | Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
-| Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
-| Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
+| Settings | ✅ | ✅ | 🟡 | Both modal on a light backdrop (#4718); timezone reads Auto (UTC) vs UTC (UTC) only because the web fixture pins UTC; web shows a focus ring on Accounts |
+| Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
 
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
