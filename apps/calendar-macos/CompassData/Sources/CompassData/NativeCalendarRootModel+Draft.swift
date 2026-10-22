@@ -266,6 +266,21 @@ extension NativeCalendarRootModel {
         }
     }
 
+    func pinnedDayColumnCalendarIds() -> Set<String> {
+        var pinned = Set<String>()
+        guard let draft = draftStore.gridDraft else { return pinned }
+        if let calendarId = draft.calendarId?.rawValue {
+            pinned.insert(calendarId)
+        }
+        if draftStore.status.isFormOpen, case .edit = draft.kind,
+           let sourceId = draft.persistedEventId?.rawValue,
+           let event = loadedEvents.first(where: { $0.id.rawValue == sourceId })
+        {
+            pinned.insert(event.calendarId.rawValue)
+        }
+        return pinned
+    }
+
     func draftOverlayForPresentation() -> GridLayoutDraftOverlay? {
         guard let draft = draftStore.gridDraft,
             let activity = draftStore.status.activity

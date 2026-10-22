@@ -937,6 +937,8 @@ public final class NativeCalendarRootModel {
     func applyFocusPresentation() {
         var scenario = timeGridState.scenario
         scenario.draftOverlay = draftOverlayForPresentation()
+        scenario.pinnedDayColumnCalendarIds = pinnedDayColumnCalendarIds()
+        scenario.defaultTargetCalendarId = defaultTargetCalendarId()?.rawValue
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
         let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
         let showDayJumpPrefixes =
@@ -1132,6 +1134,8 @@ public final class NativeCalendarRootModel {
             demoEventIds: demoIds
         )
         scenario.draftOverlay = draftOverlayForPresentation()
+        scenario.pinnedDayColumnCalendarIds = pinnedDayColumnCalendarIds()
+        scenario.defaultTargetCalendarId = defaultTargetCalendarId()?.rawValue
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
         let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
         let showDayJumpPrefixes =

@@ -329,7 +329,7 @@ describe("DayCalendarGrid", () => {
     expect(within(timedGrid).getAllByRole("columnheader")).toHaveLength(1);
   });
 
-  it("renders enabled calendars as separate event columns", () => {
+  it("renders only calendars with visible events as columns", () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const projects = makeCalendar("Projects");
     const hidden = makeCalendar("Hidden");
@@ -667,7 +667,7 @@ describe("DayCalendarGrid", () => {
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
   });
 
-  it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+  it("seeds CREATE_TIMED_DRAFT with the default target calendar on an empty day", async () => {
     // Pin the clock: createTimedDraft derives the draft from the real
     // `dayjs()` hour, so between 23:00 and 23:59 UTC the 1-hour draft runs
     // past midnight, becomes multi-day, and renders in the all-day row
@@ -698,11 +698,10 @@ describe("DayCalendarGrid", () => {
     const draftCard = screen.getByRole("button", {
       name: /timed event: untitled event/i,
     });
-    // Column widths are 180; primary is the second column (index 1).
-    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+    expect(parseFloat(draftCard.style.left)).toBeLessThan(180);
   });
 
-  it("seeds CREATE_ALLDAY_DRAFT with the default target calendar, not column 0", async () => {
+  it("seeds CREATE_ALLDAY_DRAFT with the default target calendar on an empty day", async () => {
     const holidays = makeCalendar("Holidays in United States", {
       access: "reader",
       capabilities: getCalendarCapabilities("reader"),
@@ -724,7 +723,7 @@ describe("DayCalendarGrid", () => {
     const draftCard = screen.getByRole("button", {
       name: /all-day event: untitled event/i,
     });
-    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+    expect(parseFloat(draftCard.style.left)).toBeLessThan(180);
   });
 
   it("renders a saved all-day event at full calendar-column width", async () => {
@@ -753,7 +752,7 @@ describe("DayCalendarGrid", () => {
 
     expect(parseFloat(eventButton.style.width)).toBe(170);
     expect(parseFloat(eventButton.style.height)).toBe(20);
-    expect(parseFloat(eventButton.style.left)).toBe(180);
+    expect(parseFloat(eventButton.style.left)).toBeLessThan(180);
     expect(parseFloat(eventButton.style.top)).toBe(3);
   });
 
@@ -804,6 +803,18 @@ describe("DayCalendarGrid", () => {
   it("seeds a keyboardPlace draft on the focused writable column", async () => {
     const personal = makeCalendar("Personal");
     const work = makeCalendar("Work", { isPrimary: true });
+    seededEvents = [
+      createMockEvent({
+        calendarId: personal.id,
+        content: { kind: "details", title: "Personal anchor", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+    ];
     renderDayCalendarGrid([personal, work]);
 
     const personalColumn = await screen.findByRole("button", {
@@ -828,6 +839,18 @@ describe("DayCalendarGrid", () => {
   it("seeds CREATE_TIMED_DRAFT on the focused writable column", async () => {
     const personal = makeCalendar("Personal");
     const work = makeCalendar("Work", { isPrimary: true });
+    seededEvents = [
+      createMockEvent({
+        calendarId: personal.id,
+        content: { kind: "details", title: "Personal anchor", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+    ];
     renderDayCalendarGrid([personal, work]);
 
     const personalColumn = await screen.findByRole("button", {
@@ -850,6 +873,18 @@ describe("DayCalendarGrid", () => {
   it("highlights the focused calendar column on the timed and all-day grids", async () => {
     const personal = makeCalendar("Personal");
     const work = makeCalendar("Work", { isPrimary: true });
+    seededEvents = [
+      createMockEvent({
+        calendarId: personal.id,
+        content: { kind: "details", title: "Personal anchor", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+    ];
     renderDayCalendarGrid([personal, work]);
 
     const personalColumn = await screen.findByRole("button", {

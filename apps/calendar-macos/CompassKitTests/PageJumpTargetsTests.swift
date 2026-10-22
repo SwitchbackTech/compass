@@ -78,7 +78,8 @@ final class PageJumpTargetsTests: XCTestCase {
             trackWidth: 400
         )
         let widths = state.resolvedColumnWidths()
-        XCTAssertEqual(widths.count, 2)
+        // Parity fixture: only Work has visible events on 2026-05-20 (Personal's event is hidden).
+        XCTAssertEqual(widths.count, 1)
         XCTAssertGreaterThanOrEqual(widths[0], GridMetrics.eventWidthMinimum)
         XCTAssertGreaterThanOrEqual(state.documentContentWidth(), 400)
     }

@@ -85,7 +85,7 @@ public struct TimeGridState: Sendable {
         let marginLeft = GridMetrics.gridMarginLeftPx(hasSecondaryTimeZone: hasSecondaryTimeZone)
         let count = max(1, scenario.visibleDateKeys.count)
         if scenario.layoutMode == .day {
-            let calendars = DayCalendarColumns.dayViewCalendars(scenario.calendars)
+            let calendars = scenario.dayViewCalendarsForLayout()
             let columnCount = max(calendars.count, 1)
             let usable = Double(trackWidth) - marginLeft
             let width = max(

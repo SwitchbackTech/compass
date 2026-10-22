@@ -518,7 +518,7 @@
             "focusColorHex": "#22c55e",
             "frame": {
               "height": 57,
-              "left": 375,
+              "left": 55,
               "top": 600,
               "width": 8
             },
@@ -573,12 +573,6 @@
             "accessibilityIdentifier": "compass-grid-column-507f1f77bcf86cd799439011",
             "key": "507f1f77bcf86cd799439011",
             "left": 50,
-            "width": 320
-          },
-          {
-            "accessibilityIdentifier": "compass-grid-column-507f1f77bcf86cd799439012",
-            "key": "507f1f77bcf86cd799439012",
-            "left": 370,
             "width": 320
           }
         ],

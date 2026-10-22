@@ -883,12 +883,28 @@ function stressTestDayCalendars(): FixtureCalendar[] {
   );
 }
 
+function stressTestDayEvents(calendars: FixtureCalendar[]): FixtureEvent[] {
+  return calendars.map((entry, index) =>
+    buildEvent(
+      objectId(String(index + 50)),
+      entry.id,
+      entry.name,
+      9 + (index % 6),
+    ),
+  );
+}
+
 test("day view keeps calendar column labels clipped with many visible columns", async ({
   page,
 }) => {
-  await setupCalendarExperiencePage(page, [], {
-    extraCalendars: stressTestDayCalendars(),
-  });
+  const stressCalendars = stressTestDayCalendars();
+  await setupCalendarExperiencePage(
+    page,
+    stressTestDayEvents(stressCalendars),
+    {
+      extraCalendars: stressCalendars,
+    },
+  );
 
   await page.keyboard.press("d");
   await page.waitForURL((url) => url.pathname.startsWith("/day"), {
@@ -897,7 +913,7 @@ test("day view keeps calendar column labels clipped with many visible columns", 
 
   const calendarHeaders = page.getByRole("region", { name: "Calendars" });
   const columnGroups = calendarHeaders.getByRole("group");
-  await expect(columnGroups).toHaveCount(3 + DAY_COLUMN_STRESS_NAMES.length);
+  await expect(columnGroups).toHaveCount(DAY_COLUMN_STRESS_NAMES.length);
 
   const clipping = await page.evaluate(() => {
     const groups = Array.from(
