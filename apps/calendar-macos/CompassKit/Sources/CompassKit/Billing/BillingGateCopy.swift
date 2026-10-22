@@ -18,7 +18,7 @@ public enum BillingGateCopy {
         if status == .awaitingCheckout {
             return Content(
                 title: "Finish starting your trial",
-                body: "Add a card to start your 7-day free trial. You will not be charged until it ends.",
+                body: AccountChoiceCopy.welcomeTrialCardTermsLine(),
                 primaryLabel: "Add card"
             )
         }

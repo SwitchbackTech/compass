@@ -19,6 +19,7 @@ import { deferGoogleReconnectToastIfVisible } from "@web/common/utils/toast/goog
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
+import { welcomeTrialCardTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -44,7 +45,7 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     ? "Finish starting your trial"
     : "Subscribe to keep using Compass";
   const body = isAwaitingCheckout
-    ? "Add a card to start your 7-day free trial. You will not be charged until it ends."
+    ? welcomeTrialCardTermsLine()
     : "Your trial has ended. Subscribe to keep creating and editing events, including keyboard shortcuts.";
   const primaryLabel = isAwaitingCheckout ? "Add card" : "Subscribe";
 

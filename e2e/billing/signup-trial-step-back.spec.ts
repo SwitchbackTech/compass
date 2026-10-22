@@ -8,7 +8,7 @@ test.use({ viewport: { width: 1600, height: 900 } });
 const CALLBACK_PATH = "/auth/google/callback";
 const INTENT_STORAGE_PREFIX = "compass.googleAuthorizationIntent";
 const REQUIRED_SCOPES = [...GOOGLE_SCOPES];
-const TRIAL_TERMS = `Add a card to start your ${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. You will not be charged until it ends.`;
+const TRIAL_TERMS = `${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. Card required, no charge until it ends.`;
 
 const getIntentStorageKey = (state: string) =>
   `${INTENT_STORAGE_PREFIX}.${state}`;

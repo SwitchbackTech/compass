@@ -186,7 +186,7 @@ describe("AuthModal signup trial step", () => {
     });
     expect(
       screen.getByText(
-        "Add a card to start your 7-day free trial. You will not be charged until it ends.",
+        "7-day free trial. Card required, no charge until it ends.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("$12.00 per month")).toBeInTheDocument();

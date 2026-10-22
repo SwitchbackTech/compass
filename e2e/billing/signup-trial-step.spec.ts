@@ -4,7 +4,7 @@ import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
 test.use({ viewport: { width: 1600, height: 900 } });
 
-const TRIAL_TERMS = `Add a card to start your ${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. You will not be charged until it ends.`;
+const TRIAL_TERMS = `${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. Card required, no charge until it ends.`;
 
 const jsonResponse = (body: unknown) => ({
   status: 200,
