@@ -349,13 +349,11 @@ describe("WelcomeModal", () => {
     expect(screen.queryByText(/You can sign up later/)).toBeNull();
     expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Practice the shortcuts" }),
-    ).toHaveAttribute("href", "?play=1");
-    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
-      "href",
-      "https://github.com/KeepSoftwareSimple/compass-calendar",
-    );
+      screen.queryByRole("link", { name: "Practice the shortcuts" }),
+    ).toBeNull();
+    expect(screen.queryByRole("link", { name: "GitHub" })).toBeNull();
     expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
 
     await user.keyboard("{Escape}");
@@ -704,7 +702,7 @@ describe("WelcomeModal", () => {
       expect(trialPrimary).toHaveClass("c-button-elevated");
       expect(
         screen.getByText(
-          "Add a card to start your 7-day free trial. You will not be charged until it ends.",
+          "7-day free trial. Card required, no charge until it ends.",
         ),
       ).toBeTruthy();
       expect(within(trialPrimary).getByText("Enter")).toBeTruthy();
@@ -712,7 +710,15 @@ describe("WelcomeModal", () => {
         name: "On this device only",
       });
       expect(explore).not.toHaveClass("c-button-primary");
+      expect(explore).not.toHaveClass("c-button");
       expect(within(explore).getByText("S")).toBeTruthy();
+      const emailSignUp = screen.getByRole("button", {
+        name: "Sign up with email",
+      });
+      expect(
+        emailSignUp.compareDocumentPosition(explore) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
       expect(
         screen.queryByRole("button", { name: "Continue with Google" }),
       ).toBeNull();
