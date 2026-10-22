@@ -13,6 +13,7 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
+import { resetBillingGateShownOnceForTests } from "@web/billing/billing-gate-shown-once";
 import {
   initialCardUpdateState,
   useCardUpdateStore,
@@ -81,6 +82,7 @@ import {
   initialEventJumpState,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { resetEventFormFocusStoreForTests } from "@web/shortcuts/tips/event-form-focus.store";
 import { resetShortcutUsageProfileStoreForTests } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { resetShortcutTelemetryForTests } from "@web/shortcuts/tips/shortcut-telemetry";
 import { resetShortcutHintProgressStoreForTests } from "@web/shortcuts/tips/shortcut-tips.progress.store";
@@ -88,6 +90,10 @@ import { resetShortcutTipsMutedStoreForTests } from "@web/shortcuts/tips/shortcu
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
+import {
+  initialEventFormCmdState,
+  useEventFormCmdStore,
+} from "@web/views/Forms/EventForm/event-form-cmd.store";
 import { resetPointerIntentSessionForTests } from "@web/views/Week/pointer-intent/pointer-intent.session";
 
 type StoreReset = () => void;
@@ -97,6 +103,7 @@ const storeResets: StoreReset[] = [
   () => useViewStore.setState(initialViewState, true),
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
+  () => useEventFormCmdStore.setState(initialEventFormCmdState, true),
   () => useEventClipboardStore.setState(initialEventClipboardState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
   recurrenceScopeOpportunityActions.reset,
@@ -132,12 +139,14 @@ const storeResets: StoreReset[] = [
   () => useEventJumpStore.setState(initialEventJumpState, true),
   () => usePageJumpHintStore.setState(initialPageJumpHintState, true),
   resetBillingGateAttentionForTests,
+  resetBillingGateShownOnceForTests,
   resetNewMeetingsNoticeForTests,
   resetGuestRsvpNoticeForTests,
   () => useCheckoutPanelStore.setState(initialCheckoutPanelState, true),
   () => useCardUpdateStore.setState(initialCardUpdateState, true),
   resetShortcutHintProgressStoreForTests,
   resetShortcutTipsMutedStoreForTests,
+  resetEventFormFocusStoreForTests,
   resetShortcutTelemetryForTests,
   resetShortcutUsageProfileStoreForTests,
   resetShortcutLevelHiddenStoreForTests,

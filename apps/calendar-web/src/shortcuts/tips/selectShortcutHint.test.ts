@@ -203,6 +203,16 @@ describe("selectShortcutHint", () => {
     ).toBe("form-actions");
   });
 
+  it("yields to the form footer while keyboard focus is inside the form", () => {
+    expect(
+      selectShortcutHint({
+        ...afterFirstEvent,
+        isFormOpen: true,
+        formFocusInside: true,
+      }),
+    ).toBeNull();
+  });
+
   it("falls through to the command palette once the form tips are demonstrated", () => {
     expect(
       hintFor({ ...afterFirstEvent, isFormOpen: true }, [

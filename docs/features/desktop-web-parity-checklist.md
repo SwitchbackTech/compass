@@ -27,8 +27,8 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Web | macOS | Status | Notes |
 | --- | --- | --- | --- | --- |
 | Light Beach / Dark Abyss palettes | `[data-theme]` in `index.css` | `ThemeTokens.lightBeach` / `darkAbyss` | ✅ | Generated from same CSS |
-| SwiftUI accessor coverage | Tailwind `color-*` for all 22 roles | `NativeWebTheme` exposes subset on `ThemeTokenColor+SwiftUI.swift` | 🟡 | Missing convenience colors: `surfaceRaised`, `textSubtle`, `borderStrong`, `accentHover`, `accentStrong`, `accentSecondaryHover`, `onAccent`, `info`, `shadowDefault` |
-| Panel modal backdrop | `OverlayPanel` / `bg-background/85` | `panelBackdropColor` = `background` @ 85% opacity | 🟡 | Web uses `--overlay-backdrop` for dimming; panel tint is separate |
+| SwiftUI accessor coverage | Tailwind `color-*` for all 22 roles | `NativeWebTheme` exposes all roles on `ThemeTokenColor+SwiftUI.swift` | ✅ | `NativeWebTheme` exposes all 22 generated palette roles, including raised surfaces, strong borders, accent variants, on-accent text, info and shadow |
+| Panel modal backdrop | `OverlayPanel` / `bg-background/85` + `backdrop-blur-sm` | `PanelBackdropView`: `panelBackdropColor` (`background` @ 85%) over a within-window blur | ✅ | Settings and welcome used the dark `overlayBackdrop` dim and read as solid gray; that dim stays for menus and confirm dialogs. Welcome centers vertically like web |
 | Event default fill hex | `theme.util.ts` / deck | `EventCardView.swift` literals `#454442`, `#82A0B2` | 🟡 | Values align; not read from tokens |
 | Event focus ring color | `--event-focus-color` + outline | `EventCardView` CALayer border from fill-aware helper | 🟡 | Same intent, different paint model |
 | Holiday / gradient accents | CSS gradients on chips | Mostly solid fills | 🟡 | Audit per calendar color id |
@@ -59,7 +59,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Web | macOS | Status | Notes |
 | --- | --- | --- | --- | --- |
 | `--shadow-default` on elevated buttons | `c-button-elevated` | Limited native elevation | 🟡 | Save bar / primary buttons |
-| Command palette panel shadow | Floating overlay | Stroke only, no shadow | 🟡 | `CommandPaletteOverlay.swift` |
+| Command palette panel shadow | Floating overlay | Token-colored shadow, 24pt radius and 16pt vertical offset | ✅ | `CommandPaletteOverlay.swift`; native paint parameters remain platform-specific |
 
 ### 1.5 Focus rings
 
@@ -102,8 +102,8 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Timed / all-day card shell | ✅ | `EventCardView`, palette tests |
-| Jump / hold-F digit hints | ✅ | `eventJumpHold`, chips overlay |
-| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump + quick-time slots still web-only |
+| Event jump chips (W1, SU2, ...) | ✅ | `DayJumpKeys` ports web `assignDayJumpKeys`: day prefix + per-day index on timed and all-day cards, narrowed to the typed day; digits after a day pick focus (400 ms wait for W1 vs W10); bare digits stay quick-time |
+| Shift+M weekday column jump | ✅ | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; bare day letters in jump mode (F toggles off, E / C pass through, other letters swallowed like web); four digits typed within 800 ms after a day pick create on that column (Shift+T then 1230), like web's column time burst |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
 | Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
@@ -112,12 +112,16 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
-| Date field **MM.DD.YY** closed display | 🟡 | `EventFormCompactDateField` + `EventFormDateFormat`; verify parity capture after merge |
-| Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
-| Time pickers | 🟡 | Visual parity pass needed |
+| Date field **MM.DD.YY** closed display | ✅ | `EventFormCompactDateField` shows 06.10.26 like web (compare run 39732173380) |
+| Datepicker open Enter/Space/ArrowDown | ✅ | Closed field matches web `EventFormDateField`: ↓, Enter on the committed date, and Space on the shown date open the calendar; ↑ / Shift+↑ / Shift+↓ / Mod+↓ nudge the day (`EventFormDateFieldKeys`). Open calendar matches web `react-datepicker`: ← → move a day cursor, ↑ ↓ a week, Enter or Space picks, Esc closes only the calendar (`EventFormDateKeysTests` drives them). Like web, plain Return in a date field commits or opens instead of saving the form; ⌘ Enter still saves. Hints match web: a ↓ keycap inside the focused field and ↑ ↓ · Enter · Esc in the calendar header |
+| Time pickers | 🟡 | The list opens centered on the selected time (or the quarter hour before it) like web. Still differs: macOS shows the list and the date picker as AppKit popovers that can open to the side of the field, while web drops them below it |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
+| Color row keys and hints | ✅ | Like web `EventColorPicker`: trailing ⌘ 6 keycaps; once color has focus (Mod+6 or E then C) ← → move a focus ring, Space / Enter pick, pick keys 1-9 0 - = choose a swatch and show on each swatch (swatches in web `EventColorSlotSchema` order, lavender first), and the hint swaps to ← → · Enter. The demo capture also shows a guest row on macOS only: the demo fixture calendar can invite (UI tests need it), the real local calendar cannot |
 | Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | 🟡 | macOS save bar matches accent + Mod+Enter keycap (#4610); sidebar shows web save-draft tip (#4614) |
-| Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots |
+| Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots; chips sit at the anchor's top-right corner like web `DigitHintChipOverlay` (top + 2px, flush right) |
+| Hold-Mod day header keycaps (⇧SU, ⇧M, ...) | ✅ | Week headers swap the weekday for `WeekDayColumnHeaderControl` keycaps while Mod is held; bare letters in event-jump mode |
+| Hold-Mod sidebar chips (month picker, Up next, calendar list) | ✅ | Anchors merge with nested ones, so the sidebar no longer hides the month picker and Up next chips; the calendar list digit sits on the list, not the sidebar corner. |
+| Per-account page-jump targets | ✅ | One Mod+digit target per connected account heading after Up next, like web `buildCalendarPageJumpTargets`; a collapsed heading expands on jump; one "calendars" slot with no accounts |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
 
 ### 2.4 Mini-calendar (month picker)
@@ -125,7 +129,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Keyboard `i`, arrows, Enter | ✅ | |
-| Cmd+Shift+, / . month jump | ✅ | |
+| Mod+Alt+J / K / T month jump | ✅ | |
 | Selected range / today styling | ✅ | Week mode bolds the selected week row with ink on today; 28.8pt circles; today follows the calendar clock; Go to this month circle hides on the current month |
 | Weekday header 10px muted | 🟡 | Rubik 10 in `SidebarMonthPicker.swift` |
 
@@ -191,7 +195,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Separate placeholder when creating from hotkey | 🟡 | Web `DESKTOP_QUICK_ADD_PALETTE_PLACEHOLDER`; verify native quick-add panel |
+| Separate placeholder when creating from hotkey | ✅ | Both native Quick Add field implementations match web `DESKTOP_QUICK_ADD_PALETTE_PLACEHOLDER`: “Add an event, or type a time like 1130” |
 
 ### 2.12 Life view
 
@@ -222,8 +226,9 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `nav-next` | K | ✅ | ✅ | ✅ |
 | `nav-shift-left` | Mod+Shift+← | ✅ | ✅ | ✅ |
 | `nav-shift-right` | Mod+Shift+→ | ✅ | ✅ | ✅ |
-| `nav-month-prev` | Mod+Shift+, | ✅ | ✅ | ✅ |
-| `nav-month-next` | Mod+Shift+. | ✅ | ✅ | ✅ |
+| `nav-month-prev` | Mod+Alt+J | ✅ | ✅ | ✅ |
+| `nav-month-next` | Mod+Alt+K | ✅ | ✅ | ✅ |
+| `nav-month-current` | Mod+Alt+T | ✅ | ✅ | ✅ |
 | `nav-picker-step` | Arrow keys in picker | ✅ | ✅ | 🟡 telemetry |
 | `nav-today` | T (keyup) | ✅ | ✅ | ✅ |
 | `nav-go-to-date` | Mod+G | ✅ | ✅ | ✅ |
@@ -249,9 +254,9 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | --- | --- | --- | --- |
 | `focus-sidebar` | I | ✅ | Month picker |
 | `focus-event` | U | ✅ | `focusFirstCalendarEvent()` seeds nearest grid event |
-| `focus-shift-hold` | F (+ digits) | 🟡 | Hold-F jump chips; not full web jump mode |
-| `focus-week-day` | Shift+M… | 🟡 | Column select + first event; weekend S→U/A; digit hints after day pick ❌ |
-| `focus-notice` | P | 🟡 | Subset of notices |
+| `focus-shift-hold` | F (+ digits) | ✅ | Jump mode: W1 / SU2 chips, bare day letters, digits after a day pick, typed time on the picked column |
+| `focus-week-day` | Shift+M… | ✅ | Column select + first event; weekend S→U/A; day-prefix digit targeting and typed-time creation wired |
+| `focus-notice` | P | ✅ | Connection, sample events, meeting nudge, trial, update and past-due notices; see §2.9 |
 | `focus-calendar-digit` | 1–9 in list | ✅ | |
 | `focus-page-jump` | Mod+digit (hold hints) | ✅ | |
 | `focus-find-event` | Mod+K | ✅ | Palette search |
@@ -261,7 +266,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | ID | Status | Notes |
 | --- | --- | --- |
 | `edit-open` | ✅ | Enter / E sequence |
-| `edit-save` | 🟡 | Mod+Enter works; save **button** teaches Enter only |
+| `edit-save` | ✅ | Mod+Enter saves; save button shows separate ⌘ and Enter keycaps |
 | `edit-delete` | ✅ | |
 | `edit-duplicate` | ✅ | |
 | `edit-copy` / `edit-paste` | ✅ | |
@@ -290,7 +295,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | --- | --- |
 | Tab order through form fields | 🟡 |
 | Keycaps on view switcher, footer, welcome | ✅ |
-| Keycaps on save bar, Up Next, palette rows | ❌ / 🟡 |
+| Keycaps on save bar, Up Next, palette rows | ✅ |
 | Which-key overlay | ✅ |
 
 ---
@@ -305,7 +310,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `CompassUITests` | Launch, palette keyboard, form save, snapshots (macOS CI) |
 | Web `theme-css.test.ts` | CSS ↔ TS color roles |
 
-**Not automated today:** side-by-side screenshots web vs macOS (except recorded native snapshots), palette row inventory, MM.DD.YY, gradient now line.
+**Visual automation:** `desktop-web-parity-screenshots.yml` captures web and macOS surfaces and produces side-by-side comparisons (see §7). These captures support visual review; they do not establish pixel equality or signed-in flow parity.
 
 ---
 
@@ -333,6 +338,19 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-19 | §7 from workflow run 39327804343 (#4607 branch): macOS capture + compare artifact; logistics card on event form |
 | 2026-10-20 | Palette: web sections, rows, disabled state, keycap chips |
 | 2026-10-20 | #4612 Sunday week + UTC on `main`; #4613 palette/sidebar/settings/onboarding batch; #4619 week grid gutter + pinned Sunday window |
+| 2026-10-21 | Week grid: hold-Mod day header keycaps (⇧SU, ⇧M, ...) now render; the header control existed but the grid never used it (compare run 39597000570) |
+| 2026-10-21 | Hold-Mod sidebar chips: month picker and Up next chips render, calendar list chip moved onto the list (compare run 39634795849) |
+| 2026-10-21 | Per-account page-jump targets (web `calendar-account:` ids) |
+| 2026-10-21 | Event jump chips use web day-prefix labels (W1, SU2) and digits after a day pick |
+| 2026-10-22 | Week/day hour gutter labels use web's 1 AM track origin (#4686); they sat two hours below their events (a 5 PM event drew on the 3 PM row) |
+| 2026-10-22 | Parity capture draws popover windows (form date picker, time list) over the window render, so those surfaces stop showing a closed field |
+| 2026-10-22 | macOS capture: register `onboarding-welcome-account-choice` so the welcome account step exports instead of timing out |
+| 2026-10-22 | Color swatches and pick keys follow web slot order (lavender, mint, plum, ...) instead of the alphabetical generated enum; time list popover fills its inset with the panel color |
+| 2026-10-22 | §7 refreshed from compare run 39732173380; MM.DD.YY date row ✅ |
+| 2026-10-22 | Event form date field: web keys on the closed field (↓ / Enter / Space open the calendar, arrows nudge the day) |
+| 2026-10-22 | Event form date calendar: arrow keys move a day cursor, Enter or Space picks, Esc closes |
+| 2026-10-22 | Event form date field: in-field ↓ hint and calendar header key hints (web `EventFormInfieldHint`, `EventFormCalendarPopoverHints`) |
+| 2026-10-22 | Form key hints (date calendar header, color swatches) show the word Enter like web `ShortcutLabel`, not ↩ |
 
 ---
 
@@ -340,15 +358,19 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 
 Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Compare artifact `desktop-parity-compare` pairs `web/` and `macos/` PNGs per surface.
 
-| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39331068008 on `main` post-#4607) |
+| Surface | Web CI | macOS CI | Match | Diff notes (compare run 39732173380, #4725 branch after the 2026-10-22 merges) |
 | --- | --- | --- | --- | --- |
-| Week grid | ✅ | ✅ | 🟡 | Capture uses macOS day view vs web week; demo events only on web shot; sidebar lacks web “Hold Mod jump targets” tip line |
-| Mini-calendar | ✅ | ✅ | 🟡 | Selected-day ring OK; web shows selected-week wash + denser header type |
-| Event form | ✅ | ✅ | 🟡 | Logistics card grouped (#4607); dates still locale steppers vs MM.DD.YY; save bar / Enter hint gaps |
+| Week grid | ✅ | ✅ | 🟡 | Both week view; hour labels sit on their events (#4719). macOS shot has no demo events banner, scrolls about an hour later, and the sidebar tip rotates to a different line |
+| Mini-calendar | ✅ | ✅ | ✅ | Selected-day ring and selected-week wash match; web also shows a transient ↑ ↓ move-by-week hint |
+| Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; date and time popovers draw beside the field instead of below it; guest row only on macOS (demo fixture) |
 | Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
-| Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
-| Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
+| Settings | ✅ | ✅ | 🟡 | Both modal on a light backdrop (#4718); timezone reads Auto (UTC) vs UTC (UTC) only because the web fixture pins UTC; web shows a focus ring on Accounts |
+| Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
 
-**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick and quick-time slots still ❌ vs web `useShiftHoldEventHints`.
+**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
 Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).
+
+### 2026-10-22 source reconciliation
+
+Rechecked against `main` at `7a44b191a` after the overnight merge batch. Corrected stale entries for theme accessor coverage, palette shadow, Quick Add placeholder, weekday targeting, notice focus, save keycaps and screenshot automation. These are source-backed findings, not a new signed-in acceptance run. Remaining partial visual and live-flow entries still require direct verification. Existing Life intro (#4709) and title-bar capture (#4667) PRs must be reconciled before duplicating their changes.

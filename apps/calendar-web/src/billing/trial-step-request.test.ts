@@ -58,10 +58,25 @@ describe("requestTrialStep", () => {
     expect(consumeTrialStepTrigger()).toBe("banner");
   });
 
+  it("tracks event_action for write attempts", async () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    await requestTrialStep({ trigger: "write", eventAction: "replace" });
+
+    expect(track).toHaveBeenCalledWith("trial_gate_triggered", {
+      source: "write",
+      event_action: "replace",
+    });
+    expect(consumeTrialStepTrigger()).toBe("write");
+  });
+
   it("no-ops for expired read-only accounts", async () => {
     setBillingWriteLock({ locked: true, status: "expired" });
 
-    const opened = await requestTrialStep({ trigger: "write" });
+    const opened = await requestTrialStep({
+      trigger: "write",
+      eventAction: "create",
+    });
 
     expect(opened).toBe(false);
     expect(openStartTrialStepModal).not.toHaveBeenCalled();

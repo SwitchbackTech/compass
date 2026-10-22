@@ -15,6 +15,7 @@ import {
   useRef,
 } from "react";
 import { isEventFormFocusFieldVisible } from "@core/event/event-form-field-visibility";
+import { EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY } from "@core/shortcuts/binding-keycaps.constants";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { CONFERENCE_KIND_LABEL } from "@core/types/calendar.contracts";
@@ -23,11 +24,7 @@ import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { parseBookingEventLinks } from "@web/booking/booking-event-links";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { creatableConferenceKind } from "@web/calendars/calendar.util";
-import {
-  isEventReadOnly,
-  useCalendarLookup,
-} from "@web/calendars/useCalendarLookup";
+import { useCalendarLookup } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import {
   ENV_WEB,
@@ -43,6 +40,7 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
+  focusEventFormField,
   isComboboxInteraction,
   isEditableKeyboardTarget,
   shouldDeferEnterToTarget,
@@ -62,6 +60,7 @@ import {
 } from "@web/events/attendee-rsvp";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
+  calendarFromDraft,
   eventFormFieldVisibilityInputFromDraft,
   visibleFormFieldDigitRows,
 } from "@web/events/event-form-field-visibility.util";
@@ -76,12 +75,14 @@ import { FormDigitHintOverlay } from "@web/shortcuts/form-digit-jump/FormDigitHi
 import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useFormDigitJumpShortcut";
 import { usePointerFormFieldDigitTeach } from "@web/shortcuts/form-digit-jump/usePointerFormFieldDigitTeach";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { useEventFormFocusStore } from "@web/shortcuts/tips/event-form-focus.store";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
 import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
+import { copyMeetingLinkUrl } from "@web/views/Forms/EventForm/conference-link.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { commitFocusedTimePickerDraft } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/timePickerCommitDraft";
@@ -93,6 +94,7 @@ import {
   EVENT_FORM_CONFERENCE_ID,
   EventDetailsSection,
 } from "@web/views/Forms/EventForm/EventDetailsSection";
+import { eventFormCmdActions } from "@web/views/Forms/EventForm/event-form-cmd.store";
 import {
   FormActionsRow,
   type FormActionsRowHandle,
@@ -115,6 +117,7 @@ import {
   type GridEventFormProps,
   type OnEventFormScheduleChange,
 } from "@web/views/Forms/EventForm/types";
+import { useCopyMeetingLinkShortcut } from "@web/views/Forms/EventForm/useCopyMeetingLinkShortcut";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 
@@ -238,22 +241,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? (calendarLookup.get(draft.source.calendarId)?.name ??
           "Unknown calendar")
         : null;
-    // Only an "edit" draft can be read-only - CalendarSelect only offers
-    // writable calendars to a "create"/duplicate draft (packet 08 step 8).
-    // isBusy comes straight off the source event's real content, not the
-    // draft's `values.title` (which stays "" for a busy source - see
-    // editGridEventDraft) - "Busy" below is a display-only override, never
-    // a value that could round-trip through a save.
-    const isBusy =
-      draft.kind === "edit" && draft.source.content.kind === "busy";
-    const isReadOnly =
-      draft.kind === "edit" &&
-      isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
-    const isScheduleLocked =
-      draft.kind === "edit" && draft.source.providerManaged === true;
-    const showProviderManagedStagingUx =
-      IS_EVENT_SIDEBAR_STAGING_UX && isScheduleLocked;
-    const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
     // Read-only, provider-sourced fields live on the source event's content,
     // never on draft.values (EditableContentSchema doesn't carry them) - a
     // create draft has no source event, and a busy source carries none of
@@ -271,7 +258,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       return guest.displayName?.trim() || guest.email;
     })();
     const formActionsRef = useRef<FormActionsRowHandle>(null);
-    const showBookingFormActions = !isReadOnly && bookingLinks !== null;
     // Cache-backed view of the same source event (WP-08): an optimistic RSVP
     // patches the query cache, and reading it live here is what makes the
     // user's own status dot (and the segmented control's selection) update
@@ -285,6 +271,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" ? (liveSource ?? draft.source) : null;
     const liveDetails =
       rsvpSource?.content.kind === "details" ? rsvpSource.content : undefined;
+    const meetingLinkUrl =
+      (liveDetails ?? sourceDetails)?.conference?.url?.trim() || null;
     // Attendee-editor gate (WP-04): guests are editable everywhere the whole
     // write path can deliver them — a writable calendar that can invite and an
     // event the user organizes. Repeating events included: sync refuses
@@ -293,12 +281,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     // save to "all"), and the field says so.
     const { data: allCalendars } = useCalendarsQuery();
     const defaultTargetCalendar = useDefaultTargetCalendar(allCalendars ?? []);
-    const attendeeCalendar =
-      draft.kind === "create"
-        ? draft.values.calendarId
-          ? calendarLookup.get(draft.values.calendarId)
-          : defaultTargetCalendar
-        : calendarLookup.get(draft.source.calendarId);
+    const attendeeCalendar = calendarFromDraft(
+      draft,
+      calendarLookup,
+      defaultTargetCalendar,
+    );
     const scheduleManagedToast = providerManagedScheduleToast(attendeeCalendar);
     const recurrenceManagedToast =
       providerManagedRecurrenceToast(attendeeCalendar);
@@ -311,6 +298,15 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ),
       [calendarLookup, defaultTargetCalendar, draft],
     );
+    // Only an "edit" draft can be read-only. isBusy comes off the source
+    // event's real content, not draft.values.title ("Busy" is display-only).
+    const isBusy = fieldVisibilityInput.isBusyContent;
+    const isReadOnly = fieldVisibilityInput.isReadOnly;
+    const isScheduleLocked = fieldVisibilityInput.isScheduleLocked;
+    const showProviderManagedStagingUx =
+      IS_EVENT_SIDEBAR_STAGING_UX && isScheduleLocked;
+    const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
+    const showBookingFormActions = !isReadOnly && bookingLinks !== null;
     const formDigitRows = useMemo(
       () => visibleFormFieldDigitRows(fieldVisibilityInput),
       [fieldVisibilityInput],
@@ -321,14 +317,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       [fieldVisibilityInput],
     );
     const showAttendeeEditor = isFieldJumpVisible("attendees");
-    const showCreateConference =
-      isFieldJumpVisible("conference") && draft.kind === "create";
-    const conferenceKind = showCreateConference
-      ? creatableConferenceKind(attendeeCalendar)
-      : null;
+    const conferenceKind = fieldVisibilityInput.creatableConferenceKind ?? null;
     const guestEditIsSeriesWide =
       draft.kind === "edit" && draft.source.recurrence.kind !== "single";
-    const rsvpAccountEmail = attendeeCalendar?.accountEmail;
+    const rsvpAccountEmail = fieldVisibilityInput.calendarAccountEmail;
     const showRsvpControl = isFieldJumpVisible("rsvp");
     // Contact suggestions (WP-06): live when a connected account granted the
     // optional contacts scopes; otherwise the field is a raw email input and
@@ -533,25 +525,20 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         e.preventDefault();
       }
 
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        keyboardKey(e).toLowerCase() === "l"
+      ) {
+        e.preventDefault();
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
       }
     };
 
     const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (
-        isDraft &&
-        !isExistingEvent &&
-        e.key === "Enter" &&
-        !e.metaKey &&
-        !e.ctrlKey
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        onSubmitForm();
-        return;
-      }
-
       handleIgnoredKeys(e);
     };
 
@@ -791,17 +778,115 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       { ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS, shortcutId: "edit-save" },
     );
 
+    useAppShortcut(
+      EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (isReadOnly || isScheduleLocked) return;
+        onToggleAllDay(category !== Categories_Event.ALLDAY);
+      },
+      {
+        ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+        preventDefault: true,
+        stopPropagation: true,
+        shortcutId: "edit-toggle-all-day",
+        enabled: !isReadOnly && !isScheduleLocked,
+      },
+    );
+
     const { isConfirmOpen, onCancelConfirm, onDiscardConfirm, requestClose } =
       useEscapeToCloseForm(onClose, {
         onEscapeBeforeClose: () =>
           formActionsRef.current?.consumeEscapeForCancelConfirm() ?? false,
       });
 
+    useCopyMeetingLinkShortcut(meetingLinkUrl, !isReadOnly);
+
+    const onSubmitFormRef = useRef(onSubmitForm);
+    onSubmitFormRef.current = onSubmitForm;
+    const onToggleAllDayRef = useRef(onToggleAllDay);
+    onToggleAllDayRef.current = onToggleAllDay;
+    const categoryRef = useRef(category);
+    categoryRef.current = category;
+
+    useEffect(() => {
+      eventFormCmdActions.register({
+        handlers: {
+          onSave: () => onSubmitFormRef.current("keyboard"),
+          onDuplicate: onDuplicateEvent,
+          onDelete: onDeleteEvent,
+          onClose: requestClose,
+          onCopyMeetingLink: () => {
+            if (meetingLinkUrl) void copyMeetingLinkUrl(meetingLinkUrl);
+          },
+          onJumpToActions: () => {
+            focusEventFormField("actions");
+          },
+          onToggleAllDay: () => {
+            if (isReadOnly || isScheduleLocked) return;
+            onToggleAllDayRef.current(
+              categoryRef.current !== Categories_Event.ALLDAY,
+            );
+          },
+          onCancelMeeting: () => {
+            formActionsRef.current?.triggerCancelShortcut();
+          },
+          onRescheduleMeeting: () => {
+            formActionsRef.current?.triggerRescheduleShortcut();
+          },
+        },
+        hasMeetingLink: Boolean(meetingLinkUrl),
+        isExistingEvent,
+        isReadOnly,
+        isScheduleLocked,
+        showBookingFormActions,
+      });
+
+      return () => {
+        eventFormCmdActions.clear();
+      };
+    }, [
+      isExistingEvent,
+      isReadOnly,
+      isScheduleLocked,
+      meetingLinkUrl,
+      onDeleteEvent,
+      onDuplicateEvent,
+      requestClose,
+      showBookingFormActions,
+    ]);
+
     const { areHintsVisible } = useFormDigitJumpShortcut({
       isFieldVisible: isFieldJumpVisible,
     });
     const { digitFlashField, onFormFocusIn, onFormPointerDown } =
       usePointerFormFieldDigitTeach();
+    const syncEventFormFocus = useEventFormFocusStore(
+      (state) => state.syncFromDocument,
+    );
+
+    useEffect(() => {
+      syncEventFormFocus();
+      return () => {
+        useEventFormFocusStore.setState({
+          focusInsideForm: false,
+          tabNavigationApplies: false,
+        });
+      };
+    }, [syncEventFormFocus]);
+
+    const onFormFocusCapture = useCallback(
+      (event: React.FocusEvent<HTMLElement>) => {
+        onFormFocusIn(event);
+        syncEventFormFocus();
+      },
+      [onFormFocusIn, syncEventFormFocus],
+    );
+
+    const onFormBlurCapture = useCallback(() => {
+      queueMicrotask(() => syncEventFormFocus());
+    }, [syncEventFormFocus]);
 
     const titleErrorField = fieldErrors?.["content.title"]
       ? "content.title"
@@ -859,7 +944,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             e.stopPropagation();
           }}
           onPointerDown={onFormPointerDown}
-          onFocusCapture={onFormFocusIn}
+          onFocusCapture={onFormFocusCapture}
+          onBlurCapture={onFormBlurCapture}
         >
           <div className="sticky top-0 z-10 shrink-0 bg-surface-panel px-4 pt-3 pb-2">
             <FormActionsRow
@@ -931,6 +1017,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       dateTimeSectionProps={dateTimeSectionProps}
                       eventCategory={category}
                       onToggleAllDay={onToggleAllDay}
+                      showAllDayShortcut={!isScheduleLocked}
                     />
                   </fieldset>
                 </ProviderManagedFieldShield>
@@ -1014,6 +1101,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       label={`Add ${CONFERENCE_KIND_LABEL[conferenceKind]}`}
                       labelClassName="text-text-muted"
                       rowClassName="w-full justify-between"
+                      shortcutKeys={["="]}
                     />
                   </FormCardIconRow>
                 )}

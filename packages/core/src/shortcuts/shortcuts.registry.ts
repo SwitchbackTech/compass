@@ -94,6 +94,12 @@ export const SHORTCUTS_REGISTRY = [
     section: "navigate",
   },
   {
+    id: "nav-month-current",
+    keys: [...B.navMonthCurrent.keycaps],
+    label: "Go to this month in picker",
+    section: "navigate",
+  },
+  {
     id: "nav-picker-step",
     keys: [...KEYMAP.moveFocus.keycaps],
     label: "Move the month picker by a week (Enter opens it)",
@@ -350,6 +356,14 @@ export const SHORTCUTS_REGISTRY = [
     requiresWrite: true,
   },
   {
+    id: "edit-toggle-all-day",
+    keys: [...B.editToggleAllDay.keycaps],
+    label: "Toggle all day on open event",
+    section: "edit",
+    when: { isFormOpen: true },
+    requiresWrite: true,
+  },
+  {
     id: "edit-cancel-meeting",
     keys: [...B.editCancelMeeting.keycaps],
     label: "Cancel booked meeting (confirm twice)",
@@ -369,6 +383,13 @@ export const SHORTCUTS_REGISTRY = [
     id: "edit-copy-description-link",
     keys: [...B.editCopyDescriptionLink.keycaps],
     label: "Copy link in event description",
+    section: "edit",
+    when: { isFormOpen: true },
+  },
+  {
+    id: "edit-copy-meeting-link",
+    keys: [...B.editCopyMeetingLink.keycaps],
+    label: "Copy meeting link",
     section: "edit",
     when: { isFormOpen: true },
   },

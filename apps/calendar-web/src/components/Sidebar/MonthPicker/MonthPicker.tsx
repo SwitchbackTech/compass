@@ -25,7 +25,6 @@ import { monthPickerLocale } from "./monthPickerLocale";
 import {
   MONTH_PICKER_NEXT_KEYCAPS,
   MONTH_PICKER_PREV_KEYCAPS,
-  useMonthPickerShortcuts,
 } from "./useMonthPickerShortcuts";
 
 interface Props {
@@ -125,11 +124,6 @@ export const MonthPicker: FC<Props> = ({
   const goNextMonth = useCallback(() => {
     jumpToMonth(displayedMonth.add(1, "month"));
   }, [displayedMonth, jumpToMonth]);
-
-  useMonthPickerShortcuts({
-    onPrevMonth: goPrevMonth,
-    onNextMonth: goNextMonth,
-  });
 
   // After a remount the previously focused element is gone. Put focus back on
   // the same header button, or on the new month's tab-stop day, but only when

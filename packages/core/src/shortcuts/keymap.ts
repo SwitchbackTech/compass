@@ -41,7 +41,7 @@ export const KEYMAP = {
     keycaps: ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
   },
   editTitle: { sequence: { leader: "e", second: "t" }, keycaps: ["E", "T"] },
-  eventJump: { bareLetter: "f", keycaps: ["F"] },
+  eventJump: { bareLetter: "f", keycaps: ["f"] },
   moveEvent: {
     hotkeys: {
       up: "Shift+ArrowUp",
@@ -67,6 +67,10 @@ export const KEYMAP = {
   copyDescriptionLink: {
     hotkey: "Mod+Shift+C",
     keycaps: ["Mod", "Shift", "C"],
+  },
+  copyMeetingLink: {
+    hotkey: "Mod+Shift+L",
+    keycaps: ["Mod", "Shift", "L"],
   },
   // Mod+Enter saves the event form; open the link under the caret instead.
   openDescriptionLinkAtCaret: {

@@ -82,6 +82,12 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
+    func testExportParitySurface_eventFormMeetingLink() throws {
+        try requireParityCapture()
+        captureEventFormMeetingLink()
+    }
+
+    @MainActor
     func testExportParitySurface_commandPalette() throws {
         try requireParityCapture()
         captureCommandPalette()
@@ -183,6 +189,18 @@ final class NativeParityCaptureTests: XCTestCase {
     }
 
     @MainActor
+    private func captureEventFormMeetingLink() {
+        let window = launchDemoWindow(extraLaunchArgs: [
+            "-COMPASS_UI_TEST_INITIAL_GRID_FOCUS_EVENT", "demo-morning-standup",
+            "-COMPASS_UI_TEST_OPEN_FOCUSED_EVENT_FORM",
+        ]).window
+        prepareParityGrid(window, dismissDemoBanner: true)
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-event-form-conference"].waitForExistence(timeout: 8))
+        NativeImageSnapshotSupport.captureWindow(window, named: "event-form-meeting-link")
+    }
+
+    @MainActor
     private func captureCommandPalette() {
         let launch = launchDemoWindow()
         prepareParityGridForCommandPalette(launch.window)
@@ -242,10 +260,19 @@ final class NativeParityCaptureTests: XCTestCase {
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
-        XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 15))
+        let welcome = window.descendants(matching: .any)["compass-native-welcome-modal"]
+        XCTAssertTrue(welcome.waitForExistence(timeout: 15))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
+        // Scope to the panel: the grid's own "Next" (week) button is still in
+        // the window's accessibility tree behind the modal.
+        welcome.buttons["Get started for free"].click()
+        welcome.buttons["Next"].click()
+        // The provider buttons depend on the backend config; the local-only
+        // choice is always on the account step.
+        XCTAssertTrue(welcome.buttons["On this device only"].waitForExistence(timeout: 8))
+        sleep(1)
+        NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome-account-choice")
     }
 
     @MainActor

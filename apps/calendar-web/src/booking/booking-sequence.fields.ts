@@ -7,12 +7,12 @@ export const BOOKING_FIELDS = [
   "address",
   "duration",
   "destination",
-  "blocking",
   "timezone",
   "hours",
   "more",
   "notice",
   "horizon",
+  "blocking",
   "link",
 ] as const;
 

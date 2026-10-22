@@ -1,13 +1,70 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+  HotkeyManager,
+  HotkeysProvider,
+  resolveModifier,
+} from "@tanstack/react-hotkeys";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, mock } from "bun:test";
+import { act, type PropsWithChildren } from "react";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 process.env.PORT ??= "3000";
 
 await import("@testing-library/jest-dom");
 const { DatePicker } = await import("./DatePicker");
 
+const wrapper = ({ children }: PropsWithChildren) => (
+  <HotkeysProvider>{children}</HotkeysProvider>
+);
+
+const isMac = resolveModifier("Mod") === "Meta";
+const pressGridMonthPrev = () => {
+  const init = isMac
+    ? { metaKey: true, altKey: true }
+    : { ctrlKey: true, altKey: true };
+  pressKey("j", { keyDownInit: init, keyUpInit: init });
+};
+
+beforeEach(() => {
+  HotkeyManager.resetInstance();
+});
+
+afterEach(() => {
+  HotkeyManager.resetInstance();
+});
+
 describe("DatePicker captionPicker", () => {
+  it("steps the day grid month with Mod+Alt+J while the input is focused", async () => {
+    render(
+      <DatePicker
+        captionPicker
+        isOpen
+        onCalendarClose={() => {}}
+        onChange={() => {}}
+        selected={new Date(2000, 0, 15)}
+        view="grid"
+        withTodayButton={false}
+      />,
+      { wrapper },
+    );
+
+    const input = document.querySelector<HTMLInputElement>(
+      ".react-datepicker__input-container input",
+    );
+    expect(input).toBeTruthy();
+    act(() => input?.focus());
+
+    expect(screen.getByText("Jan 2000")).toBeInTheDocument();
+    act(() => {
+      pressGridMonthPrev();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Dec 1999")).toBeInTheDocument();
+    });
+  });
+
   it("keeps the popover open when a year is picked with a life-style onChange", async () => {
     const user = userEvent.setup();
     let calendarOpen = true;

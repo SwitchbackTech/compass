@@ -45,6 +45,7 @@ public final class NativeCalendarRootModel {
     public var onRecurrenceScopeAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onStatusToastAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onShortcutsLegendAccessibilityProbeChanged: ((Bool) -> Void)?
+    public var onEventJumpChipsAccessibilityProbeChanged: (([EventJumpChipHint]) -> Void)?
     public var monthPickerMonth: Date
     public var pendingScroll: TimeGridScrollRequest?
     /// True for 700ms after an already-at-now teach pulse. Matches web `NOW_CUE_PULSE_MS`.
@@ -91,7 +92,11 @@ public final class NativeCalendarRootModel {
     var pendingInvitationDraft: GridEventDraft?
     var pendingSaveInvitation: InvitationEnum?
     public var isGuestEmailInputFocused = false
+    /// The form date field owning Return (and its open calendar's keys); the key router lets them through.
+    public var eventFormDateKeyOwner: EventFormDateFieldKeys.Owner?
     public var eventFormFocusedField: EventFormField = .title
+    /// Keyboard focus inside the color swatches while `eventFormFocusedField == .color`.
+    public internal(set) var colorSwatchFocusIndex = 0
     public var formFieldDigitHintsVisible = false
     /// Set when Sparkle has staged an update; cleared after restart prompt dismisses.
     public var desktopUpdateReadyVersion: String?
@@ -131,6 +136,13 @@ public final class NativeCalendarRootModel {
     var quickAddPanelSession: QuickAddPanelSession?
     public internal(set) var quickAddError: String?
     var blockPartyModHoldTask: Task<Void, Never>?
+    var eventJumpCommitTask: Task<Void, Never>?
+    /// Digits typed after a day pick, for web's typed-time create on that column.
+    @ObservationIgnored var eventJumpTimeBurst: [(digit: Character, at: Date)] = []
+    /// Parked create target after an empty-grid click (web `event-jump.store` pointer draft).
+    @ObservationIgnored var pointerDraftDateKey: String?
+    @ObservationIgnored var pointerDraftStartISO: String?
+    @ObservationIgnored var pointerDraftTimeKey: String?
 
     public var referenceNow: Date {
         demoPresentation?.referenceNow ?? now()
@@ -383,6 +395,9 @@ public final class NativeCalendarRootModel {
         if UITestLaunchPolicy.showPageJumpHintsForUITest {
             setPageJumpHintsVisible(true)
         }
+        if UITestLaunchPolicy.activateEventJumpForUITest {
+            activateEventJumpMode()
+        }
         if isSignedIn {
             startEventStream()
         }
@@ -530,6 +545,7 @@ public final class NativeCalendarRootModel {
         undoStore.clear()
         loadedEvents = []
         isGuestEmailInputFocused = false
+        eventFormDateKeyOwner = nil
         sidebandEvents = []
         pendingBookingCancellation = nil
         isCancellingBookedMeeting = false
@@ -639,6 +655,8 @@ public final class NativeCalendarRootModel {
             shiftMonth(by: -1)
         case .navMonthNext:
             shiftMonth(by: 1)
+        case .navMonthCurrent:
+            goToMonthPickerCurrentMonth()
         case .navScrollUp:
             pendingScroll = .pageUp
         case .navScrollDown:
@@ -674,7 +692,11 @@ public final class NativeCalendarRootModel {
         case .focusNotice:
             focusNextNotice()
         case .focusShiftHold:
-            toggleEventJumpMode()
+            if eventJumpSelection.modeActive {
+                _ = handleEventJumpKeystroke("f")
+            } else {
+                activateEventJumpMode()
+            }
         case .otherSubscribe:
             openUpgradeConfirmation()
         case .navGoToDate:
@@ -711,6 +733,7 @@ public final class NativeCalendarRootModel {
     public func showPointerHint(
         for target: PointerClickTarget,
         registry: ShortcutRegistry,
+        slotClick: GridPointerSlotClickContext? = nil,
         focusedGridEventLabel: String? = nil
     ) {
         var resolvedFocusLabel = focusedGridEventLabel
@@ -720,6 +743,7 @@ public final class NativeCalendarRootModel {
         pointerHintStore.pulse(
             target: target,
             registry: registry,
+            slotClick: slotClick,
             focusedGridEventLabel: resolvedFocusLabel
         )
     }
@@ -757,15 +781,6 @@ public final class NativeCalendarRootModel {
         }
     }
 
-    public func handleGridPointerDown(registry: ShortcutRegistry) {
-        guard !UITestLaunchPolicy.isParityCapture,
-              OnboardingGating.selectPointerHintSurfaceEligible(
-                  pointerHintVisible: true,
-                  dismissedPermanently: OnboardingGating.pointerHintDismissedPermanently())
-        else { return }
-        showPointerHint(for: .gridScroll, registry: registry)
-    }
-
     /// Web `view-select` page jump opens the view dropdown, like clicking it.
     public var isViewSwitcherOpen = false
 
@@ -783,26 +798,19 @@ public final class NativeCalendarRootModel {
             monthPickerMonth = viewStore.anchorDate
         case "calendars":
             focusCalendarList()
+        case let id where id.hasPrefix(PageJumpTargets.calendarAccountPrefix):
+            // Web clicks a collapsed heading so the jump shows its calendars.
+            let key = String(id.dropFirst(PageJumpTargets.calendarAccountPrefix.count))
+            if isAccountCollapsed(key) {
+                toggleAccountCollapsed(key)
+            }
+            focusCalendarList(key)
         case let id where id.hasPrefix(PageJumpTargets.dayColumnPrefix):
             let calendarId = String(id.dropFirst(PageJumpTargets.dayColumnPrefix.count))
             focusDayColumn(calendarId: calendarId)
         default:
             break
         }
-    }
-
-    public func focusEventJump(digit: Character) {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else { return }
-        focusEvent(eventId: hint.eventId)
-    }
-
-    @discardableResult
-    public func focusEventJumpIfAvailable(digit: Character) -> Bool {
-        guard let hint = eventJumpHintLabels.first(where: { $0.label == String(digit) }) else {
-            return false
-        }
-        focusEvent(eventId: hint.eventId)
-        return true
     }
 
     public func consumePendingScroll() -> TimeGridScrollRequest? {
@@ -926,6 +934,8 @@ public final class NativeCalendarRootModel {
     func applyFocusPresentation() {
         var scenario = timeGridState.scenario
         scenario.draftOverlay = draftOverlayForPresentation()
+        scenario.pinnedDayColumnCalendarIds = pinnedDayColumnCalendarIds()
+        scenario.defaultTargetCalendarId = defaultTargetCalendarId()?.rawValue
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
         let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
         let showDayJumpPrefixes =
@@ -1042,6 +1052,12 @@ public final class NativeCalendarRootModel {
         }
     }
 
+    /// Web `Mod+Alt+T` / sidebar "Go to this month": move the picker to the
+    /// current month without changing the main grid anchor.
+    private func goToMonthPickerCurrentMonth() {
+        browseMonth(referenceNow)
+    }
+
     public var startOfView: Date {
         EffectiveTimeZone.calendar.startOfDay(for: viewStore.anchorDate)
     }
@@ -1102,7 +1118,7 @@ public final class NativeCalendarRootModel {
             return
         }
         headerTitle = CalendarHeadingLabel.format(start: startOfView, end: endOfView, now: referenceNow)
-        let hiddenIds = Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue))
+        let hiddenIds = gridHiddenEventIdStrings
         let demoIds = demoEventIds
         let referenceNow = self.referenceNow
         var scenario = GridLayoutScenarioBuilder.build(
@@ -1115,6 +1131,8 @@ public final class NativeCalendarRootModel {
             demoEventIds: demoIds
         )
         scenario.draftOverlay = draftOverlayForPresentation()
+        scenario.pinnedDayColumnCalendarIds = pinnedDayColumnCalendarIds()
+        scenario.defaultTargetCalendarId = defaultTargetCalendarId()?.rawValue
         let hasSecondaryTimeZone = viewStore.timeTravelTimeZone != nil
         let eventJumpActive = eventJumpSelection.modeActive || eventJumpSelection.isActive
         let showDayJumpPrefixes =
@@ -1220,11 +1238,14 @@ public final class NativeCalendarRootModel {
 
     private func nativePageJumpTargets() -> [PageJumpTarget] {
         let resolved: [PageJumpTargets.Resolved]
+        let accounts: [(key: String, label: String)] = calendarListGroups.compactMap { group in
+            group.account.map { (key: group.id, label: $0) }
+        }
         if viewStore.view == .day {
             let displayed = visibleCalendars().map { (id: $0.id, name: $0.name) }
-            resolved = PageJumpTargets.buildDayPageJumpTargets(displayedCalendars: displayed)
+            resolved = PageJumpTargets.buildDayPageJumpTargets(displayedCalendars: displayed, accounts: accounts)
         } else {
-            resolved = PageJumpTargets.buildSidebarPageJumpTargets()
+            resolved = PageJumpTargets.buildSidebarPageJumpTargets(accounts: accounts)
         }
         return resolved.map { target in
             PageJumpTarget(id: target.id, digit: target.digit, label: target.label)
@@ -1237,20 +1258,57 @@ public final class NativeCalendarRootModel {
         )
     }
 
+    /// Web `ShiftHintOverlay`: W1, SU2, ... on every grid card, narrowed to
+    /// the typed day prefix.
     func buildEventJumpHints() -> [EventJumpChipHint] {
-        let digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-        let timed = focusLayoutCards.filter { !$0.isAllDay }.sorted { $0.frame.top < $1.frame.top }
-        return timed.prefix(digits.count).enumerated().map { index, card in
-            EventJumpChipHint(
-                eventId: card.eventId,
-                label: digits[index],
-                frame: card.frame
+        let layoutCards = currentGridCards()
+        let frameByEventId = Dictionary(uniqueKeysWithValues: layoutCards.map { ($0.eventId, $0.frame) })
+        let allDayByEventId = Dictionary(uniqueKeysWithValues: layoutCards.map { ($0.eventId, $0.kind == .allDay) })
+        let assignments = DayJumpKeys.filter(dayJumpAssignments(), prefix: eventJumpSelection.dayJumpBuffer)
+        return assignments.compactMap { assignment in
+            guard let frame = frameByEventId[assignment.eventId] else { return nil }
+            return EventJumpChipHint(
+                eventId: assignment.eventId,
+                label: assignment.hint,
+                frame: frame,
+                isAllDay: allDayByEventId[assignment.eventId] ?? false
             )
         }
     }
 
+    func dayJumpAssignments() -> [DayJumpKeys.Assignment] {
+        let eventsById = Dictionary(loadedEvents.map { ($0.id.rawValue, $0) }, uniquingKeysWith: { first, _ in first })
+        var seen = Set<String>()
+        let targets: [DayJumpKeys.Target] = currentGridCards().compactMap { card in
+            guard seen.insert(card.eventId).inserted, let event = eventsById[card.eventId] else { return nil }
+            let dayKey = eventJumpDayKey(for: event)
+            guard let day = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { return nil }
+            return DayJumpKeys.Target(
+                eventId: card.eventId,
+                start: eventStart(event),
+                isAllDay: card.kind == .allDay,
+                dayKey: dayKey,
+                weekday: EffectiveTimeZone.calendar.component(.weekday, from: day) - 1
+            )
+        }
+        return DayJumpKeys.assign(targets)
+    }
+
     public func visibleCalendars() -> [CompassCalendar] {
         calendars.filter { $0.isActive && calendarVisibilityStore.isVisible($0.id) }
+    }
+
+    /// Individually hidden event ids for grid layout and Up Next (same set as web hidden-events).
+    var gridHiddenEventIdStrings: Set<String> {
+        Set(hiddenEventsStore.hiddenEventIds.map(\.rawValue))
+    }
+
+    /// Timed/all-day candidates visible on the grid: visible calendar and not individually hidden.
+    func eventsEligibleForUpNext(_ events: [Event]) -> [Event] {
+        UpNextProjection.filterGridVisibleEvents(
+            events,
+            hiddenEventIds: gridHiddenEventIdStrings,
+            isCalendarVisible: calendarVisibilityStore.isVisible)
     }
 
     /// Active calendars for the sidebar list, hidden ones included.

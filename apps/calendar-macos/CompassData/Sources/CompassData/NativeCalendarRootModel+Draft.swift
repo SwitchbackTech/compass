@@ -6,6 +6,11 @@ extension NativeCalendarRootModel {
     func draftTargetDay() -> Date {
         let calendar = EffectiveTimeZone.calendar
         let now = referenceNow
+        if let pointerDraftDateKey,
+            let parked = CompassDateParsing.calendarDateInEffectiveTimeZone(pointerDraftDateKey)
+        {
+            return calendar.startOfDay(for: parked)
+        }
         let jumpColumnDay = QuickTime.quickTimeFocusedColumnDay(
             activeDayKeys: eventJumpSelection.activeDayKeys)
         let focusedDay: Date? = {
@@ -118,7 +123,9 @@ extension NativeCalendarRootModel {
 
     public func handleQuickTimeDigit(_ digit: Character) {
         guard viewStore.view != .life, draftStore.gridDraft == nil else { return }
-        guard eventJumpSelection.modeActive || eventJumpSelection.isActive else { return }
+        guard eventJumpSelection.modeActive || eventJumpSelection.isActive || pointerDraftDateKey != nil else {
+            return
+        }
         guard digit.isNumber else { return }
 
         let next = draftStore.quickTimeDigits + String(digit)
@@ -139,9 +146,18 @@ extension NativeCalendarRootModel {
         let digits = draftStore.quickTimeDigits
         draftStore.setQuickTimeDigits("")
         guard !digits.isEmpty else { return }
-        guard let start = QuickTime.resolveQuickTimeStart(digits: digits, targetDay: draftTargetDay()) else {
-            return
-        }
+        let start: Date? = {
+            if let pointerDraftStartISO,
+                let pointerDraftTimeKey,
+                digits == pointerDraftTimeKey,
+                let parsed = CompassDateParsing.parseInEffectiveTimeZone(pointerDraftStartISO)
+            {
+                return parsed
+            }
+            return QuickTime.resolveQuickTimeStart(digits: digits, targetDay: draftTargetDay())
+        }()
+        guard let start else { return }
+        clearPointerDraftIntent()
         let end = DraftTiming.timedDraftEnd(start: start)
         guard defaultTargetCalendarId() != nil else { return }
 
@@ -264,6 +280,21 @@ extension NativeCalendarRootModel {
         case .create:
             return draft.clientId.rawValue
         }
+    }
+
+    func pinnedDayColumnCalendarIds() -> Set<String> {
+        var pinned = Set<String>()
+        guard let draft = draftStore.gridDraft else { return pinned }
+        if let calendarId = draft.calendarId?.rawValue {
+            pinned.insert(calendarId)
+        }
+        if draftStore.status.isFormOpen, case .edit = draft.kind,
+           let sourceId = draft.persistedEventId?.rawValue,
+           let event = loadedEvents.first(where: { $0.id.rawValue == sourceId })
+        {
+            pinned.insert(event.calendarId.rawValue)
+        }
+        return pinned
     }
 
     func draftOverlayForPresentation() -> GridLayoutDraftOverlay? {

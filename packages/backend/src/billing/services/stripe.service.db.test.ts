@@ -101,8 +101,12 @@ describe("StripeService", () => {
     expect(sessionArgs.redirect_on_completion).toBe("never");
     expect(sessionArgs.success_url).toBeUndefined();
     expect(sessionArgs.cancel_url).toBeUndefined();
+    expect(
+      (sessionArgs as { custom_text?: { submit?: { message?: string } } })
+        .custom_text,
+    ).toBeUndefined();
     expect((sessionsCreate.mock.calls as unknown[][])[0]?.[1]).toEqual({
-      idempotencyKey: `compass-checkout-v5-${userId.toString()}`,
+      idempotencyKey: `compass-checkout-v7-${userId.toString()}`,
     });
 
     const stored = await mongoService.user.findOne({ _id: userId });
@@ -969,7 +973,7 @@ describe("StripeService", () => {
       expect(sessionArgs.ui_mode).toBeUndefined();
       expect(sessionArgs.redirect_on_completion).toBeUndefined();
       expect((sessionsCreate.mock.calls as unknown[][])[0]?.[1]).toEqual({
-        idempotencyKey: `compass-checkout-v5-desktop-${userId.toString()}`,
+        idempotencyKey: `compass-checkout-v7-desktop-${userId.toString()}`,
       });
     });
 

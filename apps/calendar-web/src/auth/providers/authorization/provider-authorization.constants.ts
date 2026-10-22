@@ -42,3 +42,8 @@ export function isSignInProviderKind(value: string): value is ProviderKind {
 export function providerAuthCallbackPath(kind: ProviderKind): string {
   return `/auth/${kind}/callback`;
 }
+
+/** Backend-only path (proxied on staging/production) for OAuth callback telemetry. */
+export function providerAuthCallbackTelemetryPath(kind: ProviderKind): string {
+  return `/api/auth/${kind}/callback`;
+}

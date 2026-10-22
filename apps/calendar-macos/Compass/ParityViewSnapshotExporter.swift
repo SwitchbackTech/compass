@@ -56,6 +56,8 @@ enum ParityViewSnapshotExporter {
         context.cgContext.clear(CGRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight))
         enableLayerBackedDrawing(contentView)
         contentView.cacheDisplay(in: captureRect, to: bitmap)
+        NSGraphicsContext.current = context
+        drawPopoverWindows(over: window)
 
         let folder = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -71,6 +73,33 @@ enum ParityViewSnapshotExporter {
         guard let png = pngData else { return }
         try png.write(to: file)
         NativeAccessibilityProbes.publishParityExport(surface: surface, on: window)
+    }
+
+    /// Popovers (the form's date picker and time list) are separate windows,
+    /// so `cacheDisplay` of the content view leaves them out and the capture
+    /// showed a closed field. Draw each visible one on top at its offset from
+    /// the main window's content, as it appears on screen.
+    @MainActor
+    private static func drawPopoverWindows(over window: NSWindow) {
+        let content = window.contentRect(forFrameRect: window.frame)
+        let popovers = (window.childWindows ?? []) + NSApp.windows.filter {
+            String(describing: type(of: $0)).contains("Popover")
+        }
+        var drawn = Set<ObjectIdentifier>()
+        for popover in popovers where popover !== window && popover.isVisible {
+            guard drawn.insert(ObjectIdentifier(popover)).inserted,
+                popover.frame.intersects(window.frame),
+                let view = popover.contentView,
+                let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds)
+            else { continue }
+            view.cacheDisplay(in: view.bounds, to: rep)
+            let frame = popover.contentRect(forFrameRect: popover.frame)
+            rep.draw(in: NSRect(
+                x: frame.minX - content.minX,
+                y: frame.minY - content.minY,
+                width: frame.width,
+                height: frame.height))
+        }
     }
 
     /// Full window PNG including traffic lights for marketing title-bar crop (CI).

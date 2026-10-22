@@ -1196,6 +1196,7 @@ describe("GET /sync/google", () => {
         provider: "google",
         outcome: "connected",
         intent: "connect",
+        environment: NodeEnv.Test,
       }),
     );
     expect(captured[0]!.properties).not.toHaveProperty("errorClass");
@@ -1376,7 +1377,7 @@ describe("GET /sync/google", () => {
     expect(captured).toHaveLength(1);
     expect(captured[0]!.distinctId).toBe(principalId);
     expect(captured[0]!.properties["outcome"]).toBe("error");
-    expect(captured[0]!.properties["reason"]).toBe("token_exchange_error");
+    expect(captured[0]!.properties["reason"]).toBe("token_exchange_failed");
     expect(captured[0]!.properties["provider_error"]).toBe("exchangeFailed");
     expect(captured[0]!.properties["errorClass"]).toBe("ProviderAuthError");
     expect(captured[0]!.properties).not.toHaveProperty("message");

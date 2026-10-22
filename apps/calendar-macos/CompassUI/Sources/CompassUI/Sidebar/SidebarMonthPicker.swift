@@ -59,19 +59,21 @@ public struct SidebarMonthPicker: View {
         daysAreClickable: Bool = false,
         captionPicker: Bool = false,
         minimumDate: Date? = nil,
-        maximumDate: Date? = nil
+        maximumDate: Date? = nil,
+        focusedDate: Date? = nil,
+        trailingHeader: AnyView? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
         self.onSelectDate = onSelectDate
         self.visibleDayCount = 1
-        self.focusedDate = nil
+        self.focusedDate = focusedDate
         self.today = today
         self.daysAreClickable = daysAreClickable
         self.captionPicker = captionPicker
         self.minimumDate = minimumDate
         self.maximumDate = maximumDate
-        self.trailingHeader = nil
+        self.trailingHeader = trailingHeader
     }
 
     public var body: some View {
@@ -154,7 +156,9 @@ public struct SidebarMonthPicker: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Go to this month")
-            .help("Go to this month")
+            .help(
+                "Go to this month \(KeycapGlyphs.display(["Mod", "Alt", "t"]))"
+            )
             .opacity(isCurrentMonth || captionView != .day ? 0 : 1)
             .disabled(isCurrentMonth || captionView != .day)
             Spacer(minLength: 0)

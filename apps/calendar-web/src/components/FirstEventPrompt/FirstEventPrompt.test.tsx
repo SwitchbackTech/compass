@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { AuthModalContext } from "@web/components/AuthModal/hooks/useAuthModal";
-import { FirstEventPrompt } from "@web/components/FirstEventPrompt/FirstEventPrompt";
 import {
   initialFirstEventPromptState,
   noteFirstRealEventCreated,
@@ -23,7 +22,18 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+
+const emitViewCommand = mock(() => undefined);
+
+mock.module("@web/common/utils/dom/view-command-bus", () => ({
+  emitViewCommand,
+  onViewCommand: () => () => undefined,
+}));
+
+const { FirstEventPrompt } = await import(
+  "@web/components/FirstEventPrompt/FirstEventPrompt"
+);
 
 const markShowcaseSeen = () => {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_SHORTCUT_SHOWCASE, "true");
@@ -31,6 +41,7 @@ const markShowcaseSeen = () => {
 
 describe("FirstEventPrompt", () => {
   beforeEach(() => {
+    emitViewCommand.mockClear();
     draftActions.discard();
     useFirstEventPromptStore.setState({ ...initialFirstEventPromptState });
     useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
@@ -121,7 +132,7 @@ describe("FirstEventPrompt", () => {
     ).toBeTruthy();
   });
 
-  it("shows the handoff copy and a C keycap once the showcase has been seen", () => {
+  it("shows a primary add action once the showcase has been seen", () => {
     markShowcaseSeen();
     render(<FirstEventPrompt />);
 
@@ -129,9 +140,20 @@ describe("FirstEventPrompt", () => {
       name: "Create your first event",
     });
     expect(prompt).toBeTruthy();
-    expect(screen.getByText("Add your first event")).toBeTruthy();
-    expect(screen.getByText(/type a title, then Enter/)).toBeTruthy();
-    expect(screen.getByText("C")).toBeTruthy();
+    expect(
+      screen.getByText("Your calendar is ready. Add something to it."),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add event" })).toBeTruthy();
+  });
+
+  it("starts a timed draft when Add event is clicked", async () => {
+    const user = userEvent.setup();
+    markShowcaseSeen();
+    render(<FirstEventPrompt />);
+
+    await user.click(screen.getByRole("button", { name: "Add event" }));
+
+    expect(emitViewCommand).toHaveBeenCalledWith("CREATE_TIMED_DRAFT");
   });
 
   it("celebrates on the first real event, then retires the card for good", async () => {

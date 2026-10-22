@@ -1,8 +1,14 @@
 import {
+  EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+  EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS,
   EVENT_MENU_LETTER,
   FOCUS_NOTICE_LETTER,
   HIDE_EVENT_LETTER,
+  MONTH_PICKER_CURRENT_HOTKEY,
+  MONTH_PICKER_CURRENT_KEYCAPS,
+  MONTH_PICKER_NEXT_HOTKEY,
   MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_HOTKEY,
   MONTH_PICKER_PREV_KEYCAPS,
   VIEW_SHORTCUT_KEYS,
 } from "@core/shortcuts/binding-keycaps.constants";
@@ -30,8 +36,18 @@ export const APP_SHORTCUT_BINDINGS = {
   navNext: { hotkey: "K", keycaps: [letterKeycap("K")] },
   navShiftLeft: { hotkey: "Shift+J", keycaps: ["Shift", letterKeycap("J")] },
   navShiftRight: { hotkey: "Shift+K", keycaps: ["Shift", letterKeycap("K")] },
-  navMonthPrev: { keycaps: [...MONTH_PICKER_PREV_KEYCAPS] },
-  navMonthNext: { keycaps: [...MONTH_PICKER_NEXT_KEYCAPS] },
+  navMonthPrev: {
+    hotkey: MONTH_PICKER_PREV_HOTKEY,
+    keycaps: [...MONTH_PICKER_PREV_KEYCAPS],
+  },
+  navMonthNext: {
+    hotkey: MONTH_PICKER_NEXT_HOTKEY,
+    keycaps: [...MONTH_PICKER_NEXT_KEYCAPS],
+  },
+  navMonthCurrent: {
+    hotkey: MONTH_PICKER_CURRENT_HOTKEY,
+    keycaps: [...MONTH_PICKER_CURRENT_KEYCAPS],
+  },
   navToday: { hotkey: "T", keycaps: [letterKeycap("T")] },
   navGoToDate: { hotkey: "G", keycaps: [letterKeycap("G")] },
   navScrollUp: { hotkey: "PageUp", keycaps: ["PageUp"] },
@@ -83,6 +99,10 @@ export const APP_SHORTCUT_BINDINGS = {
     hotkey: KEYMAP.copyDescriptionLink.hotkey,
     keycaps: [...KEYMAP.copyDescriptionLink.keycaps],
   },
+  editCopyMeetingLink: {
+    hotkey: KEYMAP.copyMeetingLink.hotkey,
+    keycaps: [...KEYMAP.copyMeetingLink.keycaps],
+  },
   editOpenDescriptionLink: {
     hotkey: KEYMAP.openDescriptionLinkAtCaret.hotkey,
     keycaps: [...KEYMAP.openDescriptionLinkAtCaret.keycaps],
@@ -92,6 +112,10 @@ export const APP_SHORTCUT_BINDINGS = {
   },
   editFieldLeaderInForm: { hotkey: "Mod+E", keycaps: ["Mod+E"] },
   editFormActions: { hotkey: "Mod+0", keycaps: hotkeyKeycaps("Mod+0") },
+  editToggleAllDay: {
+    hotkey: EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+    keycaps: [...EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS],
+  },
   otherSidebar: { hotkey: "]", keycaps: ["]"] },
   otherShortcuts: { hotkey: "?", keycaps: ["?"] },
   otherSubscribe: { hotkey: "B", keycaps: [letterKeycap("B")] },
@@ -112,6 +136,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   "nav-shift-right": APP_SHORTCUT_BINDINGS.navShiftRight.keycaps,
   "nav-month-prev": APP_SHORTCUT_BINDINGS.navMonthPrev.keycaps,
   "nav-month-next": APP_SHORTCUT_BINDINGS.navMonthNext.keycaps,
+  "nav-month-current": APP_SHORTCUT_BINDINGS.navMonthCurrent.keycaps,
   "nav-picker-step": KEYMAP.moveFocus.keycaps,
   "nav-today": APP_SHORTCUT_BINDINGS.navToday.keycaps,
   "nav-go-to-date": APP_SHORTCUT_BINDINGS.navGoToDate.keycaps,
@@ -146,6 +171,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
     APP_SHORTCUT_BINDINGS.editRescheduleMeeting.keycaps,
   "edit-copy-description-link":
     APP_SHORTCUT_BINDINGS.editCopyDescriptionLink.keycaps,
+  "edit-copy-meeting-link": APP_SHORTCUT_BINDINGS.editCopyMeetingLink.keycaps,
   "edit-open-description-link":
     APP_SHORTCUT_BINDINGS.editOpenDescriptionLink.keycaps,
   "edit-open-description-link-digit":
@@ -155,6 +181,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   ],
   "edit-jump-field-digit": KEYMAP.jumpFormField.keycaps,
   "edit-form-actions": APP_SHORTCUT_BINDINGS.editFormActions.keycaps,
+  "edit-toggle-all-day": APP_SHORTCUT_BINDINGS.editToggleAllDay.keycaps,
   "edit-focus-prev": [KEYMAP.moveFocus.hotkeys.up],
   "edit-focus-next": [KEYMAP.moveFocus.hotkeys.down],
   "edit-focus-left": [KEYMAP.moveFocus.hotkeys.left],

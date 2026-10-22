@@ -11,6 +11,8 @@ import {
 
 export type ShortcutHintContext = {
   isFormOpen: boolean;
+  /** Keyboard focus is inside the open event form (footer owns tips). */
+  formFocusInside?: boolean;
   isLifeView: boolean;
   isWeekView?: boolean;
   eventFocused: boolean;
@@ -115,6 +117,9 @@ export function selectShortcutHint(
     return { ...weekDayFocusHint(dayPrefix), reasonCode: winner.reasonCode };
   };
 
+  if (ctx.isFormOpen && ctx.formFocusInside) {
+    return null;
+  }
   if (ctx.isFormOpen && !ctx.firstEventDone) {
     return ranked("first-event-save");
   }

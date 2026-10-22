@@ -1,6 +1,6 @@
 # Shortcut Levels
 
-A small `Lv N` badge in the sidebar footer, between the `?` legend button and
+A small `LN` badge (e.g. `L1`, `L6`, no space) in the sidebar footer, between the `?` legend button and
 Refresh. It shows how many distinct keyboard shortcuts this browser has used
 against a fixed level table, so people can see their own progress without
 opening the legend. It is additive: the rotating sidebar tip and the legend's

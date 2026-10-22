@@ -8,7 +8,13 @@ struct EventFormConferenceSection: View {
     let draft: GridEventDraft
 
     var body: some View {
-        if model.showCreateConferenceToggle(for: draft),
+        if let url = model.meetingLinkURL(for: draft) {
+            EventFormMeetingLinkRow(
+                model: model,
+                url: url,
+                label: EventFormMeetingLink.label(baseline: model.baselineEvent(for: draft))
+            )
+        } else if model.showCreateConferenceToggle(for: draft),
             let kind = CalendarCapabilities.creatableConferenceKind(on: model.attendeeCalendar(for: draft))
         {
             EventFormIconRow(icon: .videoCamera) {

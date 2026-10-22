@@ -8,6 +8,7 @@ import {
 } from "@web/shortcuts/keyboard-only/pointer-hint.store";
 import { pageJumpHintActions } from "@web/shortcuts/page-jump/page-jump.store";
 import { viewFromPathname } from "@web/shortcuts/tips/shortcut-telemetry";
+import { trackEmptyGridClickHintShown } from "@web/views/Week/pointer-intent/empty-grid-click-hint.telemetry";
 import {
   INTENT_TEACHING,
   type IntentMessageContext,
@@ -65,6 +66,9 @@ export const pointerIntentActions = {
 
     const teaching = INTENT_TEACHING[intent];
     const keys = teachingKeysForIntent(intent, pointerIntentKeysLookup);
+    if (intent === "slot-click" && ctx.timeKey) {
+      keys[0] = [ctx.timeKey];
+    }
     const shortcutKey = keys[0] ?? [];
     const message = teachingMessageForIntent(intent, ctx);
 
@@ -77,6 +81,7 @@ export const pointerIntentActions = {
       revealPageJumpChipsBriefly();
     }
     markPointerIntentHintShown(intent);
+    trackEmptyGridClickHintShown(intent);
     track("pointer_hint_shown", {
       intent,
       shortcut_id: teaching.shortcutIds[0],

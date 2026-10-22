@@ -19,13 +19,24 @@ struct EventFormScheduleSection: View {
                 allDayDateRow
             }
 
-            Toggle("All day?", isOn: Binding(
-                get: { draft.schedule.kind == .allDay },
-                set: { model.setDraftAllDay($0) }
-            ))
-            .toggleStyle(.checkbox)
-            .disabled(scheduleLocked)
-            .accessibilityIdentifier("compass-event-form-allday")
+            HStack(spacing: 6) {
+                Toggle("All day?", isOn: Binding(
+                    get: { draft.schedule.kind == .allDay },
+                    set: { model.setDraftAllDay($0) }
+                ))
+                .toggleStyle(.checkbox)
+                .disabled(scheduleLocked)
+                .accessibilityIdentifier("compass-event-form-allday")
+
+                if !scheduleLocked {
+                    HStack(spacing: 4) {
+                        ForEach(["Mod", "Alt", "A"], id: \.self) { key in
+                            ShortcutHintChip(label: KeycapGlyphs.display([key]))
+                        }
+                    }
+                    .accessibilityIdentifier("compass-event-form-allday-shortcut")
+                }
+            }
 
             if scheduleLocked {
                 Text(
@@ -47,7 +58,8 @@ struct EventFormScheduleSection: View {
                     get: { draft.schedule.start },
                     set: { model.updateAllDayDraftStart($0) }
                 ),
-                accessibilityIdentifier: "compass-event-form-start"
+                accessibilityIdentifier: "compass-event-form-start",
+                keyOwner: $model.eventFormDateKeyOwner
             )
             .disabled(scheduleLocked)
             .pageJumpChipAnchor(id: "form-start")
@@ -60,7 +72,8 @@ struct EventFormScheduleSection: View {
                     },
                     set: { model.updateAllDayDraftEnd($0) }
                 ),
-                accessibilityIdentifier: "compass-event-form-end"
+                accessibilityIdentifier: "compass-event-form-end",
+                keyOwner: $model.eventFormDateKeyOwner
             )
             .disabled(scheduleLocked)
             .pageJumpChipAnchor(id: "form-end")
@@ -79,7 +92,8 @@ struct EventFormScheduleSection: View {
                     get: { draft.schedule.start },
                     set: { updateStart(mergeCalendarDay(into: draft.schedule.start, day: $0)) }
                 ),
-                accessibilityIdentifier: "compass-event-form-start-date"
+                accessibilityIdentifier: "compass-event-form-start-date",
+                keyOwner: $model.eventFormDateKeyOwner
             )
             .disabled(scheduleLocked)
             .pageJumpChipAnchor(id: "form-start")
@@ -103,7 +117,8 @@ struct EventFormScheduleSection: View {
                         get: { draft.schedule.end },
                         set: { updateEnd(mergeCalendarDay(into: draft.schedule.end, day: $0)) }
                     ),
-                    accessibilityIdentifier: "compass-event-form-end-date"
+                    accessibilityIdentifier: "compass-event-form-end-date",
+                    keyOwner: $model.eventFormDateKeyOwner
                 )
                 .disabled(scheduleLocked)
             }

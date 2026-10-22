@@ -8,9 +8,7 @@ import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResp
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
 import { LifeCommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { COMMAND_PALETTE_PLACEHOLDER } from "@web/components/CommandPalette/more.cmd.constants";
-import { useLockedShortcutSections } from "@web/components/Sidebar/hooks/useLockedShortcutSections";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
-import { ShortcutLevelBadge } from "@web/components/Sidebar/SidebarActions/ShortcutLevelBadge";
 import { SidebarShell } from "@web/components/Sidebar/SidebarShell";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import {
@@ -27,6 +25,7 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";
+import { LifeViewIntroModal } from "./LifeViewIntroModal";
 import {
   getAgeInYears,
   getCurrentWeekLabel,
@@ -44,6 +43,7 @@ import {
   writeLifePreferences,
 } from "./life-preferences.storage";
 import { applyLifeSearch } from "./life-search";
+import { useLifeViewIntro } from "./useLifeViewIntro";
 
 interface LifeViewProps {
   today?: Date;
@@ -54,6 +54,7 @@ function formatWeeks(value: number) {
 }
 
 export function LifeView({ today }: LifeViewProps) {
+  const lifeViewIntro = useLifeViewIntro();
   const currentDate = useMemo(() => today ?? new Date(), [today]);
   const navigate = useNavigate();
   const search = useSearch({ from: ROUTE_IDS.LIFE });
@@ -121,7 +122,6 @@ export function LifeView({ today }: LifeViewProps) {
       }),
     [isTrialing],
   );
-  const lockedSections = useLockedShortcutSections(shortcutSections);
   const onPreferencesChange = useCallback(
     (update: (current: LifePreferences) => LifePreferences) => {
       setPreferences(update);
@@ -175,6 +175,7 @@ export function LifeView({ today }: LifeViewProps) {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
+      <LifeViewIntroModal {...lifeViewIntro} />
       <LifeCommandPalette placeholder={COMMAND_PALETTE_PLACEHOLDER} />
       <PageJumpHints targets={LIFE_PAGE_JUMP_TARGETS} />
 
@@ -210,8 +211,7 @@ export function LifeView({ today }: LifeViewProps) {
           shortcutsViewLabel="Life"
         >
           <LifeSidebarContent
-            autoFocusBirthDate={isNewLifeUser}
-            headerEndContent={<ShortcutLevelBadge sections={lockedSections} />}
+            autoFocusBirthDate={isNewLifeUser && !lifeViewIntro.mounted}
             onCycleVariation={cycleVariation}
             preferences={preferences}
             onShuffleAge={shuffleAge}

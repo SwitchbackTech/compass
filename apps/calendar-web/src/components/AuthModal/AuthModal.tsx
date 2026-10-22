@@ -1,5 +1,5 @@
 import { DotIcon } from "@phosphor-icons/react/dist/csr/Dot";
-import { useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   type FC,
   useCallback,
@@ -23,11 +23,14 @@ import {
   dismissErrorToast,
   SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
+import { AuthButton } from "@web/components/AuthModal/components/AuthButton";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { signupTrialStepTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { dismissSignupTrialStep } from "./dismiss-signup-trial-step";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
@@ -39,6 +42,7 @@ import {
   type AuthView,
   useAuthModal,
 } from "./hooks/useAuthModal";
+import { useSignupTrialBrowserBack } from "./hooks/useSignupTrialBrowserBack";
 
 function getInitialAuthToken(search: AuthSearch): string | undefined {
   const authParam = search.auth?.toLowerCase();
@@ -61,8 +65,14 @@ function getInitialAuthToken(search: AuthSearch): string | undefined {
  * - Accessible modal with proper ARIA attributes
  */
 export const AuthModal: FC = () => {
+  const navigate = useNavigate();
   const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const isStartTrialView = currentView === "startTrial";
+  const dismissSignupTrial = useCallback(
+    () => dismissSignupTrialStep(navigate),
+    [navigate],
+  );
+  useSignupTrialBrowserBack(isOpen && isStartTrialView);
   useAppLockReason("authModal", isOpen);
   useAppLockReason("signupTrialStep", isStartTrialView);
   const handleGoogleAuthStart = useCallback(() => {
@@ -240,12 +250,27 @@ export const AuthModal: FC = () => {
   if (isStartTrialView) {
     return (
       <OverlayPanel
+        align="start"
+        anchor="top"
+        footer={
+          <AuthButton
+            className="inline-flex items-center gap-2"
+            onClick={dismissSignupTrial}
+            type="button"
+            variant="link"
+          >
+            Back
+            <ShortcutHint>Esc</ShortcutHint>
+          </AuthButton>
+        }
+        message={signupTrialStepTermsLine()}
+        onDismiss={dismissSignupTrial}
+        scrollChildrenOnly
         title={title}
-        onDismiss={closeModal}
         variant="modal"
         widthClassName="w-[560px]"
       >
-        <StartTrialStep onDismiss={closeModal} />
+        <StartTrialStep onDismiss={dismissSignupTrial} />
       </OverlayPanel>
     );
   }
@@ -264,6 +289,7 @@ export const AuthModal: FC = () => {
             <ShortcutHint
               className="shrink-0"
               visible={showBareLetterShortcutHints}
+              reserveSpaceWhenHidden={false}
             >
               {isLoginView ? "U" : "i"}
             </ShortcutHint>

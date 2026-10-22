@@ -27,7 +27,10 @@ import {
   type RsvpEventInput,
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
-import { decodeOccurrenceId } from "@core/util/occurrence-id";
+import {
+  decodeOccurrenceId,
+  rootSeriesMasterId,
+} from "@core/util/occurrence-id";
 import {
   getApiErrorCode,
   isAbortError,
@@ -453,10 +456,13 @@ function seriesWriteKey(
   fallbackId: EventId,
 ): EventId {
   if (scope === "this" || !original) return fallbackId;
-  if (original.recurrence.kind === "occurrence") {
-    return original.recurrence.seriesId;
-  }
-  return original.id;
+  const seriesId =
+    original.recurrence.kind === "occurrence"
+      ? original.recurrence.seriesId
+      : original.recurrence.kind === "series"
+        ? original.id
+        : fallbackId;
+  return EventIdSchema.parse(rootSeriesMasterId(seriesId));
 }
 
 // The envelope every serialized event mutation's variables carry: the write
@@ -704,11 +710,15 @@ export function useEventMutations(
       variables: Variables,
       context: EventMutationContext | undefined,
     ) => {
-      if (isApiError(error) && getApiErrorCode(error) === "BILLING_REQUIRED") {
+      if (
+        isApiError(error) &&
+        getApiErrorCode(error) === "BILLING_REQUIRED" &&
+        operation !== "rsvp"
+      ) {
         void queryClient.invalidateQueries({
           queryKey: billingQueryKeys.status,
         });
-        void requestTrialStep({ trigger: "write" });
+        void requestTrialStep({ trigger: "write", eventAction: operation });
       }
       reportError(
         error,
@@ -1107,7 +1117,7 @@ export function useEventMutations(
   return useMemo(
     () => ({
       create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => {
-        if (blockAwaitingCheckoutEventWrite()) {
+        if (blockAwaitingCheckoutEventWrite("create")) {
           return;
         }
         if (blockReconnectRequiredCalendar(input.calendarId)) {
@@ -1140,7 +1150,7 @@ export function useEventMutations(
         },
         callbacks?: EventMutationCallbacks,
       ): boolean => {
-        if (blockAwaitingCheckoutEventWrite()) {
+        if (blockAwaitingCheckoutEventWrite("replace")) {
           return false;
         }
         const original = findEventInCache(queryClient, payload.id, source);
@@ -1218,7 +1228,10 @@ export function useEventMutations(
         return true;
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
-        if (!isRestoringHistory() && blockAwaitingCheckoutEventWrite()) {
+        if (
+          !isRestoringHistory() &&
+          blockAwaitingCheckoutEventWrite("delete")
+        ) {
           return;
         }
         const original = findEventInCache(queryClient, payload.id, source);
@@ -1249,7 +1262,7 @@ export function useEventMutations(
         });
         deleteMutation.mutate({
           ...payload,
-          writeKey: payload.id,
+          writeKey: seriesWriteKey(original, payload.scope, payload.id),
           skipRepository: !existing,
           opportunityId,
           undoEntry: undoEntryForWrite(entry),
@@ -1257,9 +1270,6 @@ export function useEventMutations(
         });
       },
       rsvp: ({ id, responseStatus, scope, accountEmail }: RsvpPayload) => {
-        if (blockAwaitingCheckoutEventWrite()) {
-          return;
-        }
         const original = findEventInCache(queryClient, id, source);
         // No isTargetReadOnly gate on purpose (finish line 5: RSVP works on
         // viewer-access calendars) — but a reconnect-required Google account

@@ -16,7 +16,7 @@ test("the level badge shows progress and hides via the command palette", async (
 
   const badge = getLevelBadge(page);
   await expect(badge).toBeVisible();
-  await expect(badge).toHaveText("Lv 1");
+  await expect(badge).toHaveText("L1");
   await expect(badge).toHaveAccessibleName(/Shortcut level 1, Newcomer/);
 
   // T (today) and J (previous period) are both registry shortcuts, so the

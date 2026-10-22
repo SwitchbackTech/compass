@@ -665,4 +665,133 @@ describe("SyncResourceRepository", () => {
 
     expect(stale.map((r) => r._id)).toEqual([active._id]);
   });
+
+  describe("credentialUsable sweep selection", () => {
+    let credentials: CredentialRepository;
+    const staleBefore = new Date("2026-07-09T00:00:00.000Z");
+
+    beforeEach(() => {
+      credentials = new CredentialRepository(db);
+    });
+
+    it("excludes resources whose connection has no credential", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const liveConnection = objectId() as ConnectionId;
+      const deadConnection = objectId() as ConnectionId;
+
+      const live = await repo.ensure(
+        upsert({
+          tenantId,
+          principalId,
+          connectionId: liveConnection,
+          resourceKind: "calendarList",
+          calendarId: null,
+        }),
+      );
+      await repo.ensure(
+        upsert({
+          tenantId,
+          principalId,
+          connectionId: deadConnection,
+          resourceKind: "calendarList",
+          calendarId: null,
+        }),
+      );
+      await seedOauthCredential(credentials, {
+        connectionId: deadConnection,
+        provider: "google",
+        refreshToken: "dead-refresh",
+        scopes: [],
+      });
+      await credentials.deleteByConnection(deadConnection);
+      await seedOauthCredential(credentials, {
+        connectionId: liveConnection,
+        provider: "google",
+        refreshToken: "refresh",
+        scopes: [],
+      });
+
+      const results = await repo.listStaleCalendarLists(staleBefore, 10);
+      expect(results.map((r) => r._id)).toEqual([live._id]);
+    });
+
+    it("includes a reconnected connection as soon as the credential is stored", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const connectionId = objectId() as ConnectionId;
+      const resource = await repo.ensure(
+        upsert({
+          tenantId,
+          principalId,
+          connectionId,
+          resourceKind: "calendarList",
+          calendarId: null,
+        }),
+      );
+      await db
+        .collection(SYNC_COLLECTIONS.syncResources)
+        .updateOne(
+          { _id: resource._id as never },
+          { $set: { credentialUsable: false } },
+        );
+
+      expect(await repo.listStaleCalendarLists(staleBefore, 10)).toEqual([]);
+
+      await seedOauthCredential(credentials, {
+        connectionId,
+        provider: "google",
+        refreshToken: "refresh",
+        scopes: [],
+      });
+
+      expect(await repo.listStaleCalendarLists(staleBefore, 10)).toEqual([
+        expect.objectContaining({ _id: resource._id }),
+      ]);
+    });
+
+    it("listStaleCalendarLists leading match uses the credentialUsable index", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const connectionId = objectId() as ConnectionId;
+      await repo.ensure(
+        upsert({
+          tenantId,
+          principalId,
+          connectionId,
+          resourceKind: "calendarList",
+          calendarId: null,
+        }),
+      );
+      await seedOauthCredential(credentials, {
+        connectionId,
+        provider: "google",
+        refreshToken: "refresh",
+        scopes: [],
+      });
+
+      const explained = await db
+        .collection(SYNC_COLLECTIONS.syncResources)
+        .aggregate([
+          {
+            $match: {
+              credentialUsable: true,
+              resourceKind: "calendarList",
+              $or: [
+                { lastFullListAt: { $lt: staleBefore } },
+                { lastFullListAt: null },
+              ],
+            },
+          },
+          { $sort: { lastAttemptAt: 1, lastFullListAt: 1 } },
+          { $limit: 10 },
+        ])
+        .explain("queryPlanner");
+      const plan = JSON.stringify(explained["queryPlanner"]["winningPlan"]);
+      expect(plan).toContain("IXSCAN");
+      expect(plan).toContain("credentialUsable");
+      expect(plan).toContain("resourceKind");
+      expect(plan).not.toContain("COLLSCAN");
+    });
+  });
 });

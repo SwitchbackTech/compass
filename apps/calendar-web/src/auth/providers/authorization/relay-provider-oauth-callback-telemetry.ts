@@ -1,5 +1,5 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
-import { providerAuthCallbackPath } from "@web/auth/providers/authorization/provider-authorization.constants";
+import { providerAuthCallbackTelemetryPath } from "@web/auth/providers/authorization/provider-authorization.constants";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
 const TELEMETRY_HEADER = "X-Compass-OAuth-Telemetry";
@@ -13,7 +13,7 @@ export function relayProviderOAuthCallbackTelemetry(
   search: string,
 ): void {
   const query = search.startsWith("?") ? search : `?${search}`;
-  const url = `${ENV_WEB.BACKEND_BASEURL}${providerAuthCallbackPath(provider)}${query}`;
+  const url = `${ENV_WEB.BACKEND_BASEURL}${providerAuthCallbackTelemetryPath(provider)}${query}`;
 
   try {
     void fetch(url, {

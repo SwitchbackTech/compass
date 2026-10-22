@@ -220,6 +220,28 @@ describe("serve-web guest /meet cutover", () => {
       bookingServer.process.kill();
     }
   });
+
+  it("serves meet-landing.html for bare /meet when serving booking-web", async () => {
+    writeFileSync(
+      join(buildRoot, "meet-landing.html"),
+      '<!doctype html><html><head><link rel="canonical" href="https://www.compasscalendar.com/meet" /></head><body>A simple booking page for your calendar</body></html>',
+    );
+    const bookingServer = await startServeWeb({
+      WEB_SERVES_GUEST_MEET: "true",
+    });
+
+    try {
+      const response = await fetch(`${bookingServer.baseUrl}/meet`);
+
+      expect(response.status).toBe(200);
+      const html = await response.text();
+      expect(html).toContain('rel="canonical"');
+      expect(html).toContain("https://www.compasscalendar.com/meet");
+      expect(html).toContain("A simple booking page for your calendar");
+    } finally {
+      bookingServer.process.kill();
+    }
+  });
 });
 
 describe("serve-web path traversal", () => {

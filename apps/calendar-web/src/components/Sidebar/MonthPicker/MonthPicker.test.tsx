@@ -4,7 +4,13 @@ import {
   resolveModifier,
 } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act, type PropsWithChildren, type ReactElement } from "react";
 import dayjs from "@core/util/date/dayjs";
@@ -45,10 +51,10 @@ const wrapper = ({ children }: PropsWithChildren) => (
 const renderPicker = (ui: ReactElement) => render(ui, { wrapper });
 
 const isMac = resolveModifier("Mod") === "Meta";
-const pressMonthChord = (key: string) => {
+const pressMonthChord = (key: "j" | "k" | "t") => {
   const init = isMac
-    ? { metaKey: true, shiftKey: true }
-    : { ctrlKey: true, shiftKey: true };
+    ? { metaKey: true, altKey: true }
+    : { ctrlKey: true, altKey: true };
   pressKey(key, { keyDownInit: init, keyUpInit: init });
 };
 
@@ -217,7 +223,7 @@ describe("MonthPicker", () => {
 
     act(() => getTabStopDay()?.focus());
     act(() => {
-      pressMonthChord(".");
+      pressMonthChord("k");
     });
 
     await waitFor(() => {
@@ -233,7 +239,7 @@ describe("MonthPicker", () => {
     expect(document.activeElement).toBe(document.body);
 
     act(() => {
-      pressMonthChord(".");
+      pressMonthChord("k");
     });
 
     await waitFor(() => {
@@ -269,7 +275,7 @@ describe("MonthPicker", () => {
     });
 
     act(() => {
-      pressMonthChord(",");
+      pressMonthChord("j");
     });
 
     await waitFor(() => {
@@ -458,7 +464,7 @@ describe("MonthPicker", () => {
     expect(screen.getByText("May 2026")).toBeInTheDocument();
 
     act(() => {
-      pressMonthChord(",");
+      pressMonthChord("j");
     });
 
     await waitFor(() => {
@@ -468,7 +474,7 @@ describe("MonthPicker", () => {
     expect(onSelectDate).not.toHaveBeenCalled();
 
     act(() => {
-      pressMonthChord(".");
+      pressMonthChord("k");
     });
 
     await waitFor(() => {
@@ -477,18 +483,23 @@ describe("MonthPicker", () => {
     expect(onSelectDate).not.toHaveBeenCalled();
   });
 
-  it("steps the month when Shift+, produces < (US QWERTY)", async () => {
+  it("steps the month from a focused date input via the Mod+Alt chord", async () => {
     const onSelectDate = mock();
     renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
 
+    const input = document.createElement("input");
+    document.body.append(input);
+    input.focus();
+
     act(() => {
-      pressMonthChord("<");
+      pressMonthChord("j");
     });
 
     await waitFor(() => {
       expect(screen.getByText("Apr 2026")).toBeInTheDocument();
     });
     expect(onSelectDate).not.toHaveBeenCalled();
+    input.remove();
   });
 
   it("does not show remaining-key chips on the chevrons while Mod-hold hints are visible", () => {
@@ -496,9 +507,8 @@ describe("MonthPicker", () => {
     renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
 
     const picker = screen.getByRole("group", { name: "Date navigation" });
-    expect(picker.textContent).not.toContain("Shift");
-    expect(picker.textContent).not.toContain(",");
-    expect(picker.textContent).not.toContain(".");
+    expect(picker.textContent?.toLowerCase()).not.toContain("shift+j");
+    expect(picker.textContent?.toLowerCase()).not.toContain("shift+k");
   });
 
   it("keeps the selected day bold across the whole cursor week", () => {
@@ -515,7 +525,7 @@ describe("MonthPicker", () => {
     );
   });
 
-  it("labels the today control with the t shortcut in its tooltip", async () => {
+  it("labels the today control with Mod+Alt+T in its tooltip", async () => {
     const user = userEvent.setup();
     renderPicker(<MonthPicker onSelectDate={mock()} {...pickerProps} />);
 
@@ -527,6 +537,90 @@ describe("MonthPicker", () => {
 
     const tooltip = await screen.findByRole("tooltip");
     expect(tooltip).toHaveTextContent("Go to this month");
-    expect(tooltip).toHaveTextContent("T");
+    const keys = within(tooltip);
+    expect(keys.getByTestId("alt-icon")).toBeInTheDocument();
+    expect(keys.getByTestId("t-icon")).toBeInTheDocument();
+    expect(
+      keys.queryByTestId("meta-icon") ?? keys.queryByTestId("control-icon"),
+    ).toBeInTheDocument();
+  });
+
+  it("returns to the current month with Mod+Alt+T without selecting a date", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    const onSelectDate = mock();
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+    const currentMonthLabel = dayjs().format("MMM YYYY");
+
+    act(() => {
+      pressMonthChord("k");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+    act(() => {
+      pressMonthChord("k");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Jul 2026")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Go to this month" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(currentMonthLabel)).toBeInTheDocument();
+    });
+    expect(onSelectDate).not.toHaveBeenCalled();
+
+    act(() => {
+      pressMonthChord("k");
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(dayjs().add(1, "month").format("MMM YYYY")),
+      ).toBeInTheDocument();
+    });
+
+    act(() => {
+      pressMonthChord("t");
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(currentMonthLabel)).toBeInTheDocument();
+    });
+    expect(onSelectDate).not.toHaveBeenCalled();
+  });
+
+  it("returns to the current month on plain t keyup without changing selection", async () => {
+    const onSelectDate = mock();
+    renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
+    const currentMonthLabel = dayjs().format("MMM YYYY");
+
+    act(() => {
+      pressMonthChord("k");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Jun 2026")).toBeInTheDocument();
+    });
+    act(() => {
+      pressMonthChord("k");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Jul 2026")).toBeInTheDocument();
+    });
+
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keyup", {
+          bubbles: true,
+          cancelable: true,
+          key: "t",
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(currentMonthLabel)).toBeInTheDocument();
+    });
+    expect(onSelectDate).not.toHaveBeenCalled();
   });
 });

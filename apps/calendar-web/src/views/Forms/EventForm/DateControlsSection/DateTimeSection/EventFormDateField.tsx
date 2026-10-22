@@ -1,6 +1,6 @@
 import type React from "react";
-import { useEffect, useRef } from "react";
-import dayjs from "@core/util/date/dayjs";
+import { useEffect, useRef, useState } from "react";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { parseUserDate } from "@web/common/utils/datetime/web.date.util";
 import { resolveFormControlJumpIds } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -9,6 +9,18 @@ import {
   EVENT_FORM_DATE_INPUT_FORMAT,
   formatEventFormDateLabel,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
+import {
+  calendarAction,
+  closedFieldAction,
+  type EventFormDateCalendarKey,
+  type EventFormDateFieldClosedKey,
+  movePickerCursor,
+} from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateFieldKeys.util";
+import {
+  EventFormCalendarPopoverHints,
+  EventFormHintKeys,
+  EventFormInfieldHint,
+} from "@web/views/Forms/EventForm/EventFormFocusedHint";
 
 const DATE_FIELD_CLASSNAME =
   "c-event-form-date-field flex min-w-0 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
@@ -21,6 +33,7 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
 const consume = (event: React.KeyboardEvent) => {
   event.preventDefault();
   event.stopPropagation();
+  event.nativeEvent.stopImmediatePropagation();
 };
 
 export interface EventFormDateFieldProps {
@@ -53,8 +66,26 @@ export const EventFormDateField = ({
   const selectedRef = useRef(selected);
   selectedRef.current = selected;
   const containerRef = useRef<HTMLDivElement>(null);
+  const [pickerCursor, setPickerCursor] = useState<Dayjs | null>(null);
+  const pickerCursorRef = useRef<Dayjs | null>(null);
+  const setPickerCursorSync = (next: Dayjs | null) => {
+    pickerCursorRef.current = next;
+    setPickerCursor(next);
+  };
+  const [pickerMonth, setPickerMonth] = useState(() =>
+    dayjs(selected).startOf("month"),
+  );
 
   const shownDateRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      pickerCursorRef.current = null;
+      setPickerCursor(null);
+      return;
+    }
+    setPickerMonth(dayjs(selected).startOf("month"));
+  }, [isOpen, selected]);
 
   useEffect(() => {
     if (isOpen) return;
@@ -106,10 +137,41 @@ export const EventFormDateField = ({
     onCommit(dayjs(selectedRef.current).add(deltaDays, "day").toDate());
   };
 
-  const isShowingCommittedDate = (input: HTMLInputElement) =>
-    input.value === formatEventFormDateLabel(selectedRef.current);
+  const pickFromOpenCalendar = (input: HTMLInputElement) => {
+    const trimmed = input.value.trim();
+    if (!trimmed && !pickerCursorRef.current) {
+      revertInput(input);
+      onCalendarClose();
+      return;
+    }
+    const parsed = trimmed ? parseUserDate(trimmed, dayjs()) : null;
+    const showingCommitted =
+      trimmed === formatEventFormDateLabel(selectedRef.current);
+    const picked = (
+      parsed && !showingCommitted
+        ? parsed
+        : (pickerCursorRef.current ?? dayjs(selectedRef.current))
+    )
+      .startOf("day")
+      .toDate();
+    selectedRef.current = picked;
+    onCommit(picked);
+    onCalendarClose();
+  };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const isClosedFieldKey = (key: string): key is EventFormDateFieldClosedKey =>
+    key === "ArrowDown" || key === "ArrowUp" || key === "Enter" || key === " ";
+
+  const isCalendarKey = (key: string): key is EventFormDateCalendarKey =>
+    key === "ArrowLeft" ||
+    key === "ArrowRight" ||
+    key === "ArrowUp" ||
+    key === "ArrowDown" ||
+    key === "Enter" ||
+    key === " " ||
+    key === "Escape";
+
+  const handleKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
 
@@ -117,67 +179,83 @@ export const EventFormDateField = ({
     if (!(target instanceof HTMLInputElement)) return;
 
     if (isOpen) {
-      if (event.key === "Escape") {
-        onCalendarClose();
-        target.focus();
-        event.stopPropagation();
+      if (!isCalendarKey(event.key)) return;
+
+      const action = calendarAction(event.key);
+      if (!action) return;
+
+      // Left and right stay native so the caret can move inside the input.
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") return;
+
+      consume(event);
+
+      switch (action.kind) {
+        case "moveCursor": {
+          const next = movePickerCursor(
+            pickerCursorRef.current,
+            selectedRef.current,
+            action.days,
+          );
+          setPickerCursorSync(next);
+          if (!next.isSame(pickerMonth, "month")) {
+            setPickerMonth(next.startOf("month"));
+          }
+          break;
+        }
+        case "pickCursor":
+          pickFromOpenCalendar(target);
+          break;
+        case "close":
+          onCalendarClose();
+          target.focus();
+          break;
       }
-      // Other keys: react-datepicker handles arrows and Enter on the input
-      // (onInputKeyDown runs our handler first, then its own).
       return;
     }
 
-    switch (event.key) {
-      case "Backspace": {
-        event.stopPropagation();
-        break;
-      }
-      case "ArrowDown": {
-        consume(event);
-        if (event.shiftKey) {
-          nudgeDays(7);
-          break;
-        }
-        // A modifier means the user wants the day nudge, not the calendar.
-        if (event.metaKey || event.ctrlKey || event.altKey) {
-          nudgeDays(1);
-          break;
-        }
-        onCalendarOpen();
-        break;
-      }
-      case "ArrowUp": {
-        consume(event);
-        nudgeDays(event.shiftKey ? -7 : -1);
-        break;
-      }
-      case "Enter": {
-        // Mod+Enter saves the form, so commit the draft and let it through.
-        if (event.metaKey || event.ctrlKey) {
-          const parsed = parseUserDate(target.value, dayjs());
-          if (parsed) onCommit(parsed.startOf("day").toDate());
-          break;
-        }
-        consume(event);
-        // Enter on an unchanged, parseable date opens the calendar instead.
-        if (commitOrRevert(target) === "unchanged") onCalendarOpen();
-        break;
-      }
-      case " ": {
-        if (!isShowingCommittedDate(target)) break;
-        consume(event);
-        onCalendarOpen();
-        break;
-      }
-      case "Escape": {
+    if (event.key === "Backspace") {
+      event.stopPropagation();
+      return;
+    }
+
+    if (!isClosedFieldKey(event.key)) {
+      if (event.key === "Escape") {
         revertInput(target);
         event.stopPropagation();
-        break;
-      }
-      case "Tab": {
+      } else if (event.key === "Tab") {
         if (commitOrRevert(target) !== "committed") onCalendarClose();
-        break;
       }
+      return;
+    }
+
+    const modKey = event.metaKey || event.ctrlKey || event.altKey;
+    const closedAction = closedFieldAction(event.key, {
+      shiftKey: event.shiftKey,
+      modKey,
+      text: target.value,
+      committedDate: selectedRef.current,
+    });
+
+    if (closedAction.kind === "ignore") {
+      if (event.key === "Enter" && !modKey) {
+        consume(event);
+        commitOrRevert(target);
+      }
+      return;
+    }
+
+    if (event.key === "Enter" && modKey) {
+      const parsed = parseUserDate(target.value, dayjs());
+      if (parsed) onCommit(parsed.startOf("day").toDate());
+      return;
+    }
+
+    consume(event);
+
+    if (closedAction.kind === "openCalendar") {
+      onCalendarOpen();
+    } else if (closedAction.kind === "nudgeDays") {
+      nudgeDays(closedAction.days);
     }
   };
 
@@ -187,7 +265,7 @@ export const EventFormDateField = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: stops date picker mouse events from bubbling to the form.
     <div
       ref={containerRef}
-      className={DATE_FIELD_CLASSNAME}
+      className={`${DATE_FIELD_CLASSNAME} group/control ${isOpen ? "" : "group-focus-within/control:[&_.c-event-form-date-field__input]:pr-8"}`}
       id={jumpId}
       onBlur={(event) => {
         // react-datepicker skips onBlur while its calendar is open, so listen
@@ -202,6 +280,7 @@ export const EventFormDateField = ({
       onMouseDown={stopPropagation}
       onMouseUp={stopPropagation}
       tabIndex={-1}
+      onKeyDownCapture={handleKeyDownCapture}
     >
       <DatePicker
         calendarClassName={calendarClassName}
@@ -214,21 +293,41 @@ export const EventFormDateField = ({
         onCalendarClose={onCalendarClose}
         onCalendarOpen={onCalendarOpen}
         onChange={() => null}
+        headerEndContent={
+          isOpen ? <EventFormCalendarPopoverHints /> : undefined
+        }
         onInputClick={onCalendarOpen}
         onFocus={(event) => {
           if (event.target instanceof HTMLInputElement) event.target.select();
         }}
-        onKeyDown={handleKeyDown}
         onSelect={(date) => {
           if (!date) return;
           onCommit(date);
         }}
+        openToDate={pickerMonth.toDate()}
+        highlightDates={
+          isOpen && pickerCursor
+            ? [
+                {
+                  "react-datepicker__day--keyboard-selected": [
+                    pickerCursor.toDate(),
+                  ],
+                },
+              ]
+            : undefined
+        }
         preventOpenOnFocus
         selected={selected}
         title={title}
         view="grid"
         withUnderline={false}
       />
+      <EventFormInfieldHint visible={!isOpen}>
+        <EventFormHintKeys
+          keys="ArrowDown"
+          label="Arrow down opens the calendar"
+        />
+      </EventFormInfieldHint>
     </div>
   );
 };

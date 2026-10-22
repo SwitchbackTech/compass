@@ -242,8 +242,7 @@ export const isEditableKeyboardTarget = (
  * Targets where Enter has a native meaning and the event-form Enter-to-save
  * hotkey must stand down: multiline editing (TipTap contenteditable /
  * textarea), buttons (toolbar + Save/Cancel), and focused links.
- * Single-line inputs are intentionally excluded so title/location Enter
- * still submits.
+ * Single-line inputs defer too: the event form saves on Mod+Enter only.
  */
 export const shouldDeferEnterToTarget = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
@@ -255,6 +254,7 @@ export const shouldDeferEnterToTarget = (
 
   const tagName = target.tagName.toLowerCase();
   if (tagName === "textarea" || tagName === "button") return true;
+  if (tagName === "input") return true;
   if (tagName === "a" && target.hasAttribute("href")) return true;
   if (target.getAttribute("role") === "button") return true;
 

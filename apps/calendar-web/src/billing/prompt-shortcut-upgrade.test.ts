@@ -61,7 +61,10 @@ describe("promptShortcutUpgrade", () => {
     });
 
     expect(mocks.toast).not.toHaveBeenCalled();
-    expect(requestTrialStep).toHaveBeenCalledWith({ trigger: "write" });
+    expect(requestTrialStep).toHaveBeenCalledWith({
+      trigger: "write",
+      eventAction: "replace",
+    });
   });
 
   it("no-ops while the billing gate owns the screen", () => {
@@ -89,8 +92,23 @@ describe("promptShortcutUpgrade", () => {
     });
 
     expect(mocks.toast).not.toHaveBeenCalled();
-    expect(requestTrialStep).toHaveBeenCalledWith({ trigger: "write" });
+    expect(requestTrialStep).toHaveBeenCalledWith({
+      trigger: "write",
+      eventAction: "create",
+    });
     expect(getShortcutHint("create-event").parts.length).toBeGreaterThan(0);
+  });
+
+  it("does not open the trial step for non-event feature areas while awaiting checkout", () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    promptShortcutUpgrade({
+      featureArea: "calendar_navigation",
+      source: "keyboard",
+    });
+
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(requestTrialStep).not.toHaveBeenCalled();
   });
 
   it("falls back to feature-area copy without a key line when no shortcut is known", async () => {

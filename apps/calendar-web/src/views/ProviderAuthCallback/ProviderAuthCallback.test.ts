@@ -32,6 +32,7 @@ mock.module(
 const { completeProviderAuthCallback } = await import(
   "@web/views/ProviderAuthCallback/ProviderAuthCallback"
 );
+const oauthSignupFunnel = await import("@web/auth/posthog/oauth-signup-funnel");
 
 const GOOGLE_SCOPES_REQUIRED = PROVIDER_AUTH_SCOPES_REQUIRED.google;
 
@@ -66,6 +67,7 @@ describe("completeProviderAuthCallback (google)", () => {
   const navigate = mock();
 
   beforeEach(() => {
+    window.history.replaceState(null, "", "/week");
     mocks.error.mockClear();
     registerToastPort(port);
     sessionStorage.clear();
@@ -150,8 +152,35 @@ describe("completeProviderAuthCallback (google)", () => {
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
 
+  it("ignores a stripped callback revisit when the user is already signed in", async () => {
+    window.history.replaceState(null, "", "/auth/google/callback");
+    spyOn(session, "doesSessionExist").mockResolvedValue(true);
+    const trackOAuthSignupFailed = spyOn(
+      oauthSignupFunnel,
+      "trackOAuthSignupFailed",
+    ).mockImplementation(() => undefined);
+
+    await completeProviderAuthCallback({
+      provider: "google",
+      completeAuthentication,
+      navigate,
+      search: "",
+    });
+
+    expect(mockLoginOrSignup).not.toHaveBeenCalled();
+    expect(completeAuthentication).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
+    expect(trackOAuthSignupFailed).not.toHaveBeenCalled();
+    trackOAuthSignupFailed.mockRestore();
+    expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
+  });
+
   it("ignores a replayed callback when the user is already signed in", async () => {
     spyOn(session, "doesSessionExist").mockResolvedValue(true);
+    const trackOAuthSignupFailed = spyOn(
+      oauthSignupFunnel,
+      "trackOAuthSignupFailed",
+    ).mockImplementation(() => undefined);
 
     await completeProviderAuthCallback({
       provider: "google",
@@ -163,6 +192,8 @@ describe("completeProviderAuthCallback (google)", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mocks.error).not.toHaveBeenCalled();
+    expect(trackOAuthSignupFailed).not.toHaveBeenCalled();
+    trackOAuthSignupFailed.mockRestore();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
 });

@@ -31,9 +31,16 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
   return (
-    <button type="button" onClick={onComplete}>
-      Complete checkout
-    </button>
+    <div className="w-full text-left">
+      <p className="text-sm text-text-muted">Card number</p>
+      <button
+        data-signup-trial-checkout-submit
+        type="button"
+        onClick={onComplete}
+      >
+        Submit checkout
+      </button>
+    </div>
   );
 }
 
@@ -249,7 +256,7 @@ describe("AuthModal signup trial step", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Complete checkout" }),
+        screen.getByRole("button", { name: "Submit checkout" }),
       ).toBeInTheDocument();
     });
 
@@ -260,7 +267,7 @@ describe("AuthModal signup trial step", () => {
       cancelAtPeriodEnd: false,
     });
 
-    await user.click(screen.getByRole("button", { name: "Complete checkout" }));
+    await user.click(screen.getByRole("button", { name: "Submit checkout" }));
 
     await waitFor(() => {
       expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);

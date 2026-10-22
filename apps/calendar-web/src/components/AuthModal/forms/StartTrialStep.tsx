@@ -1,22 +1,13 @@
 import { type FC, useEffect, useRef } from "react";
-import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { type BillingSubscriptionResponse } from "@core/types/billing.types";
-import dayjs from "@core/util/date/dayjs";
+import { trackTrialStepViewed } from "@web/auth/posthog/signup-funnel";
 import {
-  trackTrialStepAbandoned,
-  trackTrialStepViewed,
-} from "@web/auth/posthog/signup-funnel";
-import {
-  useAppConfigQuery,
   useBillingSubscriptionQuery,
   useStripePublishableKey,
 } from "@web/billing/billing.query";
 import { formatBillingPriceLine } from "@web/billing/billing-display";
 import { checkoutPanelActions } from "@web/billing/checkout-panel.store";
-import {
-  EMBEDDED_CHECKOUT_PANEL_CLASSNAME,
-  EmbeddedCheckoutPanel,
-} from "@web/billing/EmbeddedCheckoutPanel";
+import { EmbeddedCheckoutPanel } from "@web/billing/EmbeddedCheckoutPanel";
 import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
 import {
   consumeTrialStepTrigger,
@@ -24,14 +15,6 @@ import {
 } from "@web/billing/trial-step-request";
 
 type BillingPrice = NonNullable<BillingSubscriptionResponse["price"]>;
-
-/** Charge date copy: "Monday, September 29" from trial length and a reference instant. */
-export function formatTrialChargeDate(
-  trialLengthDays: number,
-  now: dayjs.Dayjs = dayjs(),
-): string {
-  return now.add(trialLengthDays, "day").format("dddd, MMMM D");
-}
 
 /** Same line as Settings > Billing, with no price to show before it loads. */
 export function formatSignupTrialPlanPrice(
@@ -45,14 +28,11 @@ type StartTrialStepProps = {
 };
 
 /**
- * Post-signup trial step: charge-date copy and embedded Checkout inside AuthModal.
+ * Post-signup trial step: embedded Checkout inside AuthModal. Title, terms,
+ * and Back live in AuthModal/OverlayPanel; only the Stripe form scrolls here.
  */
 export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
   const signupMethod = readSignupTrialMethod();
-  const configQuery = useAppConfigQuery();
-  const trialLengthDays =
-    configQuery.data?.billing.trialLengthDays ?? BILLING_PLAN.TRIAL_LENGTH_DAYS;
-  const chargeDateLabel = formatTrialChargeDate(trialLengthDays);
   const publishableKey = useStripePublishableKey();
   const subscriptionQuery = useBillingSubscriptionQuery(true);
   const planPriceLine = formatSignupTrialPlanPrice(
@@ -74,38 +54,26 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
     trackTrialStepViewed({ source: "signup_trial_step", method: signupMethod });
   }, [signupMethod]);
 
-  const handleDismiss = () => {
-    trackTrialStepAbandoned({
-      source: "signup_trial_step",
-      method: signupMethod,
-    });
-    onDismiss();
-  };
-
   return (
-    <div
-      className={`flex w-full flex-col items-center gap-4 ${EMBEDDED_CHECKOUT_PANEL_CLASSNAME}`}
-    >
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
       {writeLeadRef.current ? (
-        <p className="text-center text-sm text-text">{TRIAL_STEP_WRITE_LEAD}</p>
+        <p className="shrink-0 text-center text-sm text-text">
+          {TRIAL_STEP_WRITE_LEAD}
+        </p>
       ) : null}
-      <p className="text-center text-sm text-text-muted">
-        A card is required to start your trial. Your card will not be charged
-        until {chargeDateLabel}. Cancel anytime from Settings and you will not
-        be billed.
-      </p>
       {planPriceLine ? (
-        <p className="text-sm text-text">{planPriceLine}</p>
+        <p className="shrink-0 text-left text-sm text-text">{planPriceLine}</p>
       ) : null}
-      {publishableKey ? (
-        <EmbeddedCheckoutPanel
-          onBack={handleDismiss}
-          onCheckoutComplete={onDismiss}
-          publishableKey={publishableKey}
-        />
-      ) : (
-        <p className="text-sm text-text-muted">Loading checkout...</p>
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {publishableKey ? (
+          <EmbeddedCheckoutPanel
+            onCheckoutComplete={onDismiss}
+            publishableKey={publishableKey}
+          />
+        ) : (
+          <p className="text-sm text-text-muted">Loading checkout...</p>
+        )}
+      </div>
     </div>
   );
 };

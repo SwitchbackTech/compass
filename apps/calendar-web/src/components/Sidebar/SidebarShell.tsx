@@ -56,7 +56,7 @@ export function SidebarShell({
       ) : null}
       {children}
       <SidebarStatusBar />
-      <SidebarActions />
+      <SidebarActions sections={sections} />
       <ShortcutsOverlay sections={sections} viewLabel={shortcutsViewLabel} />
     </aside>
   );

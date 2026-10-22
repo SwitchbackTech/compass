@@ -12,7 +12,12 @@ import {
   type CredentialUpsert,
   redactCredential,
 } from "@sync/storage/contracts/credential.contracts";
+import {
+  type SyncResourceUpsert,
+  SyncResourceUpsertSchema,
+} from "@sync/storage/contracts/sync-resource.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
 
@@ -122,6 +127,39 @@ describe("CredentialRepository", () => {
     );
     expect(result).toBeNull();
     expect(await repo.findByConnection(input.connectionId)).toBeNull();
+  });
+
+  it("mirrors credentialUsable onto sync_resources on store and delete", async () => {
+    const resources = new SyncResourceRepository(db);
+    const input = baseCredential();
+    const upsert = SyncResourceUpsertSchema.parse({
+      tenantId: objectId(),
+      principalId: objectId(),
+      connectionId: input.connectionId,
+      resourceKind: "calendarList",
+      calendarId: null,
+    } satisfies SyncResourceUpsert);
+    const resource = await resources.ensure(upsert);
+
+    await repo.store(
+      toStoredOauthCredentialUpsert(TEST_CREDENTIAL_ENCRYPTION_KEY, input),
+    );
+    expect(
+      (
+        await db
+          .collection(SYNC_COLLECTIONS.syncResources)
+          .findOne({ _id: resource._id as never })
+      )?.credentialUsable,
+    ).toBe(true);
+
+    await repo.deleteByConnection(input.connectionId);
+    expect(
+      (
+        await db
+          .collection(SYNC_COLLECTIONS.syncResources)
+          .findOne({ _id: resource._id as never })
+      )?.credentialUsable,
+    ).toBe(false);
   });
 
   it("reports whether a delete removed anything", async () => {

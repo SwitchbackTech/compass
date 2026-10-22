@@ -237,7 +237,10 @@ describe("useAppShortcut", () => {
 
     await waitFor(() => {
       expect(mockHandler).not.toHaveBeenCalled();
-      expect(requestTrialStep).toHaveBeenCalledWith({ trigger: "write" });
+      expect(requestTrialStep).toHaveBeenCalledWith({
+        trigger: "write",
+        eventAction: "create",
+      });
     });
     requestTrialStep.mockRestore();
   });
@@ -359,7 +362,10 @@ describe("useAppShortcut", () => {
 
       await waitFor(() => {
         expect(attempts(track)).toHaveLength(1);
-        expect(requestTrialStep).toHaveBeenCalledWith({ trigger: "write" });
+        expect(requestTrialStep).toHaveBeenCalledWith({
+          trigger: "write",
+          eventAction: "create",
+        });
       });
       requestTrialStep.mockRestore();
       expect(track).toHaveBeenCalledWith(

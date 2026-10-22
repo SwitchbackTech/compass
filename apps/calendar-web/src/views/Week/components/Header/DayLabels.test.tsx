@@ -80,21 +80,21 @@ describe("DayLabels", () => {
     expect(screen.getByText("Tue")).toBeTruthy();
     expect(screen.getByText("Wed")).toBeTruthy();
     expect(screen.getByText("Thu")).toBeTruthy();
-    expect(screen.queryByText("M")).toBeNull();
-    expect(screen.queryByText("R")).toBeNull();
+    expect(screen.queryByText("m")).toBeNull();
+    expect(screen.queryByText("r")).toBeNull();
   });
 
   it("swaps weekday abbreviations for day-jump prefixes while event jump is on", () => {
     eventJumpActions.setActive(true);
     renderLabels();
 
-    expect(screen.getByText("M")).toBeTruthy();
-    expect(screen.getByText("T")).toBeTruthy();
-    expect(screen.getByText("W")).toBeTruthy();
-    expect(screen.getByText("R")).toBeTruthy();
+    expect(screen.getByText("m")).toBeTruthy();
+    expect(screen.getByText("t")).toBeTruthy();
+    expect(screen.getByText("w")).toBeTruthy();
+    expect(screen.getByText("r")).toBeTruthy();
     expect(screen.queryByText("Mon")).toBeNull();
-    expect(screen.getByRole("status").textContent).toContain("Monday M");
-    expect(screen.getByRole("status").textContent).toContain("Thursday R");
+    expect(screen.getByRole("status").textContent).toContain("Monday m");
+    expect(screen.getByRole("status").textContent).toContain("Thursday r");
     expect(screen.getByRole("status").textContent).toContain(
       "Type the day key to focus that column.",
     );
@@ -105,8 +105,8 @@ describe("DayLabels", () => {
     renderLabels();
 
     // Jump mode is off here, so the column chip advertises the Shift entry.
-    expect(screen.getByText("⇧M")).toBeTruthy();
-    expect(screen.getByText("⇧R")).toBeTruthy();
+    expect(screen.getByText("⇧m")).toBeTruthy();
+    expect(screen.getByText("⇧r")).toBeTruthy();
     expect(screen.queryByText("Mon")).toBeNull();
     expect(screen.getByRole("status").textContent).toContain(
       "Hold Shift and press the day key to focus that column.",

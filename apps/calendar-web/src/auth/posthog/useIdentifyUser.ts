@@ -1,5 +1,9 @@
 import { useEffect } from "react";
 import { isPublicBookingPath } from "@core/booking/booking-telemetry";
+import {
+  posthogInternalOrTestUserRegistration,
+  shouldRegisterInternalOrTestUserFromEmail,
+} from "@web/auth/posthog/posthog-audience-filter.util";
 import { usePostHog } from "@web/auth/posthog/posthog-react";
 
 /**
@@ -27,6 +31,9 @@ export function useIdentifyUser(
       typeof posthog.identify === "function"
     ) {
       posthog.identify(userId, { email: profileEmail, user_id: userId });
+      if (shouldRegisterInternalOrTestUserFromEmail(profileEmail)) {
+        posthog.register(posthogInternalOrTestUserRegistration());
+      }
     }
   }, [profileEmail, posthog, userId]);
 }

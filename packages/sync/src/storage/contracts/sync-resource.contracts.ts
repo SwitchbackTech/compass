@@ -168,6 +168,12 @@ export const SyncResourceRecordSchema = z.strictObject({
   // field still matches the finders' `$ne: false` predicate (treated as
   // active) until backfill or the next discovery pass stamps it.
   calendarActive: z.boolean().default(true),
+  // Mirrored from credentials._id = connectionId so global sweep finders can
+  // exclude dead-credential rows before the $lookup. CredentialRepository is
+  // the only writer; startup backfills rows written before the field. Defaults
+  // to false so a missing field is never treated as sweep-eligible until
+  // backfill or the next credential write stamps it.
+  credentialUsable: z.boolean().default(false),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

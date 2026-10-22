@@ -42,12 +42,16 @@ describe("shortcut menu sections", () => {
         label: "Go to Day view",
       });
       expect(stripMetadata(navigate.shortcuts)).toContainEqual({
-        keys: ["Mod", "Shift", ","],
+        keys: ["Mod", "Alt", "j"],
         label: "Previous month in picker",
       });
       expect(stripMetadata(navigate.shortcuts)).toContainEqual({
-        keys: ["Mod", "Shift", "."],
+        keys: ["Mod", "Alt", "k"],
         label: "Next month in picker",
+      });
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+        keys: ["Mod", "Alt", "t"],
+        label: "Go to this month in picker",
       });
       expect(stripMetadata(navigate.shortcuts)).not.toContainEqual({
         keys: ["w"],

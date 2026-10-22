@@ -72,8 +72,18 @@ describe("track", () => {
 
   it("no-ops when PostHog is not initialized", () => {
     client = undefined;
+    globalThis.__compassPosthogClient = undefined;
 
     expect(() => track("event_created")).not.toThrow();
+  });
+
+  it("uses the global PostHog client when the module-local singleton is empty", () => {
+    client = undefined;
+    globalThis.__compassPosthogClient = { capture } as never;
+
+    track("booking_landing_viewed");
+
+    expect(capture).toHaveBeenCalledWith("booking_landing_viewed", undefined);
   });
 
   it("does not let a synchronous analytics failure interrupt the product", () => {

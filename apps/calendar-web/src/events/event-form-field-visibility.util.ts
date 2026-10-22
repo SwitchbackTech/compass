@@ -27,6 +27,41 @@ const recurrenceKindFromEvent = (
 const detailsFromEvent = (event: Event) =>
   event.content.kind === "details" ? event.content : null;
 
+const peopleFromDetails = (
+  details: ReturnType<typeof detailsFromEvent>,
+): Pick<
+  EventFormFieldVisibilityInput,
+  "organizerEmail" | "attendeeEmails" | "hasConferenceLink"
+> => ({
+  organizerEmail: details?.organizer?.email ?? null,
+  attendeeEmails: details?.attendees?.map((attendee) => attendee.email) ?? [],
+  hasConferenceLink: Boolean(details?.conference?.url),
+});
+
+const calendarFields = (
+  calendar: Calendar | undefined,
+): Pick<
+  EventFormFieldVisibilityInput,
+  "calendarAccountEmail" | "calendarCapabilities"
+> => ({
+  calendarAccountEmail: calendar?.accountEmail,
+  calendarCapabilities: calendar?.capabilities,
+});
+
+/** Calendar the draft would write to: selected on create, source on edit. */
+export function calendarFromDraft(
+  draft: GridEventDraft,
+  calendarLookup: ReadonlyMap<CalendarId, Calendar>,
+  defaultTargetCalendar?: Calendar,
+): Calendar | undefined {
+  if (draft.kind === "create") {
+    return draft.values.calendarId
+      ? calendarLookup.get(draft.values.calendarId)
+      : defaultTargetCalendar;
+  }
+  return calendarLookup.get(draft.source.calendarId);
+}
+
 /** Fallback when the query cache has not caught up yet (e.g. right after create). */
 export function eventFormFieldVisibilityInputFromGridEvent(
   gridEvent: GridEvent,
@@ -47,11 +82,8 @@ export function eventFormFieldVisibilityInputFromGridEvent(
     isReadOnly,
     isBusyContent: isBusy,
     isScheduleLocked: gridEvent.isProviderManaged === true,
-    calendarAccountEmail: calendar?.accountEmail,
-    calendarCapabilities: calendar?.capabilities,
-    organizerEmail: null,
-    attendeeEmails: [],
-    hasConferenceLink: false,
+    ...calendarFields(calendar),
+    ...peopleFromDetails(null),
     creatableConferenceKind: null,
     recurrenceKind:
       gridEvent.recurrence?.rule && gridEvent.recurrence.rule.length > 0
@@ -66,7 +98,6 @@ export function eventFormFieldVisibilityInputFromEvent(
 ): EventFormFieldVisibilityInput {
   const calendar = calendarLookup.get(event.calendarId);
   const isBusy = event.content.kind === "busy";
-  const details = detailsFromEvent(event);
   const isReadOnly = isEventReadOnly(calendarLookup, event.calendarId, isBusy);
 
   return {
@@ -74,11 +105,8 @@ export function eventFormFieldVisibilityInputFromEvent(
     isReadOnly,
     isBusyContent: isBusy,
     isScheduleLocked: event.providerManaged === true,
-    calendarAccountEmail: calendar?.accountEmail,
-    calendarCapabilities: calendar?.capabilities,
-    organizerEmail: details?.organizer?.email ?? null,
-    attendeeEmails: details?.attendees?.map((attendee) => attendee.email) ?? [],
-    hasConferenceLink: Boolean(details?.conference?.url),
+    ...calendarFields(calendar),
+    ...peopleFromDetails(detailsFromEvent(event)),
     creatableConferenceKind: null,
     recurrenceKind: recurrenceKindFromEvent(event),
   };
@@ -91,33 +119,26 @@ export function eventFormFieldVisibilityInputFromDraft(
 ): EventFormFieldVisibilityInput {
   const source = draft.kind === "edit" ? draft.source : null;
   const isBusy = source?.content.kind === "busy";
-  const details = source?.content.kind === "details" ? source.content : null;
-  const calendar =
-    draft.kind === "create"
-      ? draft.values.calendarId
-        ? calendarLookup.get(draft.values.calendarId)
-        : defaultTargetCalendar
-      : calendarLookup.get(source!.calendarId);
+  const calendar = calendarFromDraft(
+    draft,
+    calendarLookup,
+    defaultTargetCalendar,
+  );
   const isReadOnly =
     draft.kind === "edit" &&
-    isEventReadOnly(calendarLookup, source!.calendarId, isBusy ?? false);
-
-  const creatable =
-    draft.kind === "create" && !isReadOnly
-      ? creatableConferenceKind(calendar)
-      : null;
+    isEventReadOnly(calendarLookup, source!.calendarId, isBusy);
 
   return {
     mode: draft.kind,
     isReadOnly,
-    isBusyContent: isBusy ?? false,
+    isBusyContent: isBusy,
     isScheduleLocked: source?.providerManaged === true,
-    calendarAccountEmail: calendar?.accountEmail,
-    calendarCapabilities: calendar?.capabilities,
-    organizerEmail: details?.organizer?.email ?? null,
-    attendeeEmails: details?.attendees?.map((attendee) => attendee.email) ?? [],
-    hasConferenceLink: Boolean(details?.conference?.url),
-    creatableConferenceKind: creatable,
+    ...calendarFields(calendar),
+    ...peopleFromDetails(source ? detailsFromEvent(source) : null),
+    creatableConferenceKind:
+      draft.kind === "create" && !isReadOnly
+        ? creatableConferenceKind(calendar)
+        : null,
     recurrenceKind:
       source === null ? "single" : recurrenceKindFromEvent(source),
   };

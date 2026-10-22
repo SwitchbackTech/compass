@@ -28,7 +28,7 @@ import { isStripeConfigured } from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 /** Bump when Checkout Session create params change so Stripe does not replay a failed create. */
-const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v5-";
+const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v7-";
 
 /**
  * Desktop and web send different create params for the same user, so they need

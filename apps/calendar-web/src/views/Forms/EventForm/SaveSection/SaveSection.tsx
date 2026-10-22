@@ -5,6 +5,7 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { pulseClickTaughtShortcut } from "@web/shortcuts/pointer-intent/pulseClickTaughtShortcut";
 import { isRealMouseClick } from "@web/shortcuts/pointer-intent/real-mouse-click";
+import { EventFormFooterTips } from "@web/views/Forms/EventForm/SaveSection/EventFormFooterTips";
 
 interface Props {
   saveText?: string;
@@ -57,6 +58,7 @@ export const SaveSection: React.FC<Props> = ({
           keys={["Mod", "Enter"]}
         />
       </Btn>
+      <EventFormFooterTips />
     </div>
   );
 };

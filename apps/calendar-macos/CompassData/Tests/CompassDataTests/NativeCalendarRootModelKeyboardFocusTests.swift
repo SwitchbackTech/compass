@@ -50,6 +50,44 @@ final class NativeCalendarRootModelKeyboardFocusTests: XCTestCase {
         XCTAssertEqual(model.viewStore.anchorDate, anchor)
     }
 
+    func testGoToMonthPickerCurrentMonthWithoutNavigatingMainWindow() async throws {
+        let model = try await makeModel()
+        let anchor = model.viewStore.anchorDate
+        let calendar = EffectiveTimeZone.calendar
+        model.focusSidebar()
+        for _ in 0 ..< 6 {
+            model.handleShortcut(.navMonthNext)
+        }
+        let todayMonth = calendar.component(.month, from: model.referenceNow)
+        XCTAssertNotEqual(
+            calendar.component(.month, from: model.monthPickerMonth),
+            todayMonth)
+
+        model.handleShortcut(.navMonthCurrent)
+
+        XCTAssertEqual(
+            calendar.component(.month, from: model.monthPickerMonth),
+            todayMonth)
+        XCTAssertEqual(model.viewStore.anchorDate, anchor)
+    }
+
+    func testPlainTodayAlsoResetsMonthPickerWhenBrowsedAway() async throws {
+        let model = try await makeModel()
+        let calendar = EffectiveTimeZone.calendar
+        model.handleShortcut(.navMonthNext)
+        model.handleShortcut(.navMonthNext)
+        let todayMonth = calendar.component(.month, from: model.referenceNow)
+        XCTAssertNotEqual(
+            calendar.component(.month, from: model.monthPickerMonth),
+            todayMonth)
+
+        model.handleShortcut(.navToday)
+
+        XCTAssertEqual(
+            calendar.component(.month, from: model.monthPickerMonth),
+            todayMonth)
+    }
+
     func testMonthJumpMovesFocusedCursorWithoutNavigatingMainWindow() async throws {
         let model = try await makeModel()
         let anchor = model.viewStore.anchorDate

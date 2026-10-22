@@ -56,6 +56,10 @@ export interface ListStaleEventsOptions {
 // until startup backfill or the next discovery pass stamps them. False is
 // the only value that excludes.
 const ACTIVE_CALENDAR_FILTER = { calendarActive: { $ne: false } } as const;
+// Equality match so sweep finders can use the credentialUsable-led indexes.
+// Rows missing the field (pre-backfill) are excluded until startup backfill
+// or a credential write stamps them.
+const USABLE_CREDENTIAL_FILTER = { credentialUsable: true } as const;
 
 function credentialFilterStages(
   options: ListStaleEventsOptions = {},
@@ -122,7 +126,7 @@ export class SyncResourceRepository {
   ): Promise<SyncResourceRecord[]> {
     const records = await this.collection
       .aggregate<SyncResourceRecord>([
-        { $match: match },
+        { $match: { ...USABLE_CREDENTIAL_FILTER, ...match } },
         ...credentialFilterStages(credentialFilter),
         { $sort: sort },
         { $limit: limit },
@@ -158,6 +162,7 @@ export class SyncResourceRepository {
           // Events resources are created for calendars discovery currently
           // lists as active; discovery stamps false if that later flips.
           calendarActive: true,
+          credentialUsable: true,
           bootstrapState:
             fields.resourceKind === "events" ? "importing" : "ready",
           subscriptionId: null,
@@ -672,7 +677,7 @@ export class SyncResourceRepository {
   // carries its own (tenantId, principalId) for the job the caller enqueues. A
   // never-synced resource (lastSuccessAt null) sorts first so bootstrapping a
   // new calendar is not starved by the stale ones. Uses the
-  // resource_last_success index. Inactive calendars are excluded via the
+  // resource_usable_last_success index. Inactive calendars are excluded via the
   // mirrored calendarActive field so this sweep never enqueues a pull that
   // dispatch would drop.
   async listStaleEvents(
@@ -707,7 +712,7 @@ export class SyncResourceRepository {
   // every step, so only a genuinely stuck one goes quiet long enough to match.
   // Same GLOBAL scan + credential-exclusion shape as listStaleEvents, for the
   // same reason (2026-07-29 dead-credential tie-break bias) - uses the
-  // resource_bootstrap_stalled index.
+  // resource_usable_bootstrap_stalled index.
   async listStalledBootstraps(
     before: Date,
     limit: number,
@@ -796,9 +801,9 @@ export class SyncResourceRepository {
   // bias in a new field.
   //
   // Same GLOBAL scan + credential-exclusion shape as listStaleEvents. Uses the
-  // resource_last_attempt index for the sort's lead key; lastFullListAt itself
-  // is filtered in memory, which is free at this collection's size and could not
-  // be index-served anyway (the sort runs after $lookup).
+  // resource_usable_last_attempt index for the sort's lead keys; lastFullListAt
+  // is also index-served via resource_usable_last_full_list on the leading
+  // $match (before the credential lookup safety net).
   async listStaleCalendarLists(
     before: Date,
     limit: number,

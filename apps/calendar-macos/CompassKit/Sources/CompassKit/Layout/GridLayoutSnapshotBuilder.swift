@@ -226,7 +226,7 @@ public enum GridLayoutSnapshotBuilder {
                 )
             }
         case .day:
-            let dayCalendars = DayCalendarColumns.dayViewCalendars(scenario.calendars)
+            let dayCalendars = scenario.dayViewCalendarsForLayout()
             if dayCalendars.isEmpty, let visible = visibleDates.first {
                 return [
                     GridLayoutColumnSnapshot(
@@ -280,7 +280,7 @@ public enum GridLayoutSnapshotBuilder {
         scenario: GridLayoutScenario,
         visibleDates: [GridVisibleDate]
     ) -> Int? {
-        let dayCalendars = DayCalendarColumns.dayViewCalendars(scenario.calendars)
+        let dayCalendars = scenario.dayViewCalendarsForLayout()
         if let index = dayCalendars.firstIndex(where: { $0.id == calendarId }) {
             return index
         }

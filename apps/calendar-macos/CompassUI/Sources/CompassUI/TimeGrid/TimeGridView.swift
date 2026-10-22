@@ -26,7 +26,7 @@ public final class TimeGridView: NSView {
     /// Holds the weekday header and all-day row outside the scroll view so
     /// they stay pinned while the timed grid scrolls (web sticky header).
     private let pinnedHeaderView = FlippedView()
-    private let allDayRowView = FlippedView()
+    private let allDayRowView = AllDayRowRoutingView()
     private let timedContentView = CardRoutingFlippedView()
     private let hourGutterView = FlippedView()
     private let headerRowView = FlippedView()
@@ -48,6 +48,7 @@ public final class TimeGridView: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         scrollView.timeGridView = self
+        allDayRowView.grid = self
         configureScrollView()
         configureNowLine()
         relayout()
@@ -75,6 +76,57 @@ public final class TimeGridView: NSView {
             return
         }
         delegate?.timeGridViewDidRequestShortcutHint(self, at: event.locationInWindow)
+    }
+
+    /// Maps an empty grid click to the keyboard-teaching target (web `gridPointerTargetFromEvent`).
+    public func resolveEmptyGridClick(at locationInWindow: NSPoint) -> GridPointerClickTarget? {
+        guard let snapshot else { return nil }
+        let timeZone = TimeZone(identifier: state.effectiveTimeZone) ?? EffectiveTimeZone.timeZone
+        let scrollX = scrollView.contentView.bounds.origin.x
+        let visibleDateKeys = state.scenario.visibleDateKeys
+
+        let pointInPinned = pinnedHeaderView.convert(locationInWindow, from: nil)
+        if allDayRowView.frame.contains(pointInPinned) {
+            let x = pointInPinned.x + scrollX
+            let dateKey = dateKeyForPointer(atX: x, snapshot: snapshot, visibleDateKeys: visibleDateKeys)
+            return .allDaySlot(dateKey: dateKey)
+        }
+
+        let pointInContent = scrollView.contentView.convert(locationInWindow, from: nil)
+        let pointInDocument = documentView.convert(pointInContent, from: scrollView.contentView)
+        let gridHeight = snapshot.metrics.timedGridHeight
+        guard gridHeight > 0 else { return nil }
+
+        let x = pointInDocument.x
+        let dateKey = dateKeyForPointer(atX: x, snapshot: snapshot, visibleDateKeys: visibleDateKeys)
+        guard let slot = GridPointerClickResolver.timedSlot(
+            atY: pointInDocument.y,
+            gridHeight: gridHeight,
+            dateKey: dateKey,
+            timeZone: timeZone
+        ) else { return nil }
+
+        return .timedSlot(
+            dateKey: dateKey,
+            timeKey: slot.timeKey,
+            timeLabel: slot.timeLabel,
+            startISO: slot.startISO
+        )
+    }
+
+    private func dateKeyForPointer(
+        atX x: Double,
+        snapshot: GridLayoutSnapshot,
+        visibleDateKeys: [String]
+    ) -> String {
+        if state.layoutMode == .day {
+            return visibleDateKeys.first ?? CompassDateParsing.formatCalendarDay(state.referenceNow)
+        }
+        return GridPointerClickResolver.dateKey(
+            atX: x,
+            columns: snapshot.columns,
+            visibleDateKeys: visibleDateKeys
+        ) ?? visibleDateKeys.first ?? CompassDateParsing.formatCalendarDay(state.referenceNow)
     }
 
     private func pointInDocumentView(_ locationInWindow: NSPoint) -> NSPoint {
@@ -390,18 +442,19 @@ public final class TimeGridView: NSView {
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
         currentHour: Int
     ) {
-        // Web `CalendarTimeColumn`: `top: calc(100% / TIMED_VISIBLE_HOURS - 5px)`.
-        let labelColumnTop = max(0, hourHeight - 5)
-        for hour in 0 ..< Int(ceil(state.civilDayHours)) {
-            let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
+        // Web `HourLabelColumn` (#4686): one hour slot per label from 1 AM,
+        // starting at the top of the track, the same 1 AM origin cards, hour
+        // lines and the now line use (`timedGridTopPx`). The old
+        // `calc(100% / TIMED_VISIBLE_HOURS - 5px)` offset plus an empty first
+        // slot drew every label two hours below its events.
+        for (index, text) in labels.enumerated() {
             let label = NSTextField(labelWithString: text)
             label.font = CompassFont.nsFont(size: 10)
-            let isCurrentHour = hour > 0 && hour == currentHour
-            label.textColor = isCurrentHour ? themeAccentColor : palette.textMuted
+            label.textColor = index + 1 == currentHour ? themeAccentColor : palette.textMuted
             label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,
-                y: labelColumnTop + Double(hour) * hourHeight + 4,
+                y: Double(index) * hourHeight + 1,
                 width: width - 8,
                 height: 14)
             hourGutterView.addSubview(label)
@@ -426,7 +479,7 @@ public final class TimeGridView: NSView {
         renderTimezoneHeader(snapshot: snapshot, headerHeight: headerHeight, palette: palette)
 
         if state.layoutMode == .day {
-            let dayCalendars = DayCalendarColumns.dayViewCalendars(state.scenario.calendars)
+            let dayCalendars = state.scenario.dayViewCalendarsForLayout()
             let columnDisplayNames = DayCalendarColumnDisplayName.displayNames(
                 for: dayCalendars.map(\.name)
             )
@@ -460,17 +513,44 @@ public final class TimeGridView: NSView {
         let todayKey = CompassDateParsing.formatCalendarDay(state.referenceNow)
         let viewStartMonth = snapshot.columns.first.map { String($0.key.prefix(7)) }
         for column in snapshot.columns {
-            let header = NSTextField(
-                labelWithAttributedString: weekDayLabel(
+            let frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
+            let header: NSView
+            if state.showDayJumpPrefixes {
+                // Web `DayLabels` swaps the weekday for a ⇧SU / ⇧M keycap while
+                // Mod is held or event jump is active.
+                let control = WeekDayColumnHeaderControl(frame: frame)
+                control.apply(
                     dayKey: column.key,
                     viewStartMonth: viewStartMonth,
-                    color: column.key == todayKey ? themeAccentColor : palette.textMuted,
-                    trackWidth: state.trackWidth
+                    isToday: column.key == todayKey,
+                    isJumpDay: state.eventJumpActiveDayKeys.contains(column.key),
+                    showDayJumpPrefixes: true,
+                    dayJumpUseShiftPrefix: state.dayJumpUseShiftPrefix,
+                    numberSize: weekDayNumberSize(trackWidth: state.trackWidth),
+                    palette: (
+                        text: palette.text,
+                        textMuted: palette.textMuted,
+                        accent: themeAccentColor,
+                        surfacePanel: themeSurfacePanelColor,
+                        border: palette.border,
+                        background: palette.background
+                    )
                 )
-            )
+                header = control
+            } else {
+                let label = NSTextField(
+                    labelWithAttributedString: weekDayLabel(
+                        dayKey: column.key,
+                        viewStartMonth: viewStartMonth,
+                        color: column.key == todayKey ? themeAccentColor : palette.textMuted,
+                        trackWidth: state.trackWidth
+                    )
+                )
+                label.frame = frame
+                label.alignment = .center
+                header = label
+            }
             header.identifier = NSUserInterfaceItemIdentifier(column.key)
-            header.frame = NSRect(x: column.left, y: 6, width: column.width, height: headerHeight - 8)
-            header.alignment = .center
             header.setAccessibilityIdentifier(column.accessibilityIdentifier)
             if let date = CompassDateParsing.calendarDateInEffectiveTimeZone(column.key) {
                 let formatter = DateFormatter()
@@ -507,7 +587,7 @@ public final class TimeGridView: NSView {
         formatter.dateFormat = "EEE"
         let weekday = formatter.string(from: date)
 
-        let numberSize = min(20.8, max(18, trackWidth * 0.027))
+        let numberSize = weekDayNumberSize(trackWidth: trackWidth)
         let weekdaySize = min(16, max(13, trackWidth * 0.02))
         let centered = NSMutableParagraphStyle()
         centered.alignment = .center
@@ -821,6 +901,19 @@ public final class TimeGridView: NSView {
         }
     }
 
+    private func weekDayNumberSize(trackWidth: CGFloat) -> CGFloat {
+        min(20.8, max(18, trackWidth * 0.027))
+    }
+
+    private var themeSurfacePanelColor: NSColor {
+        switch theme {
+        case .lightBeach:
+            ThemeTokens.lightBeach.surfacePanel.nsColor
+        case .darkAbyss:
+            ThemeTokens.darkAbyss.surfacePanel.nsColor
+        }
+    }
+
     private var themeAccentColor: NSColor {
         switch theme {
         case .lightBeach:
@@ -882,6 +975,22 @@ private final class CardRoutingFlippedView: FlippedView {
                 card.mouseDown(with: event)
                 return
             }
+        }
+        super.mouseDown(with: event)
+    }
+}
+
+private final class AllDayRowRoutingView: FlippedView {
+    weak var grid: TimeGridView?
+
+    override func mouseDown(with event: NSEvent) {
+        if let grid {
+            if grid.eventCardView(at: event.locationInWindow) != nil {
+                super.mouseDown(with: event)
+                return
+            }
+            grid.delegate?.timeGridViewDidRequestShortcutHint(grid, at: event.locationInWindow)
+            return
         }
         super.mouseDown(with: event)
     }

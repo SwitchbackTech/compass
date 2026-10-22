@@ -832,13 +832,6 @@ export function BookingSettingsSection({
             />
           </div>
 
-          <BookingBlockingCalendarsField
-            availabilityCalendars={availabilityCalendars}
-            blockingCalendarIds={form.blockingCalendarIds}
-            connections={connections}
-            onToggle={toggleBlockingCalendar}
-          />
-
           <div className="grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <BookingNumberField
@@ -879,6 +872,13 @@ export function BookingSettingsSection({
               />
             </div>
           </div>
+
+          <BookingBlockingCalendarsField
+            availabilityCalendars={availabilityCalendars}
+            blockingCalendarIds={form.blockingCalendarIds}
+            connections={connections}
+            onToggle={toggleBlockingCalendar}
+          />
         </BookingMoreOptions>
 
         <BookingSaveBar

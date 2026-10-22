@@ -88,13 +88,32 @@ final class KeyboardEngineTests: XCTestCase {
         XCTAssertEqual(page.token, .named(.pageDown))
     }
 
-    func testMonthChordsMatchShiftedAndUnshiftedPunctuation() throws {
-        for (key, id) in [("<", ShortcutId.navMonthPrev), (",", .navMonthPrev),
-                          (">", .navMonthNext), (".", .navMonthNext)] {
-            let dispatcher = try ShortcutDispatcher(registry: registry)
-            XCTAssertEqual(dispatcher.dispatch(KeyEvent(key: .punctuation(key), modifiers: [.command, .shift])), id)
-            XCTAssertNotEqual(dispatcher.dispatch(KeyEvent(key: .punctuation(key), modifiers: [.command])), id)
-        }
+    func testMonthChordsMatchModAltJK() throws {
+        let dispatcher = try ShortcutDispatcher(registry: registry)
+        let modifiers: KeyModifiers = [.command, .option]
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: modifiers)),
+            .navMonthPrev)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("k"), modifiers: modifiers)),
+            .navMonthNext)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("t"), modifiers: modifiers)),
+            .navMonthCurrent)
+        XCTAssertNotEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: [.command, .shift])),
+            .navMonthPrev)
+    }
+
+    func testToggleAllDayChordMatchModAltA() throws {
+        let dispatcher = try ShortcutDispatcher(registry: registry)
+        let modifiers: KeyModifiers = [.command, .option]
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("a"), modifiers: modifiers)),
+            .editToggleAllDay)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("A"), modifiers: modifiers)),
+            .editToggleAllDay)
     }
 
     func testScopePrecedence() throws {
@@ -170,6 +189,41 @@ final class KeyboardEngineTests: XCTestCase {
         } else {
             XCTFail("expected resolved title")
         }
+    }
+
+    func testLeaderSequenceRespectsFieldVisibility() {
+        let timer = DispatchTimer()
+        let engine = LeaderSequenceEngine(
+            leaderKey: "e",
+            fieldRows: registry.editSequenceFields,
+            timer: timer,
+            armWindowMs: 0.6)
+        engine.isFieldVisible = { $0 != "rsvp" && $0 != "conference" }
+        engine.canArm = { true }
+
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        engine.advanceTime(by: 0.61)
+        XCTAssertFalse(engine.whichKeyRows.contains { $0.field == "rsvp" })
+
+        _ = engine.handleKeyDown(KeyEvent(character: "g"))
+        if case .resolved = engine.phase {
+            XCTFail("hidden rsvp should not resolve")
+        }
+        XCTAssertEqual(engine.phase, .idle)
+
+        engine.isFieldVisible = { $0 == "title" }
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        engine.advanceTime(by: 0.61)
+        XCTAssertEqual(engine.whichKeyRows.count, 1)
+    }
+
+    func testLeaderSequenceDoesNotArmWhenCanArmFalse() {
+        let engine = LeaderSequenceEngine(
+            leaderKey: "e",
+            fieldRows: registry.editSequenceFields)
+        engine.canArm = { false }
+        _ = engine.handleKeyDown(KeyEvent(character: "e"))
+        XCTAssertEqual(engine.phase, .idle)
     }
 
     func testHoldModifierDetection() {

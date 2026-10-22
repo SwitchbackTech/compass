@@ -29,4 +29,12 @@ export async function copyStaticAssets(outdir: string) {
     path.join(outdir, "og-image.png"),
     Bun.file(path.resolve(import.meta.dir, "src/assets/png/og-image.png")),
   );
+  await Bun.write(
+    path.join(outdir, "sitemap.xml"),
+    Bun.file(path.resolve(import.meta.dir, "src/sitemap.xml")),
+  );
+  await Bun.write(
+    path.join(outdir, "robots.txt"),
+    Bun.file(path.resolve(import.meta.dir, "src/robots.txt")),
+  );
 }

@@ -28,6 +28,32 @@ final class PageJumpTargetsTests: XCTestCase {
         XCTAssertEqual(targets.map(\.label), ["View dropdown", "Month picker", "Up next", "Calendar list"])
     }
 
+    /// Web: one target per connected account replaces the single list slot.
+    func testWeekViewNumbersEachConnectedAccount() {
+        let targets = PageJumpTargets.buildSidebarPageJumpTargets(accounts: [
+            (key: "google:a@example.com", label: "a@example.com"),
+            (key: "microsoft:b@example.com", label: "b@example.com"),
+        ])
+        XCTAssertEqual(
+            targets.map(\.id),
+            [
+                "view-select", "month-picker", "up-next",
+                PageJumpTargets.calendarAccountJumpId(accountKey: "google:a@example.com"),
+                PageJumpTargets.calendarAccountJumpId(accountKey: "microsoft:b@example.com"),
+            ])
+        XCTAssertEqual(targets.map(\.digit), ["1", "2", "3", "4", "5"])
+        XCTAssertFalse(targets.contains { $0.id == "calendars" })
+    }
+
+    func testDayViewPutsAccountsAfterColumns() {
+        let targets = PageJumpTargets.buildDayPageJumpTargets(
+            displayedCalendars: [(id: "cal-a", name: "Personal")],
+            accounts: [(key: "google:a@example.com", label: "a@example.com")]
+        )
+        XCTAssertEqual(targets.last?.id, PageJumpTargets.calendarAccountJumpId(accountKey: "google:a@example.com"))
+        XCTAssertEqual(targets.last?.digit, "5")
+    }
+
     func testDayViewDropsSidebarWhenColumnsOverflowPhysicalKeys() {
         let calendars = (0 ..< 14).map { index in
             (id: "cal-\(index)", name: "Calendar \(index)")
@@ -52,7 +78,8 @@ final class PageJumpTargetsTests: XCTestCase {
             trackWidth: 400
         )
         let widths = state.resolvedColumnWidths()
-        XCTAssertEqual(widths.count, 2)
+        // Parity fixture: only Work has visible events on 2026-05-20 (Personal's event is hidden).
+        XCTAssertEqual(widths.count, 1)
         XCTAssertGreaterThanOrEqual(widths[0], GridMetrics.eventWidthMinimum)
         XCTAssertGreaterThanOrEqual(state.documentContentWidth(), 400)
     }

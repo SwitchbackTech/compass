@@ -47,9 +47,8 @@ final class GridLayoutSnapshotTests: XCTestCase {
         )
 
         XCTAssertEqual(built.layoutMode, .day)
-        XCTAssertEqual(built.columns.count, 2)
+        XCTAssertEqual(built.columns.count, 1)
         XCTAssertEqual(built.columns[0].key, "507f1f77bcf86cd799439011")
-        XCTAssertEqual(built.columns[1].key, "507f1f77bcf86cd799439012")
     }
 
     private func loadSnapshotDocument() throws -> [String: Any] {

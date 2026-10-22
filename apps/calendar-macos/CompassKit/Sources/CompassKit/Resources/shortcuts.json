@@ -87,8 +87,8 @@
       "id": "nav-month-prev",
       "keys": [
         "Mod",
-        "Shift",
-        ","
+        "Alt",
+        "j"
       ],
       "label": "Previous month in picker",
       "section": "navigate"
@@ -97,10 +97,20 @@
       "id": "nav-month-next",
       "keys": [
         "Mod",
-        "Shift",
-        "."
+        "Alt",
+        "k"
       ],
       "label": "Next month in picker",
+      "section": "navigate"
+    },
+    {
+      "id": "nav-month-current",
+      "keys": [
+        "Mod",
+        "Alt",
+        "t"
+      ],
+      "label": "Go to this month in picker",
       "section": "navigate"
     },
     {
@@ -518,6 +528,20 @@
       "requiresWrite": true
     },
     {
+      "id": "edit-toggle-all-day",
+      "keys": [
+        "Mod",
+        "Alt",
+        "a"
+      ],
+      "label": "Toggle all day on open event",
+      "section": "edit",
+      "when": {
+        "isFormOpen": true
+      },
+      "requiresWrite": true
+    },
+    {
       "id": "edit-cancel-meeting",
       "keys": [
         "Mod",
@@ -553,6 +577,19 @@
         "C"
       ],
       "label": "Copy link in event description",
+      "section": "edit",
+      "when": {
+        "isFormOpen": true
+      }
+    },
+    {
+      "id": "edit-copy-meeting-link",
+      "keys": [
+        "Mod",
+        "Shift",
+        "L"
+      ],
+      "label": "Copy meeting link",
       "section": "edit",
       "when": {
         "isFormOpen": true
@@ -853,13 +890,18 @@
     ],
     "nav-month-prev": [
       "Mod",
-      "Shift",
-      ","
+      "Alt",
+      "j"
     ],
     "nav-month-next": [
       "Mod",
-      "Shift",
-      "."
+      "Alt",
+      "k"
+    ],
+    "nav-month-current": [
+      "Mod",
+      "Alt",
+      "t"
     ],
     "nav-picker-step": [
       "ArrowLeft",
@@ -976,6 +1018,11 @@
       "Shift",
       "C"
     ],
+    "edit-copy-meeting-link": [
+      "Mod",
+      "Shift",
+      "L"
+    ],
     "edit-open-description-link": [
       "Mod",
       "Shift",
@@ -1003,6 +1050,11 @@
     "edit-form-actions": [
       "Mod",
       "0"
+    ],
+    "edit-toggle-all-day": [
+      "Mod",
+      "Alt",
+      "a"
     ],
     "edit-focus-prev": [
       "ArrowUp"
@@ -1149,7 +1201,7 @@
     "eventJump": {
       "bareLetter": "f",
       "keycaps": [
-        "F"
+        "f"
       ]
     },
     "moveEvent": {
@@ -1209,6 +1261,14 @@
         "Mod",
         "Shift",
         "C"
+      ]
+    },
+    "copyMeetingLink": {
+      "hotkey": "Mod+Shift+L",
+      "keycaps": [
+        "Mod",
+        "Shift",
+        "L"
       ]
     },
     "openDescriptionLinkAtCaret": {

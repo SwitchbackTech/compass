@@ -57,6 +57,7 @@ final class NativeGridKeyboardRouter {
             .navLifeCurrent,
             .navMonthPrev,
             .navMonthNext,
+            .navMonthCurrent,
             .navUpNext,
             .navJoinMeeting,
             .otherSettings,
@@ -389,6 +390,7 @@ final class NativeGridKeyboardRouter {
         }
 
         dispatcher.shortcutContext = model.shortcutContext
+        syncEditSequenceFieldGating()
         if let id = dispatcher.dispatch(keyEvent) {
             model.syncEditSequencePhase(dispatcher.leaderEngine.phase)
             performShortcut(id)
@@ -454,6 +456,9 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEventFormKeys(_ keyEvent: KeyEvent) -> Bool {
+        if EventFormDateFieldKeys.fieldOwnsKey(keyEvent, owner: model.eventFormDateKeyOwner) {
+            return false
+        }
         if matchesBinding(keyEvent, id: .editCancelMeeting) {
             guard model.hasBookedMeetingActions else { return false }
             Task { await model.triggerBookedMeetingCancellation() }
@@ -467,6 +472,20 @@ final class NativeGridKeyboardRouter {
         if matchesBinding(keyEvent, id: .editCopyDescriptionLink) {
             return NSApp.sendAction(NSSelectorFromString("copyDescriptionLink:"), to: nil, from: nil)
         }
+        if matchesBinding(keyEvent, id: .editCopyMeetingLink) {
+            guard let draft = model.draftStore.gridDraft,
+                !model.isEventFormReadOnly(for: draft)
+            else { return false }
+            return model.copyMeetingLinkFromForm()
+        }
+        if matchesBinding(keyEvent, id: .editToggleAllDay) {
+            guard let draft = model.draftStore.gridDraft,
+                !model.isEventFormReadOnly(for: draft),
+                !model.isScheduleLocked(for: draft)
+            else { return false }
+            model.setDraftAllDay(draft.schedule.kind != .allDay)
+            return true
+        }
         if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
             guard isDescriptionFormEditorFocused() else { return false }
             let opened = NSApp.sendAction(
@@ -476,6 +495,9 @@ final class NativeGridKeyboardRouter {
             )
             if opened { model.recordShortcut(.editOpenDescriptionLink) }
             return opened
+        }
+        if handleColorSwatchKeys(keyEvent) {
+            return true
         }
         if keyEvent.modifiers.isEmpty,
             case .character(let char) = keyEvent.key,
@@ -532,6 +554,7 @@ final class NativeGridKeyboardRouter {
         }
 
         dispatcher.shortcutContext = model.shortcutContext
+        syncEditSequenceFieldGating()
         if let id = dispatcher.dispatch(keyEvent) {
             performShortcut(id)
             return true
@@ -543,6 +566,45 @@ final class NativeGridKeyboardRouter {
         }
 
         return false
+    }
+
+    /// Web `EventColorPicker` keys while the color field has focus: arrows move
+    /// between swatches, Space / Enter pick the focused one, and a pick key
+    /// (1-9, 0, -, =) picks that swatch directly.
+    private func handleColorSwatchKeys(_ keyEvent: KeyEvent) -> Bool {
+        guard model.eventFormFocusedField == .color,
+            keyEvent.modifiers.isEmpty,
+            !(NSApp.keyWindow?.firstResponder is NSTextView),
+            let draft = model.draftStore.gridDraft,
+            !model.isEventFormReadOnly(for: draft)
+        else { return false }
+        switch keyEvent.key {
+        case .named(.arrowRight), .named(.arrowDown):
+            model.moveColorSwatchFocus(by: 1)
+        case .named(.arrowLeft), .named(.arrowUp):
+            model.moveColorSwatchFocus(by: -1)
+        case .named(.enter), .character(" "):
+            model.pickColorSwatch(at: model.colorSwatchFocusIndex)
+        case .character(let char):
+            guard let index = FormFieldDigitMapping.pickKeyLabels.firstIndex(of: String(char)),
+                index < NativeCalendarRootModel.colorSwatchOptions.count
+            else { return false }
+            model.pickColorSwatch(at: index)
+            model.recordShortcut(.editPickByNumber)
+        default:
+            return false
+        }
+        return true
+    }
+
+    private func syncEditSequenceFieldGating() {
+        dispatcher.leaderEngine.isFieldVisible = { [model] field in
+            guard let formField = EventFormField(rawValue: field) else { return false }
+            return model.isEventFormFocusFieldVisible(formField)
+        }
+        dispatcher.leaderEngine.canArm = { [model] in
+            !model.visibleEditSequenceLetterFields().isEmpty
+        }
     }
 
     private func isDescriptionFormEditorFocused() -> Bool {
@@ -562,7 +624,9 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEditSequenceField(_ fieldName: String) {
-        guard let field = EventFormField(rawValue: fieldName) else { return }
+        guard let field = EventFormField(rawValue: fieldName),
+            model.isEventFormFocusFieldVisible(field)
+        else { return }
         if model.isEventFormVisible {
             model.focusEventFormField(field)
             return
@@ -582,11 +646,12 @@ final class NativeGridKeyboardRouter {
             return true
         }
 
-        if keyEvent.modifiers.isEmpty, case .character(let digit) = keyEvent.key, digit.isNumber {
-            if model.eventJumpSelection.modeActive, model.focusEventJumpIfAvailable(digit: digit) {
+        if keyEvent.modifiers.isEmpty, case .character(let char) = keyEvent.key {
+            if model.eventJumpSelection.modeActive, model.handleEventJumpKeystroke(char) {
                 return true
             }
-            model.handleQuickTimeDigit(digit)
+            guard char.isNumber else { return false }
+            model.handleQuickTimeDigit(char)
             if !model.draftStore.quickTimeDigits.isEmpty {
                 return true
             }
@@ -693,8 +758,8 @@ final class NativeGridKeyboardRouter {
     /// leaves. Any other key drops the focus and runs as usual.
     private func handleMonthPickerFocusKeys(_ keyEvent: KeyEvent) -> Bool {
         guard model.monthPickerFocusDate != nil else { return false }
-        if keyEvent.modifiers == [.command, .shift],
-           [KeyToken.punctuation(","), .punctuation("."), .punctuation("<"), .punctuation(">")].contains(keyEvent.key) {
+        if keyEvent.modifiers == [.command, .option],
+           case .character(let char) = keyEvent.key, char == "j" || char == "k" {
             return false
         }
         guard keyEvent.modifiers.isEmpty else {

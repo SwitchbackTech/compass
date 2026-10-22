@@ -48,6 +48,70 @@ final class NativeCalendarRootModelEventJumpTests: XCTestCase {
         XCTAssertEqual(model.eventJumpSelection.announcement, "Saturday selected")
     }
 
+    func testJumpModeTakesBareDayLetters() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.toggleEventJumpMode()
+
+        XCTAssertTrue(model.handleEventJumpKeystroke("w"))
+        XCTAssertEqual(model.eventJumpSelection.announcement, "Wednesday selected")
+
+        XCTAssertTrue(model.handleEventJumpKeystroke("s"))
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "s")
+        XCTAssertTrue(model.handleEventJumpKeystroke("u"))
+        XCTAssertEqual(model.eventJumpSelection.announcement, "Sunday selected")
+    }
+
+    func testJumpModeSwallowsOtherLettersButLeavesEditAndCreate() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.toggleEventJumpMode()
+
+        XCTAssertTrue(model.handleEventJumpKeystroke("j"))
+        XCTAssertTrue(model.eventJumpSelection.activeDayKeys.isEmpty)
+        XCTAssertTrue(model.handleEventJumpKeystroke("f"))
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "f")
+        XCTAssertFalse(model.handleEventJumpKeystroke("e"))
+        XCTAssertFalse(model.handleEventJumpKeystroke("c"))
+    }
+
+    func testUppercaseDayLettersMatchLowercaseHints() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.activateEventJumpMode()
+        XCTAssertTrue(model.handleEventJumpKeystroke("W"))
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "w")
+    }
+
+    /// Web: Shift+T then 1230 creates at 12:30 on Tuesday, not today.
+    func testFourDigitsAfterADayPickCreateOnThatDay() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.handleShiftDayJump(letter: "T")
+        for digit in "1230" {
+            XCTAssertTrue(model.handleEventJumpDigit(digit))
+        }
+        let draft = try XCTUnwrap(model.draftStore.gridDraft)
+        let start = try XCTUnwrap(draft.schedule.start)
+        let calendar = EffectiveTimeZone.calendar
+        XCTAssertEqual(calendar.component(.hour, from: start), 12)
+        XCTAssertEqual(calendar.component(.minute, from: start), 30)
+        XCTAssertEqual(CompassDateParsing.formatCalendarDay(start), "2026-06-09")
+        XCTAssertFalse(model.eventJumpSelection.isActive)
+    }
+
     func testQuickTimeUsesJumpSelectedDay() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)

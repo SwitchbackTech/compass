@@ -11,6 +11,23 @@ enum CommandPalettePhosphorIcon {
             let baseId = String(item.id.dropFirst("recent-".count))
             return icon(for: CommandPaletteItem(id: baseId, label: item.label, systemImage: item.systemImage))
         }
+        if item.id.hasPrefix("event-form-") {
+            let actionId = String(item.id.dropFirst("event-form-".count))
+            switch actionId {
+            case "edit-copy-meeting-link", "edit-duplicate":
+                return .copy
+            case "edit-delete":
+                return .trash
+            case "edit-close-form":
+                return .x
+            case "edit-cancel-meeting":
+                return .calendar
+            case "edit-reschedule-meeting":
+                return .arrowClockwise
+            default:
+                return nil
+            }
+        }
         switch item.id {
         case "go-to-date", "open-up-next", "show-booking", "book-personal-onboarding":
             return .calendar

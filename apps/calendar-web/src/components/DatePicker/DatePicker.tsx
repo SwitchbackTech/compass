@@ -11,8 +11,17 @@ import { theme } from "@web/common/styles/theme";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
+import {
+  MONTH_PICKER_CURRENT_KEYCAPS,
+  MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_KEYCAPS,
+  useMonthPickerShortcuts,
+} from "@web/components/Sidebar/MonthPicker/useMonthPickerShortcuts";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
-import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import {
+  isFloatingLayerOpen,
+  useFloatingLayer,
+} from "@web/shortcuts/floating-layer";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 import { CircleIcon } from "../Icons/CircleIcon";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
@@ -156,7 +165,54 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
 
   const isCaptionYearView = captionPicker && captionView === "year";
   const isCaptionMonthView = captionPicker && captionView === "month";
+  const isCaptionDayGrid = !isCaptionYearView && !isCaptionMonthView;
   const shouldCommitSelection = !captionPicker || captionView === "day";
+
+  const monthStepHandlersRef = useRef({
+    onPrev: () => {},
+    onNext: () => {},
+    onGoToThisMonth: undefined as (() => void) | undefined,
+  });
+
+  const gridMonthNavShortcuts = captionPicker && view === "grid";
+  const sidebarMonthNavShortcuts = Boolean(monthNav);
+  const monthNavShortcutsEnabled =
+    isOpen &&
+    isCaptionDayGrid &&
+    (gridMonthNavShortcuts ||
+      (sidebarMonthNavShortcuts && !isFloatingLayerOpen()));
+
+  const canGoToThisMonthInPicker =
+    (view === "sidebar" && monthNav?.onToday !== undefined) ||
+    (withTodayButton && gridMonthNavShortcuts);
+
+  useMonthPickerShortcuts({
+    enabled: monthNavShortcutsEnabled,
+    onPrevMonth: () => {
+      monthStepHandlersRef.current.onPrev();
+    },
+    onNextMonth: () => {
+      monthStepHandlersRef.current.onNext();
+    },
+    onGoToThisMonth: canGoToThisMonthInPicker
+      ? () => {
+          monthStepHandlersRef.current.onGoToThisMonth?.();
+        }
+      : undefined,
+  });
+
+  const monthChevronShortcuts =
+    monthNav != null
+      ? {
+          prev: monthNav.prevShortcut,
+          next: monthNav.nextShortcut,
+        }
+      : gridMonthNavShortcuts && monthNavShortcutsEnabled
+        ? {
+            prev: MONTH_PICKER_PREV_KEYCAPS,
+            next: MONTH_PICKER_NEXT_KEYCAPS,
+          }
+        : null;
 
   const handleCalendarClose = () => {
     commitCaptionView("day");
@@ -282,6 +338,20 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
               nextLabel: "Next month",
             };
 
+        monthStepHandlersRef.current = {
+          onPrev: headerNav.onPrev,
+          onNext: headerNav.onNext,
+          onGoToThisMonth:
+            view === "sidebar" && monthNav?.onToday
+              ? monthNav.onToday
+              : withTodayButton && isCaptionDayGrid
+                ? () => {
+                    headerProps.changeMonth(dayjs().month());
+                    headerProps.changeYear(dayjs().year());
+                  }
+                : undefined,
+        };
+
         return (
           <div
             className={classNames(
@@ -329,8 +399,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                     onClick={
                       headerNav.prevDisabled ? undefined : headerNav.onPrev
                     }
-                    shortcut={monthNav ? [...monthNav.prevShortcut] : undefined}
-                    shortcutId={monthNav ? "nav-month-prev" : undefined}
+                    shortcut={
+                      monthChevronShortcuts
+                        ? [...monthChevronShortcuts.prev]
+                        : undefined
+                    }
+                    shortcutId={
+                      monthChevronShortcuts ? "nav-month-prev" : undefined
+                    }
                   >
                     <ChevronLeftIcon />
                   </MonthNavButton>
@@ -342,8 +418,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                     onClick={
                       headerNav.nextDisabled ? undefined : headerNav.onNext
                     }
-                    shortcut={monthNav ? [...monthNav.nextShortcut] : undefined}
-                    shortcutId={monthNav ? "nav-month-next" : undefined}
+                    shortcut={
+                      monthChevronShortcuts
+                        ? [...monthChevronShortcuts.next]
+                        : undefined
+                    }
+                    shortcutId={
+                      monthChevronShortcuts ? "nav-month-next" : undefined
+                    }
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>
@@ -351,8 +433,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                 {withTodayButton && (
                   <TooltipWrapper
                     description="Go to this month"
-                    shortcut={view === "sidebar" ? "T" : undefined}
-                    shortcutId={view === "sidebar" ? "nav-today" : undefined}
+                    shortcut={
+                      view === "sidebar"
+                        ? [...MONTH_PICKER_CURRENT_KEYCAPS]
+                        : undefined
+                    }
+                    shortcutId={
+                      view === "sidebar" ? "nav-month-current" : undefined
+                    }
                   >
                     <button
                       type="button"

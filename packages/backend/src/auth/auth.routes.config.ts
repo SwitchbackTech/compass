@@ -94,14 +94,24 @@ export class AuthRoutes extends CommonRoutesConfig {
         appleSignInCallbackLimiter,
         urlencoded({ extended: false }),
         (req, res) => {
-          authController.appleSignInCallback(req, res);
+          void authController.appleSignInCallback(req, res);
         },
       );
 
+    const providerOAuthCallback = providerOAuthCallbackLimiter;
+
     this.app
       .route("/auth/:provider/callback")
-      .get(providerOAuthCallbackLimiter, (req, res) => {
-        authController.providerOAuthCallback(req, res);
+      .get(providerOAuthCallback, (req, res) => {
+        void authController.providerOAuthCallback(req, res);
+      });
+
+    // Caddy proxies /api/* to the backend; sign-in callbacks land on the SPA at
+    // /auth/:provider/callback, and the web relay posts telemetry here.
+    this.app
+      .route("/api/auth/:provider/callback")
+      .get(providerOAuthCallback, (req, res) => {
+        void authController.providerOAuthCallback(req, res);
       });
 
     return this.app;

@@ -38,7 +38,7 @@ describe("oauth-callback.analytics", () => {
     ).toEqual({ reason: "missing_code" });
   });
 
-  it("maps token exchange failures to token_exchange_error", () => {
+  it("maps token exchange failures to token_exchange_failed", () => {
     expect(
       oauthCallbackFailureReason({
         outcome: "error",
@@ -51,7 +51,7 @@ describe("oauth-callback.analytics", () => {
         }),
       }),
     ).toEqual({
-      reason: "token_exchange_error",
+      reason: "token_exchange_failed",
       provider_error: "exchangeFailed",
     });
   });
@@ -67,7 +67,7 @@ describe("oauth-callback.analytics", () => {
           name: "ProviderAuthError",
         }),
       }),
-    ).toEqual({ reason: "token_exchange_error" });
+    ).toEqual({ reason: "token_exchange_failed" });
   });
 
   it("ignores a non-provider error on the exchange path", () => {

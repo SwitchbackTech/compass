@@ -16,7 +16,7 @@ const UserApi = {
     return response.data;
   },
 
-  async updateMetadata(data: UserMetadata): Promise<UserMetadata> {
+  async updateMetadata(data: Partial<UserMetadata>): Promise<UserMetadata> {
     const response = await BaseApi.post<UserMetadata>(`/user/metadata`, data);
 
     return response.data;

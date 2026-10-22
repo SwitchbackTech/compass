@@ -41,6 +41,23 @@ public enum SignInProviderKind: String, Sendable, CaseIterable {
         case .apple: "Continue with Apple"
         }
     }
+
+    public var welcomeTrialPrimaryLabel: String {
+        switch self {
+        case .google: "Start free trial with Google"
+        case .microsoft: "Start free trial with Microsoft"
+        case .apple: "Start free trial with Apple"
+        }
+    }
+}
+
+extension AuthStore {
+    /// Web `welcomeTrialPrimaryProvider`: Google first when available.
+    public func welcomeTrialPrimaryProvider() -> SignInProviderKind? {
+        let providers = availableSignInProviders()
+        if providers.contains(.google) { return .google }
+        return providers.first
+    }
 }
 
 @MainActor
@@ -264,8 +281,12 @@ public final class AuthStore {
         return config.billing.isConfigured && config.billing.enforcement
     }
 
+    public func signupTrialLengthDays() -> Int {
+        Int(configStore.config?.billing.trialLengthDays ?? 7)
+    }
+
     public func trialChargeDateLabel(reference: Date = Date()) -> String {
-        let days = Int(configStore.config?.billing.trialLengthDays ?? 7)
+        let days = signupTrialLengthDays()
         let charge = Calendar.current.date(byAdding: .day, value: days, to: reference) ?? reference
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

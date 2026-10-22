@@ -42,4 +42,15 @@ describe("resolveStaleProviderOAuthReplay", () => {
       }),
     ).resolves.toBe("/week");
   });
+
+  it("returns the default calendar route for a stripped callback revisit", async () => {
+    await expect(
+      resolveStaleProviderOAuthReplay({
+        provider: "google",
+        search: "",
+        pathname: "/auth/google/callback",
+        hasSession: mock(async () => true),
+      }),
+    ).resolves.toBe("/week");
+  });
 });

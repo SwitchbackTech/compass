@@ -7,6 +7,9 @@ import { openStartTrialStepModal } from "@web/components/AuthModal/auth-modal-ru
 
 export type TrialGateTrigger = "write" | "banner";
 
+/** Event write that opened the trial step (create, replace, delete). */
+export type TrialGateEventAction = "create" | "replace" | "delete";
+
 let pendingTrigger: TrialGateTrigger | null = null;
 
 /** Copy for StartTrialStep when the user hit a write block. */
@@ -29,12 +32,16 @@ export function resetTrialStepRequestForTests(): void {
  */
 export async function requestTrialStep(options: {
   trigger: TrialGateTrigger;
+  eventAction?: TrialGateEventAction;
 }): Promise<boolean> {
   if (!isBillingWriteLocked()) return false;
   if (getBillingWriteLockStatus() !== "awaiting_checkout") return false;
 
   pendingTrigger = options.trigger;
-  track("trial_gate_triggered", { source: options.trigger });
+  track("trial_gate_triggered", {
+    source: options.trigger,
+    ...(options.eventAction ? { event_action: options.eventAction } : {}),
+  });
   track("billing_gate_shown", {
     status: "awaiting_checkout",
     surface: options.trigger === "write" ? "write_attempt" : "explore_banner",

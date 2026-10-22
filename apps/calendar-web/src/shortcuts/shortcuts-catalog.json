@@ -41,14 +41,20 @@
       },
       {
         "id": "nav-month-prev",
-        "keys": ["Mod", "Shift", ","],
+        "keys": ["Mod", "Alt", "j"],
         "label": "Previous month in picker",
         "section": "navigate"
       },
       {
         "id": "nav-month-next",
-        "keys": ["Mod", "Shift", "."],
+        "keys": ["Mod", "Alt", "k"],
         "label": "Next month in picker",
+        "section": "navigate"
+      },
+      {
+        "id": "nav-month-current",
+        "keys": ["Mod", "Alt", "t"],
+        "label": "Go to this month in picker",
         "section": "navigate"
       },
       {
@@ -527,6 +533,16 @@
         "requiresWrite": true
       },
       {
+        "id": "edit-toggle-all-day",
+        "keys": ["Mod", "Alt", "a"],
+        "label": "Toggle all day on open event",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        },
+        "requiresWrite": true
+      },
+      {
         "id": "edit-cancel-meeting",
         "keys": ["Mod", "Shift", "X"],
         "label": "Cancel booked meeting (confirm twice)",
@@ -550,6 +566,15 @@
         "id": "edit-copy-description-link",
         "keys": ["Mod", "Shift", "C"],
         "label": "Copy link in event description",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        }
+      },
+      {
+        "id": "edit-copy-meeting-link",
+        "keys": ["Mod", "Shift", "L"],
+        "label": "Copy meeting link",
         "section": "edit",
         "when": {
           "isFormOpen": true

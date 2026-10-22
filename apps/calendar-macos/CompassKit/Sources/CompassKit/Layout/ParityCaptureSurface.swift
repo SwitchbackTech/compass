@@ -11,9 +11,11 @@ public enum ParityCaptureSurface: String, CaseIterable, Sendable {
     case eventForm = "event-form"
     case eventFormDatePicker = "event-form-date-picker"
     case eventFormTimePicker = "event-form-time-picker"
+    case eventFormMeetingLink = "event-form-meeting-link"
     case commandPalette = "command-palette"
     case settings = "settings"
     case onboardingWelcome = "onboarding-welcome"
+    case onboardingWelcomeAccountChoice = "onboarding-welcome-account-choice"
 
     public static func isValid(_ name: String) -> Bool {
         ParityCaptureSurface(rawValue: name) != nil

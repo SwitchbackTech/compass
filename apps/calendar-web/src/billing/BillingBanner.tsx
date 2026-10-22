@@ -10,6 +10,8 @@ type BillingBannerProps = {
   ctaLabel: string;
   disabled?: boolean;
   onCta: () => void;
+  onDismiss?: () => void;
+  dismissLabel?: string;
   shortcutKey?: NoticeActionKey;
 };
 
@@ -24,6 +26,8 @@ export const BillingBanner: FC<BillingBannerProps> = ({
   ctaLabel,
   disabled = false,
   onCta,
+  onDismiss,
+  dismissLabel = "Dismiss",
   shortcutKey,
 }) => {
   useNoticeActionShortcut(shortcutKey, onCta, { enabled: !disabled });
@@ -35,15 +39,26 @@ export const BillingBanner: FC<BillingBannerProps> = ({
       role="status"
     >
       <p>{message}</p>
-      <button
-        className="c-focus-ring inline-flex items-center gap-2 font-medium text-warning underline-offset-4 hover:underline"
-        disabled={disabled}
-        onClick={onCta}
-        type="button"
-      >
-        {ctaLabel}
-        {shortcutKey ? <ShortcutKeys keys={shortcutKey} /> : null}
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          className="c-focus-ring inline-flex items-center gap-2 font-medium text-warning underline-offset-4 hover:underline"
+          disabled={disabled}
+          onClick={onCta}
+          type="button"
+        >
+          {ctaLabel}
+          {shortcutKey ? <ShortcutKeys keys={shortcutKey} /> : null}
+        </button>
+        {onDismiss ? (
+          <button
+            className="c-focus-ring rounded-xs px-2 py-1 text-text-muted hover:bg-surface-overlay hover:text-text"
+            onClick={onDismiss}
+            type="button"
+          >
+            {dismissLabel}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 };

@@ -39,6 +39,10 @@ const DIGIT_LEGAL_LINKS = [
   },
 ] as const;
 
+/** Footer jump indices for Privacy/Terms digit keys (after FAQ digits 1–5). */
+const PRIVACY_JUMP_INDEX = 3;
+const TERMS_JUMP_INDEX = 4;
+
 function JumpAnchor({
   jumpIndex,
   letter,
@@ -83,7 +87,47 @@ function JumpAnchor({
   );
 }
 
-export function WelcomeLinks({ flashedKey }: { flashedKey: string | null }) {
+type WelcomeLinksProps = {
+  flashedKey: string | null;
+  /** Account-choice screen: Pricing, Privacy, and Terms only. */
+  variant?: "guide" | "accountChoice";
+};
+
+export function WelcomeLinks({
+  flashedKey,
+  variant = "guide",
+}: WelcomeLinksProps) {
+  const linkClassName =
+    "c-focus-ring inline-flex shrink-0 items-center gap-1 whitespace-nowrap underline-offset-4 hover:text-text hover:underline";
+
+  if (variant === "accountChoice") {
+    return (
+      <div className="flex w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 border-border border-t pt-3 text-text-muted text-xs">
+        <JumpAnchor
+          letter={PRICING_LINK.letter}
+          digit={PRICING_LINK.shortcut}
+          href={PRICING_LINK.href}
+          flashedKey={flashedKey}
+          className={linkClassName}
+        >
+          {PRICING_LINK.label}
+        </JumpAnchor>
+        {DIGIT_LEGAL_LINKS.map(({ digit, label, href }, index) => (
+          <JumpAnchor
+            key={label}
+            jumpIndex={index === 0 ? PRIVACY_JUMP_INDEX : TERMS_JUMP_INDEX}
+            digit={digit}
+            href={href}
+            flashedKey={flashedKey}
+            className={linkClassName}
+          >
+            {label}
+          </JumpAnchor>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-between border-border border-t pt-4">
       <div className="flex items-center gap-3">

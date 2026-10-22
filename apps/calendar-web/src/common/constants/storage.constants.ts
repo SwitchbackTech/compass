@@ -9,6 +9,13 @@
 export const STORAGE_KEYS = {
   AUTH: "compass.auth",
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
+  /** Session guard for welcome intro funnel events (modal shown, step 1). */
+  WELCOME_INTRO_ANALYTICS_SESSION:
+    "compass.onboarding.welcome-intro-analytics-session",
+  /** JSON array of welcome step ids viewed this tab session. */
+  WELCOME_STEPS_VIEWED_SESSION:
+    "compass.onboarding.welcome-steps-viewed-session",
+  HAS_SEEN_LIFE_VIEW_INTRO: "compass.onboarding.has-seen-life-view-intro",
   WELCOME_EXIT: "compass.onboarding.welcome-exit",
   HAS_SEEN_ANONYMOUS_SAVE_TOAST:
     "compass.onboarding.has-seen-anonymous-save-toast",
@@ -92,4 +99,7 @@ export const STORAGE_KEYS = {
   // The X on the keyboard hint turns tips off for this browser.
   POINTER_HINT_DISMISSED_PERMANENTLY:
     "compass.pointer-hint.dismissed-permanently",
+  /** Session-only dismiss for the awaiting_checkout explore banner. */
+  AWAITING_CHECKOUT_BANNER_DISMISSED:
+    "compass.billing.awaiting-checkout-banner-dismissed-session",
 } as const satisfies Record<string, `compass.${string}`>;

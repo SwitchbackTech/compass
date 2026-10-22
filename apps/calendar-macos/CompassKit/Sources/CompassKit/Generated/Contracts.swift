@@ -1671,10 +1671,12 @@ public enum SubscriptionStatusEnum: String, Codable, Hashable, Sendable, CaseIte
 
 public struct UserMetadata: Codable, Hashable, Sendable {
     public let connections: [UserMetadataConnections]?
+    public let onboarding: UserMetadataOnboarding?
     public let sync: UserMetadataSync?
 
-    public init(connections: [UserMetadataConnections]? = nil, sync: UserMetadataSync? = nil) {
+    public init(connections: [UserMetadataConnections]? = nil, onboarding: UserMetadataOnboarding? = nil, sync: UserMetadataSync? = nil) {
         self.connections = connections
+        self.onboarding = onboarding
         self.sync = sync
     }
 }
@@ -1709,6 +1711,14 @@ public enum UserMetadataConnectionsConnectionStateEnum: String, Codable, Hashabl
     case iMPORTING = "IMPORTING"
     case nOT_CONNECTED = "NOT_CONNECTED"
     case rECONNECT_REQUIRED = "RECONNECT_REQUIRED"
+}
+
+public struct UserMetadataOnboarding: Codable, Hashable, Sendable {
+    public let lifeViewIntroSeenAt: String?
+
+    public init(lifeViewIntroSeenAt: String? = nil) {
+        self.lifeViewIntroSeenAt = lifeViewIntroSeenAt
+    }
 }
 
 public struct UserMetadataSync: Codable, Hashable, Sendable {

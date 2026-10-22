@@ -6,6 +6,7 @@ import { render, screen, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { resetAwaitingCheckoutBannerDismissForTests } from "@web/billing/awaiting-checkout-banner.util";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import { resetBillingGateAttentionForTests } from "@web/billing/billing-gate-attention";
 import {
@@ -91,6 +92,7 @@ describe("RootShell billing gates", () => {
       settingsPage: "accounts",
     });
     resetBillingGateAttentionForTests();
+    resetAwaitingCheckoutBannerDismissForTests();
   });
 
   it("never gates an anonymous visitor", async () => {
@@ -112,6 +114,31 @@ describe("RootShell billing gates", () => {
     expect(
       screen.queryByRole("dialog", { name: "Finish starting your trial" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("hides the explore banner for the session after dismiss", async () => {
+    access = awaitingCheckout;
+    const user = userEvent.setup();
+    await renderShell("/week");
+
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+
+    expect(
+      screen.queryByText("Start your 7-day free trial to plan your week."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the explore banner again after the session dismiss flag clears", async () => {
+    access = awaitingCheckout;
+    const user = userEvent.setup();
+    await renderShell("/week");
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    resetAwaitingCheckoutBannerDismissForTests();
+    await renderShell("/week");
+
+    expect(
+      screen.getByText("Start your 7-day free trial to plan your week."),
+    ).toBeInTheDocument();
   });
 
   it("opens the trial step from the explore banner", async () => {
@@ -301,6 +328,8 @@ describe("RootShell calendar onboarding on /life", () => {
         name: "Create your first event",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Add your first event")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your calendar is ready. Add something to it."),
+    ).toBeInTheDocument();
   });
 });

@@ -1053,6 +1053,116 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("rapid this-and-following edits serialize on the root series and converge once", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T09:00:00.000Z",
+        "2026-07-01T10:00:00.000Z",
+      ),
+    });
+    const thu = composedOccurrence(seriesId, "2026-07-04T09:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-04T09:00:00.000Z",
+        "2026-07-04T10:00:00.000Z",
+      ),
+    });
+    const fri = composedOccurrence(seriesId, "2026-07-05T09:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-05T09:00:00.000Z",
+        "2026-07-05T10:00:00.000Z",
+      ),
+    });
+    const sat = composedOccurrence(seriesId, "2026-07-06T09:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-06T09:00:00.000Z",
+        "2026-07-06T10:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(master, thu, fri, sat),
+    );
+
+    const firstSchedule = timedSchedule(
+      "2026-07-04T08:45:00.000Z",
+      "2026-07-04T09:45:00.000Z",
+    );
+    const secondSchedule = timedSchedule(
+      "2026-07-04T08:30:00.000Z",
+      "2026-07-04T09:30:00.000Z",
+    );
+
+    act(() => {
+      context.hook.result.current.mutations.replace(
+        replacePayload(thu.id, {
+          schedule: firstSchedule,
+          scope: "thisAndFollowing",
+        }),
+      );
+      context.hook.result.current.mutations.replace(
+        replacePayload(thu.id, {
+          schedule: secondSchedule,
+          scope: "thisAndFollowing",
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      const thursdayCards = cached.ids.filter((id) => {
+        const item = cached.entities[id];
+        return (
+          item.recurrence.kind !== "series" &&
+          item.schedule.kind === "timed" &&
+          String(item.schedule.start).includes("2026-07-04")
+        );
+      });
+      expect(thursdayCards).toHaveLength(1);
+      const thuSchedule = cached.entities[thursdayCards[0]!]!.schedule;
+      expect(thuSchedule.kind === "timed" ? thuSchedule.start : null).toBe(
+        DateTimeSchema.parse("2026-07-04T08:30:00.000Z"),
+      );
+      expect(
+        new Date(
+          cached.entities[fri.id]!.schedule.kind === "timed"
+            ? cached.entities[fri.id]!.schedule.start
+            : 0,
+        ).toISOString(),
+      ).toBe("2026-07-05T08:30:00.000Z");
+      expect(
+        new Date(
+          cached.entities[sat.id]!.schedule.kind === "timed"
+            ? cached.entities[sat.id]!.schedule.start
+            : 0,
+        ).toISOString(),
+      ).toBe("2026-07-06T08:30:00.000Z");
+    });
+
+    await waitFor(() =>
+      expect(
+        context.calls.filter(({ method }) => method === "replace"),
+      ).toHaveLength(1),
+    );
+
+    context.pending.resolve();
+
+    await waitFor(() => {
+      expect(context.hook.result.current.hasPending).toBe(false);
+      const edits = context.calls.filter(({ method }) => method === "replace");
+      expect(edits).toHaveLength(1);
+      expect(
+        (edits[0]!.value as { input: ReplaceEventInput }).input.schedule,
+      ).toMatchObject({
+        start: DateTimeSchema.parse("2026-07-04T08:30:00.000Z"),
+      });
+    });
+  });
+
   test("materializes optimistic instances when a single event becomes a series", async () => {
     const context = setup();
     const single = event();

@@ -16,6 +16,10 @@ import {
   selectJumpableDayPrefixes,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  selectEventFormFocusInside,
+  useEventFormFocusStore,
+} from "@web/shortcuts/tips/event-form-focus.store";
 import { selectShortcutHint } from "@web/shortcuts/tips/selectShortcutHint";
 import { readShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { useShortcutHintProgress } from "@web/shortcuts/tips/shortcut-tips.progress.store";
@@ -37,6 +41,7 @@ export function useShortcutHintContext() {
   const firstEventDone = useFirstEventPromptStore(selectFirstEventDone);
   const isCelebrating = useFirstEventPromptStore(selectFirstEventCelebrating);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
+  const formFocusInside = useEventFormFocusStore(selectEventFormFocusInside);
   const eventFocused = useIsAnyCalendarEventFocused();
   const pathname = window.location.pathname;
   const isLifeView = isLifePathname(pathname);
@@ -71,6 +76,7 @@ export function useShortcutHintContext() {
   return selectShortcutHint(
     {
       isFormOpen,
+      formFocusInside,
       isLifeView,
       isWeekView,
       eventFocused,

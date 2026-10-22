@@ -132,12 +132,14 @@ beforeEach(() => {
   mockedLifeSearch = {};
   mockNavigate.mockClear();
   localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
+  localStorage.setItem(STORAGE_KEYS.HAS_SEEN_LIFE_VIEW_INTRO, "true");
   viewActions.setSidebarOpen(true);
   mockViewport(false);
 });
 
 afterEach(() => {
   localStorage.removeItem(STORAGE_KEYS.LIFE_PREFERENCES);
+  localStorage.removeItem(STORAGE_KEYS.HAS_SEEN_LIFE_VIEW_INTRO);
   localStorage.removeItem(STORAGE_KEYS.SIDEBAR_OPEN);
   if (typeof window !== "undefined" && originalInnerWidth !== undefined) {
     Object.defineProperty(window, "innerWidth", {

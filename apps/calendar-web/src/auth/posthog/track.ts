@@ -1,4 +1,14 @@
+import { type PostHog } from "posthog-js";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
+
+declare global {
+  var __compassPosthogClient: PostHog | undefined;
+}
+
+/** booking-web code splits can load a stale `getPosthogClient` closure; global wins. */
+function activePosthogClient(): PostHog | undefined {
+  return getPosthogClient() ?? globalThis.__compassPosthogClient;
+}
 
 /**
  * Product activation catalog (untyped here; funnel modules own property shapes).
@@ -84,6 +94,9 @@ export type ProductEvent =
   | "shortcut_level_badge_toggled"
   | "pointer_hint_shown"
   | "pointer_hint_dismissed"
+  | "empty_grid_click_hint_shown"
+  | "life_view_intro_shown"
+  | "life_view_intro_dismissed"
   | "booking_settings_opened"
   | "booking_page_enabled"
   | "booking_link_copied"
@@ -112,7 +125,7 @@ export function track(
   properties?: ProductEventProperties,
 ): void {
   try {
-    getPosthogClient()?.capture(event, properties);
+    activePosthogClient()?.capture(event, properties);
   } catch {
     // Analytics must never interrupt the product action it observes. The SDK
     // owns transport retries and unload flushing for successfully queued data.

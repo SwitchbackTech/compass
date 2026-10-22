@@ -18,6 +18,7 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { seedHiddenEventIds } from "@web/__tests__/utils/hidden-events-test-data";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
@@ -35,6 +36,7 @@ import "@testing-library/jest-dom";
 
 const SOON_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const LATER_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const HIDDEN_NOW_ID = "dddddddddddddddddddddddd";
 const CALENDAR_ID = CalendarIdSchema.parse("cccccccccccccccccccccccc");
 const CALENDAR: Calendar = {
   id: CALENDAR_ID,
@@ -138,6 +140,41 @@ describe("UpNextCard", () => {
     expect(screen.queryByText("Past Event")).toBeNull();
     expect(screen.queryByText("All Day Event")).toBeNull();
     expect(screen.queryByRole("button", { name: /up next:/i })).toBeNull();
+  });
+
+  it("skips a hidden current event and shows the next visible one as Now", () => {
+    const queryClient = createCompassQueryClient();
+    seedHiddenEventIds(queryClient, [HIDDEN_NOW_ID]);
+
+    render(<UpNextCard />, {
+      events: [
+        timedEvent(HIDDEN_NOW_ID, "Flight to Chicago", -10),
+        timedEvent(SOON_EVENT_ID, "Write | Dirac 1", -5),
+      ],
+      queryClient,
+    });
+
+    expect(
+      screen.getByRole("button", { name: /now: write \| dirac 1/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Flight to Chicago")).toBeNull();
+  });
+
+  it("shows all clear when the only current and upcoming events are hidden", () => {
+    const queryClient = createCompassQueryClient();
+    seedHiddenEventIds(queryClient, [HIDDEN_NOW_ID, SOON_EVENT_ID]);
+
+    render(<UpNextCard />, {
+      events: [
+        timedEvent(HIDDEN_NOW_ID, "Hidden now", -10),
+        timedEvent(SOON_EVENT_ID, "Hidden later", 30),
+      ],
+      queryClient,
+    });
+
+    expect(screen.getByText("All clear")).toBeInTheDocument();
+    expect(screen.queryByText("Hidden now")).toBeNull();
+    expect(screen.queryByText("Hidden later")).toBeNull();
   });
 
   it("keeps its card while hiding the calendar with the only upcoming event", async () => {

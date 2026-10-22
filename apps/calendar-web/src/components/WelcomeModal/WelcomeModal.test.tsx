@@ -337,7 +337,7 @@ describe("WelcomeModal", () => {
     expect(
       screen.getByRole("heading", { name: "Let's get started" }),
     ).toBeTruthy();
-    expect(screen.getByText("Connect a calendar or start fresh")).toBeTruthy();
+    expect(screen.queryByText("Connect a calendar or start fresh")).toBeNull();
     expect(screen.getByRole("button", { name: "Back" }).parentElement).toBe(
       screen.getByRole("button", { name: "Log in" }).parentElement,
     );
@@ -349,16 +349,12 @@ describe("WelcomeModal", () => {
     expect(screen.queryByText(/You can sign up later/)).toBeNull();
     expect(screen.getByRole("link", { name: "Terms" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Pricing" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Privacy" })).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Practice the shortcuts" }),
-    ).toHaveAttribute("href", "?play=1");
-    expect(screen.getByRole("link", { name: "GitHub" })).toHaveAttribute(
-      "href",
-      "https://github.com/KeepSoftwareSimple/compass-calendar",
-    );
-    expect(
-      screen.getByRole("button", { name: "On this device only" }),
-    ).toHaveFocus();
+      screen.queryByRole("link", { name: "Practice the shortcuts" }),
+    ).toBeNull();
+    expect(screen.queryByRole("link", { name: "GitHub" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
 
     await user.keyboard("{Escape}");
     expect(screen.getByText("Step 2 of 3")).toBeTruthy();
@@ -503,11 +499,13 @@ describe("WelcomeModal", () => {
 
   it("shows shortcut keycaps on auth and explore actions without hover", async () => {
     const user = userEvent.setup();
+    setSignInAvailability({ google: "available" });
     render(<WelcomeModal />);
     await goToChooseScreen(user);
 
     for (const [name, key] of [
-      ["Sign up", "U"],
+      ["Start free trial with Google", "Enter"],
+      ["Sign up with email", "U"],
       ["Log in", "i"],
       ["Back", "Esc"],
       ["On this device only", "S"],
@@ -515,10 +513,12 @@ describe("WelcomeModal", () => {
       const hint = within(screen.getByRole("button", { name })).getByText(key);
       expect(hint.className).not.toMatch(/opacity-0/);
     }
+    resetProviderAvailabilityForTests();
   });
 
   it("opens sign up with the U shortcut", async () => {
     const user = userEvent.setup();
+    setSignInAvailability({ google: "available" });
     render(<WelcomeModal />);
     await goToChooseScreen(user);
 
@@ -630,8 +630,9 @@ describe("WelcomeModal", () => {
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
   });
 
-  it("focuses Explore on step 3 and keeps Tab inside the dialog", async () => {
+  it("focuses the trial primary on step 3 and keeps Tab inside the dialog", async () => {
     const user = userEvent.setup();
+    setSignInAvailability({ google: "available" });
 
     render(
       <>
@@ -642,10 +643,10 @@ describe("WelcomeModal", () => {
 
     await goToChooseScreen(user);
 
-    const explore = screen.getByRole("button", {
-      name: "On this device only",
+    const trialPrimary = screen.getByRole("button", {
+      name: "Start free trial with Google",
     });
-    expect(explore).toHaveFocus();
+    expect(trialPrimary).toHaveFocus();
 
     const terms = screen.getByRole("link", { name: "Terms" });
     terms.focus();
@@ -656,6 +657,7 @@ describe("WelcomeModal", () => {
     expect(
       screen.getByRole("button", { name: "Outside calendar" }),
     ).not.toHaveFocus();
+    resetProviderAvailabilityForTests();
   });
 
   describe("with sign-in providers configured", () => {
@@ -688,27 +690,38 @@ describe("WelcomeModal", () => {
       resetProviderAvailabilityForTests();
     });
 
-    it("leads with Explore and keeps sign-up options secondary", async () => {
+    it("leads with the Google trial primary and keeps explore quiet", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
       await goToChooseScreen(user);
 
+      const trialPrimary = screen.getByRole("button", {
+        name: "Start free trial with Google",
+      });
+      expect(trialPrimary).toHaveClass("w-full", "h-10", "c-button-primary");
+      expect(trialPrimary).toHaveClass("c-button-elevated");
+      expect(
+        screen.getByText(
+          "7-day free trial. Card required, no charge until it ends.",
+        ),
+      ).toBeTruthy();
+      expect(within(trialPrimary).getByText("Enter")).toBeTruthy();
       const explore = screen.getByRole("button", {
         name: "On this device only",
       });
-      expect(explore).toHaveClass("w-full", "h-10", "c-button-primary");
-      expect(explore).toHaveClass("c-button-elevated");
+      expect(explore).not.toHaveClass("c-button-primary");
+      expect(explore).not.toHaveClass("c-button");
+      expect(within(explore).getByText("S")).toBeTruthy();
+      const emailSignUp = screen.getByRole("button", {
+        name: "Sign up with email",
+      });
       expect(
-        screen.getByText("Ready to keep it? Start your free 7-day trial."),
+        emailSignUp.compareDocumentPosition(explore) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy();
       expect(
-        screen.getByRole("button", { name: "Continue with Google" }),
-      ).toBeTruthy();
-      expect(
-        within(
-          screen.getByRole("button", { name: "Continue with Google" }),
-        ).getByText("G"),
-      ).toBeTruthy();
+        screen.queryByRole("button", { name: "Continue with Google" }),
+      ).toBeNull();
       expect(
         screen.getByRole("button", { name: "Sign up with email" }),
       ).toHaveClass("w-full", "h-10", "c-button-secondary");
@@ -720,13 +733,13 @@ describe("WelcomeModal", () => {
       ).not.toHaveClass("c-button-elevated");
     });
 
-    it("starts Google auth from the button without queueing the practice", async () => {
+    it("starts Google auth from the trial primary without queueing the practice", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
       await goToChooseScreen(user);
 
       await user.click(
-        screen.getByRole("button", { name: "Continue with Google" }),
+        screen.getByRole("button", { name: "Start free trial with Google" }),
       );
 
       expect(startGoogleAuthorization).toHaveBeenCalled();
@@ -744,7 +757,7 @@ describe("WelcomeModal", () => {
       expect(startGoogleAuthorization).toHaveBeenCalled();
     });
 
-    it("renders all three configured provider buttons with whole-string labels", async () => {
+    it("renders Google as the trial primary and other providers as secondary", async () => {
       setSignInAvailability({
         google: "available",
         microsoft: "available",
@@ -755,8 +768,8 @@ describe("WelcomeModal", () => {
       await goToChooseScreen(user);
 
       expect(
-        screen.getByRole("button", { name: "Continue with Google" }),
-      ).toHaveTextContent("Continue with Google");
+        screen.getByRole("button", { name: "Start free trial with Google" }),
+      ).toHaveTextContent("Start free trial with Google");
       expect(
         screen.getByRole("button", { name: "Continue with Microsoft" }),
       ).toHaveTextContent("Continue with Microsoft");
@@ -775,13 +788,13 @@ describe("WelcomeModal", () => {
       ).toBeNull();
     });
 
-    it("renders only Google when it is the sole configured provider", async () => {
+    it("renders only the Google trial primary when it is the sole configured provider", async () => {
       const user = userEvent.setup();
       render(<WelcomeModal />);
       await goToChooseScreen(user);
 
       expect(
-        screen.getByRole("button", { name: "Continue with Google" }),
+        screen.getByRole("button", { name: "Start free trial with Google" }),
       ).toBeTruthy();
       expect(
         screen.queryByRole("button", { name: "Continue with Microsoft" }),
@@ -791,7 +804,7 @@ describe("WelcomeModal", () => {
       ).toBeNull();
     });
 
-    it("shows Sign up without email when no providers are configured", async () => {
+    it("shows Sign up as the primary when no providers are configured", async () => {
       setSignInAvailability({});
       const user = userEvent.setup();
       render(<WelcomeModal />);
@@ -800,10 +813,22 @@ describe("WelcomeModal", () => {
       expect(
         screen.queryByRole("button", { name: "Continue with Google" }),
       ).toBeNull();
-      expect(screen.getByRole("button", { name: "Sign up" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Sign up" })).toHaveClass(
+        "c-button-primary",
+      );
       expect(
         screen.queryByRole("button", { name: "Sign up with email" }),
       ).toBeNull();
+    });
+
+    it("starts Google auth from Enter on step 3", async () => {
+      const user = userEvent.setup();
+      render(<WelcomeModal />);
+      await goToChooseScreen(user);
+
+      await user.keyboard("{Enter}");
+
+      expect(startGoogleAuthorization).toHaveBeenCalled();
     });
 
     it("starts Microsoft auth with the M shortcut", async () => {

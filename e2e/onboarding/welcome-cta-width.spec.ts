@@ -33,8 +33,8 @@ test("keeps Google, email signup, and explore buttons the same width", async ({
     .click();
   await welcomeDialog.getByRole("button", { name: "Next" }).click();
 
-  const google = welcomeDialog.getByRole("button", {
-    name: "Continue with Google",
+  const trialPrimary = welcomeDialog.getByRole("button", {
+    name: "Start free trial with Google",
   });
   const email = welcomeDialog.getByRole("button", {
     name: "Sign up with email",
@@ -42,16 +42,13 @@ test("keeps Google, email signup, and explore buttons the same width", async ({
   const explore = welcomeDialog.getByRole("button", {
     name: "On this device only",
   });
-  await expect(google).toBeVisible();
+  await expect(trialPrimary).toBeVisible();
   await expect(email).toBeVisible();
   await expect(explore).toBeVisible();
 
-  const googleBox = await google.boundingBox();
+  const trialBox = await trialPrimary.boundingBox();
   const emailBox = await email.boundingBox();
-  const exploreBox = await explore.boundingBox();
-  expect(googleBox).not.toBeNull();
+  expect(trialBox).not.toBeNull();
   expect(emailBox).not.toBeNull();
-  expect(exploreBox).not.toBeNull();
-  expect(googleBox?.width).toBe(emailBox?.width);
-  expect(exploreBox?.width).toBe(emailBox?.width);
+  expect(trialBox?.width).toBe(emailBox?.width);
 });

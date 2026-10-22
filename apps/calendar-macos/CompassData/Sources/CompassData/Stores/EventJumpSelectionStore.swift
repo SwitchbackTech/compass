@@ -20,6 +20,11 @@ public final class EventJumpSelectionStore {
         dayJumpBuffer = buffer
     }
 
+    /// Day prefix plus typed digits ("w", "w1") while picking an event.
+    public func setDayJumpBuffer(_ buffer: String) {
+        dayJumpBuffer = buffer
+    }
+
     public func setWeekendDisambiguation(announcement: String) {
         activeDayKeys = []
         self.announcement = announcement

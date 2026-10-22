@@ -55,7 +55,8 @@ type AuthorizationSession = {
 
 type CreateOAuthState = (
   redirectUri: string,
-  posthogDistinctId?: string,
+  posthogDistinctId: string | undefined,
+  signupFlow: boolean | undefined,
 ) => string;
 
 /**
@@ -67,11 +68,16 @@ type CreateOAuthState = (
 function useAuthorizationSession(
   provider: ProviderKind,
   createState: CreateOAuthState,
+  signupFlow?: boolean,
 ): AuthorizationSession {
   const [session] = useState<AuthorizationSession>(() => {
     const redirectUri = buildProviderAuthCallbackUrl(provider);
     return {
-      state: createState(redirectUri, readPosthogDistinctIdForOAuth()),
+      state: createState(
+        redirectUri,
+        readPosthogDistinctIdForOAuth(),
+        signupFlow,
+      ),
       redirectUri,
     };
   });
@@ -151,7 +157,7 @@ function createRedirectAuthorizationStrategy({
 }: RedirectAuthorizationSpec): ProviderAuthorizationStrategy {
   return ({ intent, signupFlow, onStart, onError, prompt }) => {
     const [loading, setLoading] = useState(false);
-    const session = useAuthorizationSession(provider, createState);
+    const session = useAuthorizationSession(provider, createState, signupFlow);
 
     return {
       loading,
@@ -190,8 +196,13 @@ const useGoogleProviderAuthorizationStrategy: ProviderAuthorizationStrategy = ({
   const [loading, setLoading] = useState(false);
   const { state, redirectUri } = useAuthorizationSession(
     "google",
-    (_redirectUri, posthogDistinctId) =>
-      buildSignInOAuthState({ isDesktopClient: false, posthogDistinctId }),
+    (_redirectUri, posthogDistinctId, signupFlow) =>
+      buildSignInOAuthState({
+        isDesktopClient: false,
+        posthogDistinctId,
+        flow: signupFlow ? "signup" : "login",
+      }),
+    signupFlow,
   );
 
   const loginOptions = useMemo<
@@ -234,8 +245,12 @@ const useMicrosoftProviderAuthorizationStrategy =
     provider: "microsoft",
     getClientId: () => getMicrosoftSignInClientId(),
     notConfiguredMessage: "Microsoft sign-in is not configured",
-    createState: (_redirectUri, posthogDistinctId) =>
-      buildSignInOAuthState({ isDesktopClient: false, posthogDistinctId }),
+    createState: (_redirectUri, posthogDistinctId, signupFlow) =>
+      buildSignInOAuthState({
+        isDesktopClient: false,
+        posthogDistinctId,
+        flow: signupFlow ? "signup" : "login",
+      }),
     buildAuthorizationUrl: ({ clientId, redirectUri, state, prompt }) =>
       buildMicrosoftAuthorizationUrl({
         clientId,
@@ -253,12 +268,13 @@ const useAppleProviderAuthorizationStrategy =
     notConfiguredMessage: "Apple sign-in is not configured",
     // Apple returns to the backend form_post route, so the frontend callback it
     // should land on afterwards rides along inside the state.
-    createState: (redirectUri, posthogDistinctId) =>
+    createState: (redirectUri, posthogDistinctId, signupFlow) =>
       btoa(
         JSON.stringify({
           frontendRedirectURI: redirectUri,
           nonce: crypto.randomUUID(),
           ...(posthogDistinctId ? { ph: posthogDistinctId } : {}),
+          fl: signupFlow ? "signup" : "login",
         }),
       ),
     buildAuthorizationUrl: ({ clientId, state }) =>
