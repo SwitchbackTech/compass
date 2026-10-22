@@ -41,7 +41,7 @@ export const KEYMAP = {
     keycaps: ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
   },
   editTitle: { sequence: { leader: "e", second: "t" }, keycaps: ["E", "T"] },
-  eventJump: { bareLetter: "f", keycaps: ["F"] },
+  eventJump: { bareLetter: "f", keycaps: ["f"] },
   moveEvent: {
     hotkeys: {
       up: "Shift+ArrowUp",

@@ -12,16 +12,16 @@ import {
 type CalendarPage = Parameters<typeof prepareTimedCalendarPage>[0];
 
 const DAY_PREFIX_KEYS: Record<string, string[]> = {
-  SU: ["s", "u"],
-  M: ["m"],
-  T: ["t"],
-  W: ["w"],
-  R: ["r"],
-  F: ["f"],
-  SA: ["s", "a"],
+  su: ["s", "u"],
+  m: ["m"],
+  t: ["t"],
+  w: ["w"],
+  r: ["r"],
+  f: ["f"],
+  sa: ["s", "a"],
 };
 
-const WEEKDAY_PREFIXES = ["SU", "M", "T", "W", "R", "F", "SA"];
+const WEEKDAY_PREFIXES = ["su", "m", "t", "w", "r", "f", "sa"];
 
 /**
  * Creates a timed event on today via `c`, then nudges it by quarter-hour
@@ -195,6 +195,51 @@ test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
   await page.keyboard.up("Shift");
 
   await expect(shiftHintOverlay(page)).toHaveCount(0);
+});
+
+test("lowercase day prefix plus digit targets an event without a typed-time draft", async ({
+  page,
+}) => {
+  await prepareTimedCalendarPage(page);
+  await blurActive(page);
+  await page.keyboard.press("Escape");
+  await expect(shiftHintOverlay(page)).toHaveCount(0);
+
+  const titles: string[] = [];
+  for (let index = 0; index < 4; index++) {
+    const title = createEventTitle(`Ordinal Jump ${index + 1}`);
+    titles.push(title);
+    await createTimedEventOffsetBy(page, title, index);
+  }
+
+  await blurActive(page);
+  await page.keyboard.press("f");
+
+  const overlay = shiftHintOverlay(page);
+  await expect(overlay.locator(":scope > span")).toHaveCount(4);
+
+  const labels = await overlay.evaluate((root) =>
+    [...root.querySelectorAll(":scope > span")].map(
+      (node) => node.textContent?.trim() ?? "",
+    ),
+  );
+  expect(labels.every((label) => label === label.toLowerCase())).toBe(true);
+
+  const fourthLabel = labels.find((label) => label.endsWith("4")) ?? labels[3]!;
+  const fourthTitle = titles[3]!;
+  const fourthButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: fourthTitle });
+
+  for (const char of fourthLabel) {
+    await page.keyboard.press(char);
+  }
+
+  await expect
+    .poll(async () =>
+      fourthButton.evaluate((el) => el === document.activeElement),
+    )
+    .toBe(true);
 });
 
 test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
