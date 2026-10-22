@@ -130,7 +130,7 @@ struct EventFormCompactDateField: View {
             ShortcutHintChip(label: KeycapGlyphs.display(["ArrowUp"]))
             ShortcutHintChip(label: KeycapGlyphs.display(["ArrowDown"]))
             Text("·").font(.rubik(11)).foregroundStyle(theme.textMutedColor)
-            ShortcutHintChip(label: KeycapGlyphs.display(["Enter"]))
+            ShortcutHintChip(label: "Enter")
             Text("·").font(.rubik(11)).foregroundStyle(theme.textMutedColor)
             ShortcutHintChip(label: KeycapGlyphs.display(["Esc"]))
         }

@@ -349,6 +349,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-22 | Event form date field: web keys on the closed field (↓ / Enter / Space open the calendar, arrows nudge the day) |
 | 2026-10-22 | Event form date calendar: arrow keys move a day cursor, Enter or Space picks, Esc closes |
 | 2026-10-22 | Event form date field: in-field ↓ hint and calendar header key hints (web `EventFormInfieldHint`, `EventFormCalendarPopoverHints`) |
+| 2026-10-22 | Form key hints (date calendar header, color swatches) show the word Enter like web `ShortcutLabel`, not ↩ |
 
 ---
 
