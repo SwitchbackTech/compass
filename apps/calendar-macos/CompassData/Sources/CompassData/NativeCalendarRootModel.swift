@@ -651,6 +651,8 @@ public final class NativeCalendarRootModel {
             shiftMonth(by: -1)
         case .navMonthNext:
             shiftMonth(by: 1)
+        case .navMonthCurrent:
+            goToMonthPickerCurrentMonth()
         case .navScrollUp:
             pendingScroll = .pageUp
         case .navScrollDown:
@@ -1049,6 +1051,12 @@ public final class NativeCalendarRootModel {
         if let next = calendar.date(byAdding: .month, value: months, to: monthPickerMonth) {
             browseMonth(next)
         }
+    }
+
+    /// Web `Mod+Alt+T` / sidebar "Go to this month": move the picker to the
+    /// current month without changing the main grid anchor.
+    private func goToMonthPickerCurrentMonth() {
+        browseMonth(referenceNow)
     }
 
     public var startOfView: Date {

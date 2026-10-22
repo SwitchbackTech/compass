@@ -4,6 +4,7 @@ import {
 } from "@core/shortcuts/app-shortcut-bindings";
 import {
   MOD_CHORD_MAX_KEYCAPS,
+  MONTH_PICKER_CURRENT_KEYCAPS,
   MONTH_PICKER_NEXT_KEYCAPS,
   MONTH_PICKER_PREV_KEYCAPS,
 } from "@core/shortcuts/binding-keycaps.constants";
@@ -19,11 +20,13 @@ const LEGEND_MULTI_KEY_TOKENS = new Set([
 ]);
 
 describe("binding-keycaps.constants", () => {
-  it("uses Mod+Alt+J/K for month picker navigation", () => {
+  it("uses Mod+Alt+J/K/T for month picker navigation", () => {
     expect(MONTH_PICKER_PREV_KEYCAPS).toEqual(["Mod", "Alt", "j"]);
     expect(MONTH_PICKER_NEXT_KEYCAPS).toEqual(["Mod", "Alt", "k"]);
+    expect(MONTH_PICKER_CURRENT_KEYCAPS).toEqual(["Mod", "Alt", "t"]);
     expect(APP_SHORTCUT_BINDINGS.navMonthPrev.hotkey).toBe("Mod+Alt+J");
     expect(APP_SHORTCUT_BINDINGS.navMonthNext.hotkey).toBe("Mod+Alt+K");
+    expect(APP_SHORTCUT_BINDINGS.navMonthCurrent.hotkey).toBe("Mod+Alt+T");
   });
 
   it("keeps every Mod chord in the legend at or below the three-key cap", () => {

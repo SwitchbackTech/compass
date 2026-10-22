@@ -104,6 +104,16 @@
       "section": "navigate"
     },
     {
+      "id": "nav-month-current",
+      "keys": [
+        "Mod",
+        "Alt",
+        "t"
+      ],
+      "label": "Go to this month in picker",
+      "section": "navigate"
+    },
+    {
       "id": "nav-picker-step",
       "keys": [
         "ArrowLeft",
@@ -873,6 +883,11 @@
       "Mod",
       "Alt",
       "k"
+    ],
+    "nav-month-current": [
+      "Mod",
+      "Alt",
+      "t"
     ],
     "nav-picker-step": [
       "ArrowLeft",

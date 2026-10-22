@@ -2,6 +2,8 @@ import {
   EVENT_MENU_LETTER,
   FOCUS_NOTICE_LETTER,
   HIDE_EVENT_LETTER,
+  MONTH_PICKER_CURRENT_HOTKEY,
+  MONTH_PICKER_CURRENT_KEYCAPS,
   MONTH_PICKER_NEXT_HOTKEY,
   MONTH_PICKER_NEXT_KEYCAPS,
   MONTH_PICKER_PREV_HOTKEY,
@@ -39,6 +41,10 @@ export const APP_SHORTCUT_BINDINGS = {
   navMonthNext: {
     hotkey: MONTH_PICKER_NEXT_HOTKEY,
     keycaps: [...MONTH_PICKER_NEXT_KEYCAPS],
+  },
+  navMonthCurrent: {
+    hotkey: MONTH_PICKER_CURRENT_HOTKEY,
+    keycaps: [...MONTH_PICKER_CURRENT_KEYCAPS],
   },
   navToday: { hotkey: "T", keycaps: [letterKeycap("T")] },
   navGoToDate: { hotkey: "G", keycaps: [letterKeycap("G")] },
@@ -124,6 +130,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   "nav-shift-right": APP_SHORTCUT_BINDINGS.navShiftRight.keycaps,
   "nav-month-prev": APP_SHORTCUT_BINDINGS.navMonthPrev.keycaps,
   "nav-month-next": APP_SHORTCUT_BINDINGS.navMonthNext.keycaps,
+  "nav-month-current": APP_SHORTCUT_BINDINGS.navMonthCurrent.keycaps,
   "nav-picker-step": KEYMAP.moveFocus.keycaps,
   "nav-today": APP_SHORTCUT_BINDINGS.navToday.keycaps,
   "nav-go-to-date": APP_SHORTCUT_BINDINGS.navGoToDate.keycaps,

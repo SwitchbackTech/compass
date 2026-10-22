@@ -155,6 +155,7 @@ describe("shortcuts.registry", () => {
         }).map((shortcut) => shortcut.id);
         expect(ids).toContain("nav-month-prev");
         expect(ids).toContain("nav-month-next");
+        expect(ids).toContain("nav-month-current");
       }
 
       const life = filterShortcutsByContext({
@@ -163,6 +164,7 @@ describe("shortcuts.registry", () => {
       }).map((shortcut) => shortcut.id);
       expect(life).not.toContain("nav-month-prev");
       expect(life).not.toContain("nav-month-next");
+      expect(life).not.toContain("nav-month-current");
     });
 
     it("lists the month picker step row with a per-view unit, not in life", () => {
@@ -360,11 +362,15 @@ describe("shortcuts.registry", () => {
 
   // Registry rows derive from KEYMAP by construction; these pin the two
   // remaining cross-module facts a derivation cannot express.
-  it("lists month picker navigation with Mod+Alt+J/K only", () => {
+  it("lists month picker navigation with Mod+Alt+J/K/T", () => {
     const prev = SHORTCUTS_REGISTRY.find((row) => row.id === "nav-month-prev");
     const next = SHORTCUTS_REGISTRY.find((row) => row.id === "nav-month-next");
+    const current = SHORTCUTS_REGISTRY.find(
+      (row) => row.id === "nav-month-current",
+    );
     expect(prev?.keys).toEqual(["Mod", "Alt", "j"]);
     expect(next?.keys).toEqual(["Mod", "Alt", "k"]);
+    expect(current?.keys).toEqual(["Mod", "Alt", "t"]);
   });
 
   describe("keymap coherence", () => {
