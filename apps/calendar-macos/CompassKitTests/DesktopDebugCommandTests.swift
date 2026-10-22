@@ -59,6 +59,10 @@ final class DesktopDebugCommandTests: XCTestCase {
         XCTAssertEqual(
             DesktopDebugCommand.parse("compass://debug/parity-export-title-bar-reference"),
             .parityExportTitleBarReference)
+        // Every name NativeParityCaptureTests exports must parse, or the export times out.
+        XCTAssertEqual(
+            DesktopDebugCommand.parse("compass://debug/parity-export?name=onboarding-welcome-account-choice"),
+            .parityExport(surface: "onboarding-welcome-account-choice"))
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/parity-export?name=not-a-surface"))
 
         XCTAssertNil(DesktopDebugCommand.parse("compass://debug/unknown"))
