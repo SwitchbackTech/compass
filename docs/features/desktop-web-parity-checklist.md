@@ -124,6 +124,13 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Per-account page-jump targets | ✅ | One Mod+digit target per connected account heading after Up next, like web `buildCalendarPageJumpTargets`; a collapsed heading expands on jump; one "calendars" slot with no accounts |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
 
+#### 2026-10-22 popover and capture verification
+
+Date and time pickers open below their fields in native user flows at both the normal window size and the canonical 1280×820 capture size. Date keyboard selection/Escape and time selection pass. Fresh exported images also show the popovers below their fields, correcting the earlier placement finding. Sidebar-only crops can cut off the portion of the calendar that extends over the grid.
+
+Found a separate capture reliability defect with multiple installed Compass builds: generic debug URL opening can target another build, causing export timeouts. Capture helpers now activate the test target and route debug URLs to its running bundle path. The existing date/time capture checks assert placement and verify that export preserves the open picker and event form. Signed-in acceptance remains outstanding.
+
+
 ### 2.4 Mini-calendar (month picker)
 
 | Item | Status | Notes |
@@ -374,9 +381,3 @@ Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#
 ### 2026-10-22 source reconciliation
 
 Rechecked against `main` at `7a44b191a` after the overnight merge batch. Corrected stale entries for theme accessor coverage, palette shadow, Quick Add placeholder, weekday targeting, notice focus, save keycaps and screenshot automation. These are source-backed findings, not a new signed-in acceptance run. Remaining partial visual and live-flow entries still require direct verification. Existing Life intro (#4709) and title-bar capture (#4667) PRs must be reconciled before duplicating their changes.
-
-### 2026-10-22 popover and capture verification
-
-Date and time pickers open below their fields in native user flows at both the normal window size and the canonical 1280×820 capture size. Date keyboard selection/Escape and time selection pass. Fresh exported images also show the popovers below their fields, correcting the earlier placement finding. Sidebar-only crops can cut off the portion of the calendar that extends over the grid.
-
-Found a separate capture reliability defect with multiple installed Compass builds: generic debug URL opening can target another build, causing export timeouts. Capture helpers now activate the test target and route debug URLs to its running bundle path. The existing date/time capture checks assert placement and verify that export preserves the open picker and event form. Signed-in acceptance remains outstanding.
