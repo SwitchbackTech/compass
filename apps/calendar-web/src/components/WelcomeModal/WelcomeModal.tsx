@@ -48,7 +48,7 @@ const SECONDARY_CTA_CLASS =
 const COMPACT_PILL_CLASS =
   "c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs data-busy:pointer-events-none data-busy:opacity-60";
 const QUIET_TEXT_CTA_CLASS =
-  "c-button inline-flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm text-text-muted hover:text-text data-busy:pointer-events-none data-busy:opacity-60";
+  "inline-flex items-center justify-center gap-2 bg-transparent px-0 py-1 text-sm text-text-muted underline-offset-4 hover:text-text hover:underline data-busy:pointer-events-none data-busy:opacity-60";
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -419,7 +419,7 @@ export function WelcomeModal() {
                     {welcomeTrialPrimaryLabel(trialPrimaryProvider)}
                     <ShortcutHint className="ml-2">Enter</ShortcutHint>
                   </button>
-                  <p className="text-center text-text-muted text-xs">
+                  <p className="whitespace-nowrap text-center text-text-muted text-xs">
                     {welcomeTrialCardTermsLine()}
                   </p>
                 </>
@@ -435,15 +435,6 @@ export function WelcomeModal() {
                   <ShortcutHint className="ml-2">Enter</ShortcutHint>
                 </button>
               )}
-              <button
-                type="button"
-                onClick={explore}
-                className={QUIET_TEXT_CTA_CLASS}
-                {...navigationBusyProps}
-              >
-                {LOCAL_DEVICE_ONLY_LABEL}
-                <ShortcutHint className="ml-2">S</ShortcutHint>
-              </button>
               {secondarySignInProviders.length > 0 ? (
                 <SignInProviderButtons
                   available={secondarySignInProviders}
@@ -477,13 +468,24 @@ export function WelcomeModal() {
                   <ShortcutHint className="ml-2">U</ShortcutHint>
                 </button>
               ) : null}
+              <button
+                type="button"
+                onClick={explore}
+                className={QUIET_TEXT_CTA_CLASS}
+                {...navigationBusyProps}
+              >
+                {LOCAL_DEVICE_ONLY_LABEL}
+                <ShortcutHint className="ml-2">S</ShortcutHint>
+              </button>
             </div>
           </>
         )}
 
         <WelcomeSteps step={step} />
 
-        {step === 3 && <WelcomeLinks flashedKey={null} />}
+        {step === 3 && (
+          <WelcomeLinks flashedKey={null} variant="accountChoice" />
+        )}
       </div>
     </OverlayPanel>
   );

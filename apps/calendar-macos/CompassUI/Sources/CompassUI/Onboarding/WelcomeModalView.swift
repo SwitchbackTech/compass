@@ -121,14 +121,13 @@ struct WelcomeModalView: View {
                         .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
                         .multilineTextAlignment(.center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                         .frame(maxWidth: .infinity)
                 } else {
                     primaryButton(title: "Sign up", hint: "Enter") {
                         model.welcomeSignUp()
                     }
-                }
-                quietTextButton(title: AccountChoiceCopy.localDeviceOnlyLabel, hint: "S") {
-                    model.welcomeExplore()
                 }
                 ForEach(secondaryProviders, id: \.self) { provider in
                     secondaryButton(title: provider.continueLabel, hint: String(provider.shortcutLetter).uppercased()) {
@@ -139,6 +138,9 @@ struct WelcomeModalView: View {
                     secondaryButton(title: "Sign up with email", hint: "U") {
                         model.welcomeSignUp()
                     }
+                }
+                quietTextButton(title: AccountChoiceCopy.localDeviceOnlyLabel, hint: "S") {
+                    model.welcomeExplore()
                 }
             }
         }
@@ -203,7 +205,7 @@ struct WelcomeModalView: View {
                 ShortcutHintChip(label: hint)
             }
             .foregroundStyle(theme.textMutedColor)
-            .frame(maxWidth: .infinity, minHeight: 36)
+            .frame(maxWidth: .infinity, minHeight: 32)
         }
         .buttonStyle(.plain)
     }

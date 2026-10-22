@@ -264,6 +264,12 @@ final class NativeParityCaptureTests: XCTestCase {
             window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 15))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
+        window.buttons["Get started for free"].click()
+        window.buttons["Next"].click()
+        XCTAssertTrue(
+            window.buttons["Start free trial with Google"].waitForExistence(timeout: 8))
+        sleep(1)
+        NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome-account-choice")
     }
 
     @MainActor
