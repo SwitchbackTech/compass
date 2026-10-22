@@ -17,6 +17,7 @@ final class AnonymousCalendarRowTests: XCTestCase {
         app.buttons["Start free trial"].click()
         let authModal = window.descendants(matching: .any)["compass-native-auth-modal"]
         XCTAssertTrue(authModal.waitForExistence(timeout: 8))
+        app.activate()
         window.typeKey(.escape, modifierFlags: [])
         XCTAssertTrue(authModal.waitForNonExistence(timeout: 8))
         XCTAssertTrue(window.buttons["Morning standup"].waitForExistence(timeout: 8))
