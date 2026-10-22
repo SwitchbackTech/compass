@@ -104,9 +104,9 @@ describe("StripeService", () => {
     expect(
       (sessionArgs as { custom_text?: { submit?: { message?: string } } })
         .custom_text,
-    ).toEqual({ submit: { message: "Start free trial" } });
+    ).toBeUndefined();
     expect((sessionsCreate.mock.calls as unknown[][])[0]?.[1]).toEqual({
-      idempotencyKey: `compass-checkout-v6-${userId.toString()}`,
+      idempotencyKey: `compass-checkout-v7-${userId.toString()}`,
     });
 
     const stored = await mongoService.user.findOne({ _id: userId });
@@ -973,7 +973,7 @@ describe("StripeService", () => {
       expect(sessionArgs.ui_mode).toBeUndefined();
       expect(sessionArgs.redirect_on_completion).toBeUndefined();
       expect((sessionsCreate.mock.calls as unknown[][])[0]?.[1]).toEqual({
-        idempotencyKey: `compass-checkout-v6-desktop-${userId.toString()}`,
+        idempotencyKey: `compass-checkout-v7-desktop-${userId.toString()}`,
       });
     });
 

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test.use({ viewport: { width: 1280, height: 900 } });
+test.use({ viewport: { width: 1280, height: 800 } });
 
 test("staging signup trial step with live Stripe embedded checkout", async ({
   page,
@@ -55,13 +55,15 @@ test("staging signup trial step with live Stripe embedded checkout", async ({
   await page.getByLabel("Password").fill("CompassStagingTrial1!");
   await page.getByRole("button", { name: "Sign up" }).click();
 
-  await expect(
-    page.getByRole("dialog", { name: "Start your 7-day free trial" }),
-  ).toBeVisible({ timeout: 120000 });
-  const terms = page.getByText(
+  const dialog = page.getByRole("dialog", {
+    name: "Start your 7-day free trial",
+  });
+  await expect(dialog).toBeVisible({ timeout: 120000 });
+  const terms = dialog.getByText(
     /Card required\. No charge until the trial ends\.|7-day free trial\. Card required, no charge until it ends\./,
   );
   await expect(terms).toBeVisible({ timeout: 30000 });
+  await expect(dialog.getByRole("button", { name: "Back" })).toBeVisible();
 
   await expect
     .poll(() => checkoutClientSecret.length > 0, { timeout: 120000 })
@@ -73,14 +75,11 @@ test("staging signup trial step with live Stripe embedded checkout", async ({
     .first();
   await stripeFrame.locator("input").first().waitFor({ timeout: 120000 });
 
-  const primary = page.getByRole("button", {
-    name: /Start free trial|Submit checkout/i,
-  });
-  if (await primary.count()) {
-    await expect(primary.first()).toBeVisible();
-  }
+  await expect(
+    page.getByRole("button", { name: "Start free trial", exact: true }),
+  ).toHaveCount(0);
 
-  await page.screenshot({
+  await dialog.screenshot({
     path: "/opt/cursor/artifacts/signup-trial-step-staging-stripe-1280.png",
   });
 
