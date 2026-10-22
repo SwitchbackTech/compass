@@ -1,6 +1,14 @@
+import { wireBareMeetLandingTelemetry } from "@booking-web/telemetry/bare-meet-posthog";
 import { initPosthog } from "@web/auth/posthog/posthog.bootstrap";
 
-initPosthog();
+declare global {
+  var __compassPosthogClient: import("posthog-js").PostHog | undefined;
+}
+
+const posthogClient = initPosthog();
+wireBareMeetLandingTelemetry(
+  posthogClient ?? globalThis.__compassPosthogClient,
+);
 
 void import("./app.bootstrap")
   .then(({ bootstrapApp }) => bootstrapApp())
