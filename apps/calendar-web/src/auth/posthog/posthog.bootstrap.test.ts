@@ -25,9 +25,8 @@ mockModuleForFile("@web/auth/posthog/posthog.util", posthogUtil, {
   isPosthogEnabled: () => true,
 });
 
-const { initPosthog, resetPosthogClientForTests } = await import(
-  "./posthog.bootstrap"
-);
+const { getPosthogClient, initPosthog, resetPosthogClientForTests } =
+  await import("./posthog.bootstrap");
 
 afterEach(() => {
   resetPosthogClientForTests();
@@ -43,5 +42,15 @@ describe("initPosthog", () => {
       environment: resolvePosthogEnvironment(),
       version: APP_VERSION,
     });
+  });
+
+  it("shares the initialized client across duplicate module instances", async () => {
+    initPosthog();
+    resetPosthogClientForTests();
+    // Module-local client cleared; global singleton from init remains.
+    globalThis.__compassPosthogClient =
+      posthogJsStub.posthog as unknown as import("posthog-js").PostHog;
+
+    expect(getPosthogClient()).toBe(globalThis.__compassPosthogClient);
   });
 });

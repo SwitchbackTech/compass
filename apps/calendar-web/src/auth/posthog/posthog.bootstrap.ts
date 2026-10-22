@@ -16,7 +16,23 @@ import { filterPosthogWebVitals } from "@web/auth/posthog/posthog-web-vitals-fil
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
 
+/** booking-web code-splitting can instantiate this module more than once. */
+declare global {
+  var __compassPosthogClient: PostHog | undefined;
+}
+
 let client: PostHog | undefined;
+
+function storePosthogClient(posthog: PostHog): PostHog {
+  client = posthog;
+  globalThis.__compassPosthogClient = posthog;
+  return posthog;
+}
+
+function readPosthogClient(): PostHog | undefined {
+  if (client) return client;
+  return globalThis.__compassPosthogClient;
+}
 
 /**
  * Initialize PostHog once, outside the React tree.
@@ -30,7 +46,11 @@ let client: PostHog | undefined;
  */
 export function initPosthog(): PostHog | undefined {
   if (!posthogUtil.isPosthogEnabled()) return undefined;
-  if (client) return client;
+  const existing = readPosthogClient();
+  if (existing) {
+    client = existing;
+    return existing;
+  }
 
   const posthog = require("posthog-js").posthog as PostHog;
   posthog.init(ENV_WEB.POSTHOG_KEY as string, {
@@ -129,8 +149,7 @@ export function initPosthog(): PostHog | undefined {
     posthog.opt_out_capturing();
   }
 
-  client = posthog;
-  return client;
+  return storePosthogClient(posthog);
 }
 
 /**
@@ -139,10 +158,11 @@ export function initPosthog(): PostHog | undefined {
  * use this to report without a hook.
  */
 export function getPosthogClient(): PostHog | undefined {
-  return client;
+  return readPosthogClient();
 }
 
 /** Test-only: drop the singleton so initPosthog can run again. */
 export function resetPosthogClientForTests(): void {
   client = undefined;
+  delete globalThis.__compassPosthogClient;
 }
