@@ -19,7 +19,7 @@ extension NativeCalendarRootModel {
     }
 
     /// Web `EventColorPicker` order: the calendar-default swatch, then each slot.
-    public static let colorSwatchOptions: [EventColorSlot?] = [nil] + EventColorSlot.allCases.map(Optional.some)
+    public static let colorSwatchOptions: [EventColorSlot?] = [nil] + EventColorSlot.webOrder.map(Optional.some)
 
     /// Web picker arrows: move focus between swatches without changing the color.
     public func moveColorSwatchFocus(by delta: Int) {
