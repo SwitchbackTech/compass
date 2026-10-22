@@ -3,8 +3,8 @@ import CompassKit
 import XCTest
 @testable import CompassUI
 
-/// Web `DayLabels`: while Mod is held the weekday name becomes a ⇧SU / ⇧M
-/// keycap, and event-jump mode shows the bare letter.
+/// Web `DayLabels`: while Mod is held the weekday name becomes a ⇧su / ⇧m
+/// keycap, and event-jump mode shows the bare lowercase prefix.
 @MainActor
 final class TimeGridDayJumpPrefixTests: XCTestCase {
     private let dayKeys = ["2026-05-17", "2026-05-18"]
@@ -16,14 +16,14 @@ final class TimeGridDayJumpPrefixTests: XCTestCase {
 
     func testWeekHeadersShowShiftPrefixedChipsWhileModIsHeld() {
         let view = render(showDayJumpPrefixes: true)
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("⇧SU"))
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-18").contains("⇧M"))
+        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("⇧su"))
+        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-18").contains("⇧m"))
         XCTAssertFalse(headerTexts(in: view, dayKey: "2026-05-17").contains("Sun"))
     }
 
     func testEventJumpModeShowsBarePrefixes() {
         let view = render(showDayJumpPrefixes: true, dayJumpUseShiftPrefix: false)
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("SU"))
+        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("su"))
     }
 
     private func render(showDayJumpPrefixes: Bool, dayJumpUseShiftPrefix: Bool = true) -> TimeGridView {
