@@ -22,3 +22,8 @@ export function welcomeTrialCardTermsLine(
 ): string {
   return `${trialLengthDays}-day free trial. Card required, no charge until it ends.`;
 }
+
+/** Signup trial step only (title already states the trial length). */
+export function signupTrialStepTermsLine(): string {
+  return "Card required. No charge until the trial ends.";
+}

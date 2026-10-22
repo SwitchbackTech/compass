@@ -1,5 +1,4 @@
 import { expect, type Page, test } from "@playwright/test";
-import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { GOOGLE_SCOPES } from "@core/providers/google.scopes";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
@@ -8,7 +7,7 @@ test.use({ viewport: { width: 1600, height: 900 } });
 const CALLBACK_PATH = "/auth/google/callback";
 const INTENT_STORAGE_PREFIX = "compass.googleAuthorizationIntent";
 const REQUIRED_SCOPES = [...GOOGLE_SCOPES];
-const TRIAL_TERMS = `${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. Card required, no charge until it ends.`;
+const TRIAL_TERMS = "Card required. No charge until the trial ends.";
 
 const getIntentStorageKey = (state: string) =>
   `${INTENT_STORAGE_PREFIX}.${state}`;

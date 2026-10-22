@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
 test.use({ viewport: { width: 1600, height: 900 } });
 
-const TRIAL_TERMS = `${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial. Card required, no charge until it ends.`;
+const TRIAL_TERMS = "Card required. No charge until the trial ends.";
 
 const jsonResponse = (body: unknown) => ({
   status: 200,
@@ -131,6 +130,15 @@ test("signup trial step shows charge-date copy and closing opens the billing gat
   ).toBeVisible({ timeout: 15000 });
 
   await expect(page.getByText(TRIAL_TERMS)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start free trial" }),
+  ).toBeVisible();
+
+  if (process.env.CAPTURE_SIGNUP_TRIAL_SCREENSHOT === "1") {
+    await page.screenshot({
+      path: "/opt/cursor/artifacts/signup-trial-step-layout-1280.png",
+    });
+  }
 
   await page.keyboard.press("Escape");
 
