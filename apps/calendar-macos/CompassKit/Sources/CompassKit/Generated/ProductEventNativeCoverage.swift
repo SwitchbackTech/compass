@@ -72,6 +72,7 @@ public enum ProductEventNativeCoverage: Sendable {
         .shortcutUnavailableAttempt,
         .pointerHintShown,
         .pointerHintDismissed,
+        .emptyGridClickHintShown,
         .lifeViewIntroShown,
         .lifeViewIntroDismissed,
         .bookingSettingsOpened,

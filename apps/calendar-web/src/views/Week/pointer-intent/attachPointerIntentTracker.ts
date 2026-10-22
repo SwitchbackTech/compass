@@ -93,6 +93,8 @@ export function attachPointerIntentTracker(): () => void {
 
     pendingCard = null;
     if (target.kind === "timed-slot") {
+      // Intentional product behavior: empty timed-grid clicks teach keyboard
+      // create (Tyler). Do not remove or suppress this hint in analytics cleanup.
       eventJumpActions.setPointerDraftIntent({
         date: target.intent.date,
         start: target.intent.start,
@@ -106,6 +108,7 @@ export function attachPointerIntentTracker(): () => void {
     }
 
     if (target.kind === "allday-slot") {
+      // Intentional product behavior: empty all-day clicks teach Shift+C (Tyler).
       eventJumpActions.setPointerDraftIntent({ date: target.date });
       notify("allday-click");
     }

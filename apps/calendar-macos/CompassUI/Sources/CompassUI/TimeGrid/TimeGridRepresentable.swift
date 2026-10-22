@@ -63,7 +63,8 @@ public struct TimeGridRepresentable: NSViewRepresentable {
                 timeGridView(view, didClickEvent: eventId)
                 return
             }
-            model.handleGridPointerDown(registry: model.shortcutRegistry)
+            guard let target = view.resolveEmptyGridClick(at: locationInWindow) else { return }
+            model.handleGridPointerClick(target: target, registry: model.shortcutRegistry)
         }
 
         public func timeGridView(_ view: TimeGridView, didClickEvent eventId: String) {
