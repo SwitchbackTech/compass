@@ -51,7 +51,7 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
   }, [signupMethod]);
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-4 text-center">
+    <div className="flex w-full flex-col items-stretch gap-4 text-left">
       <p className="text-sm text-text-muted">{termsLine}</p>
       {planPriceLine ? (
         <p className="text-sm text-text">{planPriceLine}</p>

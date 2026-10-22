@@ -112,7 +112,7 @@ export const EmbeddedCheckoutPanel: FC<EmbeddedCheckoutPanelProps> = ({
       ) : null}
       {backVariant === "link" ? (
         <AuthButton
-          className="inline-flex items-center gap-2 self-center"
+          className="inline-flex items-center gap-2 self-start"
           onClick={onBack}
           type="button"
           variant="link"
