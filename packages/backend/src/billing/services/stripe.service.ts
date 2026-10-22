@@ -28,7 +28,7 @@ import { isStripeConfigured } from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 /** Bump when Checkout Session create params change so Stripe does not replay a failed create. */
-const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v6-";
+const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v7-";
 
 /**
  * Desktop and web send different create params for the same user, so they need
@@ -234,13 +234,6 @@ export class StripeService {
           automatic_tax: { enabled: true },
           customer_update: { address: "auto" },
           billing_address_collection: "required",
-          ...(Object.keys(trialFields).length > 0
-            ? {
-                custom_text: {
-                  submit: { message: "Start free trial" },
-                },
-              }
-            : {}),
           ...checkoutReturnParams(options),
           subscription_data: {
             ...trialFields,

@@ -23,9 +23,11 @@ import {
   dismissErrorToast,
   SESSION_EXPIRED_TOAST_ID,
 } from "@web/common/utils/toast/error-toast.util";
+import { AuthButton } from "@web/components/AuthModal/components/AuthButton";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { signupTrialStepTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { dismissSignupTrialStep } from "./dismiss-signup-trial-step";
@@ -249,8 +251,22 @@ export const AuthModal: FC = () => {
     return (
       <OverlayPanel
         align="start"
-        title={title}
+        anchor="top"
+        footer={
+          <AuthButton
+            className="inline-flex items-center gap-2"
+            onClick={dismissSignupTrial}
+            type="button"
+            variant="link"
+          >
+            Back
+            <ShortcutHint>Esc</ShortcutHint>
+          </AuthButton>
+        }
+        message={signupTrialStepTermsLine()}
         onDismiss={dismissSignupTrial}
+        scrollChildrenOnly
+        title={title}
         variant="modal"
         widthClassName="w-[560px]"
       >

@@ -37,7 +37,6 @@ function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
       <button
         data-signup-trial-checkout-submit
         type="button"
-        className="hidden"
         onClick={onComplete}
       >
         Submit checkout
@@ -196,8 +195,9 @@ describe("AuthModal signup trial step", () => {
       screen.getByText("Card required. No charge until the trial ends."),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Start free trial" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Start free trial" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
     expect(screen.getByText("$12.00 per month")).toBeInTheDocument();
   });
 
@@ -274,7 +274,7 @@ describe("AuthModal signup trial step", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Start free trial" }),
+        screen.getByRole("button", { name: "Submit checkout" }),
       ).toBeInTheDocument();
     });
 
@@ -285,7 +285,7 @@ describe("AuthModal signup trial step", () => {
       cancelAtPeriodEnd: false,
     });
 
-    await user.click(screen.getByRole("button", { name: "Start free trial" }));
+    await user.click(screen.getByRole("button", { name: "Submit checkout" }));
 
     await waitFor(() => {
       expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);

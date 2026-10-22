@@ -9,7 +9,6 @@ import { formatBillingPriceLine } from "@web/billing/billing-display";
 import { checkoutPanelActions } from "@web/billing/checkout-panel.store";
 import { EmbeddedCheckoutPanel } from "@web/billing/EmbeddedCheckoutPanel";
 import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
-import { signupTrialStepTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 
 type BillingPrice = NonNullable<BillingSubscriptionResponse["price"]>;
 
@@ -25,11 +24,11 @@ type StartTrialStepProps = {
 };
 
 /**
- * Post-signup trial step: card terms and embedded Checkout inside AuthModal.
+ * Post-signup trial step: embedded Checkout inside AuthModal. Title, terms,
+ * and Back live in AuthModal/OverlayPanel; only the Stripe form scrolls here.
  */
 export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
   const signupMethod = readSignupTrialMethod();
-  const termsLine = signupTrialStepTermsLine();
   const publishableKey = useStripePublishableKey();
   const subscriptionQuery = useBillingSubscriptionQuery(true);
   const planPriceLine = formatSignupTrialPlanPrice(
@@ -51,23 +50,20 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
   }, [signupMethod]);
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-4 text-left">
-      <p className="text-sm text-text-muted">{termsLine}</p>
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
       {planPriceLine ? (
-        <p className="text-sm text-text">{planPriceLine}</p>
+        <p className="shrink-0 text-left text-sm text-text">{planPriceLine}</p>
       ) : null}
-      {publishableKey ? (
-        <EmbeddedCheckoutPanel
-          backShortcutLabel="Esc"
-          backVariant="link"
-          onBack={onDismiss}
-          onCheckoutComplete={onDismiss}
-          primaryAction={{ label: "Start free trial", shortcutLabel: "Enter" }}
-          publishableKey={publishableKey}
-        />
-      ) : (
-        <p className="text-sm text-text-muted">Loading checkout...</p>
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {publishableKey ? (
+          <EmbeddedCheckoutPanel
+            onCheckoutComplete={onDismiss}
+            publishableKey={publishableKey}
+          />
+        ) : (
+          <p className="text-sm text-text-muted">Loading checkout...</p>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
-test.use({ viewport: { width: 1600, height: 900 } });
+test.use({ viewport: { width: 1280, height: 800 } });
 
 const TRIAL_TERMS = "Card required. No charge until the trial ends.";
 
@@ -132,10 +132,14 @@ test("signup trial step shows charge-date copy and closing opens the billing gat
   await expect(page.getByText(TRIAL_TERMS)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Start free trial" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
 
   if (process.env.CAPTURE_SIGNUP_TRIAL_SCREENSHOT === "1") {
-    await page.screenshot({
+    const dialog = page.getByRole("dialog", {
+      name: "Start your 7-day free trial",
+    });
+    await dialog.screenshot({
       path: "/opt/cursor/artifacts/signup-trial-step-layout-1280.png",
     });
   }

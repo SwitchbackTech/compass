@@ -43,9 +43,6 @@ struct StartTrialStepView: View {
                         ? "Opening checkout…"
                         : "Start free trial")
                     .font(.rubik(14, weight: .medium))
-                if !billingStore.isOpeningHostedSession {
-                    ShortcutHintChip(label: "Enter")
-                }
             }
             .foregroundStyle(theme.surfaceColor)
             .frame(maxWidth: .infinity, minHeight: 40)
