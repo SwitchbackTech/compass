@@ -13,6 +13,8 @@ struct EventJumpChipsOverlay: View {
                     // Pinned to the card's top-right corner so wider labels
                     // (SU10) grow leftward instead of past the card edge.
                     ShortcutHintChip(label: hint.label)
+                        .accessibilityIdentifier("compass-event-jump-chip")
+                        .accessibilityLabel(hint.label)
                         .padding(.trailing, 4)
                         .frame(width: max(hint.frame.width, 0), height: 24, alignment: .trailing)
                         .position(

@@ -383,13 +383,6 @@ final class NativeGridKeyboardRouter {
             return true
         }
 
-        if model.eventJumpSelection.modeActive, keyEvent.modifiers.isEmpty,
-            case .character(let letter) = keyEvent.key, letter.isLetter,
-            model.handleEventJumpLetter(letter)
-        {
-            return true
-        }
-
         if keyEvent.modifiers.isEmpty, keyEvent.key == .named(.escape), model.eventJumpSelection.isActive {
             model.clearEventJumpSelection()
             return true
@@ -641,11 +634,12 @@ final class NativeGridKeyboardRouter {
             return true
         }
 
-        if keyEvent.modifiers.isEmpty, case .character(let digit) = keyEvent.key, digit.isNumber {
-            if model.eventJumpSelection.modeActive, model.handleEventJumpDigit(digit) {
+        if keyEvent.modifiers.isEmpty, case .character(let char) = keyEvent.key {
+            if model.eventJumpSelection.modeActive, model.handleEventJumpKeystroke(char) {
                 return true
             }
-            model.handleQuickTimeDigit(digit)
+            guard char.isNumber else { return false }
+            model.handleQuickTimeDigit(char)
             if !model.draftStore.quickTimeDigits.isEmpty {
                 return true
             }

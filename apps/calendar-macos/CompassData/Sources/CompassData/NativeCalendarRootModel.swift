@@ -679,7 +679,11 @@ public final class NativeCalendarRootModel {
         case .focusNotice:
             focusNextNotice()
         case .focusShiftHold:
-            toggleEventJumpMode()
+            if eventJumpSelection.modeActive {
+                _ = handleEventJumpKeystroke("f")
+            } else {
+                activateEventJumpMode()
+            }
         case .otherSubscribe:
             openUpgradeConfirmation()
         case .navGoToDate:
@@ -1247,7 +1251,7 @@ public final class NativeCalendarRootModel {
             cards[assignment.eventId].map { card in
                 EventJumpChipHint(
                     eventId: assignment.eventId,
-                    label: assignment.hint.uppercased(),
+                    label: assignment.hint,
                     frame: card.frame,
                     isAllDay: card.isAllDay
                 )
