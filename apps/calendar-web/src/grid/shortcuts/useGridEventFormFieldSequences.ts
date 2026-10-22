@@ -104,33 +104,30 @@ export function useGridEventFormFieldSequences({
   // Plain functions, not useCallback: `targeting` is rebuilt every render by
   // the owners, so memoizing on it would be a lie. The hook reads both through
   // refs, and the menu only calls the anchor getter during render.
-  const { letterFields, resolveVisibilityInput } =
-    useActiveEventFormFieldVisibility({
-      allDayEvents,
-      getFocused: targeting.getFocused,
-      timedEvents,
-    });
+  const { resolveVisibilityInput } = useActiveEventFormFieldVisibility({
+    allDayEvents,
+    getFocused: targeting.getFocused,
+    timedEvents,
+  });
 
   const getMenuAnchor = () =>
     targeting.getFocused()?.element ?? getEventFormElement();
 
+  const activeEditSequence = () => {
+    const input = resolveVisibilityInput();
+    if (!input) return null;
+    return {
+      letterFields: visibleEditSequenceLetterFields(input),
+      fieldByKey: editSequenceFieldByKey(input),
+    };
+  };
+
   useEditSequenceShortcut({
-    canArm: () => {
-      const input = resolveVisibilityInput();
-      return (
-        input !== null && visibleEditSequenceLetterFields(input).length > 0
-      );
-    },
-    getLetterFields: () => {
-      const input = resolveVisibilityInput();
-      return input ? visibleEditSequenceLetterFields(input) : [];
-    },
-    resolveFieldByKey: () => {
-      const input = resolveVisibilityInput();
-      return input ? editSequenceFieldByKey(input) : {};
-    },
+    canArm: () => (activeEditSequence()?.letterFields.length ?? 0) > 0,
+    getLetterFields: () => activeEditSequence()?.letterFields ?? [],
+    resolveFieldByKey: () => activeEditSequence()?.fieldByKey ?? {},
     onSequence: openFocusedEventFormField,
   });
 
-  return { getMenuAnchor, letterFields };
+  return { getMenuAnchor };
 }

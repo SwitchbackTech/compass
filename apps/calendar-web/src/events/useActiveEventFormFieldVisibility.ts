@@ -5,12 +5,9 @@ import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { buildCalendarLookup } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import {
-  editSequenceFieldByKey,
   eventFormFieldVisibilityInputFromDraft,
   eventFormFieldVisibilityInputFromEvent,
   eventFormFieldVisibilityInputFromGridEvent,
-  visibleEditSequenceLetterFields,
-  visibleFormFieldDigitRows,
 } from "@web/events/event-form-field-visibility.util";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
@@ -85,25 +82,5 @@ export function useActiveEventFormFieldVisibility({
       timedEvents,
     ]);
 
-  const letterFields = useMemo(() => {
-    const input = resolveVisibilityInput();
-    return input ? visibleEditSequenceLetterFields(input) : [];
-  }, [resolveVisibilityInput]);
-
-  const digitRows = useMemo(() => {
-    const input = resolveVisibilityInput();
-    return input ? visibleFormFieldDigitRows(input) : [];
-  }, [resolveVisibilityInput]);
-
-  const fieldByKey = useMemo(() => {
-    const input = resolveVisibilityInput();
-    return input ? editSequenceFieldByKey(input) : {};
-  }, [resolveVisibilityInput]);
-
-  return {
-    digitRows,
-    fieldByKey,
-    letterFields,
-    resolveVisibilityInput,
-  };
+  return { resolveVisibilityInput };
 }
