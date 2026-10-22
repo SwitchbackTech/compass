@@ -32,6 +32,7 @@ final class BookedMeetingActionsTests: XCTestCase {
         let window = app.windows["Compass"]
         let editor = window.textViews["compass-event-form-description"]
         XCTAssertTrue(editor.waitForExistence(timeout: 8))
+        app.activate()
         window.typeKey("9", modifierFlags: [.command])
         editor.click()
         let link = NSMutableAttributedString(string: "Cancel Reschedule")
