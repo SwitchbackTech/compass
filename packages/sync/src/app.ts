@@ -182,6 +182,7 @@ export function createSyncService(
         postConnectRedirectUrl:
           config.POST_CONNECT_REDIRECT_URL ?? config.CALLBACK_BASE_URL,
         posthog: deps.posthog ?? null,
+        nodeEnv: config.NODE_ENV,
       }
     : undefined;
 

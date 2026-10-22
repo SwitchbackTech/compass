@@ -56,6 +56,7 @@ import {
 } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   hasSeenWelcome,
+  isWelcomeOnboardingPathBlocked,
   selectWelcomeModalSurfaceEligible,
 } from "@web/components/WelcomeModal/welcome.modal.util";
 import { useUpcomingEventNotifier } from "@web/notifications/useUpcomingEventNotifier";
@@ -92,7 +93,12 @@ export function RootShell() {
   const guestMeetingSetupActive = useSettingsStore(
     selectGuestMeetingSetupActive,
   );
-  const { auth: authParam } = useSearch({ from: "__root__" });
+  const rootSearch = useSearch({ from: "__root__" });
+  const { auth: authParam } = rootSearch;
+  const welcomeOnboardingPathBlocked = isWelcomeOnboardingPathBlocked(
+    pathname,
+    rootSearch,
+  );
   const { isOpen: isAuthModalOpen } = useAuthModalState();
   const signupTrialStepActive =
     authenticated && authParam?.toLowerCase() === VIEW_TO_PARAM.startTrial;
@@ -165,6 +171,7 @@ export function RootShell() {
         authenticated,
         isWelcomeFirstVisitOpen,
         guestMeetingSetupActive,
+        welcomeOnboardingPathBlocked,
       ),
       shortcutShowcase: selectShortcutShowcaseSurfaceEligible(
         showCalendarOnboarding,
@@ -187,6 +194,7 @@ export function RootShell() {
     isWelcomeGuideOpen,
     isWelcomeFirstVisitOpen,
     guestMeetingSetupActive,
+    welcomeOnboardingPathBlocked,
     connectCalendarPromptEligible,
     firstEventPromptEligible,
     isLifeView,

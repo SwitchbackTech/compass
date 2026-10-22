@@ -181,6 +181,8 @@ export interface ConnectionApiDeps {
   credentialAtRestKey?: string;
   // Same PostHog client as sync_health_snapshot. Null when the key is unset.
   posthog?: PostHogCaptureClient | null;
+  /** Mirrors backend/web `environment` on server-side product events. */
+  nodeEnv: string;
 }
 
 // Internal, authenticated connection endpoints. The tenant/principal comes from
@@ -1151,6 +1153,7 @@ async function captureOAuthCallbackThenRedirect(
     provider: input.provider,
     outcome: input.outcome,
     correlationId,
+    environment: deps.nodeEnv,
   };
   if (intent) properties["intent"] = intent;
   if (input.outcome === "error") {

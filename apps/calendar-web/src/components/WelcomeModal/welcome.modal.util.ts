@@ -1,6 +1,42 @@
+import { isPublicBookingPath } from "@core/booking/booking-telemetry";
+import { isMeetingSetupRequested } from "@web/booking/meeting-setup.search";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { hasPlayDeepLink } from "@web/components/ShortcutShowcase/play-link";
+
+function meetingSetupRequestedFromSearch(search?: {
+  meetingSetup?: unknown;
+}): boolean {
+  if (!search) return false;
+  const value = search.meetingSetup;
+  if (
+    typeof value !== "string" &&
+    typeof value !== "number" &&
+    typeof value !== "boolean"
+  ) {
+    return false;
+  }
+  return isMeetingSetupRequested({ meetingSetup: value });
+}
+
+export function isWelcomeOnboardingPathBlocked(
+  pathname: string,
+  search?: { meetingSetup?: unknown },
+): boolean {
+  if (isPublicBookingPath(pathname)) return true;
+  if (meetingSetupRequestedFromSearch(search)) return true;
+  return false;
+}
+
+/** Synchronous read for WelcomeModal's first paint before router effects run. */
+export function isWelcomeOnboardingPathBlockedFromWindow(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  const meetingSetup = params.get("meetingSetup");
+  return isWelcomeOnboardingPathBlocked(window.location.pathname, {
+    meetingSetup: meetingSetup ?? undefined,
+  });
+}
 
 export function hasSeenWelcome(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
@@ -30,10 +66,12 @@ export function selectWelcomeModalSurfaceEligible(
   authenticated: boolean,
   isFirstVisitOpen: boolean,
   guestMeetingSetupActive: boolean,
+  onboardingPathBlocked: boolean,
 ): boolean {
   if (!showCalendarOnboarding) return false;
   if (authenticated) return false;
   if (guestMeetingSetupActive) return false;
+  if (onboardingPathBlocked) return false;
   if (hasPlayDeepLink()) return false;
   if (!hasSeenWelcome()) return true;
   // Explore marks welcome seen before the fade finishes; keep the slot until
