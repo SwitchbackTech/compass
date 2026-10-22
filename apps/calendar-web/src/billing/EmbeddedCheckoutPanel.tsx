@@ -10,7 +10,7 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 export const EMBEDDED_CHECKOUT_PANEL_CLASSNAME =
   "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
-export const EMBEDDED_CHECKOUT_SECONDARY_BUTTON_CLASSNAME =
+const SECONDARY_BUTTON_CLASSNAME =
   "c-button c-button-secondary inline-flex items-center justify-center rounded-full px-6 py-2";
 
 const fetchCheckoutClientSecret = fetchEmbeddedCheckoutSecret(
@@ -73,7 +73,7 @@ export const EmbeddedCheckoutPanel: FC<EmbeddedCheckoutPanelProps> = ({
           </AuthButton>
         ) : (
           <button
-            className={`${EMBEDDED_CHECKOUT_SECONDARY_BUTTON_CLASSNAME} inline-flex items-center self-center`}
+            className={`${SECONDARY_BUTTON_CLASSNAME} self-center`}
             onClick={onBack}
             onPointerEnter={focusOnPointerEnter}
             type="button"

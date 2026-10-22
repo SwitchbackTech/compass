@@ -96,23 +96,3 @@ export function isEventFormFocusFieldVisible(
     }
   }
 }
-
-export function visibleEventFormFocusFields(
-  input: EventFormFieldVisibilityInput,
-): EventFormFocusField[] {
-  const fields: EventFormFocusField[] = [
-    "actions",
-    "title",
-    "location",
-    "conference",
-    "description",
-    "start",
-    "end",
-    "recurrence",
-    "calendar",
-    "color",
-    "attendees",
-    "rsvp",
-  ];
-  return fields.filter((field) => isEventFormFocusFieldVisible(field, input));
-}

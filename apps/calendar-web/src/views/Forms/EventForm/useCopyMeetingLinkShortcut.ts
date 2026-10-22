@@ -7,20 +7,15 @@ export function useCopyMeetingLinkShortcut(
   meetingLinkUrl: string | null | undefined,
   enabled: boolean,
 ) {
-  const handler = useCallback(
-    (event: KeyboardEvent) => {
-      const url = meetingLinkUrl?.trim();
-      if (!url) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      void copyMeetingLinkUrl(url);
-    },
-    [meetingLinkUrl],
-  );
+  const url = meetingLinkUrl?.trim() || null;
+  // useAppShortcut already applies preventDefault/stopPropagation from the
+  // options below, so the handler only has to do the copy.
+  const handler = useCallback(() => {
+    if (url) void copyMeetingLinkUrl(url);
+  }, [url]);
 
   useAppShortcut(KEYMAP.copyMeetingLink.hotkey, handler, {
-    enabled: enabled && Boolean(meetingLinkUrl?.trim()),
+    enabled: enabled && url !== null,
     ignoreInputs: false,
     preventDefault: true,
     stopPropagation: true,
