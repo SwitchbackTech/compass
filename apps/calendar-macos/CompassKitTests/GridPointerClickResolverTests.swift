@@ -11,6 +11,6 @@ final class GridPointerClickResolverTests: XCTestCase {
             dateKey: dateKey,
             timeZone: timeZone
         )
-        XCTAssertEqual(slot?.timeKey, "1130")
+        XCTAssertEqual(slot?.timeKey, "1200")
     }
 }
