@@ -27,3 +27,11 @@ public enum EventColorSlotHex {
         return details.color.map(hex(for:))
     }
 }
+
+public extension EventColorSlot {
+    /// Web `EventColorSlotSchema` order. The generated enum is alphabetical,
+    /// so swatches and their pick keys follow this list instead.
+    static let webOrder: [EventColorSlot] = [
+        .lavender, .mint, .plum, .coral, .gold, .orange, .blue, .slate, .indigo, .green, .red,
+    ]
+}

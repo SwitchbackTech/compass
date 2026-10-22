@@ -32,7 +32,8 @@ final class EventFormColorSwatchKeysTests: XCTestCase {
         let model = try model(color: nil)
         model.focusEventFormField(.color)
         model.pickColorSwatch(at: 1)
-        XCTAssertEqual(model.draftStore.gridDraft?.color, NativeCalendarRootModel.colorSwatchOptions[1])
+        // Web pick key 1 is lavender (EventColorSlotSchema order).
+        XCTAssertEqual(model.draftStore.gridDraft?.color, .lavender)
         XCTAssertEqual(model.colorSwatchFocusIndex, 1)
         model.pickColorSwatch(at: 0)
         XCTAssertNil(model.draftStore.gridDraft?.color)

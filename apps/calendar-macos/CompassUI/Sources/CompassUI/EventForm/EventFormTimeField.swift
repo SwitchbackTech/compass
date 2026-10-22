@@ -79,8 +79,9 @@ struct EventFormTimeField: View {
             }
             .frame(width: 120, height: 220)
             .background(theme.surfacePanelColor)
-            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
-            .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+            // Fill the popover's own inset too, like the date popover; the
+            // system material there read as a dark frame around the list.
+            .presentationBackground(theme.surfacePanelColor)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("\(accessibilityIdentifier)-menu")
         }
