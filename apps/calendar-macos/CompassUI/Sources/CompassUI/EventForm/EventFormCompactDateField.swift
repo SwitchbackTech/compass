@@ -9,7 +9,11 @@ struct EventFormCompactDateField: View {
     @State private var text: String
     @State private var showsCalendar = false
     @State private var pickerMonth = Date()
+    /// Web `react-datepicker` keyboard-selected day; nil until an arrow
+    /// moves it, so the open calendar first shows only the selected day.
+    @State private var cursor: Date?
     @FocusState private var isFocused: Bool
+    @FocusState private var pickerFocused: Bool
 
     init(date: Binding<Date>, accessibilityIdentifier: String) {
         _date = date
@@ -37,7 +41,7 @@ struct EventFormCompactDateField: View {
             .focused($isFocused)
             .accessibilityIdentifier(accessibilityIdentifier)
             .onSubmit { commitTypedDate() }
-            .onKeyPress(keys: [.downArrow, .upArrow, .return, .space]) { press in
+            .onKeyPress(keys: Self.handledKeys) { press in
                 handleKey(press)
             }
             .onChange(of: isFocused) { _, focused in
@@ -55,20 +59,29 @@ struct EventFormCompactDateField: View {
                 SidebarMonthPicker(
                     displayedMonth: $pickerMonth,
                     selectedDate: date,
-                    onSelectDate: { picked in
-                        date = Self.keepingTime(of: date, onDayOf: picked)
-                        text = EventFormDateFormat.formatLabel(for: date)
-                        showsCalendar = false
-                    },
+                    onSelectDate: { picked in pick(picked) },
                     today: Date(),
-                    daysAreClickable: true
+                    daysAreClickable: true,
+                    focusedDate: cursor
                 )
                 .frame(width: 252)
                 .padding(12)
                 .background(theme.surfacePanelColor)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("compass-event-form-date-picker")
-                .onAppear { pickerMonth = date }
+                // The popover may take key focus from the field, so it
+                // handles the open-calendar keys too.
+                .focusable()
+                .focusEffectDisabled()
+                .focused($pickerFocused)
+                .onKeyPress(keys: Self.handledKeys) { press in
+                    handleCalendarKey(press)
+                }
+                .onAppear {
+                    pickerMonth = date
+                    pickerFocused = true
+                }
+                .onDisappear { cursor = nil }
             }
     }
 
@@ -83,9 +96,51 @@ struct EventFormCompactDateField: View {
         return calendar.date(from: parts) ?? picked
     }
 
+    private static let handledKeys: Set<KeyEquivalent> = [
+        .downArrow, .upArrow, .leftArrow, .rightArrow, .return, .space, .escape,
+    ]
+
+    private func pick(_ day: Date) {
+        date = Self.keepingTime(of: date, onDayOf: day)
+        text = EventFormDateFormat.formatLabel(for: date)
+        showsCalendar = false
+    }
+
+    /// Web `react-datepicker` keys while the calendar is open.
+    private func handleCalendarKey(_ press: KeyPress) -> KeyPress.Result {
+        guard showsCalendar, let key = Self.calendarKey(press.key) else { return .ignored }
+        switch EventFormDateFieldKeys.calendarAction(for: key) {
+        case .moveCursor(let days):
+            guard let moved = EffectiveTimeZone.calendar.date(byAdding: .day, value: days, to: cursor ?? date) else {
+                return .ignored
+            }
+            cursor = moved
+            pickerMonth = moved
+        case .pickCursor:
+            pick(cursor ?? date)
+        case .close:
+            showsCalendar = false
+        }
+        return .handled
+    }
+
+    private static func calendarKey(_ key: KeyEquivalent) -> EventFormDateFieldKeys.CalendarKey? {
+        switch key {
+        case .leftArrow: .leftArrow
+        case .rightArrow: .rightArrow
+        case .upArrow: .upArrow
+        case .downArrow: .downArrow
+        case .return: .enter
+        case .space: .space
+        case .escape: .escape
+        default: nil
+        }
+    }
+
     /// Web `EventFormDateField.handleKeyDown` on the closed field.
     private func handleKey(_ press: KeyPress) -> KeyPress.Result {
-        guard !showsCalendar, let key = Self.fieldKey(press.key) else { return .ignored }
+        if showsCalendar { return handleCalendarKey(press) }
+        guard let key = Self.fieldKey(press.key) else { return .ignored }
         var modifiers: EventFormDateFieldKeys.Modifiers = []
         if press.modifiers.contains(.shift) { modifiers.insert(.shift) }
         if !press.modifiers.isDisjoint(with: [.command, .control, .option]) { modifiers.insert(.mod) }

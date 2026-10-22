@@ -2,7 +2,8 @@ import Foundation
 
 /// Web `EventFormDateField` keys on the closed date field: ↓ opens the
 /// calendar, ↑ / Shift+↓ / Mod+↓ nudge the day, and Enter or Space on the
-/// date already shown opens the calendar instead of committing.
+/// date already shown opens the calendar instead of committing. Once open,
+/// `calendarAction` moves a day cursor like web `react-datepicker`.
 public enum EventFormDateFieldKeys {
     public enum Key: Sendable {
         case downArrow, upArrow, enter, space
@@ -42,6 +43,29 @@ public enum EventFormDateFieldKeys {
         case .space:
             let shown = EventFormDateFormat.formatLabel(for: committedDate)
             return text == shown ? .openCalendar : .ignore
+        }
+    }
+
+    public enum CalendarKey: Sendable {
+        case leftArrow, rightArrow, upArrow, downArrow, enter, space, escape
+    }
+
+    public enum CalendarAction: Equatable, Sendable {
+        case moveCursor(days: Int)
+        case pickCursor
+        case close
+    }
+
+    /// Web `react-datepicker` keys while the calendar is open: ← → move a
+    /// day, ↑ ↓ a week, Enter or Space picks the cursor day, Esc closes.
+    public static func calendarAction(for key: CalendarKey) -> CalendarAction {
+        switch key {
+        case .leftArrow: .moveCursor(days: -1)
+        case .rightArrow: .moveCursor(days: 1)
+        case .upArrow: .moveCursor(days: -7)
+        case .downArrow: .moveCursor(days: 7)
+        case .enter, .space: .pickCursor
+        case .escape: .close
         }
     }
 
