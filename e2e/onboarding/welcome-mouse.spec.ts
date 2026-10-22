@@ -37,12 +37,21 @@ test("walks the welcome flow with the mouse only", async ({
   await welcomeDialog.getByRole("button", { name: "Next" }).click();
   await expect(welcomeDialog.getByText("Step 3 of 3")).toBeVisible();
 
-  await welcomeDialog
-    .getByRole("link", { name: "Practice the shortcuts" })
-    .click();
+  await expect(
+    welcomeDialog.getByRole("link", { name: "Pricing" }),
+  ).toBeVisible();
+  await expect(
+    welcomeDialog.getByRole("link", { name: "Privacy" }),
+  ).toBeVisible();
+  await expect(
+    welcomeDialog.getByRole("link", { name: "Terms" }),
+  ).toBeVisible();
+  await expect(
+    welcomeDialog.getByRole("link", { name: "Practice the shortcuts" }),
+  ).toHaveCount(0);
 
-  const showcase = page.getByRole("region", { name: "Shortcut practice" });
-  await expect(showcase).toBeVisible();
-  await showcase.getByRole("button", { name: "Start practicing" }).click();
-  await expect(showcase).toContainText("Task 1/11");
+  await welcomeDialog
+    .getByRole("button", { name: "On this device only" })
+    .click();
+  await expect(welcomeDialog).toHaveCount(0);
 });
