@@ -1,6 +1,9 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { isProviderAuthCallbackPath } from "@web/auth/callback/is-provider-auth-callback-path";
-import { oauthCallbackSearchHasParams } from "@web/auth/callback/strip-oauth-callback-url";
+import {
+  oauthCallbackSearchHasParams,
+  oauthCallbackSearchParams,
+} from "@web/auth/callback/strip-oauth-callback-url";
 import { session } from "@web/auth/compass/session/Session";
 import { readProviderAuthorizationIntent } from "@web/auth/providers/authorization/provider-authorization.storage";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
@@ -41,10 +44,7 @@ export async function resolveStaleProviderOAuthReplay({
     return DEFAULT_CALENDAR_ROUTE;
   }
 
-  const params = new URLSearchParams(
-    search.startsWith("?") ? search.slice(1) : search,
-  );
-  const state = params.get("state");
+  const state = oauthCallbackSearchParams(search).get("state");
 
   if (state) {
     const savedIntent = readProviderAuthorizationIntent(provider, state);

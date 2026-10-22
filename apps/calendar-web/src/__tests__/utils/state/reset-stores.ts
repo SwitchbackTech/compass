@@ -89,6 +89,10 @@ import { resetShortcutTipsMutedStoreForTests } from "@web/shortcuts/tips/shortcu
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
+import {
+  initialEventFormCmdState,
+  useEventFormCmdStore,
+} from "@web/views/Forms/EventForm/event-form-cmd.store";
 import { resetPointerIntentSessionForTests } from "@web/views/Week/pointer-intent/pointer-intent.session";
 
 type StoreReset = () => void;
@@ -98,6 +102,7 @@ const storeResets: StoreReset[] = [
   () => useViewStore.setState(initialViewState, true),
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
+  () => useEventFormCmdStore.setState(initialEventFormCmdState, true),
   () => useEventClipboardStore.setState(initialEventClipboardState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
   recurrenceScopeOpportunityActions.reset,

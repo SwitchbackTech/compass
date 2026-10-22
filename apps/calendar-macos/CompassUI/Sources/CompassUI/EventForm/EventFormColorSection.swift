@@ -21,6 +21,9 @@ struct EventFormColorSection: View {
                     colorSwatch(label: slot.rawValue, slot: slot)
                 }
             }
+            // Take the width the keycaps leave; without this the grid sizes to
+            // its ideal width inside the HStack and wraps to five per row.
+            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityIdentifier("compass-event-form-color")
             .pageJumpChipAnchor(id: "form-color")
             if let digit = FormFieldDigitMapping.digitLabel(

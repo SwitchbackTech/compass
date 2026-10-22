@@ -10,10 +10,7 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import {
-  selectEventFormCmdHandlers,
-  useEventFormCmdStore,
-} from "@web/views/Forms/EventForm/event-form-cmd.store";
+import { useEventFormCmdStore } from "@web/views/Forms/EventForm/event-form-cmd.store";
 
 const ICON_BY_ID: Partial<Record<string, CommandItem["icon"]>> = {
   "edit-save": FloppyDisk,
@@ -31,26 +28,17 @@ const ICON_BY_ID: Partial<Record<string, CommandItem["icon"]>> = {
  */
 export function useEventFormCmdItems(): CommandItem[] {
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
-  const handlers = useEventFormCmdStore(selectEventFormCmdHandlers);
-  const hasMeetingLink = useEventFormCmdStore((state) => state.hasMeetingLink);
-  const isExistingEvent = useEventFormCmdStore(
-    (state) => state.isExistingEvent,
-  );
-  const isReadOnly = useEventFormCmdStore((state) => state.isReadOnly);
-  const showBookingFormActions = useEventFormCmdStore(
-    (state) => state.showBookingFormActions,
-  );
-
-  if (!isFormOpen || !handlers) {
-    return [];
-  }
-
-  const context = {
+  const {
+    handlers,
     hasMeetingLink,
     isExistingEvent,
     isReadOnly,
     showBookingFormActions,
-  };
+  } = useEventFormCmdStore();
+
+  if (!isFormOpen || !handlers) {
+    return [];
+  }
 
   const onClickById: Record<string, () => void> = {
     "edit-save": handlers.onSave,
@@ -63,13 +51,14 @@ export function useEventFormCmdItems(): CommandItem[] {
     "edit-close-form": handlers.onClose,
   };
 
-  return listEventFormActions(context).flatMap((entry) => {
+  return listEventFormActions({
+    hasMeetingLink,
+    isExistingEvent,
+    isReadOnly,
+    showBookingFormActions,
+  }).flatMap((entry) => {
     const onClick = onClickById[entry.id];
     if (!onClick) return [];
-
-    if (entry.id === "edit-jump-field-digit") {
-      return [];
-    }
 
     return [
       {

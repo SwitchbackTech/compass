@@ -7,10 +7,12 @@ export const OAUTH_CALLBACK_QUERY_KEYS = [
   "user",
 ] as const;
 
+export function oauthCallbackSearchParams(search: string): URLSearchParams {
+  return new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+}
+
 export function oauthCallbackSearchHasParams(search: string): boolean {
-  const params = new URLSearchParams(
-    search.startsWith("?") ? search.slice(1) : search,
-  );
+  const params = oauthCallbackSearchParams(search);
   return OAUTH_CALLBACK_QUERY_KEYS.some((key) => params.has(key));
 }
 

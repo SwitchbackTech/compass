@@ -23,11 +23,7 @@ import { type AttendeeInput } from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { parseBookingEventLinks } from "@web/booking/booking-event-links";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { creatableConferenceKind } from "@web/calendars/calendar.util";
-import {
-  isEventReadOnly,
-  useCalendarLookup,
-} from "@web/calendars/useCalendarLookup";
+import { useCalendarLookup } from "@web/calendars/useCalendarLookup";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import {
   ENV_WEB,
@@ -63,6 +59,7 @@ import {
 } from "@web/events/attendee-rsvp";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
+  calendarFromDraft,
   eventFormFieldVisibilityInputFromDraft,
   visibleFormFieldDigitRows,
 } from "@web/events/event-form-field-visibility.util";
@@ -242,22 +239,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? (calendarLookup.get(draft.source.calendarId)?.name ??
           "Unknown calendar")
         : null;
-    // Only an "edit" draft can be read-only - CalendarSelect only offers
-    // writable calendars to a "create"/duplicate draft (packet 08 step 8).
-    // isBusy comes straight off the source event's real content, not the
-    // draft's `values.title` (which stays "" for a busy source - see
-    // editGridEventDraft) - "Busy" below is a display-only override, never
-    // a value that could round-trip through a save.
-    const isBusy =
-      draft.kind === "edit" && draft.source.content.kind === "busy";
-    const isReadOnly =
-      draft.kind === "edit" &&
-      isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
-    const isScheduleLocked =
-      draft.kind === "edit" && draft.source.providerManaged === true;
-    const showProviderManagedStagingUx =
-      IS_EVENT_SIDEBAR_STAGING_UX && isScheduleLocked;
-    const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
     // Read-only, provider-sourced fields live on the source event's content,
     // never on draft.values (EditableContentSchema doesn't carry them) - a
     // create draft has no source event, and a busy source carries none of
@@ -275,7 +256,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       return guest.displayName?.trim() || guest.email;
     })();
     const formActionsRef = useRef<FormActionsRowHandle>(null);
-    const showBookingFormActions = !isReadOnly && bookingLinks !== null;
     // Cache-backed view of the same source event (WP-08): an optimistic RSVP
     // patches the query cache, and reading it live here is what makes the
     // user's own status dot (and the segmented control's selection) update
@@ -299,12 +279,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     // save to "all"), and the field says so.
     const { data: allCalendars } = useCalendarsQuery();
     const defaultTargetCalendar = useDefaultTargetCalendar(allCalendars ?? []);
-    const attendeeCalendar =
-      draft.kind === "create"
-        ? draft.values.calendarId
-          ? calendarLookup.get(draft.values.calendarId)
-          : defaultTargetCalendar
-        : calendarLookup.get(draft.source.calendarId);
+    const attendeeCalendar = calendarFromDraft(
+      draft,
+      calendarLookup,
+      defaultTargetCalendar,
+    );
     const scheduleManagedToast = providerManagedScheduleToast(attendeeCalendar);
     const recurrenceManagedToast =
       providerManagedRecurrenceToast(attendeeCalendar);
@@ -317,6 +296,15 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ),
       [calendarLookup, defaultTargetCalendar, draft],
     );
+    // Only an "edit" draft can be read-only. isBusy comes off the source
+    // event's real content, not draft.values.title ("Busy" is display-only).
+    const isBusy = fieldVisibilityInput.isBusyContent;
+    const isReadOnly = fieldVisibilityInput.isReadOnly;
+    const isScheduleLocked = fieldVisibilityInput.isScheduleLocked;
+    const showProviderManagedStagingUx =
+      IS_EVENT_SIDEBAR_STAGING_UX && isScheduleLocked;
+    const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
+    const showBookingFormActions = !isReadOnly && bookingLinks !== null;
     const formDigitRows = useMemo(
       () => visibleFormFieldDigitRows(fieldVisibilityInput),
       [fieldVisibilityInput],
@@ -327,14 +315,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       [fieldVisibilityInput],
     );
     const showAttendeeEditor = isFieldJumpVisible("attendees");
-    const showCreateConference =
-      isFieldJumpVisible("conference") && draft.kind === "create";
-    const conferenceKind = showCreateConference
-      ? creatableConferenceKind(attendeeCalendar)
-      : null;
+    const conferenceKind = fieldVisibilityInput.creatableConferenceKind ?? null;
     const guestEditIsSeriesWide =
       draft.kind === "edit" && draft.source.recurrence.kind !== "single";
-    const rsvpAccountEmail = attendeeCalendar?.accountEmail;
+    const rsvpAccountEmail = fieldVisibilityInput.calendarAccountEmail;
     const showRsvpControl = isFieldJumpVisible("rsvp");
     // Contact suggestions (WP-06): live when a connected account granted the
     // optional contacts scopes; otherwise the field is a raw email input and
