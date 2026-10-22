@@ -12,9 +12,8 @@ struct ShortcutLevelBadgeView: View {
             Button(action: onOpenShortcuts) {
                 Text(levelsStore.badgeLabel)
                     .font(.rubik(12))
-                    .foregroundStyle(theme.textColor)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
+                    .foregroundStyle(theme.textMutedColor)
+                    .frame(width: 36, height: 36)
                     .background(theme.surfaceColor)
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                     .overlay(RoundedRectangle(cornerRadius: 4).stroke(theme.borderColor, lineWidth: 1))

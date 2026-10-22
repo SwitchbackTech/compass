@@ -41,6 +41,11 @@ export function levelForUsedCount(used: number): ShortcutLevelDefinition {
 /** Pointer hints and newcomer tips retire at this level (#4126). */
 export const EXPLORER_LEVEL = 2;
 
+/** Sidebar footer badge label, e.g. `L1`, `L6` (no space). */
+export function formatShortcutLevelBadgeLabel(level: number): string {
+  return `L${level}`;
+}
+
 export interface ShortcutLevel {
   level: number;
   name: string;
