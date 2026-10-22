@@ -76,7 +76,7 @@ test("staging signup trial step with live Stripe embedded checkout", async ({
   await stripeFrame.locator("input").first().waitFor({ timeout: 120000 });
 
   await expect(
-    page.getByRole("button", { name: "Start free trial", exact: true }),
+    dialog.locator("button.c-button-primary", { hasText: "Start free trial" }),
   ).toHaveCount(0);
 
   await dialog.screenshot({
