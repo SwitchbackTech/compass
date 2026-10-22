@@ -31,7 +31,7 @@ struct EventFormColorSection: View {
                     ShortcutHintChip(label: KeycapGlyphs.display(["ArrowLeft"]))
                     ShortcutHintChip(label: KeycapGlyphs.display(["ArrowRight"]))
                     Text("·").font(.rubik(11)).foregroundStyle(theme.textMutedColor)
-                    ShortcutHintChip(label: KeycapGlyphs.display(["Enter"]))
+                    ShortcutHintChip(label: "Enter")
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Arrow keys move between swatches, Enter selects a swatch")
