@@ -7,6 +7,7 @@ final class EventJumpDayPrefixUITests: XCTestCase {
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-COMPASS_UI_TEST_PIN_WEEK_GRID_TRACK",
+            "-COMPASS_UI_TEST_ACTIVATE_EVENT_JUMP",
         ]
         app.launch()
         let window = app.windows["Compass"]
@@ -15,7 +16,6 @@ final class EventJumpDayPrefixUITests: XCTestCase {
             window.staticTexts["Morning standup"].waitForExistence(timeout: 10),
             "Expected demo fixture week grid before event jump")
         window.click()
-        window.typeKey("f", modifierFlags: [])
         let chipLabels = window.staticTexts.matching(identifier: "compass-event-jump-chip")
         let firstChip = chipLabels.element(boundBy: 0)
         XCTAssertTrue(

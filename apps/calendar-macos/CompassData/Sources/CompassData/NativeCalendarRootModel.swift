@@ -389,6 +389,9 @@ public final class NativeCalendarRootModel {
         if UITestLaunchPolicy.showPageJumpHintsForUITest {
             setPageJumpHintsVisible(true)
         }
+        if UITestLaunchPolicy.activateEventJumpForUITest {
+            activateEventJumpMode()
+        }
         if isSignedIn {
             startEventStream()
         }
