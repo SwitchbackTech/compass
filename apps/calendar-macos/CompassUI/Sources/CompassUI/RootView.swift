@@ -14,7 +14,7 @@ public struct RootView: View {
         self.model = model
     }
 
-    public var body: some View {
+    private var calendarShell: some View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
@@ -66,6 +66,10 @@ public struct RootView: View {
                 .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset + 8)
                 .padding(.leading, contentLeadingInset + 8)
         }
+    }
+
+    public var body: some View {
+        calendarShell
         .background(theme.backgroundColor)
         .font(.rubik(14))
         .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in

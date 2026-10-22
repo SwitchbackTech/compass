@@ -1,4 +1,4 @@
-import CompassData
+@testable import CompassData
 import CompassKit
 import XCTest
 
@@ -10,8 +10,7 @@ final class LifeViewIntroStoreTests: XCTestCase {
     }
 
     func testShowsOnceOnLifeView() throws {
-        var events: [ProductEvent] = []
-        let analytics = CapturingAnalytics { event, _ in events.append(event) }
+        let analytics = CapturingAnalytics()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
         let store = LifeViewIntroStore(
             userAPI: UserAPI(client: environment.apiClient),
@@ -30,14 +29,14 @@ final class LifeViewIntroStoreTests: XCTestCase {
             userMetadataLoaded: false,
             seenOnServer: false)
         XCTAssertTrue(store.isMounted)
-        XCTAssertEqual(events, [.lifeViewIntroShown])
+        XCTAssertEqual(analytics.events, [.lifeViewIntroShown])
 
         store.refresh(
             onLifeView: true,
             authenticated: false,
             userMetadataLoaded: false,
             seenOnServer: false)
-        XCTAssertEqual(events.filter { $0 == .lifeViewIntroShown }.count, 1)
+        XCTAssertEqual(analytics.events.filter { $0 == .lifeViewIntroShown }.count, 1)
     }
 
     func testDismissMarksLocalSeen() async throws {
@@ -56,14 +55,15 @@ final class LifeViewIntroStoreTests: XCTestCase {
     }
 }
 
-private struct CapturingAnalytics: ProductAnalyticsClient {
-    private let handler: (ProductEvent, ProductEventProperties) -> Void
+private final class CapturingAnalytics: ProductAnalyticsClient, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recordedEvents: [ProductEvent] = []
 
-    init(handler: @escaping (ProductEvent, ProductEventProperties) -> Void) {
-        self.handler = handler
+    var events: [ProductEvent] {
+        lock.withLock { recordedEvents }
     }
 
     func track(_ event: ProductEvent, properties: ProductEventProperties) {
-        handler(event, properties)
+        lock.withLock { recordedEvents.append(event) }
     }
 }
