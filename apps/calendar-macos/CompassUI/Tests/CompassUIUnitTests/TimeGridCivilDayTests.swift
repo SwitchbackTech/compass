@@ -28,6 +28,26 @@ final class TimeGridCivilDayTests: XCTestCase {
         }
     }
 
+    /// Web #4686: the 5 PM label sits at the top of the 5 PM slot, where a
+    /// 5 PM event starts (1 AM track origin), not two hours lower.
+    func testHourLabelsShareTheEventTrackOrigin() throws {
+        let savedZone = EffectiveTimeZone.identifier
+        defer { EffectiveTimeZone.identifier = savedZone }
+        EffectiveTimeZone.identifier = "UTC"
+        let state = TimeGridState(layoutMode: .day,
+            scenario: GridLayoutScenario(layoutMode: .day,
+                referenceNow: GridLayoutSnapshotFixtures.referenceNow, visibleDateKeys: ["2026-05-20"]),
+            effectiveTimeZone: "UTC")
+        let view = TimeGridView(state: state, theme: .lightBeach)
+        view.frame = NSRect(x: 0, y: 0, width: 800, height: 600)
+        view.layoutSubtreeIfNeeded()
+        let document = try XCTUnwrap(descendants(view).compactMap { $0 as? NSScrollView }.first?.documentView)
+        let hourHeight = (document.frame.height - GridTimeConstants.gridPaddingBottom) / state.civilDayHours
+        let label = try XCTUnwrap(descendants(view).compactMap { $0 as? NSTextField }.first { $0.stringValue == "5 PM" })
+        let eventTop = GridTimeConstants.timedGridTopPx(minutesFromCivilMidnight: 17 * 60, hourHeight: hourHeight)
+        XCTAssertEqual(label.frame.minY, eventTop, accuracy: 3, "5 PM label at \(label.frame.minY), 5 PM event top at \(eventTop)")
+    }
+
     private func descendants(_ view: NSView) -> [NSView] {
         view.subviews.flatMap { [$0] + descendants($0) }
     }

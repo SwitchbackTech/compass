@@ -390,18 +390,19 @@ public final class TimeGridView: NSView {
         palette: (background: NSColor, surface: NSColor, surfaceRaised: NSColor, border: NSColor, text: NSColor, textMuted: NSColor),
         currentHour: Int
     ) {
-        // Web `CalendarTimeColumn`: `top: calc(100% / TIMED_VISIBLE_HOURS - 5px)`.
-        let labelColumnTop = max(0, hourHeight - 5)
-        for hour in 0 ..< Int(ceil(state.civilDayHours)) {
-            let text = hour == 0 ? "" : (labels.indices.contains(hour - 1) ? labels[hour - 1] : "")
+        // Web `HourLabelColumn` (#4686): one hour slot per label from 1 AM,
+        // starting at the top of the track, the same 1 AM origin cards, hour
+        // lines and the now line use (`timedGridTopPx`). The old
+        // `calc(100% / TIMED_VISIBLE_HOURS - 5px)` offset plus an empty first
+        // slot drew every label two hours below its events.
+        for (index, text) in labels.enumerated() {
             let label = NSTextField(labelWithString: text)
             label.font = CompassFont.nsFont(size: 10)
-            let isCurrentHour = hour > 0 && hour == currentHour
-            label.textColor = isCurrentHour ? themeAccentColor : palette.textMuted
+            label.textColor = index + 1 == currentHour ? themeAccentColor : palette.textMuted
             label.alignment = .center
             label.frame = NSRect(
                 x: xOffset + 4,
-                y: labelColumnTop + Double(hour) * hourHeight + 4,
+                y: Double(index) * hourHeight + 1,
                 width: width - 8,
                 height: 14)
             hourGutterView.addSubview(label)
