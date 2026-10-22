@@ -1,7 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// Web `OverlayPanel` backdrop: dimmed background with light blur (`backdrop-blur-sm`).
+/// Web `OverlayPanel` backdrop: `bg-background/85` over a light blur
+/// (`backdrop-blur-sm`), so the calendar shows faintly through. The dark
+/// `overlayBackdrop` dim belongs to menus and confirm dialogs, not panels.
 struct PanelBackdropView: NSViewRepresentable {
     @Environment(\.nativeWebTheme) private var theme
 
@@ -10,7 +12,7 @@ struct PanelBackdropView: NSViewRepresentable {
         container.wantsLayer = true
 
         let blur = NSVisualEffectView()
-        blur.material = .hudWindow
+        blur.material = .windowBackground
         blur.blendingMode = .withinWindow
         blur.state = .active
         blur.translatesAutoresizingMaskIntoConstraints = false
@@ -37,7 +39,7 @@ struct PanelBackdropView: NSViewRepresentable {
     }
 
     func updateNSView(_ container: NSView, context: Context) {
-        context.coordinator.tintView?.layer?.backgroundColor = NSColor(theme.overlayBackdropColor).cgColor
+        context.coordinator.tintView?.layer?.backgroundColor = NSColor(theme.panelBackdropColor).cgColor
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }

@@ -28,7 +28,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- | --- | --- |
 | Light Beach / Dark Abyss palettes | `[data-theme]` in `index.css` | `ThemeTokens.lightBeach` / `darkAbyss` | ✅ | Generated from same CSS |
 | SwiftUI accessor coverage | Tailwind `color-*` for all 22 roles | `NativeWebTheme` exposes subset on `ThemeTokenColor+SwiftUI.swift` | 🟡 | Missing convenience colors: `surfaceRaised`, `textSubtle`, `borderStrong`, `accentHover`, `accentStrong`, `accentSecondaryHover`, `onAccent`, `info`, `shadowDefault` |
-| Panel modal backdrop | `OverlayPanel` / `bg-background/85` | `panelBackdropColor` = `background` @ 85% opacity | 🟡 | Web uses `--overlay-backdrop` for dimming; panel tint is separate |
+| Panel modal backdrop | `OverlayPanel` / `bg-background/85` + `backdrop-blur-sm` | `PanelBackdropView`: `panelBackdropColor` (`background` @ 85%) over a within-window blur | ✅ | Settings and welcome used the dark `overlayBackdrop` dim and read as solid gray; that dim stays for menus and confirm dialogs. Welcome centers vertically like web |
 | Event default fill hex | `theme.util.ts` / deck | `EventCardView.swift` literals `#454442`, `#82A0B2` | 🟡 | Values align; not read from tokens |
 | Event focus ring color | `--event-focus-color` + outline | `EventCardView` CALayer border from fill-aware helper | 🟡 | Same intent, different paint model |
 | Holiday / gradient accents | CSS gradients on chips | Mostly solid fills | 🟡 | Audit per calendar color id |
