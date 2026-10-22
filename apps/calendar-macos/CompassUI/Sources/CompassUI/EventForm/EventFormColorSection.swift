@@ -9,8 +9,9 @@ struct EventFormColorSection: View {
     let focusField: EventFormField
 
     var body: some View {
-        // Web `EventColorPicker`: swatches only (the legend is screen-reader text).
-        VStack(alignment: .leading, spacing: 0) {
+        // Web `EventColorPicker`: swatches (the legend is screen-reader text),
+        // then the Mod+digit jump keycaps pushed to the trailing edge.
+        HStack(alignment: .bottom, spacing: 6) {
             LazyVGrid(
                 columns: [GridItem(.adaptive(minimum: 20, maximum: 20), spacing: 6)],
                 alignment: .leading, spacing: 6
@@ -22,6 +23,16 @@ struct EventFormColorSection: View {
             }
             .accessibilityIdentifier("compass-event-form-color")
             .pageJumpChipAnchor(id: "form-color")
+            if let digit = FormFieldDigitMapping.digitLabel(
+                for: .color, rows: model.shortcutRegistry.editSequenceFields)
+            {
+                HStack(spacing: 4) {
+                    ShortcutHintChip(label: KeycapGlyphs.display(["mod"]))
+                    ShortcutHintChip(label: digit)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Command \(digit) jumps to color")
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
