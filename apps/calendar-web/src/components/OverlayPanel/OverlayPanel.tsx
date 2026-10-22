@@ -38,6 +38,13 @@ interface Props {
   message?: string;
   /** Additional content (buttons, etc.) */
   children?: ReactNode;
+  /** Pinned below the scroll region when `scrollChildrenOnly` is set. */
+  footer?: ReactNode;
+  /**
+   * When true, title and message stay fixed while only `children` scroll
+   * (for tall embedded checkout).
+   */
+  scrollChildrenOnly?: boolean;
   /** Called when clicking the backdrop or pressing Escape */
   onDismiss?: () => void;
   /** Called when pressing Shift+Escape; falls back to onDismiss when omitted. */
@@ -101,6 +108,8 @@ export const OverlayPanel = ({
   closing = false,
   anchor = "center",
   onKeyDown,
+  footer,
+  scrollChildrenOnly = false,
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -159,7 +168,15 @@ export const OverlayPanel = ({
   );
 
   const scrollBodyClasses = classNames(
-    "flex min-h-0 w-full flex-1 flex-col gap-6 overflow-y-auto p-8",
+    "flex min-h-0 w-full flex-1 flex-col p-8",
+    scrollChildrenOnly
+      ? "max-h-[min(720px,calc(90vh-2rem))] gap-4 overflow-hidden"
+      : "gap-6 overflow-y-auto",
+    align === "start" ? "items-start" : "items-center",
+  );
+
+  const scrollChildrenClasses = classNames(
+    "flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain",
     align === "start" ? "items-start" : "items-center",
   );
 
@@ -214,11 +231,11 @@ export const OverlayPanel = ({
     }
   };
 
-  const panelBody = (
+  const panelHeader = (
     <>
       {icon}
       {title && (
-        <div className="flex w-full items-center justify-between gap-3">
+        <div className="flex w-full shrink-0 items-center justify-between gap-3">
           {variant === "modal" ? (
             <h2 id={titleId} className={titleClasses}>
               {title}
@@ -232,11 +249,24 @@ export const OverlayPanel = ({
         </div>
       )}
       {message && (
-        <p id={messageId} className={messageClasses}>
+        <p id={messageId} className={`${messageClasses} shrink-0`}>
           {message}
         </p>
       )}
+    </>
+  );
+
+  const panelBody = scrollChildrenOnly ? (
+    <>
+      {panelHeader}
+      <div className={scrollChildrenClasses}>{children}</div>
+      {footer ? <div className="w-full shrink-0">{footer}</div> : null}
+    </>
+  ) : (
+    <>
+      {panelHeader}
       {children}
+      {footer}
     </>
   );
 
