@@ -3,6 +3,7 @@ import {
   classifyBookingPath,
   isBookingCapabilityPath,
   isBookingUnsafeMetaKey,
+  isPosthogIngestionToken,
   isPublicBookingPath,
   redactBookingSecretsFromString,
   redactBookingUrl,
@@ -131,6 +132,27 @@ describe("redactBookingUrl", () => {
 });
 
 describe("sanitizeBookingTelemetry", () => {
+  it("keeps PostHog ingestion token on public booking sanitization", () => {
+    const phc = "phc_FkDHexample000000000000000000000000";
+    const payload = sanitizeBookingTelemetry(
+      {
+        uuid: "evt-1",
+        event: "booking_landing_viewed",
+        token: phc,
+        properties: {
+          $current_url: "https://compasscalendar.com/meet",
+          $pathname: "/meet",
+          token: SENTINEL.token,
+        },
+      },
+      { dropUnsafeKeys: true },
+    );
+
+    expect(payload.token).toBe(phc);
+    expect(payload.properties.token).toBeUndefined();
+    assertNoSentinels(payload);
+  });
+
   it("redacts nested pageview, exception, and referrer fields", () => {
     const payload = sanitizeBookingTelemetry(
       {
@@ -176,6 +198,14 @@ describe("sanitizeBookingTelemetry", () => {
     expect(line).toContain("/meet/confirmed/:reservationId");
     expect(line).toContain(":email");
     assertNoSentinels(line);
+  });
+});
+
+describe("isPosthogIngestionToken", () => {
+  it("matches project API keys only", () => {
+    expect(isPosthogIngestionToken("phc_abc123")).toBe(true);
+    expect(isPosthogIngestionToken(SENTINEL.token)).toBe(false);
+    expect(isPosthogIngestionToken(null)).toBe(false);
   });
 });
 

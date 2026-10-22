@@ -52,6 +52,22 @@ describe("filterPosthogBookingTelemetry", () => {
     }
   });
 
+  it("preserves PostHog ingestion token on bare /meet product events", () => {
+    const phc = "phc_FkDHexample000000000000000000000000";
+    const result = filterPosthogBookingTelemetry({
+      uuid: "test-uuid",
+      event: "booking_landing_viewed",
+      token: phc,
+      properties: {
+        $current_url: "https://compasscalendar.com/meet",
+        $pathname: "/meet",
+      },
+    } as CaptureResult);
+    expect(result).not.toBeNull();
+    expect((result as CaptureResult & { token?: string })?.token).toBe(phc);
+    expect(result?.properties?.booking_route).toBe("meet_landing");
+  });
+
   it("keeps the bare /meet landing pageview and tags it meet_landing", () => {
     const result = filterPosthogBookingTelemetry(
       capture("$pageview", {

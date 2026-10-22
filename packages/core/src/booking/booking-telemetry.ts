@@ -201,6 +201,23 @@ export function isBookingUnsafeMetaKey(key: string): boolean {
   return BOOKING_UNSAFE_META_KEYS.has(normalizeMetaKey(key));
 }
 
+/** PostHog-js copies the project API key onto each capture as `token`. */
+export function isPosthogIngestionToken(value: unknown): boolean {
+  return typeof value === "string" && /^phc_[A-Za-z0-9]+/.test(value);
+}
+
+const shouldDropUnsafeMetaEntry = (
+  key: string,
+  value: unknown,
+  redactKeys: boolean,
+): boolean => {
+  if (!redactKeys || !isBookingUnsafeMetaKey(key)) return false;
+  if (normalizeMetaKey(key) === "token" && isPosthogIngestionToken(value)) {
+    return false;
+  }
+  return true;
+};
+
 const keepQueryParam = (key: string): boolean =>
   KEEP_QUERY_KEYS.has(key.toLowerCase());
 
@@ -265,7 +282,7 @@ const rewriteTelemetryValue = (
 
   const output: Record<string, unknown> = {};
   for (const [key, nested] of Object.entries(value)) {
-    if (redactKeys && isBookingUnsafeMetaKey(key)) continue;
+    if (shouldDropUnsafeMetaEntry(key, nested, redactKeys)) continue;
     output[key] = rewriteTelemetryValue(nested, seen, redactKeys);
   }
   return output;
