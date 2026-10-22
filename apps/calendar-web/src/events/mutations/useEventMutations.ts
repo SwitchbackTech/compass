@@ -44,6 +44,8 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { billingQueryKeys } from "@web/billing/billing.query";
+import { blockAwaitingCheckoutEventWrite } from "@web/billing/billing-write-guard";
+import { requestTrialStep } from "@web/billing/trial-step-request";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -708,10 +710,15 @@ export function useEventMutations(
       variables: Variables,
       context: EventMutationContext | undefined,
     ) => {
-      if (isApiError(error) && getApiErrorCode(error) === "BILLING_REQUIRED") {
+      if (
+        isApiError(error) &&
+        getApiErrorCode(error) === "BILLING_REQUIRED" &&
+        operation !== "rsvp"
+      ) {
         void queryClient.invalidateQueries({
           queryKey: billingQueryKeys.status,
         });
+        void requestTrialStep({ trigger: "write", eventAction: operation });
       }
       reportError(
         error,
@@ -1110,6 +1117,9 @@ export function useEventMutations(
   return useMemo(
     () => ({
       create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => {
+        if (blockAwaitingCheckoutEventWrite("create")) {
+          return;
+        }
         if (blockReconnectRequiredCalendar(input.calendarId)) {
           return;
         }
@@ -1140,6 +1150,9 @@ export function useEventMutations(
         },
         callbacks?: EventMutationCallbacks,
       ): boolean => {
+        if (blockAwaitingCheckoutEventWrite("replace")) {
+          return false;
+        }
         const original = findEventInCache(queryClient, payload.id, source);
         if (isTargetReadOnly(original)) {
           console.warn(
@@ -1215,6 +1228,12 @@ export function useEventMutations(
         return true;
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
+        if (
+          !isRestoringHistory() &&
+          blockAwaitingCheckoutEventWrite("delete")
+        ) {
+          return;
+        }
         const original = findEventInCache(queryClient, payload.id, source);
         if (!isRestoringHistory() && isTargetReadOnly(original)) {
           console.warn(

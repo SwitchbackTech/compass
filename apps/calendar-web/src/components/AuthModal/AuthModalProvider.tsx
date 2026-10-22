@@ -1,4 +1,5 @@
-import { type FC, type ReactNode } from "react";
+import { type FC, type ReactNode, useEffect } from "react";
+import { registerOpenStartTrialStep } from "@web/components/AuthModal/auth-modal-runtime";
 import { AuthModalContext, useAuthModalState } from "./hooks/useAuthModal";
 
 interface AuthModalProviderProps {
@@ -13,6 +14,10 @@ interface AuthModalProviderProps {
  */
 export const AuthModalProvider: FC<AuthModalProviderProps> = ({ children }) => {
   const value = useAuthModalState();
+
+  useEffect(() => {
+    registerOpenStartTrialStep(() => value.openModal("startTrial"));
+  }, [value.openModal]);
 
   return (
     <AuthModalContext.Provider value={value}>

@@ -14,21 +14,28 @@ import { getShortcutHint } from "@web/shortcuts/tips/shortcut-tips.data";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const trackModule = await import("@web/auth/posthog/track");
+const trialStepModule = await import("@web/billing/trial-step-request");
 
 describe("promptShortcutUpgrade", () => {
   const { port, mocks } = createTestToastPort();
   const track = spyOn(trackModule, "track");
+  let requestTrialStep: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     registerToastPort(port);
     mocks.toast.mockClear();
     mocks.update.mockClear();
     track.mockClear();
+    requestTrialStep = spyOn(
+      trialStepModule,
+      "requestTrialStep",
+    ).mockResolvedValue(true);
     resetShortcutUpgradePromptForTests();
     resetBillingWriteLockForTests();
   });
 
   afterEach(() => {
+    requestTrialStep.mockRestore();
     resetShortcutUpgradePromptForTests();
     resetBillingWriteLockForTests();
   });
@@ -44,7 +51,7 @@ describe("promptShortcutUpgrade", () => {
     expect(track).not.toHaveBeenCalled();
   });
 
-  it("shows a contextual prompt and tracks both funnel events", async () => {
+  it("opens the trial step for awaiting_checkout instead of a toast", () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade({
@@ -53,17 +60,10 @@ describe("promptShortcutUpgrade", () => {
       source: "keyboard",
     });
 
-    await waitFor(() => {
-      expect(mocks.toast).toHaveBeenCalledTimes(1);
-    });
-    expect(track).toHaveBeenCalledWith("shortcut_upgrade_prompted", {
-      feature_area: "event_editing",
-      action_id: "event.move",
-      source: "keyboard",
-    });
-    expect(track).toHaveBeenCalledWith("billing_gate_shown", {
-      status: "awaiting_checkout",
-      surface: "shortcut_prompt",
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(requestTrialStep).toHaveBeenCalledWith({
+      trigger: "write",
+      eventAction: "replace",
     });
   });
 
@@ -81,7 +81,7 @@ describe("promptShortcutUpgrade", () => {
     setAppLockReason("billingGate", false);
   });
 
-  it("names the pressed key and its pitch when the caller knows the shortcut", async () => {
+  it("routes keyed shortcuts to the trial step while awaiting checkout", () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade({
@@ -91,23 +91,24 @@ describe("promptShortcutUpgrade", () => {
       source: "keyboard",
     });
 
-    await waitFor(() => {
-      expect(mocks.toast).toHaveBeenCalledTimes(1);
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(requestTrialStep).toHaveBeenCalledWith({
+      trigger: "write",
+      eventAction: "create",
     });
-    const [[element]] = mocks.toast.mock.calls as unknown as [
-      [{ props: Record<string, unknown> }],
-    ];
-    expect(element.props).toMatchObject({
-      parts: getShortcutHint("create-event").parts,
-      title:
-        "Premium unlocks it, so you can block time the moment you think of it.",
-      ctaLabel: "Start trial",
-      checkoutSource: {
-        kind: "shortcut_prompt",
-        featureArea: "event_creation",
-        actionId: "calendar.create_timed_event",
-      },
+    expect(getShortcutHint("create-event").parts.length).toBeGreaterThan(0);
+  });
+
+  it("does not open the trial step for non-event feature areas while awaiting checkout", () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    promptShortcutUpgrade({
+      featureArea: "calendar_navigation",
+      source: "keyboard",
     });
+
+    expect(mocks.toast).not.toHaveBeenCalled();
+    expect(requestTrialStep).not.toHaveBeenCalled();
   });
 
   it("falls back to feature-area copy without a key line when no shortcut is known", async () => {
@@ -134,7 +135,7 @@ describe("promptShortcutUpgrade", () => {
   });
 
   it("deduplicates tracking for a rapid repeat of the same shortcut", async () => {
-    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    setBillingWriteLock({ locked: true, status: "expired" });
 
     promptShortcutUpgrade(
       {

@@ -9,6 +9,10 @@ import { formatBillingPriceLine } from "@web/billing/billing-display";
 import { checkoutPanelActions } from "@web/billing/checkout-panel.store";
 import { EmbeddedCheckoutPanel } from "@web/billing/EmbeddedCheckoutPanel";
 import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
+import {
+  consumeTrialStepTrigger,
+  TRIAL_STEP_WRITE_LEAD,
+} from "@web/billing/trial-step-request";
 
 type BillingPrice = NonNullable<BillingSubscriptionResponse["price"]>;
 
@@ -35,6 +39,7 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
     subscriptionQuery.data?.price,
   );
   const viewedRef = useRef(false);
+  const writeLeadRef = useRef(consumeTrialStepTrigger() === "write");
 
   useEffect(() => {
     checkoutPanelActions.holdSource({ kind: "signup_trial_step" });
@@ -51,6 +56,11 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-3">
+      {writeLeadRef.current ? (
+        <p className="shrink-0 text-center text-sm text-text">
+          {TRIAL_STEP_WRITE_LEAD}
+        </p>
+      ) : null}
       {planPriceLine ? (
         <p className="shrink-0 text-left text-sm text-text">{planPriceLine}</p>
       ) : null}

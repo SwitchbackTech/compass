@@ -11,7 +11,6 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
-import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { billingQueryKeys } from "@web/billing/billing.query";
 import {
   initialCheckoutCelebrationState,
@@ -164,7 +163,7 @@ describe("AuthModal signup trial step", () => {
     useCheckoutCelebrationStore.setState(initialCheckoutCelebrationState, true);
   });
 
-  it("lands on the trial step after email signup when billing is configured", async () => {
+  it("closes the auth modal after email signup when billing is configured", async () => {
     const user = userEvent.setup();
 
     emailPassword = createTestEmailPasswordPort();
@@ -174,7 +173,7 @@ describe("AuthModal signup trial step", () => {
     });
     registerEmailPasswordPort(emailPassword);
 
-    await renderTrialFlow(HOSTED_CONFIG);
+    const { router } = await renderTrialFlow(HOSTED_CONFIG);
 
     await user.type(screen.getByLabelText("Name"), "Pat");
     await user.type(screen.getByLabelText("Email"), "new@example.com");
@@ -187,18 +186,11 @@ describe("AuthModal signup trial step", () => {
     await user.click(screen.getByRole("button", { name: "Sign up" }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("dialog", { name: "Start your 7-day free trial" }),
-      ).toBeInTheDocument();
+      expect(router.state.location.searchStr).toBe("");
     });
     expect(
-      screen.getByText("Card required. No charge until the trial ends."),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Start free trial" }),
+      screen.queryByRole("dialog", { name: "Start your 7-day free trial" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
-    expect(screen.getByText("$12.00 per month")).toBeInTheDocument();
   });
 
   it("skips the trial step when billing is not configured", async () => {
@@ -225,12 +217,9 @@ describe("AuthModal signup trial step", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the billing gate after closing the trial step", async () => {
+  it("returns to the calendar after closing the trial step", async () => {
     const user = userEvent.setup();
-    const { router, queryClient } = await renderTrialFlow(
-      HOSTED_CONFIG,
-      "/day?auth=trial",
-    );
+    const { router } = await renderTrialFlow(HOSTED_CONFIG, "/day?auth=trial");
     mockUseSession.mockReturnValue({
       authenticated: true,
       userId: "user-1",
@@ -248,16 +237,9 @@ describe("AuthModal signup trial step", () => {
     await waitFor(() => {
       expect(router.state.location.searchStr).toBe("");
     });
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <BillingGateModal status="awaiting_checkout" />
-      </QueryClientProvider>,
-    );
-
     expect(
-      screen.getByRole("heading", { name: "Finish starting your trial" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Finish starting your trial" }),
+    ).not.toBeInTheDocument();
   });
 
   it("migrates anonymous events once after checkout completes", async () => {

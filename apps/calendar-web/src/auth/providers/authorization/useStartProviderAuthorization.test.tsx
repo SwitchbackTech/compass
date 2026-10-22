@@ -133,7 +133,7 @@ describe("useStartProviderAuthorizationImpl", () => {
     expect(decoded.nonce).toBeTruthy();
     const intent = readProviderAuthorizationIntent("apple", state);
     expect(intent?.intent).toBe("signIn");
-    expect(intent?.returnPath).toContain("auth=trial");
+    expect(intent?.returnPath).not.toContain("auth=trial");
     expect(result.current.loading).toBe(true);
   });
 

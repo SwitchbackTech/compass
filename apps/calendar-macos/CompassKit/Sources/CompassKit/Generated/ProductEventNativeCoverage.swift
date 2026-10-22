@@ -54,6 +54,7 @@ public enum ProductEventNativeCoverage: Sendable {
         .billingGateShown,
         .billingGateCtaClicked,
         .billingGateShortcutConverted,
+        .trialGateTriggered,
         .billingCancelScheduled,
         .billingResumed,
         .billingCardUpdateCompleted,

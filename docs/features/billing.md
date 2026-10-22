@@ -87,22 +87,29 @@ production.
 - **Signup step one (account, no card):** hosted signup creates a signed-in
   account that derives as read-only `awaiting_checkout` until Stripe Checkout
   completes. Event writes fail server-side until then.
-- **Signup step two (trial step):** when billing is configured and enforced,
-  signup continues in the auth modal on **Start your 7-day free trial**
-  (`StartTrialStep.tsx`, `?auth=trial`). Copy states when the card will be
-  charged (seven days out). Embedded Checkout runs in the modal with
-  `trial_period_days: 7`. On `onComplete`, Compass polls
+- **After signup (explore first):** when billing is configured and enforced,
+  hosted signup (email or OAuth) lands on the calendar with real events
+  visible. The account stays read-only `awaiting_checkout` until Checkout
+  completes, but there is no automatic trial modal and no full-screen gate.
+  A top banner (**Start your 7-day free trial to plan your week**, `S`) is
+  the calm opt-in. **Dismiss** hides it for the current browser session only
+  (`sessionStorage`). Keyboard and UI **event** writes (create, edit, move,
+  resize, delete, including recurring scope) open **Start your 7-day free trial**
+  in the auth modal (`StartTrialStep.tsx`, `?auth=trial`). Settings, preferences,
+  and view changes do not. Analytics: `trial_gate_triggered` with
+  `source: write | banner` and `event_action: create | replace | delete` on
+  write (plus existing `billing_gate_shown` / funnel events). Embedded Checkout runs in the modal
+  with `trial_period_days: 7`. On `onComplete`, Compass polls
   `GET /api/billing/status`, celebrates, and migrates anonymous IndexedDB
   events once billing is writable (`complete-checkout-session.ts`). The
   webhook writes `trialing` with a `stripeSubscriptionId`.
-- **Abandoned trial step:** closing the trial step without paying leaves
-  `awaiting_checkout`. `BillingGateModal` opens with **Finish starting your
-  trial** and **Add card** (`S`). Checkout in the gate uses the same embedded
-  panel. Google reconnect and delayed-sync toasts wait while the gate owns
-  the screen so they do not cover the ask.
-- **Legacy `awaiting_checkout` (signed up before the trial step shipped):**
-  same read-only gate and Checkout behavior as abandoning the trial step; no
-  in-signup trial step on return.
+- **Closing the trial step without paying:** the user returns to the calendar
+  in `awaiting_checkout` with the explore banner still available. Writes keep
+  opening the trial step until Checkout completes.
+- **Expired / canceled (post-trial read-only):** `BillingGateModal` still
+  blocks the app with **Subscribe to keep using Compass**. Checkout in the
+  gate uses the same embedded panel. Google reconnect and delayed-sync toasts
+  wait while the gate owns the screen so they do not cover the ask.
 - **Trialing (Stripe subscription):** writable, with a days-left badge in the
   sidebar month picker header (`TrialBadge.tsx`, via `DatePicker`'s
   `headerEndContent` slot). The badge carries no `tabindex`: `getPageJumpFocusElement`
@@ -309,7 +316,10 @@ If Link is enabled, also add `https://link.com` and `https://*.link.com` to
 - Post-checkout migration: `apps/calendar-web/src/billing/complete-checkout-session.ts`
 - Signup trial UI: `apps/calendar-web/src/components/AuthModal/forms/StartTrialStep.tsx`
 - Auth modal routing (`?auth=trial`): `apps/calendar-web/src/components/AuthModal/hooks/useAuthModal.ts`
-- Billing gate: `apps/calendar-web/src/billing/BillingGateModal.tsx`
+- Explore banner and trial gate requests:
+  `apps/calendar-web/src/billing/BillingAwaitingCheckoutBanner.tsx`,
+  `apps/calendar-web/src/billing/trial-step-request.ts`
+- Billing gate (expired / canceled): `apps/calendar-web/src/billing/BillingGateModal.tsx`
 - Embedded Checkout port (the only `loadStripe` call): `apps/calendar-web/src/billing/embedded-checkout/embedded-checkout.port.tsx`
 - Lazy seam: `apps/calendar-web/src/billing/embedded-checkout/embedded-checkout.seam.ts`
 - Gate checkout store: `apps/calendar-web/src/billing/checkout-panel.store.ts`

@@ -53,8 +53,8 @@ test("hides welcome, practice, and first-event prompts while the billing gate is
     if (path.endsWith("/api/billing/status")) {
       return route.fulfill(
         jsonResponse({
-          subscriptionStatus: "awaiting_checkout",
-          trialEndsAt: null,
+          subscriptionStatus: "expired",
+          trialEndsAt: "2020-01-01T00:00:00.000Z",
           isReadOnly: true,
         }),
       );
@@ -97,7 +97,7 @@ test("hides welcome, practice, and first-event prompts while the billing gate is
   });
 
   await expect(
-    page.getByRole("dialog", { name: "Finish starting your trial" }),
+    page.getByRole("dialog", { name: "Subscribe to keep using Compass" }),
   ).toBeVisible({ timeout: 15000 });
 
   await expect(

@@ -180,6 +180,9 @@ test("trial step back avoids oauth replay and duplicate billing_gate_shown", asy
   await expect(page).not.toHaveURL(/\/auth\/google\/callback/);
   await expect(
     page.getByRole("dialog", { name: "Finish starting your trial" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
 
   await page.goto("/week?auth=trial", { waitUntil: "domcontentloaded" });
@@ -204,7 +207,10 @@ test("trial step back avoids oauth replay and duplicate billing_gate_shown", asy
 
   await page.getByRole("button", { name: /^Back\b/ }).click();
   await expect(
-    page.getByRole("dialog", { name: "Finish starting your trial" }),
+    page.getByRole("dialog", { name: "Start your 7-day free trial" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
 
   await page.goto(CALLBACK_PATH);

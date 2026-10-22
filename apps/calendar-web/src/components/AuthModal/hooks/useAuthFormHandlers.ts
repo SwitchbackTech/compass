@@ -1,6 +1,5 @@
 import { type AnyRouter, useRouter, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { queryClient } from "@web/api/query-client";
 import { getEmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
@@ -15,10 +14,6 @@ import {
   trackSignupStep,
 } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
-import {
-  appConfigQueryOptions,
-  shouldOfferSignupTrialStep,
-} from "@web/billing/billing.query";
 import { rememberSignupTrialMethod } from "@web/billing/signup-trial.util";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthSearch, type AuthView } from "./useAuthModal";
@@ -101,14 +96,7 @@ export function useAuthFormHandlers({
             });
             trackSignupCompleted("email");
             rememberSignupTrialMethod("email");
-            const config = await queryClient.ensureQueryData(
-              appConfigQueryOptions(),
-            );
-            if (shouldOfferSignupTrialStep(config)) {
-              setView("startTrial");
-            } else {
-              closeModal();
-            }
+            closeModal();
             return;
           }
           case "FIELD_ERROR":
@@ -127,7 +115,7 @@ export function useAuthFormHandlers({
         setIsSubmitting(false);
       }
     },
-    [closeModal, completeAuthentication, setView],
+    [closeModal, completeAuthentication],
   );
 
   const handleLogin = useCallback(

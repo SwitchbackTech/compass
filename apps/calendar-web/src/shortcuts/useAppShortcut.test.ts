@@ -6,6 +6,7 @@ import {
   resetBillingWriteLockForTests,
   setBillingWriteLock,
 } from "@web/billing/billing-write-lock";
+import * as TrialStepRequest from "@web/billing/trial-step-request";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { setAppLockReason } from "@web/shortcuts/app-lock";
 import {
@@ -223,7 +224,11 @@ describe("useAppShortcut", () => {
     });
   });
 
-  it("shows a contextual upgrade prompt instead of running a write shortcut", async () => {
+  it("opens the trial step instead of running a write shortcut", async () => {
+    const requestTrialStep = spyOn(
+      TrialStepRequest,
+      "requestTrialStep",
+    ).mockResolvedValue(true);
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     renderHook(() => useAppShortcut("C", mockHandler, WRITE_CREATE_SHORTCUT));
@@ -232,8 +237,12 @@ describe("useAppShortcut", () => {
 
     await waitFor(() => {
       expect(mockHandler).not.toHaveBeenCalled();
-      expect(mocks.toast).toHaveBeenCalled();
+      expect(requestTrialStep).toHaveBeenCalledWith({
+        trigger: "write",
+        eventAction: "create",
+      });
     });
+    requestTrialStep.mockRestore();
   });
 
   it("does not prompt while the billing gate owns the screen", async () => {
@@ -337,6 +346,10 @@ describe("useAppShortcut", () => {
 
     it("records billing_locked in look-around, where no lock is held", async () => {
       const track = spyOn(Track, "track");
+      const requestTrialStep = spyOn(
+        TrialStepRequest,
+        "requestTrialStep",
+      ).mockResolvedValue(true);
       setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
       renderHook(() =>
@@ -349,8 +362,12 @@ describe("useAppShortcut", () => {
 
       await waitFor(() => {
         expect(attempts(track)).toHaveLength(1);
-        expect(mocks.toast).toHaveBeenCalled();
+        expect(requestTrialStep).toHaveBeenCalledWith({
+          trigger: "write",
+          eventAction: "create",
+        });
       });
+      requestTrialStep.mockRestore();
       expect(track).toHaveBeenCalledWith(
         "shortcut_unavailable_attempt",
         expect.objectContaining({

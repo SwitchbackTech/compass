@@ -28,14 +28,12 @@ export function buildProviderAuthCallbackUrl(
   return `${origin}${providerAuthCallbackPath(provider)}`;
 }
 
+/** Post-OAuth return path for signup: land on the calendar, not the trial step. */
 export function buildSignupTrialReturnPath(
   href = window.location.href,
   origin = window.location.origin,
 ): string {
-  const base = getSafeProviderAuthReturnPath("google", href, origin);
-  const url = new URL(base, origin);
-  url.searchParams.set("auth", "trial");
-  return `${url.pathname}${url.search}${url.hash}`;
+  return getSafeProviderAuthReturnPath("google", href, origin);
 }
 
 export function getSafeProviderAuthReturnPath(

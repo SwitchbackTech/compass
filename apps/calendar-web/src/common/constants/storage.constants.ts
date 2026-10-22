@@ -99,4 +99,7 @@ export const STORAGE_KEYS = {
   // The X on the keyboard hint turns tips off for this browser.
   POINTER_HINT_DISMISSED_PERMANENTLY:
     "compass.pointer-hint.dismissed-permanently",
+  /** Session-only dismiss for the awaiting_checkout explore banner. */
+  AWAITING_CHECKOUT_BANNER_DISMISSED:
+    "compass.billing.awaiting-checkout-banner-dismissed-session",
 } as const satisfies Record<string, `compass.${string}`>;

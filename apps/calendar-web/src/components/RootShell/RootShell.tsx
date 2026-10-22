@@ -3,6 +3,7 @@ import { useContext, useEffect, useMemo } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { ConnectAppleForm } from "@web/auth/providers/ConnectAppleForm";
 import { MissingPermissionsModal } from "@web/auth/providers/MissingPermissionsModal";
+import { BillingAwaitingCheckoutBanner } from "@web/billing/BillingAwaitingCheckoutBanner";
 import { BillingGateModal } from "@web/billing/BillingGateModal";
 import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
 import { CheckoutCelebrationModal } from "@web/billing/CheckoutCelebrationModal";
@@ -142,12 +143,16 @@ export function RootShell() {
 
   const readOnlyStatus =
     access.kind === "server" && access.isReadOnly ? access.status : null;
-  // The gate must yield to the celebration. Between Checkout completing and
-  // the webhook landing, status can still read awaiting_checkout, and the gate
-  // is a full app-lock overlay: it would take the screen at exactly the
-  // moment the user has just paid.
+  const isAwaitingCheckoutExplore =
+    readOnlyStatus === "awaiting_checkout" && !signupTrialStepActive;
+  // Full-screen gate for post-trial read-only states only. New accounts in
+  // `awaiting_checkout` browse the calendar until they write or opt in.
   const gateStatus =
-    isCelebrating || signupTrialStepActive ? null : readOnlyStatus;
+    isCelebrating || signupTrialStepActive || isAwaitingCheckoutExplore
+      ? null
+      : readOnlyStatus;
+  const showAwaitingCheckoutBanner =
+    isAwaitingCheckoutExplore && !isCelebrating;
   const showCalendarOnboarding =
     gateStatus === null &&
     !isCelebrating &&
@@ -212,6 +217,7 @@ export function RootShell() {
   return (
     <AuthModalProvider>
       {showPastDue && <BillingPastDueBanner />}
+      {showAwaitingCheckoutBanner && <BillingAwaitingCheckoutBanner />}
       <Outlet />
       <AuthModal />
       <ConnectAppleForm />

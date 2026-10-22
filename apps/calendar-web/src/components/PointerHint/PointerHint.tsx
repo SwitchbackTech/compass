@@ -44,9 +44,9 @@ export const PointerHint: FC = () => {
 
   const body =
     attempt.message && attempt.keys ? (
-      <>{formatTeachingMessage(attempt.message, attempt.keys)}</>
+      formatTeachingMessage(attempt.message, attempt.keys)
     ) : attempt.message ? (
-      <>{attempt.message}</>
+      attempt.message
     ) : attempt.shortcutKey ? (
       <>
         Next time, press <ShortcutKeys keys={attempt.shortcutKey} />.

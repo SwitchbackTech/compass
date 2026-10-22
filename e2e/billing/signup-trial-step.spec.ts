@@ -11,7 +11,7 @@ const jsonResponse = (body: unknown) => ({
   body: JSON.stringify(body),
 });
 
-test("signup trial step shows charge-date copy and closing opens the billing gate", async ({
+test("awaiting checkout can explore the calendar and opt into the trial step", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -108,7 +108,7 @@ test("signup trial step shows charge-date copy and closing opens the billing gat
   await page.route("https://js.stripe.com/**", (route) => route.abort());
   await page.route("https://*.stripe.com/**", (route) => route.abort());
 
-  await page.goto("/week?auth=trial", { waitUntil: "domcontentloaded" });
+  await page.goto("/week", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(
     () =>
       (
@@ -124,6 +124,18 @@ test("signup trial step shows charge-date copy and closing opens the billing gat
       }
     ).__COMPASS_E2E_HOOKS__?.setAuthenticated(true);
   });
+
+  await expect(
+    page.getByText("Start your 7-day free trial to plan your week."),
+  ).toBeVisible({ timeout: 15000 });
+  await expect(
+    page.getByRole("dialog", { name: "Start your 7-day free trial" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("dialog", { name: "Finish starting your trial" }),
+  ).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Start free trial" }).click();
 
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
@@ -148,5 +160,8 @@ test("signup trial step shows charge-date copy and closing opens the billing gat
 
   await expect(
     page.getByRole("dialog", { name: "Finish starting your trial" }),
-  ).toBeVisible({ timeout: 15000 });
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Start your 7-day free trial to plan your week."),
+  ).toBeVisible();
 });
