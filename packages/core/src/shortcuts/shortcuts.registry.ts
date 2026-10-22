@@ -94,6 +94,12 @@ export const SHORTCUTS_REGISTRY = [
     section: "navigate",
   },
   {
+    id: "nav-month-current",
+    keys: [...B.navMonthCurrent.keycaps],
+    label: "Go to this month in picker",
+    section: "navigate",
+  },
+  {
     id: "nav-picker-step",
     keys: [...KEYMAP.moveFocus.keycaps],
     label: "Move the month picker by a week (Enter opens it)",

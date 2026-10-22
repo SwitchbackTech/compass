@@ -12,6 +12,7 @@ import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import {
+  MONTH_PICKER_CURRENT_KEYCAPS,
   MONTH_PICKER_NEXT_KEYCAPS,
   MONTH_PICKER_PREV_KEYCAPS,
   useMonthPickerShortcuts,
@@ -170,6 +171,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const monthStepHandlersRef = useRef({
     onPrev: () => {},
     onNext: () => {},
+    onGoToThisMonth: undefined as (() => void) | undefined,
   });
 
   const gridMonthNavShortcuts = captionPicker && view === "grid";
@@ -180,6 +182,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     (gridMonthNavShortcuts ||
       (sidebarMonthNavShortcuts && !isFloatingLayerOpen()));
 
+  const canGoToThisMonthInPicker =
+    (view === "sidebar" && monthNav?.onToday !== undefined) ||
+    (withTodayButton && gridMonthNavShortcuts);
+
   useMonthPickerShortcuts({
     enabled: monthNavShortcutsEnabled,
     onPrevMonth: () => {
@@ -188,6 +194,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     onNextMonth: () => {
       monthStepHandlersRef.current.onNext();
     },
+    onGoToThisMonth: canGoToThisMonthInPicker
+      ? () => {
+          monthStepHandlersRef.current.onGoToThisMonth?.();
+        }
+      : undefined,
   });
 
   const monthChevronShortcuts =
@@ -330,6 +341,15 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         monthStepHandlersRef.current = {
           onPrev: headerNav.onPrev,
           onNext: headerNav.onNext,
+          onGoToThisMonth:
+            view === "sidebar" && monthNav?.onToday
+              ? monthNav.onToday
+              : withTodayButton && isCaptionDayGrid
+                ? () => {
+                    headerProps.changeMonth(dayjs().month());
+                    headerProps.changeYear(dayjs().year());
+                  }
+                : undefined,
         };
 
         return (
@@ -413,8 +433,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                 {withTodayButton && (
                   <TooltipWrapper
                     description="Go to this month"
-                    shortcut={view === "sidebar" ? "T" : undefined}
-                    shortcutId={view === "sidebar" ? "nav-today" : undefined}
+                    shortcut={
+                      view === "sidebar"
+                        ? [...MONTH_PICKER_CURRENT_KEYCAPS]
+                        : undefined
+                    }
+                    shortcutId={
+                      view === "sidebar" ? "nav-month-current" : undefined
+                    }
                   >
                     <button
                       type="button"

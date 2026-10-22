@@ -57,6 +57,7 @@ final class NativeGridKeyboardRouter {
             .navLifeCurrent,
             .navMonthPrev,
             .navMonthNext,
+            .navMonthCurrent,
             .navUpNext,
             .navJoinMeeting,
             .otherSettings,

@@ -5,9 +5,11 @@
  */
 export const MONTH_PICKER_PREV_HOTKEY = "Mod+Alt+J" as const;
 export const MONTH_PICKER_NEXT_HOTKEY = "Mod+Alt+K" as const;
+export const MONTH_PICKER_CURRENT_HOTKEY = "Mod+Alt+T" as const;
 
 export const MONTH_PICKER_PREV_KEYCAPS = ["Mod", "Alt", "j"] as const;
 export const MONTH_PICKER_NEXT_KEYCAPS = ["Mod", "Alt", "k"] as const;
+export const MONTH_PICKER_CURRENT_KEYCAPS = ["Mod", "Alt", "t"] as const;
 
 /** Max keycaps in a single modifier chord shown in the legend (Mod/Alt/Shift + key). */
 export const MOD_CHORD_MAX_KEYCAPS = 3 as const;

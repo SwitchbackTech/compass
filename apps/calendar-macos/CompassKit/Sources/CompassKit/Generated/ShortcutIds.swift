@@ -14,6 +14,7 @@ public enum ShortcutId: String, Codable, Hashable, Sendable, CaseIterable {
     case navShiftRight = "nav-shift-right"
     case navMonthPrev = "nav-month-prev"
     case navMonthNext = "nav-month-next"
+    case navMonthCurrent = "nav-month-current"
     case navPickerStep = "nav-picker-step"
     case navToday = "nav-today"
     case navGoToDate = "nav-go-to-date"

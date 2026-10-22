@@ -97,6 +97,9 @@ final class KeyboardEngineTests: XCTestCase {
         XCTAssertEqual(
             dispatcher.dispatch(KeyEvent(key: .character("k"), modifiers: modifiers)),
             .navMonthNext)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("t"), modifiers: modifiers)),
+            .navMonthCurrent)
         XCTAssertNotEqual(
             dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: [.command, .shift])),
             .navMonthPrev)

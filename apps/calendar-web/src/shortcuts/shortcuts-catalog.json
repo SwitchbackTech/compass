@@ -52,6 +52,12 @@
         "section": "navigate"
       },
       {
+        "id": "nav-month-current",
+        "keys": ["Mod", "Alt", "t"],
+        "label": "Go to this month in picker",
+        "section": "navigate"
+      },
+      {
         "id": "nav-picker-step",
         "keys": ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
         "label": "Move the month picker by a week (Enter opens it)",
