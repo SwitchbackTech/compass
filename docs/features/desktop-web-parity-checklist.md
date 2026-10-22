@@ -103,7 +103,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Timed / all-day card shell | ✅ | `EventCardView`, palette tests |
 | Event jump chips (W1, SU2, ...) | ✅ | `DayJumpKeys` ports web `assignDayJumpKeys`: day prefix + per-day index on timed and all-day cards, narrowed to the typed day; digits after a day pick focus (400 ms wait for W1 vs W10); bare digits stay quick-time |
-| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; bare day letters in jump mode (F toggles off, E / C pass through, other letters swallowed like web); still web-only: HHMM create on the picked column (Shift+T then 1230) |
+| Shift+M weekday column jump | ✅ | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; bare day letters in jump mode (F toggles off, E / C pass through, other letters swallowed like web); four digits typed within 800 ms after a day pick create on that column (Shift+T then 1230), like web's column time burst |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
 | Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
@@ -253,7 +253,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | --- | --- | --- | --- |
 | `focus-sidebar` | I | ✅ | Month picker |
 | `focus-event` | U | ✅ | `focusFirstCalendarEvent()` seeds nearest grid event |
-| `focus-shift-hold` | F (+ digits) | 🟡 | Hold-F jump chips; not full web jump mode |
+| `focus-shift-hold` | F (+ digits) | ✅ | Jump mode: W1 / SU2 chips, bare day letters, digits after a day pick, typed time on the picked column |
 | `focus-week-day` | Shift+M… | 🟡 | Column select + first event; weekend S→U/A; digit hints after day pick ❌ |
 | `focus-notice` | P | 🟡 | Subset of notices |
 | `focus-calendar-digit` | 1–9 in list | ✅ | |
@@ -357,6 +357,6 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
 
-**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column still ❌ vs web `useShiftHoldEventHints`.
+**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
 Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).

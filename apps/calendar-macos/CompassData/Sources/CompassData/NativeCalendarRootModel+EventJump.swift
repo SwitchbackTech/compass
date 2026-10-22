@@ -120,6 +120,9 @@ extension NativeCalendarRootModel {
         let buffer = eventJumpSelection.dayJumpBuffer
         guard !buffer.isEmpty, buffer != "s" else { return false }
         eventJumpCommitTask?.cancel()
+        if commitTypedTimeOnPickedDay(appending: digit) {
+            return true
+        }
         switch DayJumpKeys.matchDigit(dayJumpAssignments(), next: buffer + String(digit)) {
         case .focus(let eventId, _):
             commitEventJump(eventId: eventId)
@@ -139,6 +142,22 @@ extension NativeCalendarRootModel {
         return true
     }
 
+    /// Web column time burst: with one day picked, four digits typed within
+    /// `typedTimeWindow` create at that time on the picked column (Shift+T
+    /// then 1230). Ordinal picks along the way still focus.
+    private func commitTypedTimeOnPickedDay(appending digit: Character) -> Bool {
+        guard eventJumpSelection.activeDayKeys.count == 1 else { return false }
+        let now = Date()
+        let recent = eventJumpTimeBurst.filter { now.timeIntervalSince($0.at) < DayJumpKeys.typedTimeWindow }
+        eventJumpTimeBurst = recent + [(digit: digit, at: now)]
+        let burst = String(eventJumpTimeBurst.map(\.digit))
+        guard !QuickTime.canBufferGrow(burst) else { return false }
+        eventJumpTimeBurst = []
+        draftStore.setQuickTimeDigits(burst)
+        commitQuickTimeIfBuffered()
+        return true
+    }
+
     /// Web `commitFocus`: keep the day selected so the next digit picks again.
     private func commitEventJump(eventId: String) {
         let buffer = eventJumpSelection.dayJumpBuffer
@@ -149,6 +168,7 @@ extension NativeCalendarRootModel {
 
     public func clearEventJumpSelection() {
         eventJumpCommitTask?.cancel()
+        eventJumpTimeBurst = []
         eventJumpSelection.clear()
         eventJumpHintLabels = []
         quickTimeSlotHintLabels = []
