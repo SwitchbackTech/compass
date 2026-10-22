@@ -37,6 +37,9 @@ struct EventFormCompactDateField: View {
             .focused($isFocused)
             .accessibilityIdentifier(accessibilityIdentifier)
             .onSubmit { commitTypedDate() }
+            .onKeyPress(keys: [.downArrow, .upArrow, .return, .space]) { press in
+                handleKey(press)
+            }
             .onChange(of: isFocused) { _, focused in
                 if !focused { commitTypedDate() }
             }
@@ -78,6 +81,39 @@ struct EventFormCompactDateField: View {
         parts.minute = time.minute
         parts.second = time.second
         return calendar.date(from: parts) ?? picked
+    }
+
+    /// Web `EventFormDateField.handleKeyDown` on the closed field.
+    private func handleKey(_ press: KeyPress) -> KeyPress.Result {
+        guard !showsCalendar, let key = Self.fieldKey(press.key) else { return .ignored }
+        var modifiers: EventFormDateFieldKeys.Modifiers = []
+        if press.modifiers.contains(.shift) { modifiers.insert(.shift) }
+        if !press.modifiers.isDisjoint(with: [.command, .control, .option]) { modifiers.insert(.mod) }
+        switch EventFormDateFieldKeys.action(for: key, modifiers: modifiers, text: text, committedDate: date) {
+        case .openCalendar:
+            revertTextToBoundDate()
+            showsCalendar = true
+            return .handled
+        case .nudgeDays(let days):
+            guard let nudged = EffectiveTimeZone.calendar.date(byAdding: .day, value: days, to: date) else {
+                return .ignored
+            }
+            date = nudged
+            text = EventFormDateFormat.formatLabel(for: nudged)
+            return .handled
+        case .ignore:
+            return .ignored
+        }
+    }
+
+    private static func fieldKey(_ key: KeyEquivalent) -> EventFormDateFieldKeys.Key? {
+        switch key {
+        case .downArrow: .downArrow
+        case .upArrow: .upArrow
+        case .return: .enter
+        case .space: .space
+        default: nil
+        }
     }
 
     private func commitTypedDate() {
