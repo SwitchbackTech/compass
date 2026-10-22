@@ -12,6 +12,12 @@ final class EventFormDateKeysTests: XCTestCase {
     }
 
     @MainActor
+    func testTheFocusedFieldShowsTheArrowDownHint() {
+        let (app, _) = launchWithStartDateFocused()
+        XCTAssertTrue(app.descendants(matching: .any)["Arrow down opens the calendar"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testArrowDownOpensTheCalendarAndArrowsThenEnterPickADay() throws {
         let (app, field) = launchWithStartDateFocused()
         let before = try XCTUnwrap(field.value as? String)
