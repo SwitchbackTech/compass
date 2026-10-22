@@ -102,6 +102,17 @@ final class KeyboardEngineTests: XCTestCase {
             .navMonthPrev)
     }
 
+    func testToggleAllDayChordMatchModAltA() throws {
+        let dispatcher = try ShortcutDispatcher(registry: registry)
+        let modifiers: KeyModifiers = [.command, .option]
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("a"), modifiers: modifiers)),
+            .editToggleAllDay)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("A"), modifiers: modifiers)),
+            .editToggleAllDay)
+    }
+
     func testScopePrecedence() throws {
         let fired = LockedBox<ShortcutId?>(nil)
         let gridHandler = ShortcutHandler(

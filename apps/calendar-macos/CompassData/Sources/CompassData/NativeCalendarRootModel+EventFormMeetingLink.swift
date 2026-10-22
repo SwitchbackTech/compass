@@ -36,6 +36,7 @@ extension NativeCalendarRootModel {
             hasMeetingLink: meetingLinkURL(for: draft) != nil,
             isExistingEvent: draft.kind == .edit,
             isReadOnly: isEventFormReadOnly(for: draft),
+            isScheduleLocked: isScheduleLocked(for: draft),
             showBookingFormActions: hasBookedMeetingActions)
     }
 }

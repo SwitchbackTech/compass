@@ -96,6 +96,12 @@ extension NativeCalendarRootModel {
             Task { await saveDraft() }
         case "edit-form-actions":
             focusEventFormField(.actions)
+        case "edit-toggle-all-day":
+            guard let draft = draftStore.gridDraft,
+                !isEventFormReadOnly(for: draft),
+                !isScheduleLocked(for: draft)
+            else { return }
+            setDraftAllDay(draft.schedule.kind != .allDay)
         case "edit-copy-meeting-link":
             copyMeetingLinkFromForm()
         case "edit-duplicate":

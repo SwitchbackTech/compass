@@ -18,17 +18,20 @@ public enum EventFormActions {
         public var hasMeetingLink: Bool
         public var isExistingEvent: Bool
         public var isReadOnly: Bool
+        public var isScheduleLocked: Bool
         public var showBookingFormActions: Bool
 
         public init(
             hasMeetingLink: Bool,
             isExistingEvent: Bool,
             isReadOnly: Bool,
+            isScheduleLocked: Bool,
             showBookingFormActions: Bool
         ) {
             self.hasMeetingLink = hasMeetingLink
             self.isExistingEvent = isExistingEvent
             self.isReadOnly = isReadOnly
+            self.isScheduleLocked = isScheduleLocked
             self.showBookingFormActions = showBookingFormActions
         }
     }
@@ -49,6 +52,10 @@ public enum EventFormActions {
 
         if !options.isReadOnly {
             rows.append(registryEntry(registry, id: "edit-delete", shortcutId: .editDelete))
+        }
+
+        if !options.isReadOnly, !options.isScheduleLocked {
+            rows.append(registryEntry(registry, id: "edit-toggle-all-day", shortcutId: .editToggleAllDay))
         }
 
         if options.showBookingFormActions {

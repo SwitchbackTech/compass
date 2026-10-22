@@ -9,12 +9,14 @@ interface Props {
   dateTimeSectionProps: DateTimeSectionProps;
   eventCategory: Categories_Event;
   onToggleAllDay: (checked: boolean) => void;
+  showAllDayShortcut?: boolean;
 }
 
 export const DateControlsSection = ({
   dateTimeSectionProps,
   eventCategory,
   onToggleAllDay,
+  showAllDayShortcut = true,
 }: Props) => {
   return (
     <div className="flex flex-col gap-2">
@@ -22,6 +24,7 @@ export const DateControlsSection = ({
       <AllDayToggle
         checked={eventCategory === Categories_Event.ALLDAY}
         onChange={onToggleAllDay}
+        showShortcut={showAllDayShortcut}
       />
     </div>
   );

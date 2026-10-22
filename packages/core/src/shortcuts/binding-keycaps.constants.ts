@@ -9,6 +9,10 @@ export const MONTH_PICKER_NEXT_HOTKEY = "Mod+Alt+K" as const;
 export const MONTH_PICKER_PREV_KEYCAPS = ["Mod", "Alt", "j"] as const;
 export const MONTH_PICKER_NEXT_KEYCAPS = ["Mod", "Alt", "k"] as const;
 
+/** Toggle all-day on the open event form; same Mod+Alt family as month jumps. */
+export const EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY = "Mod+Alt+A" as const;
+export const EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS = ["Mod", "Alt", "a"] as const;
+
 /** Max keycaps in a single modifier chord shown in the legend (Mod/Alt/Shift + key). */
 export const MOD_CHORD_MAX_KEYCAPS = 3 as const;
 

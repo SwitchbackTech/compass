@@ -9,6 +9,7 @@ export type EventFormCmdHandlers = {
   onClose: () => void;
   onCopyMeetingLink: () => void;
   onJumpToActions: () => void;
+  onToggleAllDay?: () => void;
   onCancelMeeting?: () => void;
   onRescheduleMeeting?: () => void;
 };
@@ -18,6 +19,7 @@ type State = {
   hasMeetingLink: boolean;
   isExistingEvent: boolean;
   isReadOnly: boolean;
+  isScheduleLocked: boolean;
   showBookingFormActions: boolean;
 };
 
@@ -26,6 +28,7 @@ export const initialEventFormCmdState: State = {
   hasMeetingLink: false,
   isExistingEvent: false,
   isReadOnly: false,
+  isScheduleLocked: false,
   showBookingFormActions: false,
 };
 

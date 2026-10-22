@@ -350,6 +350,14 @@ export const SHORTCUTS_REGISTRY = [
     requiresWrite: true,
   },
   {
+    id: "edit-toggle-all-day",
+    keys: [...B.editToggleAllDay.keycaps],
+    label: "Toggle all day on open event",
+    section: "edit",
+    when: { isFormOpen: true },
+    requiresWrite: true,
+  },
+  {
     id: "edit-cancel-meeting",
     keys: [...B.editCancelMeeting.keycaps],
     label: "Cancel booked meeting (confirm twice)",

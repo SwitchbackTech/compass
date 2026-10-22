@@ -1,4 +1,6 @@
 import {
+  EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+  EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS,
   EVENT_MENU_LETTER,
   FOCUS_NOTICE_LETTER,
   HIDE_EVENT_LETTER,
@@ -104,6 +106,10 @@ export const APP_SHORTCUT_BINDINGS = {
   },
   editFieldLeaderInForm: { hotkey: "Mod+E", keycaps: ["Mod+E"] },
   editFormActions: { hotkey: "Mod+0", keycaps: hotkeyKeycaps("Mod+0") },
+  editToggleAllDay: {
+    hotkey: EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+    keycaps: [...EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS],
+  },
   otherSidebar: { hotkey: "]", keycaps: ["]"] },
   otherShortcuts: { hotkey: "?", keycaps: ["?"] },
   otherSubscribe: { hotkey: "B", keycaps: [letterKeycap("B")] },
@@ -168,6 +174,7 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   ],
   "edit-jump-field-digit": KEYMAP.jumpFormField.keycaps,
   "edit-form-actions": APP_SHORTCUT_BINDINGS.editFormActions.keycaps,
+  "edit-toggle-all-day": APP_SHORTCUT_BINDINGS.editToggleAllDay.keycaps,
   "edit-focus-prev": [KEYMAP.moveFocus.hotkeys.up],
   "edit-focus-next": [KEYMAP.moveFocus.hotkeys.down],
   "edit-focus-left": [KEYMAP.moveFocus.hotkeys.left],

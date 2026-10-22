@@ -33,6 +33,7 @@ export function useEventFormCmdItems(): CommandItem[] {
     hasMeetingLink,
     isExistingEvent,
     isReadOnly,
+    isScheduleLocked,
     showBookingFormActions,
   } = useEventFormCmdStore();
 
@@ -43,6 +44,7 @@ export function useEventFormCmdItems(): CommandItem[] {
   const onClickById: Record<string, () => void> = {
     "edit-save": handlers.onSave,
     "edit-form-actions": handlers.onJumpToActions,
+    "edit-toggle-all-day": () => handlers.onToggleAllDay?.(),
     "edit-copy-meeting-link": handlers.onCopyMeetingLink,
     "edit-duplicate": handlers.onDuplicate,
     "edit-delete": handlers.onDelete,
@@ -55,6 +57,7 @@ export function useEventFormCmdItems(): CommandItem[] {
     hasMeetingLink,
     isExistingEvent,
     isReadOnly,
+    isScheduleLocked,
     showBookingFormActions,
   }).flatMap((entry) => {
     const onClick = onClickById[entry.id];

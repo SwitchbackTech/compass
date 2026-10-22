@@ -74,7 +74,9 @@ test("shows date, time, and color keycaps on the event form", async ({
   const form = page.getByRole("form");
   const startDate = form.getByTitle("Pick Start Date");
   await startDate.focus();
-  await expect(form.getByTestId("event-form-control-hint")).toBeVisible();
+  await expect(
+    form.locator("#eventFormStartDate").getByTestId("event-form-control-hint"),
+  ).toBeVisible();
 
   const endTime = form.getByRole("combobox", { name: "End time" });
   await expect(endTime).toBeVisible();

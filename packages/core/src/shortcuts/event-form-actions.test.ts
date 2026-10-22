@@ -7,6 +7,7 @@ describe("listEventFormActions", () => {
       hasMeetingLink: false,
       isExistingEvent: true,
       isReadOnly: false,
+      isScheduleLocked: false,
       showBookingFormActions: false,
     }).map((row) => row.id);
 
@@ -16,6 +17,7 @@ describe("listEventFormActions", () => {
       hasMeetingLink: true,
       isExistingEvent: true,
       isReadOnly: false,
+      isScheduleLocked: false,
       showBookingFormActions: false,
     }).map((row) => row.id);
 
@@ -27,6 +29,7 @@ describe("listEventFormActions", () => {
       hasMeetingLink: false,
       isExistingEvent: true,
       isReadOnly: true,
+      isScheduleLocked: false,
       showBookingFormActions: false,
     }).map((row) => row.id);
 
@@ -34,11 +37,24 @@ describe("listEventFormActions", () => {
     expect(ids).not.toContain("edit-delete");
   });
 
+  it("omits toggle all day when schedule is locked", () => {
+    const ids = listEventFormActions({
+      hasMeetingLink: false,
+      isExistingEvent: false,
+      isReadOnly: false,
+      isScheduleLocked: true,
+      showBookingFormActions: false,
+    }).map((row) => row.id);
+
+    expect(ids).not.toContain("edit-toggle-all-day");
+  });
+
   it("lists only palette-invocable actions", () => {
     const ids = listEventFormActions({
       hasMeetingLink: true,
       isExistingEvent: true,
       isReadOnly: false,
+      isScheduleLocked: false,
       showBookingFormActions: true,
     }).map((row) => row.id);
 
