@@ -173,9 +173,13 @@ final class NativeParityCaptureTests: XCTestCase {
         let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_EVENT_FORM_DATE_PICKER"]).window
         prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
-        XCTAssertTrue(
-            window.descendants(matching: .any)["compass-event-form-date-picker"].waitForExistence(timeout: 12))
+        let field = window.descendants(matching: .any)["compass-event-form-start-date"]
+        let picker = window.descendants(matching: .any)["compass-event-form-date-picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 12))
+        XCTAssertGreaterThanOrEqual(picker.frame.minY, field.frame.maxY)
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-date-picker")
+        XCTAssertTrue(picker.exists, "Export must preserve the open date calendar")
+        XCTAssertTrue(field.exists, "Export must preserve the event form")
     }
 
     @MainActor
@@ -183,9 +187,13 @@ final class NativeParityCaptureTests: XCTestCase {
         let window = launchDemoWindow(extraLaunchArgs: ["-COMPASS_UI_TEST_OPEN_EVENT_FORM_TIME_PICKER"]).window
         prepareParityGrid(window, dismissDemoBanner: true)
         window.typeKey("c", modifierFlags: [])
+        let field = window.buttons["compass-event-form-start"]
         let startTimeMenu = window.descendants(matching: .any)["compass-event-form-start-menu"]
         XCTAssertTrue(startTimeMenu.waitForExistence(timeout: 12))
+        XCTAssertGreaterThanOrEqual(startTimeMenu.frame.minY, field.frame.maxY)
         NativeImageSnapshotSupport.captureWindow(window, named: "event-form-time-picker")
+        XCTAssertTrue(startTimeMenu.exists, "Export must preserve the open time list")
+        XCTAssertTrue(field.exists, "Export must preserve the event form")
     }
 
     @MainActor
