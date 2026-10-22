@@ -157,7 +157,7 @@ public struct SidebarMonthPicker: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Go to this month")
             .help(
-                "Go to this month \(KeycapGlyphs.display([\"Mod\", \"Alt\", \"t\"]))"
+                "Go to this month \(KeycapGlyphs.display(["Mod", "Alt", "t"]))"
             )
             .opacity(isCurrentMonth || captionView != .day ? 0 : 1)
             .disabled(isCurrentMonth || captionView != .day)
