@@ -1,9 +1,11 @@
 import CoreGraphics
 
-/// Layout tokens mirrored from web `index.css` `@theme` (radius + type scale).
+/// Layout tokens mirrored from the web theme (radius, type, and blur scales).
 public enum NativeWebLayoutTokens {
     public static let radiusDefault: CGFloat = 4
     public static let radiusPanel: CGFloat = 12
+    /// Tailwind `--blur-sm`, used by web `backdrop-blur-sm`.
+    public static let blurSmall: CGFloat = 8
 
     public static let fontSizeXS: CGFloat = 9
     public static let fontSizeS: CGFloat = 11
