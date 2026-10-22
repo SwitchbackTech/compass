@@ -43,11 +43,10 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testLifeViewShowsIntroModalOnce() {
-        let app = XCUIApplication.compassUITest()
+        let app = XCUIApplication.compassUITest(lifeViewIntroSeen: false)
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
-            "-\(OnboardingStorageKeys.hasSeenLifeViewIntro)", "false",
         ]
         app.launch()
 

@@ -252,11 +252,10 @@ final class NativeParityCaptureTests: XCTestCase {
 
     @MainActor
     private func captureLifeViewIntro() {
-        let app = XCUIApplication.compassUITest()
+        let app = XCUIApplication.compassUITest(lifeViewIntroSeen: false)
         app.launchArguments += [
             "-COMPASS_FIXTURE", "demo",
             "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
-            "-\(OnboardingStorageKeys.hasSeenLifeViewIntro)", "false",
             "-compass.theme", "light-beach",
             "-COMPASS_UI_TEST_PARITY_CAPTURE",
             "-PARITY_CAPTURE",
