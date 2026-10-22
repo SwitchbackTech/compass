@@ -158,8 +158,17 @@ test("explore banner dismiss hides until the next session", async ({
 
   const bannerText = "Start your 7-day free trial to plan your week.";
   await expect(page.getByText(bannerText)).toBeVisible({ timeout: 15000 });
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/before-explore-calendar-banner.png",
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Dismiss" }).click();
   await expect(page.getByText(bannerText)).toHaveCount(0);
+
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/after-explore-banner-dismissed.png",
+    fullPage: true,
+  });
 
   await page.evaluate(() => {
     sessionStorage.removeItem(
@@ -209,7 +218,11 @@ test("event create opens the trial step while settings navigation does not", asy
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("c");
 
-  await expect(
-    page.getByRole("dialog", { name: "Start your 7-day free trial" }),
-  ).toBeVisible({ timeout: 15000 });
+  const trialDialog = page.getByRole("dialog", {
+    name: "Start your 7-day free trial",
+  });
+  await expect(trialDialog).toBeVisible({ timeout: 15000 });
+  await trialDialog.screenshot({
+    path: "/opt/cursor/artifacts/after-trial-step-from-event-create.png",
+  });
 });
