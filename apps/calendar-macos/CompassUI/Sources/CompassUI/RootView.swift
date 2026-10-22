@@ -130,6 +130,7 @@ public struct RootView: View {
         .overlay {
             BillingUpgradeConfirmationSheet(billingStore: model.billingStore)
         }
+        .blur(radius: model.overlayStores.palette.isOpen ? 4 : 0)
         .overlay {
             CommandPaletteOverlay(model: model)
         }

@@ -363,7 +363,7 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Week grid | ✅ | ✅ | 🟡 | Both week view; hour labels sit on their events (#4719). macOS shot has no demo events banner, scrolls about an hour later, and the sidebar tip rotates to a different line |
 | Mini-calendar | ✅ | ✅ | ✅ | Selected-day ring and selected-week wash match; web also shows a transient ↑ ↓ move-by-week hint |
 | Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; date and time popovers draw beside the field instead of below it; guest row only on macOS (demo fixture) |
-| Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
+| Command palette | ✅ | ✅ | 🟡 | Local 2026-10-22 capture confirms background tint and 4pt blur match the web treatment; palette row/layout differences still need review. Outside-click dismissal is covered in both themes |
 | Settings | ✅ | ✅ | 🟡 | Both modal on a light backdrop (#4718); timezone reads Auto (UTC) vs UTC (UTC) only because the web fixture pins UTC; web shows a focus ring on Accounts |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
 
@@ -374,3 +374,11 @@ Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#
 ### 2026-10-22 source reconciliation
 
 Rechecked against `main` at `7a44b191a` after the overnight merge batch. Corrected stale entries for theme accessor coverage, palette shadow, Quick Add placeholder, weekday targeting, notice focus, save keycaps and screenshot automation. These are source-backed findings, not a new signed-in acceptance run. Remaining partial visual and live-flow entries still require direct verification. Existing Life intro (#4709) and title-bar capture (#4667) PRs must be reconciled before duplicating their changes.
+
+### 2026-10-22 native verification follow-up
+
+Life intro PR #4709 passes strict verification, including native package and UI tests. Enter dismissal and returning to Life without a repeat intro pass in the native regression; signed-in server persistence has not received a new live acceptance run.
+
+Compared the command palette against the web image in run 39786084114. The native palette used the dark overlay token instead of web's background at 85% opacity. The palette now uses the matching background tint, with a 4pt blur applied to the content behind it. Local screenshot inspection confirms the calendar remains faintly visible behind the panel. Both-theme outside-click checks protect hit testing; this does not establish pixel equality for the full palette.
+
+The same completed comparison shows the sidebar toggle on the native title bar. Reconcile draft #4667 against current rendering before adopting its older experiments. Date/time popover placement and the remaining signed-in acceptance flows are still open audit items.
