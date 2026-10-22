@@ -629,6 +629,22 @@ test("day view separates visible calendars into distinct columns", async ({
   expect(readerEventBox!.x).toBeGreaterThan(primaryEventBox!.x);
   expect(primaryEventBox!.width).toBeLessThanOrEqual(primaryHeaderBox!.width);
   expect(readerEventBox!.width).toBeLessThanOrEqual(readerHeaderBox!.width);
+
+  const lastCalendarHeaderBorderRight = await readerHeader.evaluate(
+    (element) => getComputedStyle(element).borderRightWidth,
+  );
+  const timedGrid = dayAgenda.getByRole("region", {
+    name: "Timed events grid",
+  });
+  const lastTimedColumn = timedGrid.getByRole("columnheader", {
+    name: new RegExp(CALENDAR_B_NAME),
+  });
+  const lastTimedColumnBorderRight = await lastTimedColumn.evaluate(
+    (element) => getComputedStyle(element).borderRightWidth,
+  );
+  expect(lastCalendarHeaderBorderRight).toBe("0px");
+  expect(lastTimedColumnBorderRight).toBe("0px");
+  expect(lastCalendarHeaderBorderRight).toBe(lastTimedColumnBorderRight);
 });
 
 test("a new event form offers only writable calendars", async ({ page }) => {

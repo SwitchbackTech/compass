@@ -64,7 +64,7 @@ export const DayCalendarColumnHeaders = ({
               <div
                 aria-label={calendar.name}
                 role="group"
-                className="flex min-w-0 overflow-hidden border-border border-l px-2 text-text last:border-r has-[:focus-visible]:bg-accent/15"
+                className="flex min-w-0 overflow-hidden border-border border-l px-2 text-text has-[:focus-visible]:bg-accent/15"
                 data-focused-column={isFocused ? "true" : undefined}
                 key={calendar.id}
               >
