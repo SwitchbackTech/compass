@@ -94,14 +94,14 @@ export class AuthRoutes extends CommonRoutesConfig {
         appleSignInCallbackLimiter,
         urlencoded({ extended: false }),
         (req, res) => {
-          authController.appleSignInCallback(req, res);
+          void authController.appleSignInCallback(req, res);
         },
       );
 
     this.app
       .route("/auth/:provider/callback")
       .get(providerOAuthCallbackLimiter, (req, res) => {
-        authController.providerOAuthCallback(req, res);
+        void authController.providerOAuthCallback(req, res);
       });
 
     return this.app;

@@ -13,36 +13,30 @@ describe("provider-oauth-callback.service", () => {
     expect(parseProviderOAuthCallbackProvider("unknown")).toBeNull();
   });
 
-  it("captures callback and failure then redirects to the SPA", () => {
-    const received = spyOn(
+  it("captures oauth_callback then redirects to the SPA", async () => {
+    const capture = spyOn(
       analytics.providerOAuthSignupAnalytics,
-      "captureCallbackReceived",
-    ).mockImplementation(() => undefined);
-    const failed = spyOn(
-      analytics.providerOAuthSignupAnalytics,
-      "captureFailed",
-    ).mockImplementation(() => undefined);
+      "captureCallbackQuery",
+    ).mockResolvedValue(true);
 
     const state = buildSignInOAuthState({
       isDesktopClient: false,
       posthogDistinctId: "anon-abc",
     });
 
-    const result = handleProviderOAuthCallback({
+    const result = await handleProviderOAuthCallback({
       provider: "google",
       query: { state, error: "access_denied" },
       telemetryOnly: false,
       frontendUrl: "http://localhost:9080",
     });
 
-    expect(received).toHaveBeenCalledWith({ provider: "google", state });
-    expect(failed).toHaveBeenCalledWith(
-      expect.objectContaining({
-        provider: "google",
-        reason: "access_denied",
-        providerError: "access_denied",
-      }),
-    );
+    expect(capture).toHaveBeenCalledWith({
+      provider: "google",
+      state,
+      code: undefined,
+      providerError: "access_denied",
+    });
     expect(result).toEqual({
       mode: "redirect",
       location: expect.stringContaining(
@@ -50,59 +44,44 @@ describe("provider-oauth-callback.service", () => {
       ),
     });
 
-    received.mockRestore();
-    failed.mockRestore();
+    capture.mockRestore();
   });
 
-  it("returns telemetry-only without redirect", () => {
-    const received = spyOn(
+  it("returns telemetry-only without redirect", async () => {
+    const capture = spyOn(
       analytics.providerOAuthSignupAnalytics,
-      "captureCallbackReceived",
-    ).mockImplementation(() => undefined);
-    spyOn(
-      analytics.providerOAuthSignupAnalytics,
-      "captureFailed",
-    ).mockImplementation(() => undefined);
+      "captureCallbackQuery",
+    ).mockResolvedValue(true);
 
     const state = buildSignInOAuthState({ isDesktopClient: false });
-    const result = handleProviderOAuthCallback({
+    const result = await handleProviderOAuthCallback({
       provider: "microsoft",
       query: { state, code: "auth-code" },
       telemetryOnly: true,
     });
 
     expect(result).toEqual({ mode: "telemetry" });
-    received.mockRestore();
+    capture.mockRestore();
   });
 
-  it("captures Apple form-post callback and failure on the same analytics path", () => {
-    const received = spyOn(
+  it("captures Apple form-post callback on the same analytics path", async () => {
+    const capture = spyOn(
       analytics.providerOAuthSignupAnalytics,
-      "captureCallbackReceived",
-    ).mockImplementation(() => undefined);
-    const failed = spyOn(
-      analytics.providerOAuthSignupAnalytics,
-      "captureFailed",
-    ).mockImplementation(() => undefined);
+      "captureCallbackQuery",
+    ).mockResolvedValue(true);
 
-    appleFormPostAnalytics({
+    await appleFormPostAnalytics({
       state: "apple-state",
       error: "access_denied",
     });
 
-    expect(received).toHaveBeenCalledWith({
+    expect(capture).toHaveBeenCalledWith({
       provider: "apple",
       state: "apple-state",
+      code: undefined,
+      providerError: "access_denied",
     });
-    expect(failed).toHaveBeenCalledWith(
-      expect.objectContaining({
-        provider: "apple",
-        reason: "access_denied",
-        providerError: "access_denied",
-      }),
-    );
 
-    received.mockRestore();
-    failed.mockRestore();
+    capture.mockRestore();
   });
 });

@@ -1,4 +1,3 @@
-import { oauthFailedReasonFromCallbackQuery } from "@core/analytics/oauth-signup.events";
 import {
   type ProviderKind,
   ProviderKindSchema,
@@ -30,28 +29,16 @@ function queryField(
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
-function captureOAuthCallbackQueryAnalytics(
+async function captureOAuthCallbackQueryAnalytics(
   provider: ProviderKind,
   query: { state?: string; code?: string; providerError?: string },
-): void {
-  providerOAuthSignupAnalytics.captureCallbackReceived({
+): Promise<void> {
+  await providerOAuthSignupAnalytics.captureCallbackQuery({
     provider,
     state: query.state,
-  });
-
-  const failureReason = oauthFailedReasonFromCallbackQuery({
-    state: query.state,
     code: query.code,
-    providerError: query.providerError,
+    providerError: query.providerError ?? null,
   });
-  if (failureReason) {
-    providerOAuthSignupAnalytics.captureFailed({
-      provider,
-      state: query.state,
-      reason: failureReason,
-      providerError: query.providerError,
-    });
-  }
 }
 
 function spaCallbackUrl(
@@ -76,17 +63,17 @@ export function parseProviderOAuthCallbackProvider(
   return parsed.success ? parsed.data : null;
 }
 
-export function handleProviderOAuthCallback(input: {
+export async function handleProviderOAuthCallback(input: {
   provider: ProviderKind;
   query: ProviderOAuthCallbackQuery;
   telemetryOnly: boolean;
   frontendUrl?: string;
-}): ProviderOAuthCallbackResolution {
+}): Promise<ProviderOAuthCallbackResolution> {
   const state = queryField(input.query, "state");
   const code = queryField(input.query, "code");
   const providerError = queryField(input.query, "error");
 
-  captureOAuthCallbackQueryAnalytics(input.provider, {
+  await captureOAuthCallbackQueryAnalytics(input.provider, {
     state,
     code,
     providerError,
@@ -102,12 +89,12 @@ export function handleProviderOAuthCallback(input: {
   };
 }
 
-export function appleFormPostAnalytics(input: {
+export async function appleFormPostAnalytics(input: {
   state: string;
   code?: string;
   error?: string;
-}): void {
-  captureOAuthCallbackQueryAnalytics("apple", {
+}): Promise<void> {
+  await captureOAuthCallbackQueryAnalytics("apple", {
     state: input.state,
     code: input.code,
     providerError: input.error,

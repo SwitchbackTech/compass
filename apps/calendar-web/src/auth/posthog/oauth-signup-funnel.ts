@@ -17,7 +17,7 @@ const SIGNUP_FAILURE_TO_OAUTH_FAILED: Partial<
   oauth_missing_state: "invalid_state",
   oauth_missing_intent: "invalid_state",
   oauth_missing_code: "missing_code",
-  oauth_exchange_failed: "token_exchange_error",
+  oauth_exchange_failed: "token_exchange_failed",
   oauth_missing_scopes: "other",
   oauth_callback_crashed: "other",
 };
