@@ -45,6 +45,7 @@ public final class NativeCalendarRootModel {
     public var onRecurrenceScopeAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onStatusToastAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onShortcutsLegendAccessibilityProbeChanged: ((Bool) -> Void)?
+    public var onEventJumpChipsAccessibilityProbeChanged: (([EventJumpChipHint]) -> Void)?
     public var monthPickerMonth: Date
     public var pendingScroll: TimeGridScrollRequest?
     /// True for 700ms after an already-at-now teach pulse. Matches web `NOW_CUE_PULSE_MS`.
@@ -1240,8 +1241,9 @@ public final class NativeCalendarRootModel {
             eventJumpAssignments,
             prefix: eventJumpSelection.dayJumpBuffer
         )
+        let layoutCards = currentGridCards()
         let frameByEventId = Dictionary(
-            uniqueKeysWithValues: focusLayoutCards.map { ($0.eventId, $0.frame) }
+            uniqueKeysWithValues: layoutCards.map { ($0.eventId, $0.frame) }
         )
         return filtered.compactMap { assignment in
             guard let frame = frameByEventId[assignment.eventId] else { return nil }
@@ -1257,7 +1259,7 @@ public final class NativeCalendarRootModel {
         let calendar = EffectiveTimeZone.calendar
         let eventsById = Dictionary(uniqueKeysWithValues: loadedEvents.map { ($0.id.rawValue, $0) })
         var targets: [DayJumpKeyAssignment.Target] = []
-        for card in focusLayoutCards {
+        for card in currentGridCards() {
             guard let event = eventsById[card.eventId] else { continue }
             switch event.schedule {
             case .timed(let timed):
