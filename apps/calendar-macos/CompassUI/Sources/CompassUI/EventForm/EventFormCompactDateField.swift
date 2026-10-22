@@ -47,8 +47,11 @@ struct EventFormCompactDateField: View {
                 RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
                     .stroke(isFocused ? theme.accentColor : theme.borderColor, lineWidth: 1)
             }
+            .focused($isFocused)
+            .accessibilityIdentifier(accessibilityIdentifier)
             .overlay(alignment: .trailing) {
-                // Web `EventFormInfieldHint`: ↓ opens the calendar.
+                // Web `EventFormInfieldHint`: ↓ opens the calendar. Added after the
+                // identifier so the keycap does not share the field's id.
                 if showsArrowDownHint {
                     ShortcutHintChip(label: KeycapGlyphs.display(["ArrowDown"]))
                         .padding(.trailing, 6)
@@ -56,8 +59,6 @@ struct EventFormCompactDateField: View {
                         .accessibilityLabel("Arrow down opens the calendar")
                 }
             }
-            .focused($isFocused)
-            .accessibilityIdentifier(accessibilityIdentifier)
             .onSubmit { commitTypedDate() }
             .onKeyPress(keys: Self.handledKeys) { press in
                 handleKey(press)
