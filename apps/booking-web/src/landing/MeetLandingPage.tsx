@@ -7,6 +7,11 @@ import {
   MEET_LANDING_HEADLINE,
   MEET_LANDING_SUPPORTING,
 } from "@booking-web/landing/meet-landing.copy";
+import {
+  trackBookingLandingViewed,
+  trackBookingSetupCtaClicked,
+} from "@booking-web/telemetry/guest-booking-funnel";
+import { useEffect, useRef } from "react";
 import { meetingSetupRootHref } from "@web/booking/meeting-setup.search";
 
 /**
@@ -16,8 +21,15 @@ import { meetingSetupRootHref } from "@web/booking/meeting-setup.search";
  */
 export function MeetLandingPage() {
   const setupHref = meetingSetupRootHref();
+  const viewedRef = useRef(false);
 
   useBookingDocumentTitle(MEET_LANDING_DOCUMENT_TITLE);
+
+  useEffect(() => {
+    if (viewedRef.current) return;
+    viewedRef.current = true;
+    trackBookingLandingViewed();
+  }, []);
 
   return (
     <PublicBookingLayout showFooter={false}>
@@ -31,6 +43,7 @@ export function MeetLandingPage() {
       <a
         className="c-focus-ring inline-flex min-h-11 w-fit items-center rounded-md bg-accent px-4 font-medium text-on-accent text-sm hover:bg-accent-hover"
         href={setupHref}
+        onClick={() => trackBookingSetupCtaClicked("landing")}
       >
         {MEET_LANDING_CTA_LABEL}
       </a>
