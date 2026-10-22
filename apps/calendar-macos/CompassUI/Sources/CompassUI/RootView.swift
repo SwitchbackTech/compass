@@ -14,7 +14,7 @@ public struct RootView: View {
         self.model = model
     }
 
-    public var body: some View {
+    private var calendarShell: some View {
         ZStack(alignment: .top) {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
@@ -66,6 +66,10 @@ public struct RootView: View {
                 .padding(.top, MacTitleBarChromeMetrics.mainContentTopInset + 8)
                 .padding(.leading, contentLeadingInset + 8)
         }
+    }
+
+    private var calendarWithBanners: some View {
+        calendarShell
         .background(theme.backgroundColor)
         .font(.rubik(14))
         .overlayPreferenceValue(PageJumpChipAnchorKey.self) { anchors in
@@ -103,6 +107,10 @@ public struct RootView: View {
                     .noticeFocusRing(model.focusedNotice == .billingPastDue)
             }
         }
+    }
+
+    private var calendarWithOnboarding: some View {
+        calendarWithBanners
         .overlay {
             if model.authStore.isModalPresented, model.activeOnboardingSurface != .welcomeModal {
                 AuthModalOverlay(authStore: model.authStore, billingStore: model.billingStore)
@@ -110,6 +118,17 @@ public struct RootView: View {
         }
         .overlay {
             OnboardingOverlay(model: model)
+        }
+        .overlay {
+            if model.isLifeViewIntroActive {
+                LifeViewIntroModalView(model: model)
+            }
+        }
+        .onAppear {
+            model.refreshLifeViewIntro()
+        }
+        .onChange(of: model.viewStore.view) { _, _ in
+            model.refreshLifeViewIntro()
         }
         .overlay {
             if model.showsLocalModeConnectPrompt {
@@ -131,6 +150,10 @@ public struct RootView: View {
         .overlay {
             BillingUpgradeConfirmationSheet(billingStore: model.billingStore)
         }
+    }
+
+    private var calendarWithTools: some View {
+        calendarWithOnboarding
         .blur(radius: model.overlayStores.palette.isOpen ? NativeWebLayoutTokens.blurSmall : 0)
         .overlay {
             CommandPaletteOverlay(model: model)
@@ -147,6 +170,10 @@ public struct RootView: View {
         .overlay {
             StatusToastOverlay(model: model)
         }
+    }
+
+    public var body: some View {
+        calendarWithTools
         .overlay {
             DedicationDialogView(
                 isPresented: model.dedicationDialogVisible,

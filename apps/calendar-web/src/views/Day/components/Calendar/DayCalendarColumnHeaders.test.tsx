@@ -178,4 +178,14 @@ describe("DayCalendarColumnHeaders", () => {
 
     expect(onColumnFocusChange).toHaveBeenCalledWith(personal.id);
   });
+
+  it("does not draw a right-edge divider on the last column (matches timed grid)", () => {
+    render(<DayCalendarColumnHeaders calendars={[personal, holidays]} />);
+
+    const columnGroups = within(
+      screen.getByRole("region", { name: "Calendars" }),
+    ).getAllByRole("group");
+    expect(columnGroups.at(-1)).not.toHaveClass("border-r");
+    expect(columnGroups.at(-1)).not.toHaveClass("last:border-r");
+  });
 });
