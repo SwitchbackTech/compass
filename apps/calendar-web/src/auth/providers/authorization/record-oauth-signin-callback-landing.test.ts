@@ -32,7 +32,7 @@ describe("recordOAuthSignInCallbackLanding", () => {
     const firstCall = fetchMock.mock.calls[0];
     expect(firstCall).toBeDefined();
     const [url, init] = firstCall as unknown as [string, RequestInit];
-    expect(url).toContain("/auth/google/callback?state=abc");
+    expect(url).toContain("/api/auth/google/callback?state=abc");
     expect(init.headers).toEqual(
       expect.objectContaining({ "X-Compass-OAuth-Telemetry": "1" }),
     );

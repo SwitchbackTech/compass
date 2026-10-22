@@ -18,7 +18,7 @@ describe("relayProviderOAuthCallbackTelemetry", () => {
     const firstCall = fetchMock.mock.calls[0];
     expect(firstCall).toBeDefined();
     const [url, init] = firstCall as unknown as [string, RequestInit];
-    expect(url).toContain("/auth/google/callback?state=test-state");
+    expect(url).toContain("/api/auth/google/callback?state=test-state");
     expect(init.headers).toEqual(
       expect.objectContaining({ "X-Compass-OAuth-Telemetry": "1" }),
     );
