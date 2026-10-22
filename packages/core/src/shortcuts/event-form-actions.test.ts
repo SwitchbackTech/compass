@@ -33,4 +33,15 @@ describe("listEventFormActions", () => {
     expect(ids).not.toContain("edit-duplicate");
     expect(ids).not.toContain("edit-delete");
   });
+
+  it("lists only palette-invocable actions", () => {
+    const ids = listEventFormActions({
+      hasMeetingLink: true,
+      isExistingEvent: true,
+      isReadOnly: false,
+      showBookingFormActions: true,
+    }).map((row) => row.id);
+
+    expect(ids).not.toContain("edit-jump-field-digit");
+  });
 });

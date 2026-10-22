@@ -1,5 +1,6 @@
 import {
   oauthCallbackSearchHasParams,
+  oauthCallbackSearchParams,
   stripOAuthCallbackQueryFromHistory,
 } from "@web/auth/callback/strip-oauth-callback-url";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -12,6 +13,8 @@ describe("stripOAuthCallbackQueryFromHistory", () => {
   it("detects provider callback query params", () => {
     expect(oauthCallbackSearchHasParams("?state=abc&code=1")).toBe(true);
     expect(oauthCallbackSearchHasParams("")).toBe(false);
+    expect(oauthCallbackSearchParams("?state=abc").get("state")).toBe("abc");
+    expect(oauthCallbackSearchParams("state=abc").get("state")).toBe("abc");
   });
 
   it("removes callback params from the address bar", () => {
