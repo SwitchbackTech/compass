@@ -1,5 +1,4 @@
 import { APP_SHORTCUT_BINDINGS } from "@core/shortcuts/app-shortcut-bindings";
-import { KEYMAP } from "@core/shortcuts/keymap";
 
 /** One keyboard-discoverable action while the event form is open. */
 export type EventFormActionEntry = {
@@ -78,12 +77,6 @@ export function listEventFormActions(
     id: "edit-close-form",
     label: "Close form",
     keys: APP_SHORTCUT_BINDINGS.createPlaceDiscard.keycaps,
-  });
-
-  rows.push({
-    id: "edit-jump-field-digit",
-    label: "Jump to field (hold Mod for hints)",
-    keys: KEYMAP.jumpFormField.keycaps,
   });
 
   return rows;

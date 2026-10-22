@@ -21,7 +21,7 @@ type State = {
   showBookingFormActions: boolean;
 };
 
-const initialState: State = {
+export const initialEventFormCmdState: State = {
   handlers: null,
   hasMeetingLink: false,
   isExistingEvent: false,
@@ -30,7 +30,7 @@ const initialState: State = {
 };
 
 export const useEventFormCmdStore = create<State>()(
-  devtools(() => initialState, {
+  devtools(() => initialEventFormCmdState, {
     name: "compass/event-form-cmd",
     enabled: IS_DEV,
   }),
@@ -40,7 +40,7 @@ export const eventFormCmdActions = {
   register: (payload: State) =>
     useEventFormCmdStore.setState(payload, false, { type: "register" }),
   clear: () =>
-    useEventFormCmdStore.setState(initialState, false, { type: "clear" }),
+    useEventFormCmdStore.setState(initialEventFormCmdState, false, {
+      type: "clear",
+    }),
 };
-
-export const selectEventFormCmdHandlers = (state: State) => state.handlers;
