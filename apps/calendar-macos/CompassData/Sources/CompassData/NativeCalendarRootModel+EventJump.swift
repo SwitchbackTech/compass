@@ -76,6 +76,21 @@ extension NativeCalendarRootModel {
         selectJumpDay(prefix: prefix)
     }
 
+    /// Web jump mode takes day letters bare (W, then 2). F still toggles the
+    /// mode off and E / C keep their edit and create shortcuts, so those fall
+    /// through (false); every other letter is swallowed so J/K cannot fire.
+    public func handleEventJumpLetter(_ letter: Character) -> Bool {
+        switch letter.lowercased() {
+        case "f", "e", "c":
+            return false
+        case "m", "t", "w", "r", "s", "u", "a":
+            handleShiftDayJump(letter: letter)
+            return true
+        default:
+            return true
+        }
+    }
+
     private func selectJumpDay(prefix: String) {
         let calendar = EffectiveTimeZone.calendar
         for dayKey in visibleDateKeys() {
