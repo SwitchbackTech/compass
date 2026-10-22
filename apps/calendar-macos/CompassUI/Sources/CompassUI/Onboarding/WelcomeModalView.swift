@@ -16,13 +16,16 @@ struct WelcomeModalView: View {
         ZStack {
             PanelBackdropView()
                 .ignoresSafeArea()
-            ScrollView {
-                panel
-                    .frame(maxWidth: .infinity, alignment: .top)
-                    .padding(.top, 32)
-                    .padding(.bottom, 32)
+            // Web `OverlayPanel` centers the panel and scrolls (`py-8`) only
+            // when it is taller than the window.
+            GeometryReader { geometry in
+                ScrollView {
+                    panel
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
+                        .frame(minHeight: geometry.size.height)
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .onAppear {
             model.onboardingStore.setWelcomeFirstVisitOpen(true)
