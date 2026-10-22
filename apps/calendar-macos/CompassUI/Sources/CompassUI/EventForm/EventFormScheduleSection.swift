@@ -30,8 +30,8 @@ struct EventFormScheduleSection: View {
 
                 if !scheduleLocked {
                     HStack(spacing: 4) {
-                        ForEach(KeycapGlyphs.display(["Mod", "Alt", "A"]), id: \.self) { key in
-                            ShortcutHintChip(label: key)
+                        ForEach(["Mod", "Alt", "A"], id: \.self) { key in
+                            ShortcutHintChip(label: KeycapGlyphs.display([key]))
                         }
                     }
                     .accessibilityIdentifier("compass-event-form-allday-shortcut")
