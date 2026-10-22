@@ -41,13 +41,13 @@
       },
       {
         "id": "nav-month-prev",
-        "keys": ["Mod", "Alt", "Shift", "j"],
+        "keys": ["Mod", "Alt", "j"],
         "label": "Previous month in picker",
         "section": "navigate"
       },
       {
         "id": "nav-month-next",
-        "keys": ["Mod", "Alt", "Shift", "k"],
+        "keys": ["Mod", "Alt", "k"],
         "label": "Next month in picker",
         "section": "navigate"
       },

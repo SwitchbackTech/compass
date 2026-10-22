@@ -357,13 +357,13 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ### UX
 
-The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Alt+Shift+J` / `Mod+Alt+Shift+K` (same J/K direction as grid period nav) and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. The chord works from inputs while the sidebar picker or an open grid date popover is on the day grid. Clicking a day does nothing; hovering the picker shows `I focuses the picker`, focusing it reveals the arrow keycaps, and using an arrow adds `Enter opens it`. Repeated clicks surface the keyboard hint.
+The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Alt+J` / `Mod+Alt+K` (same J/K direction as grid period nav) and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. The chord works from inputs while the sidebar picker or an open grid date popover is on the day grid. Clicking a day does nothing; hovering the picker shows `I focuses the picker`, focusing it reveals the arrow keycaps, and using an arrow adds `Enter opens it`. Repeated clicks surface the keyboard hint.
 
 ### Steps
 
 1. Navigate to `/week` with the sidebar open and press `I`.
 2. Press ArrowDown twice, then ArrowRight once.
-3. Press `Mod+Alt+Shift+K`.
+3. Press `Mod+Alt+K`.
 4. Press Enter.
 5. Click any day in the picker three or four times.
 
@@ -371,7 +371,7 @@ The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold 
 
 - After `I`, the first day of the highlighted week row has focus and the whole row shows the focus ring.
 - Each arrow moves the ring to the next week; the calendar grid does not move yet.
-- After `Mod+Alt+Shift+K`, the next month is shown and focus is still on a day in that month.
+- After `Mod+Alt+K`, the next month is shown and focus is still on a day in that month.
 - Enter anchors the week view on the focused row and the muted week capsule matches the visible window. Today is an ink circle, not an accent fill.
 - Clicks do not navigate, and a click shows the keyboard hint. Hovering the picker shows `I focuses the picker`. Focusing it replaces that with up/down arrow keycaps and `move by week`. After an arrow, `Enter opens it` appears with `Enter` as a keycap. The keyboard hint says to press `I`, then use the arrow keys and Enter.
 
