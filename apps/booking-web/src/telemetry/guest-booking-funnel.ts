@@ -13,10 +13,6 @@ type BookingSubmitFailureReason =
 /** Which "Set up your meeting page" link sent the visitor to `/?meetingSetup=1`. */
 export type BookingSetupCtaSource = "landing" | "footer";
 
-export function trackBookingLandingViewed(): void {
-  track("booking_landing_viewed");
-}
-
 export function trackBookingSetupCtaClicked(
   source: BookingSetupCtaSource,
 ): void {
