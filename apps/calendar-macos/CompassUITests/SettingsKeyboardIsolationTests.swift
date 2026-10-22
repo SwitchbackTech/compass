@@ -2,6 +2,33 @@ import XCTest
 
 final class SettingsKeyboardIsolationTests: XCTestCase {
     @MainActor
+    func testBackdropAndEscapeCloseSettingsInBothThemes() {
+        for theme in ["light-beach", "dark-abyss"] {
+            let app = XCUIApplication.compassUITest()
+            app.launchArguments += ["-COMPASS_FIXTURE", "demo", "-compass.theme", theme]
+            app.launch()
+            let window = app.windows["Compass"]
+            XCTAssertTrue(window.waitForExistence(timeout: 15))
+            window.typeKey(",", modifierFlags: [.command])
+            let settings = window.descendants(matching: .any)["compass-native-settings"]
+            XCTAssertTrue(settings.waitForExistence(timeout: 8))
+            let evidence = XCTAttachment(screenshot: window.screenshot())
+            evidence.name = "Settings modal backdrop, \(theme)"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            window.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 20, dy: 200))
+                .click()
+            XCTAssertTrue(settings.waitForNonExistence(timeout: 5))
+            window.typeKey(",", modifierFlags: [.command])
+            XCTAssertTrue(settings.waitForExistence(timeout: 8))
+            window.typeKey(.escape, modifierFlags: [])
+            XCTAssertTrue(settings.waitForNonExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
+    @MainActor
     func testSettingsDoesNotCreateAnEventBehindTheDialog() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]

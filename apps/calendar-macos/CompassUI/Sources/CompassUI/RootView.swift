@@ -124,6 +124,7 @@ public struct RootView: View {
                 BillingGateOverlay(billingStore: model.billingStore)
             }
         }
+        .blur(radius: model.settingsStore.isPresented ? 4 : 0)
         .overlay {
             SettingsWindowOverlay(model: model)
         }
