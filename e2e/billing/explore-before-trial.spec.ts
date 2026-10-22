@@ -195,9 +195,7 @@ test("explore banner dismiss hides until the next session", async ({
   await expect(page.getByText(bannerText)).toBeVisible({ timeout: 15000 });
 });
 
-test("event create opens the trial step while settings navigation does not", async ({
-  page,
-}) => {
+test("opening settings does not open the trial step", async ({ page }) => {
   await awaitingCheckoutRoutes(page);
   await signInAwaitingCheckout(page);
 
@@ -208,13 +206,15 @@ test("event create opens the trial step while settings navigation does not", asy
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
+});
 
-  await page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/billing/status") && response.ok(),
-  );
+test("event create opens the trial step", async ({ page }) => {
+  await awaitingCheckoutRoutes(page);
+  await signInAwaitingCheckout(page);
+
+  await expect(
+    page.getByText("Start your 7-day free trial to plan your week."),
+  ).toBeVisible({ timeout: 15000 });
   await page.locator("#mainGrid").focus();
   await page.keyboard.press("c");
 
