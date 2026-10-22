@@ -1,8 +1,16 @@
 import { useCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { useHiddenEventIds } from "@web/events/hidden/hidden-events.query";
+import {
+  selectGridDraft,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { isAllDayEventOnDay } from "./dayAllDayRows.util";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
 
@@ -16,9 +24,48 @@ export const useDayCalendarColumns = ({
   timedEvents: GridEvent[];
 }) => {
   const { data: calendars = [] } = useCalendarsQuery();
+  const hiddenEventIds = useHiddenEventIds();
+  const gridDraft = useDraftStore(selectGridDraft);
+  const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
+  const defaultTargetCalendar = useDefaultTargetCalendar(calendars);
+
+  const pinnedCalendarIds = useMemo(() => {
+    const pinned = new Set<CalendarId>();
+    const draftCalendarId = gridDraft?.values.calendarId;
+    if (draftCalendarId) {
+      pinned.add(draftCalendarId);
+    }
+    if (isEventFormOpen && gridDraft?.kind === "edit" && gridDraft.source.id) {
+      const source = [...timedEvents, ...allDayEvents].find(
+        (event) => event._id === gridDraft.source.id,
+      );
+      if (source?.calendarId) {
+        pinned.add(source.calendarId);
+      }
+    }
+    return pinned;
+  }, [allDayEvents, gridDraft, isEventFormOpen, timedEvents]);
+
   const displayedCalendars = useMemo(
-    () => getDayViewCalendars(calendars),
-    [calendars],
+    () =>
+      getDayViewCalendars({
+        allDayEvents,
+        calendars,
+        dateInView,
+        defaultTargetCalendar,
+        hiddenEventIds,
+        pinnedCalendarIds,
+        timedEvents,
+      }),
+    [
+      allDayEvents,
+      calendars,
+      dateInView,
+      defaultTargetCalendar,
+      hiddenEventIds,
+      pinnedCalendarIds,
+      timedEvents,
+    ],
   );
   const calendarColumnIndexById = useMemo(
     () =>

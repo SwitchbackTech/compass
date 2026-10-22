@@ -427,7 +427,7 @@ public final class TimeGridView: NSView {
         renderTimezoneHeader(snapshot: snapshot, headerHeight: headerHeight, palette: palette)
 
         if state.layoutMode == .day {
-            let dayCalendars = DayCalendarColumns.dayViewCalendars(state.scenario.calendars)
+            let dayCalendars = state.scenario.dayViewCalendarsForLayout()
             let columnDisplayNames = DayCalendarColumnDisplayName.displayNames(
                 for: dayCalendars.map(\.name)
             )

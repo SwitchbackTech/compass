@@ -199,9 +199,11 @@ public struct GridLayoutScenario: Sendable {
     public var allDayEvents: [GridLayoutAllDayEventInput]
     public var busyPeriods: [BusyPeriodInput]
     public var calendars: [CompassCalendar]
+    public var defaultTargetCalendarId: String?
     public var draftOverlay: GridLayoutDraftOverlay?
     public var hiddenEventIds: Set<String>
     public var layoutMode: GridLayoutMode
+    public var pinnedDayColumnCalendarIds: Set<String>
     public var referenceNow: Date
     public var timedEvents: [GridLayoutTimedEventInput]
     public var visibleDateKeys: [String]
@@ -210,9 +212,11 @@ public struct GridLayoutScenario: Sendable {
         allDayEvents: [GridLayoutAllDayEventInput] = [],
         busyPeriods: [BusyPeriodInput] = [],
         calendars: [CompassCalendar] = [],
+        defaultTargetCalendarId: String? = nil,
         draftOverlay: GridLayoutDraftOverlay? = nil,
         hiddenEventIds: Set<String> = [],
         layoutMode: GridLayoutMode,
+        pinnedDayColumnCalendarIds: Set<String> = [],
         referenceNow: Date,
         timedEvents: [GridLayoutTimedEventInput] = [],
         visibleDateKeys: [String]
@@ -220,9 +224,11 @@ public struct GridLayoutScenario: Sendable {
         self.allDayEvents = allDayEvents
         self.busyPeriods = busyPeriods
         self.calendars = calendars
+        self.defaultTargetCalendarId = defaultTargetCalendarId
         self.draftOverlay = draftOverlay
         self.hiddenEventIds = hiddenEventIds
         self.layoutMode = layoutMode
+        self.pinnedDayColumnCalendarIds = pinnedDayColumnCalendarIds
         self.referenceNow = referenceNow
         self.timedEvents = timedEvents
         self.visibleDateKeys = visibleDateKeys

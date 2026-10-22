@@ -1,8 +1,15 @@
+import { Origin } from "@core/constants/core.constants";
 import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
-import { getDayViewCalendars } from "./dayCalendarColumns.util";
+import dayjs from "@core/util/date/dayjs";
+import { type GridEvent } from "@web/common/types/web.event.types";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import {
+  calendarIdsWithVisibleEventsOnDay,
+  getDayViewCalendars,
+} from "./dayCalendarColumns.util";
 import { describe, expect, it } from "bun:test";
 
 function makeCalendar(overrides: Partial<Calendar>): Calendar {
@@ -28,20 +35,129 @@ function makeCalendar(overrides: Partial<Calendar>): Calendar {
   };
 }
 
+const dateInView = dayjs("2026-05-20T00:00:00.000");
+
+const gridEvent = (
+  overrides: Partial<GridEvent> & Pick<GridEvent, "_id">,
+): GridEvent => ({
+  description: "",
+  endDate: "2026-05-20T10:00:00.000Z",
+  isAllDay: false,
+  origin: Origin.COMPASS,
+  position: gridEventDefaultPosition,
+  startDate: "2026-05-20T09:00:00.000Z",
+  title: "Event",
+  user: "",
+  ...overrides,
+});
+
 describe("getDayViewCalendars", () => {
-  it("keeps the local calendar when it is active and visible", () => {
-    const local = makeCalendar({ provider: "local", name: "Compass" });
-    const google = makeCalendar({
+  const local = makeCalendar({ provider: "local", name: "Compass" });
+  const google = makeCalendar({
+    provider: "google",
+    id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    name: "primary",
+  });
+  const extra = makeCalendar({
+    id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    name: "empty",
+  });
+
+  it("returns only calendars with visible events on the day", () => {
+    const timed = [
+      gridEvent({
+        _id: "a",
+        calendarId: local.id,
+      }),
+    ];
+
+    expect(
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [local, google, extra],
+        dateInView,
+        hiddenEventIds: new Set(),
+        timedEvents: timed,
+      }),
+    ).toEqual([local]);
+  });
+
+  it("counts all-day events on the displayed day", () => {
+    const allDay = [
+      gridEvent({
+        _id: "ad",
+        calendarId: google.id,
+        isAllDay: true,
+        startDate: "2026-05-20",
+        endDate: "2026-05-21",
+      }),
+    ];
+
+    expect(
+      getDayViewCalendars({
+        allDayEvents: allDay,
+        calendars: [local, google],
+        dateInView,
+        hiddenEventIds: new Set(),
+        timedEvents: [],
+      }),
+    ).toEqual([google]);
+  });
+
+  it("ignores individually hidden events", () => {
+    const timed = [
+      gridEvent({
+        _id: "hidden-event",
+        calendarId: google.id,
+      }),
+    ];
+
+    expect(
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [local, google],
+        dateInView,
+        hiddenEventIds: new Set(["hidden-event"]),
+        timedEvents: timed,
+      }),
+    ).toEqual([local]);
+  });
+
+  it("keeps pinned calendars without visible events", () => {
+    expect(
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [local, google, extra],
+        dateInView,
+        hiddenEventIds: new Set(),
+        pinnedCalendarIds: new Set([extra.id]),
+        timedEvents: [],
+      }),
+    ).toEqual([extra]);
+  });
+
+  it("falls back to the default target calendar when the day has no visible events", () => {
+    const primaryGoogle = makeCalendar({
       provider: "google",
       id: "507f1f77bcf86cd799439012" as Calendar["id"],
       name: "primary",
+      isPrimary: true,
     });
 
-    expect(getDayViewCalendars([local, google])).toEqual([local, google]);
+    expect(
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [local, primaryGoogle],
+        dateInView,
+        defaultTargetCalendar: primaryGoogle,
+        hiddenEventIds: new Set(),
+        timedEvents: [],
+      }),
+    ).toEqual([primaryGoogle]);
   });
 
   it("falls back to the primary calendar when none are visible", () => {
-    const local = makeCalendar({
+    const hiddenLocal = makeCalendar({
       provider: "local",
       name: "Compass",
       isVisible: false,
@@ -53,30 +169,59 @@ describe("getDayViewCalendars", () => {
       isPrimary: true,
       isVisible: false,
     });
-    const secondaryGoogle = makeCalendar({
-      provider: "google",
-      id: "507f1f77bcf86cd799439013" as Calendar["id"],
-      name: "secondary",
-      isVisible: false,
-    });
 
     expect(
-      getDayViewCalendars([local, secondaryGoogle, primaryGoogle]),
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [hiddenLocal, primaryGoogle],
+        dateInView,
+        hiddenEventIds: new Set(),
+        timedEvents: [],
+      }),
     ).toEqual([primaryGoogle]);
   });
 
-  it("includes a visible local column alongside Google calendars", () => {
-    const local = makeCalendar({
-      provider: "local",
-      name: "Compass",
-      isPrimary: true,
+  it("preserves calendar order from the eligible list", () => {
+    const first = makeCalendar({
+      id: "507f1f77bcf86cd799439014" as Calendar["id"],
+      name: "A",
     });
-    const google = makeCalendar({
-      provider: "google",
-      id: "507f1f77bcf86cd799439012" as Calendar["id"],
-      name: "primary",
+    const second = makeCalendar({
+      id: "507f1f77bcf86cd799439015" as Calendar["id"],
+      name: "B",
     });
+    const timed = [
+      gridEvent({ _id: "1", calendarId: second.id }),
+      gridEvent({ _id: "2", calendarId: first.id }),
+    ];
 
-    expect(getDayViewCalendars([local, google])).toEqual([local, google]);
+    expect(
+      getDayViewCalendars({
+        allDayEvents: [],
+        calendars: [first, second],
+        dateInView,
+        hiddenEventIds: new Set(),
+        timedEvents: timed,
+      }),
+    ).toEqual([first, second]);
+  });
+});
+
+describe("calendarIdsWithVisibleEventsOnDay", () => {
+  it("returns an empty set when every event is hidden", () => {
+    const timed = [
+      gridEvent({
+        _id: "x",
+        calendarId: "507f1f77bcf86cd799439011" as Calendar["id"],
+      }),
+    ];
+    expect(
+      calendarIdsWithVisibleEventsOnDay({
+        allDayEvents: [],
+        dateInView,
+        hiddenEventIds: new Set(["x"]),
+        timedEvents: timed,
+      }).size,
+    ).toBe(0);
   });
 });

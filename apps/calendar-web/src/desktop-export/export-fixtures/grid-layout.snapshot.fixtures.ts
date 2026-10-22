@@ -11,6 +11,7 @@ import {
   resolveCalendarCardIdentity,
   resolveCalendarFocusColor,
 } from "@web/calendars/useCalendarLookup";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { eventPositionInParityGridFrame } from "@web/desktop-export/export-fixtures/parity-grid-frame";
 import {
@@ -149,7 +150,37 @@ const buildSnapshot = ({
 
   const hiddenEventIds = new Set(["hidden-strip"]);
 
-  const dayCalendars = getDayViewCalendars(calendars);
+  const dayDate = dayjs(`${visibleDateKeys[0] ?? "2026-05-20"}T00:00:00.000`);
+  const dayCalendars = getDayViewCalendars({
+    allDayEvents: allDayEvents.map(
+      (event) =>
+        ({
+          _id: event.eventId,
+          calendarId: event.calendarId as Calendar["id"],
+          endDate: event.endDate,
+          isAllDay: true,
+          startDate: event.startDate,
+        }) as GridEvent,
+    ),
+    calendars,
+    dateInView: dayDate,
+    defaultTargetCalendar: calendarWork,
+    hiddenEventIds,
+    timedEvents: timedEvents.map(
+      (event) =>
+        ({
+          _id: event.eventId,
+          calendarId: event.calendarId as Calendar["id"],
+          endDate: event.endDate,
+          isAllDay: false,
+          startDate: event.startDate,
+        }) as GridEvent,
+    ),
+  });
+  const dayColWidths =
+    layoutMode === "day"
+      ? colWidths.slice(0, Math.max(dayCalendars.length, 1))
+      : colWidths;
   const columnIndexForCalendar = (calendarId: string) =>
     dayCalendars.findIndex((calendar) => calendar.id === calendarId);
 
@@ -160,8 +191,8 @@ const buildSnapshot = ({
           key: calendar.id,
           left:
             GRID_MARGIN_LEFT +
-            colWidths.slice(0, index).reduce((sum, width) => sum + width, 0),
-          width: colWidths[index] ?? 0,
+            dayColWidths.slice(0, index).reduce((sum, width) => sum + width, 0),
+          width: dayColWidths[index] ?? 0,
         }))
       : visibleDates.map((visible, index) => ({
           accessibilityIdentifier: columnIdentifier(visible.key),
