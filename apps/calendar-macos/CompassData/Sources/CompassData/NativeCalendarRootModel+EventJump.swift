@@ -49,6 +49,7 @@ extension NativeCalendarRootModel {
             eventJumpHintLabels = []
             quickTimeSlotHintLabels = []
         }
+        onEventJumpChipsAccessibilityProbeChanged?(eventJumpHintLabels)
         applyFocusPresentation()
     }
 

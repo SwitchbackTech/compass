@@ -85,6 +85,13 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
         model.onShortcutsLegendAccessibilityProbeChanged = { [weak self] open in
             Self.publish(NativeOverlayProbes.shortcutsLegend, visible: open, hostingView: self?.view)
         }
+        model.onEventJumpChipsAccessibilityProbeChanged = { [weak self] hints in
+            let window = Self.compassHostWindow(hostingView: self?.view) ?? NSApp.mainWindow
+            if let window {
+                EventJumpChipsAccessibilityProbe.attach(to: window)
+            }
+            EventJumpChipsAccessibilityProbe.publish(hints: hints)
+        }
         applyTheme()
         deepLinkRouter.onDeliver = { [weak self] url in
             self?.deliverDeepLink(url)
@@ -138,6 +145,8 @@ final class NativeRootController: NSHostingController<ThemedRootView> {
             )
             NativeOverlayProbes.statusToast.attach(to: window)
             NativeOverlayProbes.shortcutsLegend.attach(to: window)
+            EventJumpChipsAccessibilityProbe.attach(to: window)
+            EventJumpChipsAccessibilityProbe.publish(hints: model.timeGridState.eventJumpHints)
         }
     }
 

@@ -45,6 +45,7 @@ public final class NativeCalendarRootModel {
     public var onRecurrenceScopeAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onStatusToastAccessibilityProbeChanged: ((Bool) -> Void)?
     public var onShortcutsLegendAccessibilityProbeChanged: ((Bool) -> Void)?
+    public var onEventJumpChipsAccessibilityProbeChanged: (([EventJumpChipHint]) -> Void)?
     public var monthPickerMonth: Date
     public var pendingScroll: TimeGridScrollRequest?
     /// True for 700ms after an already-at-now teach pulse. Matches web `NOW_CUE_PULSE_MS`.
