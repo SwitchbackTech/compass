@@ -132,6 +132,8 @@ public final class NativeCalendarRootModel {
     public internal(set) var quickAddError: String?
     var blockPartyModHoldTask: Task<Void, Never>?
     var eventJumpCommitTask: Task<Void, Never>?
+    /// Digits typed after a day pick, for web's typed-time create on that column.
+    @ObservationIgnored var eventJumpTimeBurst: [(digit: Character, at: Date)] = []
 
     public var referenceNow: Date {
         demoPresentation?.referenceNow ?? now()
