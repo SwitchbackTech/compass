@@ -124,13 +124,14 @@ public struct RootView: View {
                 BillingGateOverlay(billingStore: model.billingStore)
             }
         }
-        .blur(radius: model.settingsStore.isPresented ? 4 : 0)
+        .blur(radius: model.settingsStore.isPresented ? 8 : 0)
         .overlay {
             SettingsWindowOverlay(model: model)
         }
         .overlay {
             BillingUpgradeConfirmationSheet(billingStore: model.billingStore)
         }
+        .blur(radius: model.overlayStores.palette.isOpen ? 8 : 0)
         .overlay {
             CommandPaletteOverlay(model: model)
         }

@@ -29,7 +29,7 @@ public struct CommandPaletteOverlay: View {
             GeometryReader { geometry in
                 let resultsMaxHeight = geometry.size.height * Self.resultsMaxViewportFraction
                 ZStack {
-                    theme.overlayBackdropColor
+                    theme.panelBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { paletteStore.close() }
 
