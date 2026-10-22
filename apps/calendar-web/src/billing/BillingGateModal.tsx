@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { useStripePublishableKey } from "@web/billing/billing.query";
 import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
+import { shouldTrackBillingGateShown } from "@web/billing/billing-gate-shown-once";
 import {
   checkoutPanelActions,
   selectCheckoutPanelOpen,
@@ -48,10 +49,11 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
   const primaryLabel = isAwaitingCheckout ? "Add card" : "Subscribe";
 
   useEffect(() => {
-    if (!shownRef.current) {
-      shownRef.current = true;
-      track("billing_gate_shown", { status });
+    if (shownRef.current || !shouldTrackBillingGateShown(status)) {
+      return;
     }
+    shownRef.current = true;
+    track("billing_gate_shown", { status });
   }, [status]);
 
   useEffect(() => {
