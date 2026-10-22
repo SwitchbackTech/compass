@@ -2,10 +2,8 @@ import { expect, test } from "@playwright/test";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 import { publicBookingAppUrl } from "./booking-harness";
 
-const HEADING = "Let people book time with you";
-
-// A <footer> inside <main> has no contentinfo role, so the footer's one link
-// is the count that proves the page shell rendered once.
+const HEADING = "A simple booking page for your calendar";
+const DOCUMENT_TITLE = "Simple booking page and Calendly alternative - Compass";
 
 test.describe("meeting landing page", () => {
   test("bare /meet renders the landing page with one page shell", async ({
@@ -18,14 +16,16 @@ test.describe("meeting landing page", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: HEADING }),
     ).toBeVisible();
-    await expect(page).toHaveTitle("Meeting pages - Compass");
+    await expect(page).toHaveTitle(DOCUMENT_TITLE);
     await expect(
       page.getByRole("link", { name: "Set up your meeting page" }),
     ).toHaveAttribute("href", "/?meetingSetup=1");
     await expect(page.getByRole("main")).toHaveCount(1);
     await expect(
       page.getByRole("link", { name: "Set up your own meeting page" }),
-    ).toHaveCount(1);
+    ).toHaveCount(0);
+    await expect(page.getByText(/7-day trial/i)).toHaveCount(0);
+    await expect(page.getByText(/Already use Compass/i)).toHaveCount(0);
     await expectNoAxeViolations(page);
   });
 

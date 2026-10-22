@@ -16,6 +16,8 @@ export const PUBLIC_BOOKING_TEXT_LINK_CLASS =
 
 interface PublicBookingLayoutProps extends PropsWithChildren {
   wide?: boolean;
+  /** Host booking pages show the footer CTA; the `/meet` landing does not. */
+  showFooter?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ interface PublicBookingLayoutProps extends PropsWithChildren {
 export function PublicBookingLayout({
   children,
   wide = false,
+  showFooter = true,
 }: PublicBookingLayoutProps) {
   return (
     <div
@@ -41,11 +44,11 @@ export function PublicBookingLayout({
     >
       <main
         className={`mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pt-10 ${
-          wide ? "max-w-3xl" : "max-w-lg"
-        }`}
+          showFooter ? "" : "pb-10"
+        } ${wide ? "max-w-3xl" : "max-w-lg"}`}
       >
         {children}
-        <PublicBookingFooter />
+        {showFooter ? <PublicBookingFooter /> : null}
       </main>
     </div>
   );
