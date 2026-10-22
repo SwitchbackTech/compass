@@ -32,9 +32,17 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 function FakeCheckout({ onComplete }: EmbeddedCheckoutProps) {
   return (
-    <button type="button" onClick={onComplete}>
-      Complete checkout
-    </button>
+    <div className="w-full text-left">
+      <p className="text-sm text-text-muted">Card number</p>
+      <button
+        data-signup-trial-checkout-submit
+        type="button"
+        className="hidden"
+        onClick={onComplete}
+      >
+        Submit checkout
+      </button>
+    </div>
   );
 }
 
@@ -185,9 +193,10 @@ describe("AuthModal signup trial step", () => {
       ).toBeInTheDocument();
     });
     expect(
-      screen.getByText(
-        "7-day free trial. Card required, no charge until it ends.",
-      ),
+      screen.getByText("Card required. No charge until the trial ends."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start free trial" }),
     ).toBeInTheDocument();
     expect(screen.getByText("$12.00 per month")).toBeInTheDocument();
   });
@@ -265,7 +274,7 @@ describe("AuthModal signup trial step", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: "Complete checkout" }),
+        screen.getByRole("button", { name: "Start free trial" }),
       ).toBeInTheDocument();
     });
 
@@ -276,7 +285,7 @@ describe("AuthModal signup trial step", () => {
       cancelAtPeriodEnd: false,
     });
 
-    await user.click(screen.getByRole("button", { name: "Complete checkout" }));
+    await user.click(screen.getByRole("button", { name: "Start free trial" }));
 
     await waitFor(() => {
       expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
