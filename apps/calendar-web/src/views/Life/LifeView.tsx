@@ -27,6 +27,7 @@ import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.p
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";
+import { LifeViewIntroModal } from "./LifeViewIntroModal";
 import {
   getAgeInYears,
   getCurrentWeekLabel,
@@ -44,6 +45,7 @@ import {
   writeLifePreferences,
 } from "./life-preferences.storage";
 import { applyLifeSearch } from "./life-search";
+import { useLifeViewIntro } from "./useLifeViewIntro";
 
 interface LifeViewProps {
   today?: Date;
@@ -54,6 +56,7 @@ function formatWeeks(value: number) {
 }
 
 export function LifeView({ today }: LifeViewProps) {
+  const lifeViewIntro = useLifeViewIntro();
   const currentDate = useMemo(() => today ?? new Date(), [today]);
   const navigate = useNavigate();
   const search = useSearch({ from: ROUTE_IDS.LIFE });
@@ -175,6 +178,7 @@ export function LifeView({ today }: LifeViewProps) {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
+      <LifeViewIntroModal {...lifeViewIntro} />
       <LifeCommandPalette placeholder={COMMAND_PALETTE_PLACEHOLDER} />
       <PageJumpHints targets={LIFE_PAGE_JUMP_TARGETS} />
 
@@ -210,7 +214,7 @@ export function LifeView({ today }: LifeViewProps) {
           shortcutsViewLabel="Life"
         >
           <LifeSidebarContent
-            autoFocusBirthDate={isNewLifeUser}
+            autoFocusBirthDate={isNewLifeUser && !lifeViewIntro.mounted}
             headerEndContent={<ShortcutLevelBadge sections={lockedSections} />}
             onCycleVariation={cycleVariation}
             preferences={preferences}

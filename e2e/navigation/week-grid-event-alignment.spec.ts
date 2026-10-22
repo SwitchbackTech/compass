@@ -72,6 +72,7 @@ async function openAlignmentWeek(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
     localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+    localStorage.setItem("compass.onboarding.has-seen-life-view-intro", "true");
     localStorage.setItem("compass.view.sidebar-open", "false");
   });
   await page.clock.install({ time: new Date(FROZEN_CLOCK) });
@@ -116,12 +117,18 @@ test.describe("Week grid event alignment", () => {
     await page.addInitScript(() => {
       localStorage.setItem("compass.onboarding.has-seen-welcome", "true");
       localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+      localStorage.setItem(
+        "compass.onboarding.has-seen-life-view-intro",
+        "true",
+      );
       localStorage.setItem("compass.view.sidebar-open", "false");
     });
     await page.clock.install({ time: new Date(FROZEN_CLOCK) });
     await prepareCalendarPage(page);
     await page.goto("/life", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Life" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Life", exact: true }),
+    ).toBeVisible();
 
     await page.goto(
       "/week?utm_source=blog&utm_medium=cta&utm_campaign=try_app&utm_content=star_button",

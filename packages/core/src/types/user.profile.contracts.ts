@@ -43,6 +43,12 @@ export const UserMetadataSchema = z.object({
       importGCal: z.string().nullable().optional(),
     })
     .optional(),
+  onboarding: z
+    .object({
+      /** ISO timestamp when the user dismissed the Life view intro modal. */
+      lifeViewIntroSeenAt: z.string().optional(),
+    })
+    .optional(),
   connections: z.array(SyncConnectionSummarySchema).optional(),
 });
 export type UserMetadata = z.infer<typeof UserMetadataSchema>;
