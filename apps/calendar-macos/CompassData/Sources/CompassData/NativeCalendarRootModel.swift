@@ -1246,31 +1246,32 @@ public final class NativeCalendarRootModel {
     /// Web `ShiftHintOverlay`: W1, SU2, ... on every grid card, narrowed to
     /// the typed day prefix.
     func buildEventJumpHints() -> [EventJumpChipHint] {
-        let cards = Dictionary(focusLayoutCards.map { ($0.eventId, $0) }, uniquingKeysWith: { first, _ in first })
+        let layoutCards = currentGridCards()
+        let frameByEventId = Dictionary(uniqueKeysWithValues: layoutCards.map { ($0.eventId, $0.frame) })
+        let allDayByEventId = Dictionary(uniqueKeysWithValues: layoutCards.map { ($0.eventId, $0.kind == .allDay) })
         let assignments = DayJumpKeys.filter(dayJumpAssignments(), prefix: eventJumpSelection.dayJumpBuffer)
         return assignments.compactMap { assignment in
-            cards[assignment.eventId].map { card in
-                EventJumpChipHint(
-                    eventId: assignment.eventId,
-                    label: assignment.hint,
-                    frame: card.frame,
-                    isAllDay: card.isAllDay
-                )
-            }
+            guard let frame = frameByEventId[assignment.eventId] else { return nil }
+            return EventJumpChipHint(
+                eventId: assignment.eventId,
+                label: assignment.hint,
+                frame: frame,
+                isAllDay: allDayByEventId[assignment.eventId] ?? false
+            )
         }
     }
 
     func dayJumpAssignments() -> [DayJumpKeys.Assignment] {
         let eventsById = Dictionary(loadedEvents.map { ($0.id.rawValue, $0) }, uniquingKeysWith: { first, _ in first })
         var seen = Set<String>()
-        let targets: [DayJumpKeys.Target] = focusLayoutCards.compactMap { card in
+        let targets: [DayJumpKeys.Target] = currentGridCards().compactMap { card in
             guard seen.insert(card.eventId).inserted, let event = eventsById[card.eventId] else { return nil }
             let dayKey = eventJumpDayKey(for: event)
             guard let day = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { return nil }
             return DayJumpKeys.Target(
                 eventId: card.eventId,
                 start: eventStart(event),
-                isAllDay: card.isAllDay,
+                isAllDay: card.kind == .allDay,
                 dayKey: dayKey,
                 weekday: EffectiveTimeZone.calendar.component(.weekday, from: day) - 1
             )
