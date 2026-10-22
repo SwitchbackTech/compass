@@ -238,10 +238,10 @@ export async function handleThirdPartySignInUp(
       provider: kind,
       error: err instanceof Error ? err.message : String(err),
     });
-    providerOAuthSignupAnalytics.captureFailed({
+    void providerOAuthSignupAnalytics.captureExchangeFailure({
       provider: kind,
       state: oauthState,
-      reason: "token_exchange_error",
+      reason: "token_exchange_failed",
     });
     throw err;
   }
@@ -251,10 +251,10 @@ export async function handleThirdPartySignInUp(
       provider: kind,
       status: response.status,
     });
-    providerOAuthSignupAnalytics.captureFailed({
+    void providerOAuthSignupAnalytics.captureExchangeFailure({
       provider: kind,
       state: oauthState,
-      reason: "token_exchange_error",
+      reason: "user_create_failed",
     });
   }
 
@@ -325,7 +325,7 @@ export async function handleThirdPartySignInUp(
       provider: kind,
       error: err instanceof Error ? err.message : String(err),
     });
-    providerOAuthSignupAnalytics.captureFailed({
+    void providerOAuthSignupAnalytics.captureExchangeFailure({
       provider: kind,
       state: oauthState,
       reason: "other",

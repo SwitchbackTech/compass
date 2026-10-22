@@ -1,3 +1,4 @@
+import { type AuthOAuthFlow } from "@core/analytics/oauth-signup.events";
 import { DESKTOP_OAUTH_STATE_PREFIX } from "@core/desktop/desktop-oauth-state.util";
 
 const SIGNIN_OAUTH_STATE_VERSION_PREFIX = "v1.";
@@ -9,12 +10,14 @@ export type ParsedSignInOAuthState = {
   rawState: string;
   nonce: string;
   posthogDistinctId?: string;
+  flow: AuthOAuthFlow;
   isDesktop: boolean;
 };
 
 type SignInOAuthStatePayload = {
   n: string;
   ph?: string;
+  fl?: AuthOAuthFlow;
 };
 
 function base64UrlEncode(value: string): string {
@@ -56,6 +59,13 @@ function decodePayload(body: string): SignInOAuthStatePayload | null {
     if (parsed.ph !== undefined && typeof parsed.ph !== "string") {
       return null;
     }
+    if (
+      parsed.fl !== undefined &&
+      parsed.fl !== "signup" &&
+      parsed.fl !== "login"
+    ) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -66,10 +76,12 @@ function decodePayload(body: string): SignInOAuthStatePayload | null {
 export function buildSignInOAuthState(input: {
   isDesktopClient: boolean;
   posthogDistinctId?: string;
+  flow?: AuthOAuthFlow;
 }): string {
   const payload: SignInOAuthStatePayload = {
     n: crypto.randomUUID(),
     ...(input.posthogDistinctId ? { ph: input.posthogDistinctId } : {}),
+    ...(input.flow ? { fl: input.flow } : {}),
   };
   const body = encodePayload(payload);
   return input.isDesktopClient ? `${DESKTOP_OAUTH_STATE_PREFIX}${body}` : body;
@@ -89,6 +101,7 @@ export function parseSignInOAuthState(
     return {
       rawState: state,
       nonce: body,
+      flow: "login",
       isDesktop,
     };
   }
@@ -105,8 +118,18 @@ export function parseSignInOAuthState(
     rawState: state,
     nonce: payload.n,
     posthogDistinctId,
+    flow: payload.fl ?? "login",
     isDesktop,
   };
+}
+
+export function signInOAuthFlowFromState(
+  state: string | null | undefined,
+): AuthOAuthFlow {
+  if (!state) return "login";
+  const parsed = parseSignInOAuthState(state);
+  if (parsed) return parsed.flow;
+  return parseAppleRelayOAuthState(state).flow;
 }
 
 /**
@@ -114,16 +137,24 @@ export function parseSignInOAuthState(
  * version-prefixed payload above. base64UrlDecode reads both alphabets (it
  * only rewrites `-`/`_` and re-pads), so one pass covers plain base64 too.
  */
-function posthogDistinctIdFromAppleOAuthState(
-  state: string,
-): string | undefined {
+function parseAppleRelayOAuthState(state: string): {
+  posthogDistinctId?: string;
+  flow: AuthOAuthFlow;
+} {
   try {
-    const parsed = JSON.parse(base64UrlDecode(state)) as { ph?: unknown };
-    return typeof parsed.ph === "string" && parsed.ph.length > 0
-      ? parsed.ph
-      : undefined;
+    const parsed = JSON.parse(base64UrlDecode(state)) as {
+      ph?: unknown;
+      fl?: unknown;
+    };
+    const posthogDistinctId =
+      typeof parsed.ph === "string" && parsed.ph.length > 0
+        ? parsed.ph
+        : undefined;
+    const flow =
+      parsed.fl === "signup" || parsed.fl === "login" ? parsed.fl : "login";
+    return { posthogDistinctId, flow };
   } catch {
-    return undefined;
+    return { flow: "login" };
   }
 }
 
@@ -133,6 +164,6 @@ export function posthogDistinctIdFromSignInOAuthState(
   if (!state) return undefined;
   return (
     parseSignInOAuthState(state)?.posthogDistinctId ??
-    posthogDistinctIdFromAppleOAuthState(state)
+    parseAppleRelayOAuthState(state).posthogDistinctId
   );
 }

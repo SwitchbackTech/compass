@@ -231,15 +231,17 @@ Apple (`packages/core/src/analytics/oauth-signup.events.ts`):
 
 1. `oauth_redirect_started` (`provider`, `intent`) when the browser leaves for
    the provider consent screen.
-2. `oauth_callback_received` (`provider`) when the provider redirect lands. The
-   SPA relays the query string to the backend route
-   `GET /auth/:provider/callback` with `X-Compass-OAuth-Telemetry: 1` so the
-   event is captured server-side even when JavaScript fails later. OAuth `state`
-   carries the PostHog anon distinct id when available.
-3. `oauth_failed` (`provider`, `reason`, optional `provider_error`) for consent
-   denial, invalid state, missing code, token exchange errors, and other
-   failures. Legacy `signup_failed` still fires with `reason_code` for existing
-   insights.
+2. `oauth_callback_received` (`provider`) on the client when the provider
+   redirect lands, plus server `oauth_callback` (`environment`, `provider`,
+   `flow`, `outcome`, optional `reason`) from the backend route
+   `GET /auth/:provider/callback`. The SPA relays the query string with
+   `X-Compass-OAuth-Telemetry: 1` so the server event is captured even when
+   JavaScript fails later. OAuth `state` carries the PostHog anon distinct id and
+   signup vs login flow when available.
+3. Server `oauth_callback` failures cover consent denial (`access_denied`),
+   invalid state, missing code, token exchange failures, and user creation
+   failures. Client `oauth_failed` and legacy `signup_failed` still fire for
+   existing insights.
 4. `signup_completed` or `login_completed` (`method`) after a successful
    SuperTokens exchange (unchanged).
 

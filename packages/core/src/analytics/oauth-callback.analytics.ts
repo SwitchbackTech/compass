@@ -88,7 +88,7 @@ export function oauthCallbackFailureReason(input: {
     }
     const exchange = tokenExchangeFailure(input.exchangeError);
     if (exchange) {
-      return withProviderError("token_exchange_error", exchange.providerError);
+      return withProviderError("token_exchange_failed", exchange.providerError);
     }
     return withProviderError("other", mergedProviderError);
   }

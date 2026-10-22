@@ -16,6 +16,7 @@ describe("signin-oauth-state", () => {
       rawState: state,
       nonce: expect.any(String),
       posthogDistinctId: "anon-123",
+      flow: "login",
       isDesktop: false,
     });
   });
@@ -37,6 +38,7 @@ describe("signin-oauth-state", () => {
     expect(parseSignInOAuthState(legacy)).toEqual({
       rawState: legacy,
       nonce: legacy,
+      flow: "login",
       isDesktop: false,
     });
     expect(posthogDistinctIdFromSignInOAuthState(legacy)).toBeUndefined();

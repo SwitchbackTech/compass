@@ -13,7 +13,7 @@ describe("oauth-signup-funnel", () => {
       "missing_code",
     );
     expect(oauthFailedReasonFromSignupFailure("oauth_exchange_failed")).toBe(
-      "token_exchange_error",
+      "token_exchange_failed",
     );
   });
 });

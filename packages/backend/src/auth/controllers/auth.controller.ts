@@ -204,14 +204,14 @@ class AuthController {
     );
   };
 
-  appleSignInCallback = (
+  appleSignInCallback = async (
     req: ReqBody<Record<string, unknown>>,
     res: Res_Promise,
-  ): void => {
+  ): Promise<void> => {
     const body = req.body ?? {};
     const state = typeof body["state"] === "string" ? body["state"].trim() : "";
     if (state) {
-      appleFormPostAnalytics({
+      await appleFormPostAnalytics({
         state,
         code: typeof body["code"] === "string" ? body["code"] : undefined,
         error: typeof body["error"] === "string" ? body["error"] : undefined,
@@ -226,10 +226,10 @@ class AuthController {
     res.redirect(302, result.location);
   };
 
-  providerOAuthCallback = (
+  providerOAuthCallback = async (
     req: express.Request,
     res: express.Response,
-  ): void => {
+  ): Promise<void> => {
     const provider = parseProviderOAuthCallbackProvider(
       String(req.params["provider"] ?? ""),
     );
@@ -240,7 +240,7 @@ class AuthController {
 
     const telemetryOnly = req.header("x-compass-oauth-telemetry") === "1";
 
-    const resolution = handleProviderOAuthCallback({
+    const resolution = await handleProviderOAuthCallback({
       provider,
       query: req.query as Record<string, string | undefined>,
       telemetryOnly,
