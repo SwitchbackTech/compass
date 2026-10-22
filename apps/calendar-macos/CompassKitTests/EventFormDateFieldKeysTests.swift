@@ -51,4 +51,19 @@ final class EventFormDateFieldKeysTests: XCTestCase {
         XCTAssertEqual(EventFormDateFieldKeys.calendarAction(for: .space), .pickCursor)
         XCTAssertEqual(EventFormDateFieldKeys.calendarAction(for: .escape), .close)
     }
+
+    func testTheFormLetsTheDateFieldKeepItsKeys() {
+        let closed = EventFormDateFieldKeys.Owner(fieldId: "start", calendarOpen: false)
+        let open = EventFormDateFieldKeys.Owner(fieldId: "start", calendarOpen: true)
+        let enter = KeyEvent(key: .named(.enter))
+        let escape = KeyEvent(key: .named(.escape))
+        let right = KeyEvent(key: .named(.arrowRight))
+        XCTAssertFalse(EventFormDateFieldKeys.fieldOwnsKey(enter, owner: nil))
+        XCTAssertTrue(EventFormDateFieldKeys.fieldOwnsKey(enter, owner: closed))
+        XCTAssertFalse(EventFormDateFieldKeys.fieldOwnsKey(escape, owner: closed))
+        XCTAssertTrue(EventFormDateFieldKeys.fieldOwnsKey(escape, owner: open))
+        XCTAssertTrue(EventFormDateFieldKeys.fieldOwnsKey(right, owner: open))
+        // Mod+Enter still saves the form.
+        XCTAssertFalse(EventFormDateFieldKeys.fieldOwnsKey(KeyEvent(key: .named(.enter), modifiers: .command), owner: open))
+    }
 }

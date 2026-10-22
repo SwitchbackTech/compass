@@ -69,6 +69,35 @@ public enum EventFormDateFieldKeys {
         }
     }
 
+    /// The form date field holding keyboard focus. Web `EventFormDateField`
+    /// consumes its keys before the form sees them, so the form's key router
+    /// lets them through to the field.
+    public struct Owner: Equatable, Sendable {
+        public var fieldId: String
+        public var calendarOpen: Bool
+
+        public init(fieldId: String, calendarOpen: Bool) {
+            self.fieldId = fieldId
+            self.calendarOpen = calendarOpen
+        }
+    }
+
+    /// Plain Return belongs to the field (commit, or open the calendar), not
+    /// the form's Enter-saves; with the calendar open, Esc, arrows, and Space
+    /// belong to it too.
+    public static func fieldOwnsKey(_ event: KeyEvent, owner: Owner?) -> Bool {
+        guard let owner, event.modifiers.isEmpty else { return false }
+        switch event.key {
+        case .named(.enter):
+            return true
+        case .named(.escape), .named(.arrowUp), .named(.arrowDown), .named(.arrowLeft), .named(.arrowRight),
+            .character(" "):
+            return owner.calendarOpen
+        default:
+            return false
+        }
+    }
+
     /// Web `commitOrRevert` returning "unchanged": the text parses to the day
     /// already committed.
     private static func showsCommittedDay(_ text: String, _ committedDate: Date) -> Bool {

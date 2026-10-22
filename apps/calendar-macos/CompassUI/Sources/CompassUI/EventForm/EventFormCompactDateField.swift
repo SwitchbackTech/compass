@@ -6,6 +6,9 @@ struct EventFormCompactDateField: View {
     @Environment(\.nativeWebTheme) private var theme
     @Binding var date: Date
     let accessibilityIdentifier: String
+    /// Tells the form's key router this field owns Return (and its open
+    /// calendar's keys), like web `EventFormDateField` consuming them.
+    @Binding var keyOwner: EventFormDateFieldKeys.Owner?
     @State private var text: String
     @State private var showsCalendar = false
     @State private var pickerMonth = Date()
@@ -15,9 +18,14 @@ struct EventFormCompactDateField: View {
     @FocusState private var isFocused: Bool
     @FocusState private var pickerFocused: Bool
 
-    init(date: Binding<Date>, accessibilityIdentifier: String) {
+    init(
+        date: Binding<Date>,
+        accessibilityIdentifier: String,
+        keyOwner: Binding<EventFormDateFieldKeys.Owner?> = .constant(nil)
+    ) {
         _date = date
         self.accessibilityIdentifier = accessibilityIdentifier
+        _keyOwner = keyOwner
         _text = State(initialValue: EventFormDateFormat.formatLabel(for: date.wrappedValue))
         let openPicker = UITestLaunchPolicy.openEventFormDatePickerForUITest
             && accessibilityIdentifier == "compass-event-form-start-date"
@@ -46,6 +54,12 @@ struct EventFormCompactDateField: View {
             }
             .onChange(of: isFocused) { _, focused in
                 if !focused { commitTypedDate() }
+                syncKeyOwner()
+            }
+            .onChange(of: showsCalendar) { syncKeyOwner() }
+            .onChange(of: pickerFocused) { syncKeyOwner() }
+            .onDisappear {
+                if keyOwner?.fieldId == accessibilityIdentifier { keyOwner = nil }
             }
             .onChange(of: date) { _, newValue in
                 guard !isFocused else { return }
@@ -94,6 +108,14 @@ struct EventFormCompactDateField: View {
         parts.minute = time.minute
         parts.second = time.second
         return calendar.date(from: parts) ?? picked
+    }
+
+    private func syncKeyOwner() {
+        if isFocused || showsCalendar || pickerFocused {
+            keyOwner = .init(fieldId: accessibilityIdentifier, calendarOpen: showsCalendar)
+        } else if keyOwner?.fieldId == accessibilityIdentifier {
+            keyOwner = nil
+        }
     }
 
     private static let handledKeys: Set<KeyEquivalent> = [

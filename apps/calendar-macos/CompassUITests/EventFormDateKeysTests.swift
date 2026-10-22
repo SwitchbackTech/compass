@@ -21,7 +21,19 @@ final class EventFormDateKeysTests: XCTestCase {
         app.typeKey(.rightArrow, modifierFlags: [])
         app.typeKey(.return, modifierFlags: [])
         XCTAssertTrue(picker.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(field.exists, "Enter in the open calendar saved and closed the form")
         XCTAssertEqual(field.value as? String, try shifted(before, days: 1))
+    }
+
+    @MainActor
+    func testEscapeClosesTheCalendarButNotTheForm() throws {
+        let (app, field) = launchWithStartDateFocused()
+        field.typeKey(.downArrow, modifierFlags: [])
+        let picker = app.descendants(matching: .any)["compass-event-form-date-picker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        app.typeKey(.escape, modifierFlags: [])
+        XCTAssertTrue(picker.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(field.exists, "Esc in the open calendar closed the form")
     }
 
     @MainActor
