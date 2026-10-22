@@ -114,7 +114,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
 | Date field **MM.DD.YY** closed display | 🟡 | `EventFormCompactDateField` + `EventFormDateFormat`; verify parity capture after merge |
 | Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
-| Time pickers | 🟡 | Visual parity pass needed |
+| Time pickers | 🟡 | The list opens centered on the selected time (or the quarter hour before it) like web. Still differs: macOS shows the list and the date picker as AppKit popovers that can open to the side of the field, while web drops them below it |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
 | Color row Mod+digit hint | 🟡 | Trailing ⌘ 6 keycaps like web `EventColorPicker`; web swaps to ← → · Enter while a swatch has focus, macOS has no swatch arrow keys yet. The demo capture also shows a guest row on macOS only: the demo fixture calendar can invite (UI tests need it), the real local calendar cannot |
 | Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | 🟡 | macOS save bar matches accent + Mod+Enter keycap (#4610); sidebar shows web save-draft tip (#4614) |
