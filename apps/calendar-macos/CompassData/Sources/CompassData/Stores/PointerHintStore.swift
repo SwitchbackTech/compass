@@ -18,11 +18,16 @@ public final class PointerHintStore {
     public func pulse(
         target: PointerClickTarget,
         registry: ShortcutRegistry,
+        slotClick: GridPointerSlotClickContext? = nil,
         focusedGridEventLabel: String? = nil
     ) {
         guard sessionCount < sessionCap else { return }
         guard !shownIntents.contains(target) else { return }
-        guard let attempt = PointerHintMessaging.attempt(for: target, registry: registry) else { return }
+        guard let attempt = PointerHintMessaging.attempt(
+            for: target,
+            registry: registry,
+            slotClick: slotClick
+        ) else { return }
         shownIntents.insert(target)
         sessionCount += 1
         self.attempt = attempt

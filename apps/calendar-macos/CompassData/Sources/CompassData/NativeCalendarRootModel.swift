@@ -139,6 +139,10 @@ public final class NativeCalendarRootModel {
     var eventJumpCommitTask: Task<Void, Never>?
     /// Digits typed after a day pick, for web's typed-time create on that column.
     @ObservationIgnored var eventJumpTimeBurst: [(digit: Character, at: Date)] = []
+    /// Parked create target after an empty-grid click (web `event-jump.store` pointer draft).
+    @ObservationIgnored var pointerDraftDateKey: String?
+    @ObservationIgnored var pointerDraftStartISO: String?
+    @ObservationIgnored var pointerDraftTimeKey: String?
 
     public var referenceNow: Date {
         demoPresentation?.referenceNow ?? now()
@@ -729,6 +733,7 @@ public final class NativeCalendarRootModel {
     public func showPointerHint(
         for target: PointerClickTarget,
         registry: ShortcutRegistry,
+        slotClick: GridPointerSlotClickContext? = nil,
         focusedGridEventLabel: String? = nil
     ) {
         var resolvedFocusLabel = focusedGridEventLabel
@@ -738,6 +743,7 @@ public final class NativeCalendarRootModel {
         pointerHintStore.pulse(
             target: target,
             registry: registry,
+            slotClick: slotClick,
             focusedGridEventLabel: resolvedFocusLabel
         )
     }
@@ -773,15 +779,6 @@ public final class NativeCalendarRootModel {
         if visible {
             onEventFormTitleAccessibilityProbeTitleSync?(draftStore.gridDraft?.title)
         }
-    }
-
-    public func handleGridPointerDown(registry: ShortcutRegistry) {
-        guard !UITestLaunchPolicy.isParityCapture,
-              OnboardingGating.selectPointerHintSurfaceEligible(
-                  pointerHintVisible: true,
-                  dismissedPermanently: OnboardingGating.pointerHintDismissedPermanently())
-        else { return }
-        showPointerHint(for: .gridScroll, registry: registry)
     }
 
     /// Web `view-select` page jump opens the view dropdown, like clicking it.

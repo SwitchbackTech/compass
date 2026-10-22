@@ -26,7 +26,7 @@ public final class TimeGridView: NSView {
     /// Holds the weekday header and all-day row outside the scroll view so
     /// they stay pinned while the timed grid scrolls (web sticky header).
     private let pinnedHeaderView = FlippedView()
-    private let allDayRowView = FlippedView()
+    private let allDayRowView = AllDayRowRoutingView()
     private let timedContentView = CardRoutingFlippedView()
     private let hourGutterView = FlippedView()
     private let headerRowView = FlippedView()
@@ -48,6 +48,7 @@ public final class TimeGridView: NSView {
         super.init(frame: .zero)
         wantsLayer = true
         scrollView.timeGridView = self
+        allDayRowView.grid = self
         configureScrollView()
         configureNowLine()
         relayout()
@@ -75,6 +76,57 @@ public final class TimeGridView: NSView {
             return
         }
         delegate?.timeGridViewDidRequestShortcutHint(self, at: event.locationInWindow)
+    }
+
+    /// Maps an empty grid click to the keyboard-teaching target (web `gridPointerTargetFromEvent`).
+    public func resolveEmptyGridClick(at locationInWindow: NSPoint) -> GridPointerClickTarget? {
+        guard let snapshot else { return nil }
+        let timeZone = TimeZone(identifier: state.effectiveTimeZone) ?? EffectiveTimeZone.timeZone
+        let scrollX = scrollView.contentView.bounds.origin.x
+        let visibleDateKeys = state.scenario.visibleDateKeys
+
+        let pointInPinned = pinnedHeaderView.convert(locationInWindow, from: nil)
+        if allDayRowView.frame.contains(pointInPinned) {
+            let x = pointInPinned.x + scrollX
+            let dateKey = dateKeyForPointer(atX: x, snapshot: snapshot, visibleDateKeys: visibleDateKeys)
+            return .allDaySlot(dateKey: dateKey)
+        }
+
+        let pointInContent = scrollView.contentView.convert(locationInWindow, from: nil)
+        let pointInDocument = documentView.convert(pointInContent, from: scrollView.contentView)
+        let gridHeight = snapshot.metrics.timedGridHeight
+        guard gridHeight > 0 else { return nil }
+
+        let x = pointInDocument.x
+        let dateKey = dateKeyForPointer(atX: x, snapshot: snapshot, visibleDateKeys: visibleDateKeys)
+        guard let slot = GridPointerClickResolver.timedSlot(
+            atY: pointInDocument.y,
+            gridHeight: gridHeight,
+            dateKey: dateKey,
+            timeZone: timeZone
+        ) else { return nil }
+
+        return .timedSlot(
+            dateKey: dateKey,
+            timeKey: slot.timeKey,
+            timeLabel: slot.timeLabel,
+            startISO: slot.startISO
+        )
+    }
+
+    private func dateKeyForPointer(
+        atX x: Double,
+        snapshot: GridLayoutSnapshot,
+        visibleDateKeys: [String]
+    ) -> String {
+        if state.layoutMode == .day {
+            return visibleDateKeys.first ?? CompassDateParsing.formatCalendarDay(state.referenceNow)
+        }
+        return GridPointerClickResolver.dateKey(
+            atX: x,
+            columns: snapshot.columns,
+            visibleDateKeys: visibleDateKeys
+        ) ?? visibleDateKeys.first ?? CompassDateParsing.formatCalendarDay(state.referenceNow)
     }
 
     private func pointInDocumentView(_ locationInWindow: NSPoint) -> NSPoint {
@@ -923,6 +975,22 @@ private final class CardRoutingFlippedView: FlippedView {
                 card.mouseDown(with: event)
                 return
             }
+        }
+        super.mouseDown(with: event)
+    }
+}
+
+private final class AllDayRowRoutingView: FlippedView {
+    weak var grid: TimeGridView?
+
+    override func mouseDown(with event: NSEvent) {
+        if let grid {
+            if grid.eventCardView(at: event.locationInWindow) != nil {
+                super.mouseDown(with: event)
+                return
+            }
+            grid.delegate?.timeGridViewDidRequestShortcutHint(grid, at: event.locationInWindow)
+            return
         }
         super.mouseDown(with: event)
     }

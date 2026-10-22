@@ -83,6 +83,7 @@ export type ProductEvent =
   | "shortcut_level_badge_toggled"
   | "pointer_hint_shown"
   | "pointer_hint_dismissed"
+  | "empty_grid_click_hint_shown"
   | "life_view_intro_shown"
   | "life_view_intro_dismissed"
   | "booking_settings_opened"

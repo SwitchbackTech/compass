@@ -31,6 +31,7 @@ import {
 import { writeShortcutUsageProfile } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { setTipsMuted } from "@web/shortcuts/tips/shortcut-tips-muted.store";
 import { attachPointerIntentTracker } from "@web/views/Week/pointer-intent/attachPointerIntentTracker";
+import { resetEmptyGridClickHintTelemetryForTests } from "@web/views/Week/pointer-intent/empty-grid-click-hint.telemetry";
 import { WEEK_EVENT_ID_ATTRIBUTE } from "@web/views/Week/pointer-intent/grid-pointer-target";
 import { resetPageJumpChipDemoForTests } from "@web/views/Week/pointer-intent/pointer-intent.actions";
 import { resetPointerIntentSessionForTests } from "@web/views/Week/pointer-intent/pointer-intent.session";
@@ -95,6 +96,7 @@ describe("attachPointerIntentTracker", () => {
     track.mockClear();
     capture.mockClear();
     resetPointerIntentSessionForTests();
+    resetEmptyGridClickHintTelemetryForTests();
     resetPageJumpChipDemoForTests();
     setTipsMuted(false);
     usePointerHintStore.setState(initialPointerHintState, true);
@@ -108,6 +110,7 @@ describe("attachPointerIntentTracker", () => {
     detach();
     document.body.innerHTML = "";
     resetPointerIntentSessionForTests();
+    resetEmptyGridClickHintTelemetryForTests();
     resetPageJumpChipDemoForTests();
     usePointerHintStore.setState(initialPointerHintState, true);
     usePageJumpHintStore.setState(initialPageJumpHintState, true);
@@ -198,7 +201,7 @@ describe("attachPointerIntentTracker", () => {
     );
   });
 
-  it("pulses slot-click with digits for the timed column y", async () => {
+  it("shows the keyboard-create hint on an intentional empty timed-grid click (do not remove)", async () => {
     const user = userEvent.setup();
     const column = document.getElementById(ID_GRID_COLUMNS_TIMED)!
       .firstElementChild as HTMLElement;
@@ -210,7 +213,16 @@ describe("attachPointerIntentTracker", () => {
     });
 
     const attempt = usePointerHintStore.getState().latestAttempt;
-    expect(attempt?.shortcutKey).toEqual(["1130"]);
+    const timeKey = attempt?.message?.match(/^Type (\d{4})/)?.[1];
+    expect(timeKey).toBeDefined();
+    if (!timeKey) return;
+    expect(attempt?.shortcutKey).toEqual([timeKey]);
+    expect(attempt?.message).toMatch(/^Type \d{4} to create at /);
+    expect(
+      track.mock.calls.some(
+        ([event]) => event === "empty_grid_click_hint_shown",
+      ),
+    ).toBe(true);
   });
 
   it("pulses grid-scroll only after three wheel gestures", async () => {
