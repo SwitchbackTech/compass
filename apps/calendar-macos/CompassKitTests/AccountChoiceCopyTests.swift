@@ -16,5 +16,8 @@ final class AccountChoiceCopyTests: XCTestCase {
         XCTAssertEqual(
             AccountChoiceCopy.welcomeTrialCardTermsLine(),
             "7-day free trial. Card required, no charge until it ends.")
+        XCTAssertEqual(
+            AccountChoiceCopy.signupTrialStepTermsLine,
+            "Card required. No charge until the trial ends.")
     }
 }

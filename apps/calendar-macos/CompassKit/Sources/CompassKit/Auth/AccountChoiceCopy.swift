@@ -13,4 +13,8 @@ public enum AccountChoiceCopy {
     public static func welcomeTrialCardTermsLine(trialLengthDays: Int = 7) -> String {
         "\(trialLengthDays)-day free trial. Card required, no charge until it ends."
     }
+
+    /// Signup trial step only (title already states the trial length).
+    public static let signupTrialStepTermsLine =
+        "Card required. No charge until the trial ends."
 }
