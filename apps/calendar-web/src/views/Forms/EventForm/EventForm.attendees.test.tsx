@@ -361,9 +361,9 @@ describe("EventForm attendee editor gating", () => {
     expect(setDraft).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
 
-    // Enter outside the combobox still saves (regression guard).
+    // Mod+Enter outside the combobox still saves (regression guard).
     await user.click(screen.getByPlaceholderText("Title"));
-    await user.keyboard("{Enter}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });

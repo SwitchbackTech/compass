@@ -133,10 +133,10 @@ describe("form.util", () => {
       expect(shouldDeferEnterToTarget(createEvent(link))).toBe(true);
     });
 
-    it("does not defer Enter for single-line inputs", () => {
+    it("defers Enter for single-line inputs", () => {
       const input = document.createElement("input");
 
-      expect(shouldDeferEnterToTarget(createEvent(input))).toBe(false);
+      expect(shouldDeferEnterToTarget(createEvent(input))).toBe(true);
     });
   });
 

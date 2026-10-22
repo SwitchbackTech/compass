@@ -181,7 +181,7 @@ describe("EventForm read-only gate", () => {
     expect(screen.getByRole("note")).toHaveTextContent(/read-only/i);
   });
 
-  it("keeps every field enabled, allows Enter to submit, for a writable-calendar edit draft", async () => {
+  it("keeps every field enabled and allows Mod+Enter to submit for a writable-calendar edit draft", async () => {
     const user = userEvent.setup();
     const writableCalendar = makeCalendar({
       access: "owner",
@@ -223,7 +223,7 @@ describe("EventForm read-only gate", () => {
     // Behavioral regression check (not just "Save is disabled/hidden"):
     // the full submit path - blocked above for a read-only draft - must
     // still work end to end for a writable one.
-    await user.keyboard("{Enter}");
+    await user.keyboard("{Control>}{Enter}{/Control}");
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });

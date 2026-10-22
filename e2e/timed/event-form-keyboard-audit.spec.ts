@@ -97,3 +97,61 @@ test("end time menu opens without shifting the form panel horizontally", async (
   await page.keyboard.press("Escape");
   await expect(page.getByRole("listbox")).toHaveCount(0);
 });
+
+test("date picker arrow keys move the highlight while the input stays focused", async ({
+  page,
+}, testInfo) => {
+  await openTimedEventFormWithKeyboard(page);
+
+  const form = page.getByRole("form");
+  const startDate = page.locator('input[title="Pick Start Date"]');
+
+  await startDate.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".react-datepicker")).toBeVisible();
+  await expect(startDate).toBeFocused();
+
+  await page.keyboard.press("ArrowDown");
+  const highlighted = page.locator(".react-datepicker__day--keyboard-selected");
+  await expect(highlighted).toBeVisible();
+
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/event-form-date-picker-arrow-highlight.png",
+  });
+  await page.screenshot({
+    path: testInfo.outputPath("event-form-date-picker-arrow-highlight.png"),
+  });
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".react-datepicker")).toHaveCount(0);
+  await expect(form).toBeVisible();
+});
+
+test("plain Enter in schedule fields does not submit; Mod+Enter does", async ({
+  page,
+}) => {
+  await openTimedEventFormWithKeyboard(page);
+
+  const title = page.getByRole("form").getByPlaceholder("Title");
+  const startDate = page.locator('input[title="Pick Start Date"]');
+  const location = page.getByRole("textbox", { name: "Location" });
+
+  await title.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("form")).toBeVisible();
+
+  await startDate.focus();
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("form")).toBeVisible();
+
+  await location.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("form")).toBeVisible();
+
+  const modEnter =
+    process.platform === "darwin" ? "Meta+Enter" : "Control+Enter";
+  await title.focus();
+  await page.keyboard.press(modEnter);
+  await expect(page.getByRole("form")).toHaveCount(0);
+});
