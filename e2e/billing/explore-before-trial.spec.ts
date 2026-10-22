@@ -161,8 +161,20 @@ test("explore banner dismiss hides until the next session", async ({
   await page.getByRole("button", { name: "Dismiss" }).click();
   await expect(page.getByText(bannerText)).toHaveCount(0);
 
-  await page.evaluate(() => sessionStorage.clear());
+  await page.evaluate(() => {
+    sessionStorage.removeItem(
+      "compass.billing.awaiting-checkout-banner-dismissed-session",
+    );
+  });
   await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(
+    () =>
+      (
+        window as Window & {
+          __COMPASS_E2E_HOOKS__?: { setAuthenticated: (v: boolean) => void };
+        }
+      ).__COMPASS_E2E_HOOKS__ !== undefined,
+  );
   await page.evaluate(() => {
     (
       window as Window & {
@@ -180,7 +192,7 @@ test("event create opens the trial step while settings navigation does not", asy
   await awaitingCheckoutRoutes(page);
   await signInAwaitingCheckout(page);
 
-  await page.keyboard.press("Control+Comma");
+  await page.getByRole("button", { name: "Open settings" }).click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible({
     timeout: 10000,
   });
@@ -188,8 +200,15 @@ test("event create opens the trial step while settings navigation does not", asy
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
   await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
 
+  await page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/billing/status") && response.ok(),
+  );
+  await page.locator("#mainGrid").focus();
   await page.keyboard.press("c");
+
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toBeVisible({ timeout: 15000 });
