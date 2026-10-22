@@ -268,8 +268,9 @@ final class NativeParityCaptureTests: XCTestCase {
         // the window's accessibility tree behind the modal.
         welcome.buttons["Get started for free"].click()
         welcome.buttons["Next"].click()
-        XCTAssertTrue(
-            welcome.buttons["Start free trial with Google"].waitForExistence(timeout: 8))
+        // The provider buttons depend on the backend config; the local-only
+        // choice is always on the account step.
+        XCTAssertTrue(welcome.buttons["On this device only"].waitForExistence(timeout: 8))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome-account-choice")
     }
