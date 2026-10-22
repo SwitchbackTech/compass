@@ -1,5 +1,7 @@
 import { APP_SHORTCUT_BINDINGS } from "@core/shortcuts/app-shortcut-bindings";
 
+const toggleAllDayKeys = APP_SHORTCUT_BINDINGS.editToggleAllDay.keycaps;
+
 /** One keyboard-discoverable action while the event form is open. */
 export type EventFormActionEntry = {
   id: string;
@@ -11,6 +13,7 @@ export type EventFormActionListOptions = {
   hasMeetingLink: boolean;
   isExistingEvent: boolean;
   isReadOnly: boolean;
+  isScheduleLocked: boolean;
   showBookingFormActions: boolean;
 };
 
@@ -33,6 +36,14 @@ export function listEventFormActions(
       keys: APP_SHORTCUT_BINDINGS.editFormActions.keycaps,
     },
   ];
+
+  if (!options.isReadOnly && !options.isScheduleLocked) {
+    rows.push({
+      id: "edit-toggle-all-day",
+      label: "Toggle all day",
+      keys: toggleAllDayKeys,
+    });
+  }
 
   if (options.hasMeetingLink) {
     rows.push({

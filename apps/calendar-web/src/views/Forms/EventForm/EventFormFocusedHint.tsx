@@ -6,17 +6,19 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 export function EventFormInfieldHint({
   children,
   className,
+  testId = "event-form-control-hint",
   visible = true,
 }: {
   children: ReactNode;
   className?: string;
+  testId?: string;
   visible?: boolean;
 }) {
   if (!visible) return null;
 
   return (
     <span
-      data-testid="event-form-control-hint"
+      data-testid={testId}
       className={classNames(
         "pointer-events-none absolute top-1/2 right-1.5 z-10 -translate-y-1/2",
         "invisible opacity-0 transition-opacity group-focus-within/control:visible group-focus-within/control:opacity-100",

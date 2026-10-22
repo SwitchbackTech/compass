@@ -533,6 +533,16 @@
         "requiresWrite": true
       },
       {
+        "id": "edit-toggle-all-day",
+        "keys": ["Mod", "Alt", "a"],
+        "label": "Toggle all day on open event",
+        "section": "edit",
+        "when": {
+          "isFormOpen": true
+        },
+        "requiresWrite": true
+      },
+      {
         "id": "edit-cancel-meeting",
         "keys": ["Mod", "Shift", "X"],
         "label": "Cancel booked meeting (confirm twice)",

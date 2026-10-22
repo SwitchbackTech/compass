@@ -10,6 +10,7 @@ final class EventFormActionsTests: XCTestCase {
                 hasMeetingLink: false,
                 isExistingEvent: true,
                 isReadOnly: false,
+                isScheduleLocked: false,
                 showBookingFormActions: false))
         XCTAssertFalse(without.map(\.id).contains("edit-copy-meeting-link"))
     }
@@ -22,6 +23,7 @@ final class EventFormActionsTests: XCTestCase {
                 hasMeetingLink: true,
                 isExistingEvent: true,
                 isReadOnly: false,
+                isScheduleLocked: false,
                 showBookingFormActions: false))
         XCTAssertTrue(withLink.map(\.id).contains("edit-copy-meeting-link"))
     }

@@ -3,6 +3,8 @@ import {
   REGISTRY_RUNTIME_KEY_SOURCES,
 } from "@core/shortcuts/app-shortcut-bindings";
 import {
+  EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+  EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS,
   MOD_CHORD_MAX_KEYCAPS,
   MONTH_PICKER_CURRENT_KEYCAPS,
   MONTH_PICKER_NEXT_KEYCAPS,
@@ -27,6 +29,13 @@ describe("binding-keycaps.constants", () => {
     expect(APP_SHORTCUT_BINDINGS.navMonthPrev.hotkey).toBe("Mod+Alt+J");
     expect(APP_SHORTCUT_BINDINGS.navMonthNext.hotkey).toBe("Mod+Alt+K");
     expect(APP_SHORTCUT_BINDINGS.navMonthCurrent.hotkey).toBe("Mod+Alt+T");
+  });
+
+  it("uses Mod+Alt+A for toggling all day on the open event form", () => {
+    expect(EVENT_FORM_TOGGLE_ALL_DAY_KEYCAPS).toEqual(["Mod", "Alt", "a"]);
+    expect(APP_SHORTCUT_BINDINGS.editToggleAllDay.hotkey).toBe(
+      EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+    );
   });
 
   it("keeps every Mod chord in the legend at or below the three-key cap", () => {

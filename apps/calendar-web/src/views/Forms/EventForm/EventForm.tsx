@@ -15,6 +15,7 @@ import {
   useRef,
 } from "react";
 import { isEventFormFocusFieldVisible } from "@core/event/event-form-field-visibility";
+import { EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY } from "@core/shortcuts/binding-keycaps.constants";
 import { type EventFormFocusField } from "@core/shortcuts/event-form-focus-field";
 import { KEYMAP } from "@core/shortcuts/keymap";
 import { CONFERENCE_KIND_LABEL } from "@core/types/calendar.contracts";
@@ -74,6 +75,7 @@ import { FormDigitHintOverlay } from "@web/shortcuts/form-digit-jump/FormDigitHi
 import { useFormDigitJumpShortcut } from "@web/shortcuts/form-digit-jump/useFormDigitJumpShortcut";
 import { usePointerFormFieldDigitTeach } from "@web/shortcuts/form-digit-jump/usePointerFormFieldDigitTeach";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
+import { useEventFormFocusStore } from "@web/shortcuts/tips/event-form-focus.store";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
@@ -789,6 +791,23 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       { ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS, shortcutId: "edit-save" },
     );
 
+    useAppShortcut(
+      EVENT_FORM_TOGGLE_ALL_DAY_HOTKEY,
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (isReadOnly || isScheduleLocked) return;
+        onToggleAllDay(category !== Categories_Event.ALLDAY);
+      },
+      {
+        ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+        preventDefault: true,
+        stopPropagation: true,
+        shortcutId: "edit-toggle-all-day",
+        enabled: !isReadOnly && !isScheduleLocked,
+      },
+    );
+
     const { isConfirmOpen, onCancelConfirm, onDiscardConfirm, requestClose } =
       useEscapeToCloseForm(onClose, {
         onEscapeBeforeClose: () =>
@@ -799,6 +818,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     const onSubmitFormRef = useRef(onSubmitForm);
     onSubmitFormRef.current = onSubmitForm;
+    const onToggleAllDayRef = useRef(onToggleAllDay);
+    onToggleAllDayRef.current = onToggleAllDay;
+    const categoryRef = useRef(category);
+    categoryRef.current = category;
 
     useEffect(() => {
       eventFormCmdActions.register({
@@ -813,6 +836,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           onJumpToActions: () => {
             focusEventFormField("actions");
           },
+          onToggleAllDay: () => {
+            if (isReadOnly || isScheduleLocked) return;
+            onToggleAllDayRef.current(
+              categoryRef.current !== Categories_Event.ALLDAY,
+            );
+          },
           onCancelMeeting: () => {
             formActionsRef.current?.triggerCancelShortcut();
           },
@@ -823,6 +852,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         hasMeetingLink: Boolean(meetingLinkUrl),
         isExistingEvent,
         isReadOnly,
+        isScheduleLocked,
         showBookingFormActions,
       });
 
@@ -832,6 +862,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     }, [
       isExistingEvent,
       isReadOnly,
+      isScheduleLocked,
       meetingLinkUrl,
       onDeleteEvent,
       onDuplicateEvent,
@@ -844,6 +875,31 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     });
     const { digitFlashField, onFormFocusIn, onFormPointerDown } =
       usePointerFormFieldDigitTeach();
+    const syncEventFormFocus = useEventFormFocusStore(
+      (state) => state.syncFromDocument,
+    );
+
+    useEffect(() => {
+      syncEventFormFocus();
+      return () => {
+        useEventFormFocusStore.setState({
+          focusInsideForm: false,
+          tabNavigationApplies: false,
+        });
+      };
+    }, [syncEventFormFocus]);
+
+    const onFormFocusCapture = useCallback(
+      (event: React.FocusEvent<HTMLElement>) => {
+        onFormFocusIn(event);
+        syncEventFormFocus();
+      },
+      [onFormFocusIn, syncEventFormFocus],
+    );
+
+    const onFormBlurCapture = useCallback(() => {
+      queueMicrotask(() => syncEventFormFocus());
+    }, [syncEventFormFocus]);
 
     const titleErrorField = fieldErrors?.["content.title"]
       ? "content.title"
@@ -901,7 +957,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             e.stopPropagation();
           }}
           onPointerDown={onFormPointerDown}
-          onFocusCapture={onFormFocusIn}
+          onFocusCapture={onFormFocusCapture}
+          onBlurCapture={onFormBlurCapture}
         >
           <div className="sticky top-0 z-10 shrink-0 bg-surface-panel px-4 pt-3 pb-2">
             <FormActionsRow
@@ -973,6 +1030,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                       dateTimeSectionProps={dateTimeSectionProps}
                       eventCategory={category}
                       onToggleAllDay={onToggleAllDay}
+                      showAllDayShortcut={!isScheduleLocked}
                     />
                   </fieldset>
                 </ProviderManagedFieldShield>

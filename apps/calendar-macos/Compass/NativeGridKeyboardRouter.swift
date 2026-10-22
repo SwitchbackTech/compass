@@ -478,6 +478,14 @@ final class NativeGridKeyboardRouter {
             else { return false }
             return model.copyMeetingLinkFromForm()
         }
+        if matchesBinding(keyEvent, id: .editToggleAllDay) {
+            guard let draft = model.draftStore.gridDraft,
+                !model.isEventFormReadOnly(for: draft),
+                !model.isScheduleLocked(for: draft)
+            else { return false }
+            model.setDraftAllDay(draft.schedule.kind != .allDay)
+            return true
+        }
         if matchesBinding(keyEvent, id: .editOpenDescriptionLink) {
             guard isDescriptionFormEditorFocused() else { return false }
             let opened = NSApp.sendAction(

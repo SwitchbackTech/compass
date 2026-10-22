@@ -19,13 +19,24 @@ struct EventFormScheduleSection: View {
                 allDayDateRow
             }
 
-            Toggle("All day?", isOn: Binding(
-                get: { draft.schedule.kind == .allDay },
-                set: { model.setDraftAllDay($0) }
-            ))
-            .toggleStyle(.checkbox)
-            .disabled(scheduleLocked)
-            .accessibilityIdentifier("compass-event-form-allday")
+            HStack(spacing: 6) {
+                Toggle("All day?", isOn: Binding(
+                    get: { draft.schedule.kind == .allDay },
+                    set: { model.setDraftAllDay($0) }
+                ))
+                .toggleStyle(.checkbox)
+                .disabled(scheduleLocked)
+                .accessibilityIdentifier("compass-event-form-allday")
+
+                if !scheduleLocked {
+                    HStack(spacing: 4) {
+                        ForEach(["Mod", "Alt", "A"], id: \.self) { key in
+                            ShortcutHintChip(label: KeycapGlyphs.display([key]))
+                        }
+                    }
+                    .accessibilityIdentifier("compass-event-form-allday-shortcut")
+                }
+            }
 
             if scheduleLocked {
                 Text(
