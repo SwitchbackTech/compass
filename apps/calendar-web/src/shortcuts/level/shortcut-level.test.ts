@@ -1,5 +1,6 @@
 import {
   computeShortcutLevel,
+  formatShortcutLevelBadgeLabel,
   SHORTCUT_LEVELS,
 } from "@core/shortcuts/shortcut-level";
 import { describe, expect, it } from "bun:test";
@@ -78,9 +79,16 @@ describe("SHORTCUT_LEVELS", () => {
     expect(new Set(thresholds).size).toBe(thresholds.length);
   });
 
-  it("numbers the levels in table order so the badge reads Lv 1 upward", () => {
+  it("numbers the levels in table order so the badge reads L1 upward", () => {
     expect(SHORTCUT_LEVELS.map((definition) => definition.level)).toEqual(
       SHORTCUT_LEVELS.map((_, index) => index + 1),
     );
+  });
+});
+
+describe("formatShortcutLevelBadgeLabel", () => {
+  it("uses L plus the level number with no space", () => {
+    expect(formatShortcutLevelBadgeLabel(1)).toBe("L1");
+    expect(formatShortcutLevelBadgeLabel(6)).toBe("L6");
   });
 });

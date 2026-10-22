@@ -46,7 +46,7 @@ describe("SidebarActions", () => {
     const { wrapper } = createStoreWrapper();
     setSyncingSyncIndicatorOverride();
 
-    render(<SidebarActions />, { wrapper });
+    render(<SidebarActions sections={[]} />, { wrapper });
 
     expect(
       screen.getByRole("button", {
@@ -58,7 +58,7 @@ describe("SidebarActions", () => {
   it("does not render the background import spinner in the sidebar", () => {
     const { wrapper } = createStoreWrapper();
 
-    render(<SidebarActions />, { wrapper });
+    render(<SidebarActions sections={[]} />, { wrapper });
 
     expect(
       screen.queryByRole("button", {
@@ -75,29 +75,29 @@ describe("SidebarActions", () => {
     viewActions.setSidebarOpen(true);
     act(() => viewActions.toggleShortcuts());
 
-    render(<SidebarActions />, { wrapper });
+    render(<SidebarActions sections={[]} />, { wrapper });
 
     expect(
       screen.getByRole("button", { name: "Close shortcuts" }),
     ).toBeInTheDocument();
   });
 
-  it("leaves the shortcut level badge to the sidebar header", () => {
+  it("shows the shortcut level badge in the footer row", () => {
     const { wrapper } = createStoreWrapper();
 
-    render(<SidebarActions />, { wrapper });
+    render(<SidebarActions sections={[]} />, { wrapper });
 
     expect(
-      screen.queryByRole("button", { name: /^Shortcut level/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: /^Shortcut level 1, / }),
+    ).toHaveTextContent("L1");
   });
 
   it("groups footer controls in one leading row for tab order", () => {
     const { wrapper } = createStoreWrapper();
-    const { container } = render(<SidebarActions />, { wrapper });
+    const { container } = render(<SidebarActions sections={[]} />, { wrapper });
 
     const footer = container.firstElementChild;
-    expect(footer?.childElementCount).toBe(3);
+    expect(footer?.childElementCount).toBe(5);
     expect(footer?.className).not.toContain("justify-between");
 
     const labels = screen
@@ -107,6 +107,7 @@ describe("SidebarActions", () => {
       "Open shortcuts",
       "Open settings",
       "Open command palette",
+      expect.stringMatching(/^Shortcut level 1,/),
     ]);
   });
 });

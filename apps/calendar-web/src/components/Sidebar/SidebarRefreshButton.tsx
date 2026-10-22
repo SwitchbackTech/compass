@@ -1,6 +1,7 @@
 import { ArrowClockwiseIcon } from "@phosphor-icons/react/dist/csr/ArrowClockwise";
 import { type FC, useEffect, useState } from "react";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
+import { SIDEBAR_REFRESH_SLOT_CLASS } from "@web/components/Sidebar/SidebarActions/sidebar-footer.constants";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { useSseDegradedSince } from "@web/sse/hooks/useSseDegraded";
@@ -45,25 +46,26 @@ export const SidebarRefreshButton: FC = () => {
   const refreshDue = useRefreshDue(degradedSinceMs);
   const { isUpdateAvailable } = useVersionCheck();
 
-  if (!refreshDue && !isUpdateAvailable) return null;
-
+  const visible = refreshDue || isUpdateAvailable;
   const description = SIDEBAR_RELOAD_DESCRIPTION;
 
   return (
-    <div aria-live="polite" className="flex shrink-0 items-center">
-      <TooltipWrapper
-        description={description}
-        onClick={reloadLocation}
-        shortcut={["Mod", "R"]}
-      >
-        <button
-          className="c-focus-ring inline-flex h-9 items-center gap-1 rounded-default px-2 text-text-muted text-xs transition hover:bg-surface-panel hover:text-text"
-          type="button"
+    <div aria-live="polite" className={SIDEBAR_REFRESH_SLOT_CLASS}>
+      {visible ? (
+        <TooltipWrapper
+          description={description}
+          onClick={reloadLocation}
+          shortcut={["Mod", "R"]}
         >
-          <ArrowClockwiseIcon aria-hidden="true" size={14} />
-          Refresh
-        </button>
-      </TooltipWrapper>
+          <button
+            className="c-focus-ring inline-flex h-9 w-full items-center justify-center gap-1 rounded-default px-2 text-text-muted text-xs transition hover:bg-surface-panel hover:text-text"
+            type="button"
+          >
+            <ArrowClockwiseIcon aria-hidden="true" size={14} />
+            Refresh
+          </button>
+        </TooltipWrapper>
+      ) : null}
     </div>
   );
 };

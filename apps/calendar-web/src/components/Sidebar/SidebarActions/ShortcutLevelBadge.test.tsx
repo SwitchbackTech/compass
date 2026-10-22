@@ -76,12 +76,12 @@ describe("ShortcutLevelBadge", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders Lv 1 on an empty usage profile", () => {
+  it("renders L1 on an empty usage profile", () => {
     renderBadge();
 
     expect(
       screen.getByRole("button", { name: /Shortcut level 1, Newcomer/ }),
-    ).toHaveTextContent("Lv 1");
+    ).toHaveTextContent("L1");
   });
 
   it("lists the first three unused, unlocked rows as try-next", async () => {

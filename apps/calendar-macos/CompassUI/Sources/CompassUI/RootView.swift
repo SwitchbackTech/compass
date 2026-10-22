@@ -267,10 +267,7 @@ public struct RootView: View {
                 visibleDayCount: model.viewStore.visibleDayCount,
                 today: model.referenceNow,
                 trailingHeader: {
-                    HStack(spacing: 8) {
-                        TrialBadgeView(billingStore: model.billingStore)
-                        ShortcutLevelBadgeView(levelsStore: model.levelsStore) { model.toggleShortcutsLegend() }
-                    }
+                    TrialBadgeView(billingStore: model.billingStore)
                 }
             )
             .pageJumpChipAnchor(id: "month-picker")
@@ -302,6 +299,7 @@ public struct RootView: View {
             sidebarActionButton(label: "Open command palette", icon: .command) {
                 model.toggleCommandPalette()
             }
+            ShortcutLevelBadgeView(levelsStore: model.levelsStore) { model.toggleShortcutsLegend() }
             SidebarRefreshButton(model: model)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

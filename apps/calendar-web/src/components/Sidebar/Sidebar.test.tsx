@@ -99,15 +99,6 @@ describe("Sidebar", () => {
     expect(screen.getByText("Sidebar actions")).toBeTruthy();
   });
 
-  it("puts the shortcut level badge in the month picker header", async () => {
-    const { wrapper } = createStoreWrapper();
-    render(<Sidebar {...sidebarProps} />, { wrapper });
-
-    expect(
-      await screen.findByRole("button", { name: /^Shortcut level 1, / }),
-    ).toBeInTheDocument();
-  });
-
   it("shows event details only while the draft store says the form is open", async () => {
     const { wrapper } = createStoreWrapper();
     const { rerender } = render(

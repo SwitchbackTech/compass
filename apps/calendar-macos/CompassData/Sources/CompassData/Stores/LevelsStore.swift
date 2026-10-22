@@ -76,7 +76,7 @@ public final class LevelsStore {
     }
 
     public var badgeLabel: String {
-        "Lv \(levelSnapshot.level)"
+        "L\(levelSnapshot.level)"
     }
 
     public func recordShortcutInvocation(_ id: ShortcutId, section: String) {

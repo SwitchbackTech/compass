@@ -26,7 +26,6 @@ struct LifeSidebarView: View {
             Text(LifeMath.variations[model.lifeStore.preferences.variation]?.label ?? "Average")
               .fontWeight(.semibold).foregroundStyle(theme.textColor)
             Spacer(minLength: 0)
-            ShortcutLevelBadgeView(levelsStore: model.levelsStore) { model.toggleShortcutsLegend() }
           }
           Text("This is your life if you live to \(model.lifeStore.preferences.lifespan)")
           Text("Each dot represents one week of your life, and each row represents one year.")

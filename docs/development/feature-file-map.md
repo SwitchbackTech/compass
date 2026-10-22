@@ -170,7 +170,7 @@ Product rules (hold-Mod discovery, "chip the field", typing always types):
 - Typed-date parser and go-to-date announcement: `parseUserDate` / `goToDateAnnouncement` in `apps/calendar-web/src/common/utils/datetime/web.date.util.ts`, `apps/calendar-web/src/shortcuts/go-to-date/useGoToDateShortcut.ts`
 - Palette-teaches hint: `apps/calendar-web/src/components/CommandPalette/palette-shortcut-telemetry.ts`, `apps/calendar-web/src/components/CommandPalette/hooks/usePaletteLegendCmdItems.ts`
 - Public printable `/shortcuts` catalog: `apps/calendar-web/src/components/ShortcutsPage/ShortcutsCatalogView.tsx` (snapshot in `apps/calendar-web/src/shortcuts/shortcuts-catalog.json`, updated by hand when the registry changes; stays off a new `import()` root)
-- Shortcut level badge (sidebar footer, `Lv N`): `apps/calendar-web/src/shortcuts/level/` (pure level model + hidden-badge store), `apps/calendar-web/src/components/Sidebar/SidebarActions/ShortcutLevelBadge.tsx`; see [Shortcut Levels](../features/shortcut-levels.md)
+- Shortcut level badge (sidebar footer, `LN`): `apps/calendar-web/src/shortcuts/level/` (pure level model + hidden-badge store), `apps/calendar-web/src/components/Sidebar/SidebarActions/ShortcutLevelBadge.tsx`; see [Shortcut Levels](../features/shortcut-levels.md)
 - Mount point for global shortcuts and onboarding surface selection: `apps/calendar-web/src/components/RootShell/RootShell.tsx`, `onboarding-surface.ts`
 - Acceptance runbook: [Shortcuts](../acceptance/shortcuts.md), [Onboarding](../acceptance/onboarding.md)
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type Shortcut } from "@core/shortcuts/shortcut.types";
 import {
   computeShortcutLevel,
+  formatShortcutLevelBadgeLabel,
   type ShortcutLevel,
 } from "@core/shortcuts/shortcut-level";
 import { track } from "@web/auth/posthog/track";
@@ -11,6 +12,7 @@ import { SHORTCUT_LEVEL_UP_TOAST_ID } from "@web/common/constants/toast.constant
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { FOOTER_ICON_BUTTON_CLASS } from "@web/components/Sidebar/SidebarActions/sidebar-footer.constants";
 import {
   Tooltip,
   TooltipContent,
@@ -104,7 +106,7 @@ function useShortcutLevelCelebration(
 }
 
 /**
- * Sidebar header badge showing the user's shortcut level. Additive to the
+ * Sidebar footer badge showing the user's shortcut level. Additive to the
  * rotating sidebar tip and the legend's own check marks: hover or focus for
  * the level name, progress, and up to three shortcuts to try next in the
  * current context. Click opens the `?` legend. Hidden entirely when the
@@ -136,13 +138,14 @@ export function ShortcutLevelBadge({ sections }: Props) {
         <button
           aria-label={`Shortcut level ${level.level}, ${level.name}. ${level.used} of ${level.total} shortcuts used. Open shortcuts.`}
           className={classNames(
-            "c-keycap c-focus-ring cursor-pointer text-xs",
+            FOOTER_ICON_BUTTON_CLASS,
+            "c-keycap min-w-9 px-1.5 font-normal tabular-nums",
             pulsing && "c-level-pulse",
           )}
           onClick={viewActions.toggleShortcuts}
           type="button"
         >
-          {`Lv ${level.level}`}
+          {formatShortcutLevelBadgeLabel(level.level)}
         </button>
       </TooltipTrigger>
       {/* font-normal overrides c-tooltip's font-medium so only the heading
