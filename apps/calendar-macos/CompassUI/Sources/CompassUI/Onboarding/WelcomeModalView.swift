@@ -182,6 +182,8 @@ struct WelcomeModalView: View {
             .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
         }
         .buttonStyle(.plain)
+        // The keycap is a visual hint; the title alone names the button.
+        .accessibilityLabel(title)
     }
 
     private func secondaryButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
@@ -198,6 +200,8 @@ struct WelcomeModalView: View {
             .overlay(Capsule().stroke(theme.borderColor, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        // The keycap is a visual hint; the title alone names the button.
+        .accessibilityLabel(title)
     }
 
     private func quietTextButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
@@ -211,6 +215,8 @@ struct WelcomeModalView: View {
             .frame(maxWidth: .infinity, minHeight: 32)
         }
         .buttonStyle(.plain)
+        // The keycap is a visual hint; the title alone names the button.
+        .accessibilityLabel(title)
     }
 
     private func pillButton(title: String, hint: String, action: @escaping () -> Void) -> some View {
@@ -228,5 +234,7 @@ struct WelcomeModalView: View {
             .overlay(Capsule().stroke(theme.borderColor, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        // The keycap is a visual hint; the title alone names the button.
+        .accessibilityLabel(title)
     }
 }
