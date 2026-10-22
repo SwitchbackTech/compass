@@ -4,7 +4,10 @@ final class EventJumpDayPrefixUITests: XCTestCase {
     @MainActor
     func testLowercaseDayPrefixChipFocusesEvent() {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo",
+            "-COMPASS_UI_TEST_PIN_WEEK_GRID_TRACK",
+        ]
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
