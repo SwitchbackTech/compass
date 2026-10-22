@@ -60,7 +60,8 @@ public struct SidebarMonthPicker: View {
         captionPicker: Bool = false,
         minimumDate: Date? = nil,
         maximumDate: Date? = nil,
-        focusedDate: Date? = nil
+        focusedDate: Date? = nil,
+        trailingHeader: AnyView? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
@@ -72,7 +73,7 @@ public struct SidebarMonthPicker: View {
         self.captionPicker = captionPicker
         self.minimumDate = minimumDate
         self.maximumDate = maximumDate
-        self.trailingHeader = nil
+        self.trailingHeader = trailingHeader
     }
 
     public var body: some View {

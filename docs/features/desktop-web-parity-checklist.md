@@ -113,7 +113,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
 | Date field **MM.DD.YY** closed display | ✅ | `EventFormCompactDateField` shows 06.10.26 like web (compare run 39732173380) |
-| Datepicker open Enter/Space/ArrowDown | ✅ | Closed field matches web `EventFormDateField`: ↓, Enter on the committed date, and Space on the shown date open the calendar; ↑ / Shift+↑ / Shift+↓ / Mod+↓ nudge the day (`EventFormDateFieldKeys`). Open calendar matches web `react-datepicker`: ← → move a day cursor, ↑ ↓ a week, Enter or Space picks, Esc closes only the calendar (`EventFormDateKeysTests` drives them). Like web, plain Return in a date field commits or opens instead of saving the form; ⌘ Enter still saves. Still differs: macOS shows no in-field ↓ hint |
+| Datepicker open Enter/Space/ArrowDown | ✅ | Closed field matches web `EventFormDateField`: ↓, Enter on the committed date, and Space on the shown date open the calendar; ↑ / Shift+↑ / Shift+↓ / Mod+↓ nudge the day (`EventFormDateFieldKeys`). Open calendar matches web `react-datepicker`: ← → move a day cursor, ↑ ↓ a week, Enter or Space picks, Esc closes only the calendar (`EventFormDateKeysTests` drives them). Like web, plain Return in a date field commits or opens instead of saving the form; ⌘ Enter still saves. Hints match web: a ↓ keycap inside the focused field and ↑ ↓ · Enter · Esc in the calendar header |
 | Time pickers | 🟡 | The list opens centered on the selected time (or the quarter hour before it) like web. Still differs: macOS shows the list and the date picker as AppKit popovers that can open to the side of the field, while web drops them below it |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
 | Color row keys and hints | ✅ | Like web `EventColorPicker`: trailing ⌘ 6 keycaps; once color has focus (Mod+6 or E then C) ← → move a focus ring, Space / Enter pick, pick keys 1-9 0 - = choose a swatch and show on each swatch (swatches in web `EventColorSlotSchema` order, lavender first), and the hint swaps to ← → · Enter. The demo capture also shows a guest row on macOS only: the demo fixture calendar can invite (UI tests need it), the real local calendar cannot |
@@ -348,6 +348,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-22 | §7 refreshed from compare run 39732173380; MM.DD.YY date row ✅ |
 | 2026-10-22 | Event form date field: web keys on the closed field (↓ / Enter / Space open the calendar, arrows nudge the day) |
 | 2026-10-22 | Event form date calendar: arrow keys move a day cursor, Enter or Space picks, Esc closes |
+| 2026-10-22 | Event form date field: in-field ↓ hint and calendar header key hints (web `EventFormInfieldHint`, `EventFormCalendarPopoverHints`) |
 
 ---
 

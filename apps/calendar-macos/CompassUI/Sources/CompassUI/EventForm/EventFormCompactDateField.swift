@@ -37,7 +37,8 @@ struct EventFormCompactDateField: View {
             .textFieldStyle(.plain)
             .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
             .foregroundStyle(theme.textColor)
-            .padding(.horizontal, 8)
+            .padding(.leading, 8)
+            .padding(.trailing, showsArrowDownHint ? 26 : 8)
             .frame(minWidth: 72, idealWidth: 84, maxWidth: 96)
             .frame(minHeight: 38)
             .background(theme.surfaceOverlayColor)
@@ -48,6 +49,16 @@ struct EventFormCompactDateField: View {
             }
             .focused($isFocused)
             .accessibilityIdentifier(accessibilityIdentifier)
+            .overlay(alignment: .trailing) {
+                // Web `EventFormInfieldHint`: ↓ opens the calendar. Added after the
+                // identifier so the keycap does not share the field's id.
+                if showsArrowDownHint {
+                    ShortcutHintChip(label: KeycapGlyphs.display(["ArrowDown"]))
+                        .padding(.trailing, 6)
+                        .allowsHitTesting(false)
+                        .accessibilityLabel("Arrow down opens the calendar")
+                }
+            }
             .onSubmit { commitTypedDate() }
             .onKeyPress(keys: Self.handledKeys) { press in
                 handleKey(press)
@@ -76,7 +87,8 @@ struct EventFormCompactDateField: View {
                     onSelectDate: { picked in pick(picked) },
                     today: Date(),
                     daysAreClickable: true,
-                    focusedDate: cursor
+                    focusedDate: cursor,
+                    trailingHeader: AnyView(calendarKeyHints)
                 )
                 .frame(width: 252)
                 .padding(12)
@@ -108,6 +120,22 @@ struct EventFormCompactDateField: View {
         parts.minute = time.minute
         parts.second = time.second
         return calendar.date(from: parts) ?? picked
+    }
+
+    private var showsArrowDownHint: Bool { isFocused && !showsCalendar }
+
+    /// Web `EventFormCalendarPopoverHints` in the calendar header.
+    private var calendarKeyHints: some View {
+        HStack(spacing: 4) {
+            ShortcutHintChip(label: KeycapGlyphs.display(["ArrowUp"]))
+            ShortcutHintChip(label: KeycapGlyphs.display(["ArrowDown"]))
+            Text("·").font(.rubik(11)).foregroundStyle(theme.textMutedColor)
+            ShortcutHintChip(label: KeycapGlyphs.display(["Enter"]))
+            Text("·").font(.rubik(11)).foregroundStyle(theme.textMutedColor)
+            ShortcutHintChip(label: KeycapGlyphs.display(["Esc"]))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Arrow keys move in the calendar, Enter selects the day, Escape closes the calendar")
     }
 
     private func syncKeyOwner() {
