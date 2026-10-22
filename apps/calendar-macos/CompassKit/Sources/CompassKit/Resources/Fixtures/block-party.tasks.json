@@ -154,10 +154,10 @@
       "id": "jump-to-kickoff",
       "type": "eventJump",
       "title": "Fly across the board",
-      "instruction": "Press F to reveal jump letters, then type the one on Team kickoff.",
-      "hint": "Press F and letters appear on every block. Type the letter sitting on Team kickoff.",
+      "instruction": "Press f to reveal jump labels, then type the one on Team kickoff.",
+      "hint": "Press f and labels appear on every block. Type the lowercase label on Team kickoff.",
       "keycaps": [
-        "F"
+        "f"
       ],
       "targetEventId": "game-kickoff"
     },

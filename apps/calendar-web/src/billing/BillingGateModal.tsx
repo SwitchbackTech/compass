@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef } from "react";
 import { track } from "@web/auth/posthog/track";
 import { useStripePublishableKey } from "@web/billing/billing.query";
 import { setBillingGateOwnsScreen } from "@web/billing/billing-gate-attention";
+import { shouldTrackBillingGateShown } from "@web/billing/billing-gate-shown-once";
 import {
   checkoutPanelActions,
   selectCheckoutPanelOpen,
@@ -18,6 +19,7 @@ import { deferGoogleReconnectToastIfVisible } from "@web/common/utils/toast/goog
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
+import { welcomeTrialCardTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -43,15 +45,16 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     ? "Finish starting your trial"
     : "Subscribe to keep using Compass";
   const body = isAwaitingCheckout
-    ? "Add a card to start your 7-day free trial. You will not be charged until it ends."
+    ? welcomeTrialCardTermsLine()
     : "Your trial has ended. Subscribe to keep creating and editing events, including keyboard shortcuts.";
   const primaryLabel = isAwaitingCheckout ? "Add card" : "Subscribe";
 
   useEffect(() => {
-    if (!shownRef.current) {
-      shownRef.current = true;
-      track("billing_gate_shown", { status });
+    if (shownRef.current || !shouldTrackBillingGateShown(status)) {
+      return;
     }
+    shownRef.current = true;
+    track("billing_gate_shown", { status });
   }, [status]);
 
   useEffect(() => {

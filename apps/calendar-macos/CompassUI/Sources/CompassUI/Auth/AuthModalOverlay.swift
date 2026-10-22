@@ -101,8 +101,10 @@ public struct AuthModalOverlay: View {
 
     private var footer: some View {
         VStack(spacing: 8) {
-            AuthLinkButton(title: "Back") {
-                authStore.closeModal()
+            if authStore.currentView != .startTrial {
+                AuthLinkButton(title: "Back") {
+                    authStore.closeModal()
+                }
             }
             HStack(spacing: 8) {
                 footerLink("Pricing", url: "https://compasscalendar.com/pricing")

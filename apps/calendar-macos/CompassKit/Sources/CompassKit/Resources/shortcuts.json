@@ -1171,7 +1171,7 @@
     "eventJump": {
       "bareLetter": "f",
       "keycaps": [
-        "F"
+        "f"
       ]
     },
     "moveEvent": {

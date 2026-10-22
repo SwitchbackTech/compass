@@ -3,8 +3,8 @@ import CompassKit
 import XCTest
 @testable import CompassUI
 
-/// Web `DayLabels`: while Mod is held the weekday name becomes a ⇧SU / ⇧M
-/// keycap, and event-jump mode shows the bare letter.
+/// Web `DayLabels`: while Mod is held the weekday name becomes a ⇧su / ⇧m
+/// keycap, and event-jump mode shows the bare lowercase prefix.
 @MainActor
 final class TimeGridDayJumpPrefixTests: XCTestCase {
     private let dayKeys = ["2026-05-17", "2026-05-18"]
@@ -16,17 +16,25 @@ final class TimeGridDayJumpPrefixTests: XCTestCase {
 
     func testWeekHeadersShowShiftPrefixedChipsWhileModIsHeld() {
         let view = render(showDayJumpPrefixes: true)
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("⇧SU"))
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-18").contains("⇧M"))
-        XCTAssertFalse(headerTexts(in: view, dayKey: "2026-05-17").contains("Sun"))
+        let sunday = headerTexts(in: view, dayKey: "2026-05-17")
+        let monday = headerTexts(in: view, dayKey: "2026-05-18")
+        XCTAssertTrue(sunday.contains("⇧su"), "Sunday header texts: \(sunday)")
+        XCTAssertTrue(monday.contains("⇧m"), "Monday header texts: \(monday)")
+        XCTAssertFalse(sunday.contains("Sun"), "Sunday header texts: \(sunday)")
     }
 
     func testEventJumpModeShowsBarePrefixes() {
         let view = render(showDayJumpPrefixes: true, dayJumpUseShiftPrefix: false)
-        XCTAssertTrue(headerTexts(in: view, dayKey: "2026-05-17").contains("SU"))
+        let sunday = headerTexts(in: view, dayKey: "2026-05-17")
+        XCTAssertTrue(sunday.contains("su"), "Sunday header texts: \(sunday)")
     }
 
     private func render(showDayJumpPrefixes: Bool, dayJumpUseShiftPrefix: Bool = true) -> TimeGridView {
+        // Header texts are set while rendering, so pinning the shared zone
+        // for the render is enough; earlier suites change it.
+        let savedZone = EffectiveTimeZone.identifier
+        defer { EffectiveTimeZone.identifier = savedZone }
+        EffectiveTimeZone.identifier = "UTC"
         let state = TimeGridState(
             layoutMode: .week,
             scenario: GridLayoutSnapshotFixtures.parityScenario(layoutMode: .week, visibleDateKeys: dayKeys),

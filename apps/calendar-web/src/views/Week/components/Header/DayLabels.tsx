@@ -28,7 +28,7 @@ import { GridTimezoneLabel } from "@web/timezone/GridTimezoneLabel";
 
 const dayJumpPrefix = (day: Dayjs) => {
   const weekday = day.day() as DayJumpWeekday;
-  return DAY_JUMP_PREFIX_BY_WEEKDAY[weekday].toUpperCase();
+  return DAY_JUMP_PREFIX_BY_WEEKDAY[weekday];
 };
 
 interface Props {

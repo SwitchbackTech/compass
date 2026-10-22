@@ -2,7 +2,8 @@ import { renderHook } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const identify = mock();
-const usePostHog = mock(() => ({ identify }));
+const register = mock();
+const usePostHog = mock(() => ({ identify, register }));
 
 // bun's mock.module is global and leaks into every other test file in the
 // run. Spread the real module so unrelated suites (e.g. anything rendering
@@ -33,6 +34,8 @@ const { useIdentifyUser } = await import("./useIdentifyUser");
 describe("useIdentifyUser", () => {
   beforeEach(() => {
     identify.mockClear();
+    register.mockClear();
+    usePostHog.mockReturnValue({ identify, register });
   });
 
   it("identifies with userId as the distinct_id and email as a property", () => {
@@ -56,5 +59,13 @@ describe("useIdentifyUser", () => {
 
     expect(identify).not.toHaveBeenCalled();
     window.history.pushState({}, "", "/week");
+  });
+
+  it("flags internal team accounts for PostHog cohort filters", () => {
+    renderHook(() =>
+      useIdentifyUser("tyler@keepsoftwaresimple.com", "user-123"),
+    );
+
+    expect(register).toHaveBeenCalledWith({ $internal_or_test_user: true });
   });
 });

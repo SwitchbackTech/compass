@@ -47,6 +47,8 @@ export async function completeProviderAuthCallback({
   const staleReturnPath = await resolveStaleProviderOAuthReplay({
     provider,
     search,
+    pathname:
+      typeof window !== "undefined" ? window.location.pathname : undefined,
   });
   if (staleReturnPath) {
     navigate(staleReturnPath, { replace: true });

@@ -103,7 +103,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Timed / all-day card shell | ✅ | `EventCardView`, palette tests |
 | Event jump chips (W1, SU2, ...) | ✅ | `DayJumpKeys` ports web `assignDayJumpKeys`: day prefix + per-day index on timed and all-day cards, narrowed to the typed day; digits after a day pick focus (400 ms wait for W1 vs W10); bare digits stay quick-time |
-| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; bare day letters in jump mode (F toggles off, E / C pass through, other letters swallowed like web); still web-only: HHMM create on the picked column (Shift+T then 1230) |
+| Shift+M weekday column jump | ✅ | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; bare day letters in jump mode (F toggles off, E / C pass through, other letters swallowed like web); four digits typed within 800 ms after a day pick create on that column (Shift+T then 1230), like web's column time burst |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
 | Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
@@ -114,9 +114,9 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Replaces sidebar body while open | ✅ | `EventFormView` in `RootView` |
 | Date field **MM.DD.YY** closed display | 🟡 | `EventFormCompactDateField` + `EventFormDateFormat`; verify parity capture after merge |
 | Datepicker open Enter/Space/ArrowDown | 🟡 | Audit `EventFormScheduleSection.swift` vs web |
-| Time pickers | 🟡 | Visual parity pass needed |
+| Time pickers | 🟡 | The list opens centered on the selected time (or the quarter hour before it) like web. Still differs: macOS shows the list and the date picker as AppKit popovers that can open to the side of the field, while web drops them below it |
 | Location / Meet / guests grouping | ✅ | #4607 single `EventFormCard` + description card (web #4599) |
-| Color row Mod+digit hint | 🟡 | Trailing ⌘ 6 keycaps like web `EventColorPicker`; web swaps to ← → · Enter while a swatch has focus, macOS has no swatch arrow keys yet. The demo capture also shows a guest row on macOS only: the demo fixture calendar can invite (UI tests need it), the real local calendar cannot |
+| Color row keys and hints | ✅ | Like web `EventColorPicker`: trailing ⌘ 6 keycaps; once color has focus (Mod+6 or E then C) ← → move a focus ring, Space / Enter pick, pick keys 1-9 0 - = choose a swatch and show on each swatch, and the hint swaps to ← → · Enter. The demo capture also shows a guest row on macOS only: the demo fixture calendar can invite (UI tests need it), the real local calendar cannot |
 | Save bar: accent fill, on-accent text, space-between, **⌘Enter** hint | 🟡 | macOS save bar matches accent + Mod+Enter keycap (#4610); sidebar shows web save-draft tip (#4614) |
 | Mod+digit field jump + hold-Mod chips | ✅ | `ModHoldChipsOverlay`, layout snapshots; chips sit at the anchor's top-right corner like web `DigitHintChipOverlay` (top + 2px, flush right), so the month picker chip no longer hides the Lv badge's "v" |
 | Hold-Mod day header keycaps (⇧SU, ⇧M, ...) | ✅ | Week headers swap the weekday for `WeekDayColumnHeaderControl` keycaps while Mod is held; bare letters in event-jump mode |
@@ -253,7 +253,7 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | --- | --- | --- | --- |
 | `focus-sidebar` | I | ✅ | Month picker |
 | `focus-event` | U | ✅ | `focusFirstCalendarEvent()` seeds nearest grid event |
-| `focus-shift-hold` | F (+ digits) | 🟡 | Hold-F jump chips; not full web jump mode |
+| `focus-shift-hold` | F (+ digits) | ✅ | Jump mode: W1 / SU2 chips, bare day letters, digits after a day pick, typed time on the picked column |
 | `focus-week-day` | Shift+M… | 🟡 | Column select + first event; weekend S→U/A; digit hints after day pick ❌ |
 | `focus-notice` | P | 🟡 | Subset of notices |
 | `focus-calendar-digit` | 1–9 in list | ✅ | |
@@ -342,6 +342,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-21 | Per-account page-jump targets (web `calendar-account:` ids) |
 | 2026-10-21 | Event jump chips use web day-prefix labels (W1, SU2) and digits after a day pick |
 | 2026-10-22 | Week/day hour gutter labels use web's 1 AM track origin (#4686); they sat two hours below their events (a 5 PM event drew on the 3 PM row) |
+| 2026-10-22 | Parity capture draws popover windows (form date picker, time list) over the window render, so those surfaces stop showing a closed field |
 | 2026-10-22 | macOS capture: register `onboarding-welcome-account-choice` so the welcome account step exports instead of timing out |
 
 ---
@@ -359,6 +360,6 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
 
-**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column still ❌ vs web `useShiftHoldEventHints`.
+**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
 Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).

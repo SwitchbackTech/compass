@@ -46,11 +46,19 @@ final class WeekDayColumnHeaderControl: NSView {
         numberSize: CGFloat,
         palette: (text: NSColor, textMuted: NSColor, accent: NSColor, surfacePanel: NSColor, border: NSColor, background: NSColor)
     ) {
-        guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { return }
+        // A day key's number and weekday are civil facts, so read them in a
+        // fixed UTC calendar instead of the shared, mutable `EffectiveTimeZone`,
+        // which can change between parsing and reading the weekday.
+        var civil = Calendar(identifier: .gregorian)
+        civil.timeZone = TimeZone(identifier: "UTC") ?? .gmt
+        let parts = dayKey.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3,
+            let date = civil.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+        else { return }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.calendar = EffectiveTimeZone.calendar
-        formatter.timeZone = EffectiveTimeZone.timeZone
+        formatter.calendar = civil
+        formatter.timeZone = civil.timeZone
         let isNewMonth = dayKey.hasSuffix("-01") && viewStartMonth.map { !dayKey.hasPrefix($0) } == true
         formatter.dateFormat = isNewMonth ? "MMM d" : "d"
         let number = formatter.string(from: date)
@@ -61,8 +69,8 @@ final class WeekDayColumnHeaderControl: NSView {
         numberField.textColor = ink
 
         if showDayJumpPrefixes {
-            let weekday = EffectiveTimeZone.calendar.component(.weekday, from: date)
-            let prefix = DayJumpPrefixes.prefix(forWeekday: weekday - 1).uppercased()
+            let weekday = civil.component(.weekday, from: date)
+            let prefix = DayJumpPrefixes.prefix(forWeekday: weekday - 1)
             chipLabel.stringValue = dayJumpUseShiftPrefix ? "⇧\(prefix)" : prefix
             chipLabel.isHidden = false
             chipLabel.textColor = palette.text

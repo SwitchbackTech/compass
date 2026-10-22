@@ -408,7 +408,7 @@ describe("keycap progress", () => {
     >;
     expect(task.id).toBe("jump-to-kickoff");
     // The full sequence is on the card up front: H, then kickoff's letter.
-    expect(getDisplayKeycaps(task, state)).toEqual(["F", "S"]);
+    expect(getDisplayKeycaps(task, state)).toEqual(["f", "s"]);
     expect(getNextKeycapIndex(task, state)).toBe(0);
 
     state = handleGameKey(state, key.jump, T0);

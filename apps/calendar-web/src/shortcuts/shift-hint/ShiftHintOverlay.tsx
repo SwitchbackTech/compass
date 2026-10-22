@@ -31,8 +31,8 @@ export function ShiftHintOverlay({ hints }: { hints: ActiveShiftHint[] }) {
           return null;
         }
 
-        const label = hint.hint.toUpperCase();
-        // Longer labels (SU1, F10) need more room than the old AA chips.
+        const label = hint.hint;
+        // Longer labels (su1, f10) need more room than the old AA chips.
         const chipWidth = Math.max(22, 10 + label.length * 8);
 
         return (
