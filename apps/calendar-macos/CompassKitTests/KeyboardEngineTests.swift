@@ -88,13 +88,18 @@ final class KeyboardEngineTests: XCTestCase {
         XCTAssertEqual(page.token, .named(.pageDown))
     }
 
-    func testMonthChordsMatchShiftedAndUnshiftedPunctuation() throws {
-        for (key, id) in [("<", ShortcutId.navMonthPrev), (",", .navMonthPrev),
-                          (">", .navMonthNext), (".", .navMonthNext)] {
-            let dispatcher = try ShortcutDispatcher(registry: registry)
-            XCTAssertEqual(dispatcher.dispatch(KeyEvent(key: .punctuation(key), modifiers: [.command, .shift])), id)
-            XCTAssertNotEqual(dispatcher.dispatch(KeyEvent(key: .punctuation(key), modifiers: [.command])), id)
-        }
+    func testMonthChordsMatchModAltShiftJK() throws {
+        let dispatcher = try ShortcutDispatcher(registry: registry)
+        let modifiers: KeyModifiers = [.command, .option, .shift]
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: modifiers)),
+            .navMonthPrev)
+        XCTAssertEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("k"), modifiers: modifiers)),
+            .navMonthNext)
+        XCTAssertNotEqual(
+            dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: [.command, .shift])),
+            .navMonthPrev)
     }
 
     func testScopePrecedence() throws {

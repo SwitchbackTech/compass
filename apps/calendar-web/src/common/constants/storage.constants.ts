@@ -9,6 +9,7 @@
 export const STORAGE_KEYS = {
   AUTH: "compass.auth",
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
+  HAS_SEEN_LIFE_VIEW_INTRO: "compass.onboarding.has-seen-life-view-intro",
   WELCOME_EXIT: "compass.onboarding.welcome-exit",
   HAS_SEEN_ANONYMOUS_SAVE_TOAST:
     "compass.onboarding.has-seen-anonymous-save-toast",
