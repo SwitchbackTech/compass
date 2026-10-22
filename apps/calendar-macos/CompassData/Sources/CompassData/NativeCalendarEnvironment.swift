@@ -22,6 +22,7 @@ public struct NativeCalendarEnvironment: Sendable {
     public let blockPartyStore: BlockPartyStore
     public let shortcutRegistry: ShortcutRegistry
     public let analyticsIdentity: AnalyticsIdentityCoordinator
+    public let productAnalytics: ProductAnalyticsClient
 
     @MainActor
     public init(
@@ -107,6 +108,7 @@ public struct NativeCalendarEnvironment: Sendable {
         levelsStore = LevelsStore(registry: shortcutRegistry, analytics: analytics)
         onboardingStore = OnboardingStore(analytics: analytics)
         blockPartyStore = BlockPartyStore(analytics: analytics)
+        productAnalytics = analytics
         self.analyticsIdentity = analyticsIdentity
     }
 }

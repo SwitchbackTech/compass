@@ -42,6 +42,28 @@ final class NativeLaunchTests: XCTestCase {
     }
 
     @MainActor
+    func testLifeViewShowsIntroModalOnce() {
+        let app = XCUIApplication.compassUITest(lifeViewIntroSeen: false)
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo",
+            "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+        ]
+        app.launch()
+
+        let window = app.windows["Compass"]
+        XCTAssertTrue(window.waitForExistence(timeout: 15))
+        window.typeKey("l", modifierFlags: [])
+        let intro = window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
+        XCTAssertTrue(intro.waitForExistence(timeout: 10))
+        window.typeKey(.return, modifierFlags: [])
+        XCTAssertTrue(intro.waitForNonExistence(timeout: 5))
+
+        window.typeKey("w", modifierFlags: [])
+        window.typeKey("l", modifierFlags: [])
+        XCTAssertFalse(intro.exists)
+    }
+
+    @MainActor
     func testFreshLaunchShowsWelcomeModal() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-\(OnboardingStorageKeys.hasSeenWelcome)", "false"]
@@ -449,13 +471,18 @@ final class NativeLaunchTests: XCTestCase {
     @MainActor
     func testEventClickShowsPointerHintWithoutOpening() {
         let app = XCUIApplication.compassUITest()
-        app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
+        app.launchArguments += [
+            "-COMPASS_FIXTURE", "demo",
+            "-\(OnboardingStorageKeys.pointerHintDismissedPermanently)", "false",
+        ]
         app.launch()
 
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         let standup = window.buttons["compass-grid-event-demo-morning-standup"]
         XCTAssertTrue(standup.waitForExistence(timeout: 10))
+        // The demo opens near the afternoon; reveal the morning event before clicking its coordinates.
+        window.scrollViews.firstMatch.scroll(byDeltaX: 0, deltaY: 1000)
         clickGridEvent(standup)
 
         let hint = window.descendants(matching: .any)["compass-pointer-hint"]

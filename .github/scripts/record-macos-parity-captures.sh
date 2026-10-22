@@ -19,6 +19,7 @@ SURFACES=(
   command-palette
   settings
   onboarding-welcome
+  life-view-intro
 )
 mkdir -p "$OUT"
 if ! python3 -c "import PIL" 2>/dev/null; then
