@@ -248,6 +248,7 @@ export const AuthModal: FC = () => {
   if (isStartTrialView) {
     return (
       <OverlayPanel
+        align="start"
         title={title}
         onDismiss={dismissSignupTrial}
         variant="modal"

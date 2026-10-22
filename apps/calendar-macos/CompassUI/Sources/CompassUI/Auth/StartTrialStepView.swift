@@ -8,14 +8,14 @@ struct StartTrialStepView: View {
     @Bindable var billingStore: BillingStore
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
             Text(AccountChoiceCopy.signupTrialStepTermsLine)
                 .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(.leading)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             trialPrimaryButton
 
@@ -72,5 +72,6 @@ struct StartTrialStepView: View {
             .foregroundStyle(theme.accentSecondaryColor)
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
