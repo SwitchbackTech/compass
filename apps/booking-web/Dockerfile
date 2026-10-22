@@ -15,8 +15,14 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 ARG API_BASEURL=http://localhost:3000/api
+ARG POSTHOG_KEY=
+ARG POSTHOG_HOST=
+ARG BUILD_VERSION=production
 ENV NODE_ENV=production
 ENV API_BASEURL=${API_BASEURL}
+ENV POSTHOG_KEY=${POSTHOG_KEY}
+ENV POSTHOG_HOST=${POSTHOG_HOST}
+ENV BUILD_VERSION=${BUILD_VERSION}
 
 RUN cd apps/booking-web && bun run build.ts
 

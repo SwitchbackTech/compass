@@ -68,6 +68,9 @@ jobs:
           build-args: |
             API_BASEURL=${{ vars.BACKEND_API_URL }}
             NODE_ENV=${{ inputs.environment == 'production' && 'production' || 'staging' }}
+            POSTHOG_KEY=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
+            POSTHOG_HOST=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
+            BUILD_VERSION=${{ steps.version.outputs.image_version }}
           tags: switchbacktech/compass-booking-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
 
       - name: Deploy booking-web to ${{ inputs.environment }}

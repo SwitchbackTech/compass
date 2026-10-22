@@ -791,7 +791,13 @@ describe("staging deploy workflow", () => {
       "switchbacktech/compass-booking-web:${{ inputs.environment }}-",
     );
     expect(bookingDeploy).toContain("file: apps/booking-web/Dockerfile");
+    expect(bookingDeploy).toContain("POSTHOG_KEY=$");
+    expect(bookingDeploy).toContain("POSTHOG_HOST=$");
     expect(bookingDeploy).toContain("./compass update-booking-web");
+
+    const bookingDockerfile = readRepoFile("apps/booking-web/Dockerfile");
+    expect(bookingDockerfile).toContain("ARG POSTHOG_KEY=");
+    expect(bookingDockerfile).toContain("ARG POSTHOG_HOST=");
   });
 
   it("runs deploy health checks after each staging deploy", () => {
