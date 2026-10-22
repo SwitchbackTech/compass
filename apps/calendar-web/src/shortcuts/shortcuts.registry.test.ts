@@ -360,6 +360,13 @@ describe("shortcuts.registry", () => {
 
   // Registry rows derive from KEYMAP by construction; these pin the two
   // remaining cross-module facts a derivation cannot express.
+  it("lists month picker navigation with Mod+Alt+J/K only", () => {
+    const prev = SHORTCUTS_REGISTRY.find((row) => row.id === "nav-month-prev");
+    const next = SHORTCUTS_REGISTRY.find((row) => row.id === "nav-month-next");
+    expect(prev?.keys).toEqual(["Mod", "Alt", "j"]);
+    expect(next?.keys).toEqual(["Mod", "Alt", "k"]);
+  });
+
   describe("keymap coherence", () => {
     it("maps the taught edit-sequence second key to the title field", () => {
       expect(EDIT_SEQUENCE_FIELD_BY_KEY[KEYMAP.editTitle.sequence.second]).toBe(

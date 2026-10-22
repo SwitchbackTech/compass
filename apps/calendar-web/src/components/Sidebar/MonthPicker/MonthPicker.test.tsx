@@ -47,8 +47,8 @@ const renderPicker = (ui: ReactElement) => render(ui, { wrapper });
 const isMac = resolveModifier("Mod") === "Meta";
 const pressMonthChord = (key: "j" | "k") => {
   const init = isMac
-    ? { metaKey: true, altKey: true, shiftKey: true }
-    : { ctrlKey: true, altKey: true, shiftKey: true };
+    ? { metaKey: true, altKey: true }
+    : { ctrlKey: true, altKey: true };
   pressKey(key, { keyDownInit: init, keyUpInit: init });
 };
 
@@ -477,7 +477,7 @@ describe("MonthPicker", () => {
     expect(onSelectDate).not.toHaveBeenCalled();
   });
 
-  it("steps the month from a focused date input via the Mod+Alt+Shift chord", async () => {
+  it("steps the month from a focused date input via the Mod+Alt chord", async () => {
     const onSelectDate = mock();
     renderPicker(<MonthPicker onSelectDate={onSelectDate} {...pickerProps} />);
 

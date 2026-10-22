@@ -64,7 +64,7 @@ split `getPageJumpAnchor` / `getPageJumpFocusElement`.
 
 Bare letter shortcuts stand down while the caret is in an editable field.
 Mod chords stay available so discovery and jumps still work while typing
-(including month-picker month jumps on `Mod+Alt+Shift+J` / `K`):
+(including month-picker month jumps on `Mod+Alt+J` / `K`, with preventDefault so DevTools does not steal the chord in the app):
 `Mod+digit` (jump), `Mod+E` (same field jumps as `e`…), `Mod+K` (command
 palette).
 

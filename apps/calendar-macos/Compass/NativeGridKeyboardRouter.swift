@@ -713,7 +713,7 @@ final class NativeGridKeyboardRouter {
     /// leaves. Any other key drops the focus and runs as usual.
     private func handleMonthPickerFocusKeys(_ keyEvent: KeyEvent) -> Bool {
         guard model.monthPickerFocusDate != nil else { return false }
-        if keyEvent.modifiers == [.command, .option, .shift],
+        if keyEvent.modifiers == [.command, .option],
            case .character(let char) = keyEvent.key, char == "j" || char == "k" {
             return false
         }

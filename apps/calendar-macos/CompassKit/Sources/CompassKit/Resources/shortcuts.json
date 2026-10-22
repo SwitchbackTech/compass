@@ -88,7 +88,6 @@
       "keys": [
         "Mod",
         "Alt",
-        "Shift",
         "j"
       ],
       "label": "Previous month in picker",
@@ -99,7 +98,6 @@
       "keys": [
         "Mod",
         "Alt",
-        "Shift",
         "k"
       ],
       "label": "Next month in picker",
@@ -869,13 +867,11 @@
     "nav-month-prev": [
       "Mod",
       "Alt",
-      "Shift",
       "j"
     ],
     "nav-month-next": [
       "Mod",
       "Alt",
-      "Shift",
       "k"
     ],
     "nav-picker-step": [

@@ -21,8 +21,8 @@ const wrapper = ({ children }: PropsWithChildren) => (
 const isMac = resolveModifier("Mod") === "Meta";
 const pressGridMonthPrev = () => {
   const init = isMac
-    ? { metaKey: true, altKey: true, shiftKey: true }
-    : { ctrlKey: true, altKey: true, shiftKey: true };
+    ? { metaKey: true, altKey: true }
+    : { ctrlKey: true, altKey: true };
   pressKey("j", { keyDownInit: init, keyUpInit: init });
 };
 
@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 describe("DatePicker captionPicker", () => {
-  it("steps the day grid month with Mod+Alt+Shift+J while the input is focused", async () => {
+  it("steps the day grid month with Mod+Alt+J while the input is focused", async () => {
     render(
       <DatePicker
         captionPicker
