@@ -38,7 +38,7 @@ final class SidebarMonthPickerTests: XCTestCase {
         let title = window.buttons["compass-native-header-title"]
         let originalTitle = title.label
         window.typeKey("i", modifierFlags: [])
-        window.typeKey(".", modifierFlags: [.command, .shift])
+        window.typeKey("k", modifierFlags: [.command, .option, .shift])
         window.typeKey(.rightArrow, modifierFlags: [])
         XCTAssertEqual(title.label, originalTitle)
         window.typeKey(.return, modifierFlags: [])

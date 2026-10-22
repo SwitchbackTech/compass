@@ -102,8 +102,8 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Timed / all-day card shell | ✅ | `EventCardView`, palette tests |
-| Jump / hold-F digit hints | ✅ | `eventJumpHold`, chips overlay |
-| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump + quick-time slots still web-only |
+| Event jump chips (W1, SU2, ...) | ✅ | `DayJumpKeys` ports web `assignDayJumpKeys`: day prefix + per-day index on timed and all-day cards, narrowed to the typed day; digits after a day pick focus (400 ms wait for W1 vs W10); bare digits stay quick-time |
+| Shift+M weekday column jump | 🟡 | `handleShiftDayJump`; weekend Shift+S→U/A added; digit jump after a day pick wired; still web-only: bare letters in jump mode (web takes M/T/W without Shift) and HHMM create on the picked column (Shift+T then 1230) |
 | Sidebar edit ring | 🟡 | Inset focus layer vs web outline |
 | Unsettled outline | ✅ | Dashed `text-muted/50` outline on sample events and organized events with awaiting or tentative guests |
 
@@ -128,7 +128,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Keyboard `i`, arrows, Enter | ✅ | |
-| Cmd+Shift+, / . month jump | ✅ | |
+| Mod+Alt+Shift+J / K month jump | ✅ | |
 | Selected range / today styling | ✅ | Week mode bolds the selected week row with ink on today; 28.8pt circles; today follows the calendar clock; Go to this month circle hides on the current month |
 | Weekday header 10px muted | 🟡 | Rubik 10 in `SidebarMonthPicker.swift` |
 
@@ -225,8 +225,8 @@ Legend: **Mod** = ⌘ on macOS. Web bindings from `APP_SHORTCUT_BINDINGS` / `KEY
 | `nav-next` | K | ✅ | ✅ | ✅ |
 | `nav-shift-left` | Mod+Shift+← | ✅ | ✅ | ✅ |
 | `nav-shift-right` | Mod+Shift+→ | ✅ | ✅ | ✅ |
-| `nav-month-prev` | Mod+Shift+, | ✅ | ✅ | ✅ |
-| `nav-month-next` | Mod+Shift+. | ✅ | ✅ | ✅ |
+| `nav-month-prev` | Mod+Alt+Shift+J | ✅ | ✅ | ✅ |
+| `nav-month-next` | Mod+Alt+Shift+K | ✅ | ✅ | ✅ |
 | `nav-picker-step` | Arrow keys in picker | ✅ | ✅ | 🟡 telemetry |
 | `nav-today` | T (keyup) | ✅ | ✅ | ✅ |
 | `nav-go-to-date` | Mod+G | ✅ | ✅ | ✅ |
@@ -339,6 +339,7 @@ Each PR should link a child issue, include before/after screenshots (web Chromiu
 | 2026-10-21 | Week grid: hold-Mod day header keycaps (⇧SU, ⇧M, ...) now render; the header control existed but the grid never used it (compare run 39597000570) |
 | 2026-10-21 | Hold-Mod sidebar chips: month picker and Up next chips render, calendar list chip moved onto the list (compare run 39634795849) |
 | 2026-10-21 | Per-account page-jump targets (web `calendar-account:` ids) |
+| 2026-10-21 | Event jump chips use web day-prefix labels (W1, SU2) and digits after a day pick |
 
 ---
 
@@ -355,6 +356,6 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Settings | ✅ | ✅ | 🟡 | macOS sidebar shell vs web modal; accounts copy differs (anonymous seed) |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Copy aligned; footer keycap spacing differs |
 
-**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick and quick-time slots still ❌ vs web `useShiftHoldEventHints`.
+**Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare letters in jump mode still ❌ vs web `useShiftHoldEventHints`.
 
 Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#4612, #4613, …). Latest dispatch: workflow run 39348622389 (pre-#4612 merge baseline).

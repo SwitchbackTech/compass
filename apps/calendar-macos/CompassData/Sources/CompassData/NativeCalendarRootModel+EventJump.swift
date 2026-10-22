@@ -89,17 +89,51 @@ extension NativeCalendarRootModel {
                 buffer: prefix
             )
             recordShortcut(.focusWeekDay)
-            if let first = loadedEvents.first(where: { event in
-                eventJumpDayKey(for: event) == dayKey
-            }) {
-                focusEvent(eventId: first.id.rawValue)
+            // Assignments run in day order then index, so this is the day's 1.
+            if let first = dayJumpAssignments().first(where: { $0.dayKey == dayKey }) {
+                focusEvent(eventId: first.eventId)
             }
             refreshEventJumpPresentation()
             return
         }
     }
 
+    /// Web `matchDayJumpKeystroke` digits: once a day is typed, digits pick
+    /// that day's events (W1, W12). Before that they belong to quick-time, so
+    /// this returns false.
+    public func handleEventJumpDigit(_ digit: Character) -> Bool {
+        let buffer = eventJumpSelection.dayJumpBuffer
+        guard !buffer.isEmpty, buffer != "s" else { return false }
+        eventJumpCommitTask?.cancel()
+        switch DayJumpKeys.matchDigit(dayJumpAssignments(), next: buffer + String(digit)) {
+        case .focus(let eventId, _):
+            commitEventJump(eventId: eventId)
+        case .prefix(let next, let exactEventId):
+            eventJumpSelection.setDayJumpBuffer(next)
+            refreshEventJumpPresentation()
+            if let exactEventId {
+                eventJumpCommitTask = Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: DayJumpKeys.ambiguousCommitDelay)
+                    guard !Task.isCancelled, let self, self.eventJumpSelection.dayJumpBuffer == next else { return }
+                    self.commitEventJump(eventId: exactEventId)
+                }
+            }
+        case .none:
+            break
+        }
+        return true
+    }
+
+    /// Web `commitFocus`: keep the day selected so the next digit picks again.
+    private func commitEventJump(eventId: String) {
+        let buffer = eventJumpSelection.dayJumpBuffer
+        eventJumpSelection.setDayJumpBuffer(String(buffer.prefix { !$0.isNumber }))
+        focusEvent(eventId: eventId)
+        refreshEventJumpPresentation()
+    }
+
     public func clearEventJumpSelection() {
+        eventJumpCommitTask?.cancel()
         eventJumpSelection.clear()
         eventJumpHintLabels = []
         quickTimeSlotHintLabels = []
@@ -151,7 +185,7 @@ extension NativeCalendarRootModel {
         }
     }
 
-    private func eventJumpDayKey(for event: Event) -> String {
+    func eventJumpDayKey(for event: Event) -> String {
         switch event.schedule {
         case .timed(let timed):
             let start = CompassDateParsing.parseInEffectiveTimeZone(timed.start.rawValue) ?? referenceNow

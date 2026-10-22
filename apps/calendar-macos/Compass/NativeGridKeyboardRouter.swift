@@ -603,7 +603,7 @@ final class NativeGridKeyboardRouter {
         }
 
         if keyEvent.modifiers.isEmpty, case .character(let digit) = keyEvent.key, digit.isNumber {
-            if model.eventJumpSelection.modeActive, model.focusEventJumpIfAvailable(digit: digit) {
+            if model.eventJumpSelection.modeActive, model.handleEventJumpDigit(digit) {
                 return true
             }
             model.handleQuickTimeDigit(digit)
@@ -713,8 +713,8 @@ final class NativeGridKeyboardRouter {
     /// leaves. Any other key drops the focus and runs as usual.
     private func handleMonthPickerFocusKeys(_ keyEvent: KeyEvent) -> Bool {
         guard model.monthPickerFocusDate != nil else { return false }
-        if keyEvent.modifiers == [.command, .shift],
-           [KeyToken.punctuation(","), .punctuation("."), .punctuation("<"), .punctuation(">")].contains(keyEvent.key) {
+        if keyEvent.modifiers == [.command, .option, .shift],
+           case .character(let char) = keyEvent.key, char == "j" || char == "k" {
             return false
         }
         guard keyEvent.modifiers.isEmpty else {

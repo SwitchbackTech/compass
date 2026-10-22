@@ -2,7 +2,9 @@ import {
   EVENT_MENU_LETTER,
   FOCUS_NOTICE_LETTER,
   HIDE_EVENT_LETTER,
+  MONTH_PICKER_NEXT_HOTKEY,
   MONTH_PICKER_NEXT_KEYCAPS,
+  MONTH_PICKER_PREV_HOTKEY,
   MONTH_PICKER_PREV_KEYCAPS,
   VIEW_SHORTCUT_KEYS,
 } from "@core/shortcuts/binding-keycaps.constants";
@@ -30,8 +32,14 @@ export const APP_SHORTCUT_BINDINGS = {
   navNext: { hotkey: "K", keycaps: [letterKeycap("K")] },
   navShiftLeft: { hotkey: "Shift+J", keycaps: ["Shift", letterKeycap("J")] },
   navShiftRight: { hotkey: "Shift+K", keycaps: ["Shift", letterKeycap("K")] },
-  navMonthPrev: { keycaps: [...MONTH_PICKER_PREV_KEYCAPS] },
-  navMonthNext: { keycaps: [...MONTH_PICKER_NEXT_KEYCAPS] },
+  navMonthPrev: {
+    hotkey: MONTH_PICKER_PREV_HOTKEY,
+    keycaps: [...MONTH_PICKER_PREV_KEYCAPS],
+  },
+  navMonthNext: {
+    hotkey: MONTH_PICKER_NEXT_HOTKEY,
+    keycaps: [...MONTH_PICKER_NEXT_KEYCAPS],
+  },
   navToday: { hotkey: "T", keycaps: [letterKeycap("T")] },
   navGoToDate: { hotkey: "G", keycaps: [letterKeycap("G")] },
   navScrollUp: { hotkey: "PageUp", keycaps: ["PageUp"] },
