@@ -25,15 +25,20 @@ extension NativeCalendarRootModel {
         return "Event jump · Esc"
     }
 
+    public func activateEventJumpMode() {
+        guard !eventJumpSelection.modeActive else { return }
+        eventJumpSelection.setModeActive(true)
+        recordShortcut(.focusShiftHold)
+        refreshEventJumpPresentation()
+    }
+
     public func toggleEventJumpMode() {
         if eventJumpSelection.modeActive {
             clearEventJumpSelection()
             draftStore.setQuickTimeDigits("")
             return
         }
-        eventJumpSelection.setModeActive(true)
-        recordShortcut(.focusShiftHold)
-        refreshEventJumpPresentation()
+        activateEventJumpMode()
     }
 
     func refreshEventJumpPresentation() {
@@ -44,6 +49,7 @@ extension NativeCalendarRootModel {
             eventJumpHintLabels = []
             quickTimeSlotHintLabels = []
         }
+        onEventJumpChipsAccessibilityProbeChanged?(eventJumpHintLabels)
         applyFocusPresentation()
     }
 
@@ -76,18 +82,83 @@ extension NativeCalendarRootModel {
         selectJumpDay(prefix: prefix)
     }
 
-    /// Web jump mode takes day letters bare (W, then 2). F still toggles the
-    /// mode off and E / C keep their edit and create shortcuts, so those fall
-    /// through (false); every other letter is swallowed so J/K cannot fire.
-    public func handleEventJumpLetter(_ letter: Character) -> Bool {
-        switch letter.lowercased() {
-        case "f", "e", "c":
+    /// Web jump mode: lowercase day prefixes plus digits (`f4`, `su8`).
+    /// Uppercase letters are accepted. `e` / `c` fall through; other unknown
+    /// letters are swallowed so leader keys cannot fire.
+    @discardableResult
+    public func handleEventJumpKeystroke(_ key: Character) -> Bool {
+        guard eventJumpSelection.modeActive else { return false }
+        let normalized = Character(String(key).lowercased())
+        if normalized.isNumber {
+            return handleEventJumpDigit(normalized)
+        }
+        switch normalized.lowercased() {
+        case "e", "c":
             return false
-        case "m", "t", "w", "r", "s", "u", "a":
-            handleShiftDayJump(letter: letter)
-            return true
         default:
-            return true
+            break
+        }
+        guard
+            let match = DayJumpKeys.matchKeystroke(
+                assignments: dayJumpAssignments(),
+                dayKeyByPrefix: dayKeyByPrefixForJump(),
+                key: normalized,
+                buffer: eventJumpSelection.dayJumpBuffer
+            )
+        else {
+            return normalized.isLetter
+        }
+        applyEventJumpKeystrokeMatch(match)
+        return true
+    }
+
+    public func handleEventJumpLetter(_ letter: Character) -> Bool {
+        handleEventJumpKeystroke(letter)
+    }
+
+    private func dayKeyByPrefixForJump() -> [String: String] {
+        let calendar = EffectiveTimeZone.calendar
+        var map: [String: String] = [:]
+        for dayKey in visibleDateKeys() {
+            guard let date = CompassDateParsing.calendarDateInEffectiveTimeZone(dayKey) else { continue }
+            let weekday = calendar.component(.weekday, from: date) - 1
+            map[DayJumpPrefixes.prefix(forWeekday: weekday)] = dayKey
+        }
+        return map
+    }
+
+    private func applyEventJumpKeystrokeMatch(_ match: DayJumpKeys.KeystrokeMatch) {
+        eventJumpCommitTask?.cancel()
+        switch match {
+        case let .selectDay(dayPrefix, dayKey, firstEventId, buffer):
+            let name = DayJumpPrefixes.displayName(forPrefix: dayPrefix)
+            eventJumpSelection.selectDay(
+                key: dayKey,
+                announcement: "\(name) selected",
+                buffer: buffer
+            )
+            recordShortcut(.focusWeekDay)
+            if let firstEventId {
+                focusEvent(eventId: firstEventId)
+            }
+            refreshEventJumpPresentation()
+        case let .prefix(buffer, pendingExactEventId):
+            if buffer == "s" {
+                eventJumpSelection.setWeekendDisambiguation(announcement: "Weekend")
+            } else {
+                eventJumpSelection.setDayJumpBuffer(buffer)
+            }
+            refreshEventJumpPresentation()
+            if let pendingExactEventId {
+                eventJumpCommitTask = Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: DayJumpKeys.ambiguousCommitDelay)
+                    guard !Task.isCancelled, let self, self.eventJumpSelection.dayJumpBuffer == buffer else { return }
+                    self.commitEventJump(eventId: pendingExactEventId)
+                }
+            }
+        case let .focus(eventId, buffer):
+            eventJumpSelection.setDayJumpBuffer(buffer)
+            commitEventJump(eventId: eventId)
         }
     }
 

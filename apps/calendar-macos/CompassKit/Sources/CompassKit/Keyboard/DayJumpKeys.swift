@@ -41,6 +41,14 @@ public enum DayJumpKeys {
         case none
     }
 
+    public enum KeystrokeMatch: Equatable, Sendable {
+        case selectDay(dayPrefix: String, dayKey: String, firstEventId: String?, buffer: String)
+        case prefix(buffer: String, pendingExactEventId: String?)
+        case focus(eventId: String, buffer: String)
+    }
+
+    private static let uniqueDayLetters: Set<Character> = ["m", "t", "w", "r", "f"]
+
     /// Web `DIGIT_AMBIGUOUS_COMMIT_MS`.
     public static let ambiguousCommitDelay: Duration = .milliseconds(400)
     /// Web column time burst window (`DIGIT_AMBIGUOUS_COMMIT_MS * 2`).
@@ -82,5 +90,68 @@ public enum DayJumpKeys {
             return .focus(eventId: exact.eventId, buffer: next)
         }
         return .prefix(buffer: next, exactEventId: exact?.eventId)
+    }
+
+    /// Web `matchDayJumpKeystroke`: accepts uppercase letters as aliases.
+    public static func matchKeystroke(
+        assignments: [Assignment],
+        dayKeyByPrefix: [String: String],
+        key: Character,
+        buffer: String
+    ) -> KeystrokeMatch? {
+        let lower = String(key).lowercased()
+        guard lower.count == 1, let char = lower.first else { return nil }
+
+        if char.isNumber {
+            if buffer.isEmpty || buffer == "s" { return nil }
+            switch matchDigit(assignments, next: buffer + String(char)) {
+            case let .focus(eventId, next):
+                return .focus(eventId: eventId, buffer: next)
+            case let .prefix(next, exactEventId):
+                return .prefix(buffer: next, pendingExactEventId: exactEventId)
+            case .none:
+                return nil
+            }
+        }
+
+        guard char.isLetter else { return nil }
+
+        if buffer == "s", char == "u" || char == "a" {
+            return selectDay(
+                assignments: assignments,
+                dayKeyByPrefix: dayKeyByPrefix,
+                dayPrefix: char == "u" ? "su" : "sa"
+            )
+        }
+
+        if char == "s" {
+            return .prefix(buffer: "s", pendingExactEventId: nil)
+        }
+
+        if uniqueDayLetters.contains(char) {
+            return selectDay(
+                assignments: assignments,
+                dayKeyByPrefix: dayKeyByPrefix,
+                dayPrefix: String(char)
+            )
+        }
+
+        return nil
+    }
+
+    private static func selectDay(
+        assignments: [Assignment],
+        dayKeyByPrefix: [String: String],
+        dayPrefix: String
+    ) -> KeystrokeMatch? {
+        let forDay = assignments.filter { $0.dayPrefix == dayPrefix }
+        let first = forDay.min(by: { $0.index < $1.index })
+        guard let dayKey = first?.dayKey ?? dayKeyByPrefix[dayPrefix] else { return nil }
+        return .selectDay(
+            dayPrefix: dayPrefix,
+            dayKey: dayKey,
+            firstEventId: first?.eventId,
+            buffer: dayPrefix
+        )
     }
 }

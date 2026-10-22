@@ -45,4 +45,16 @@ final class DayJumpKeysTests: XCTestCase {
         XCTAssertEqual(DayJumpKeys.matchDigit(assignments, next: "w1"), .prefix(buffer: "w1", exactEventId: "e0"))
         XCTAssertEqual(DayJumpKeys.matchDigit(assignments, next: "w10"), .focus(eventId: "e9", buffer: "w10"))
     }
+
+    func testKeystrokeSelectsFridayAndBuildsF4() {
+        let friday = "2026-06-12"
+        let assignments = DayJumpKeys.assign((1 ... 4).map { index in
+            target("e\(index)", day: friday, weekday: 5, hour: index)
+        })
+        let map = ["f": friday]
+        let fridayPick = DayJumpKeys.matchKeystroke(assignments: assignments, dayKeyByPrefix: map, key: "f", buffer: "")
+        XCTAssertEqual(fridayPick, .selectDay(dayPrefix: "f", dayKey: friday, firstEventId: "e1", buffer: "f"))
+        let focus = DayJumpKeys.matchKeystroke(assignments: assignments, dayKeyByPrefix: map, key: "4", buffer: "f")
+        XCTAssertEqual(focus, .focus(eventId: "e4", buffer: "f4"))
+    }
 }

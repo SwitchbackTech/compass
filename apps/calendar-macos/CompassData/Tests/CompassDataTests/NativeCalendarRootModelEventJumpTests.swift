@@ -56,16 +56,16 @@ final class NativeCalendarRootModelEventJumpTests: XCTestCase {
         model.viewStore.view = .week
         model.toggleEventJumpMode()
 
-        XCTAssertTrue(model.handleEventJumpLetter("w"))
+        XCTAssertTrue(model.handleEventJumpKeystroke("w"))
         XCTAssertEqual(model.eventJumpSelection.announcement, "Wednesday selected")
 
-        XCTAssertTrue(model.handleEventJumpLetter("s"))
+        XCTAssertTrue(model.handleEventJumpKeystroke("s"))
         XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "s")
-        XCTAssertTrue(model.handleEventJumpLetter("u"))
+        XCTAssertTrue(model.handleEventJumpKeystroke("u"))
         XCTAssertEqual(model.eventJumpSelection.announcement, "Sunday selected")
     }
 
-    func testJumpModeSwallowsOtherLettersButLeavesToggleEditAndCreate() async throws {
+    func testJumpModeSwallowsOtherLettersButLeavesEditAndCreate() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
         let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
@@ -73,11 +73,23 @@ final class NativeCalendarRootModelEventJumpTests: XCTestCase {
         model.viewStore.view = .week
         model.toggleEventJumpMode()
 
-        XCTAssertTrue(model.handleEventJumpLetter("j"))
+        XCTAssertTrue(model.handleEventJumpKeystroke("j"))
         XCTAssertTrue(model.eventJumpSelection.activeDayKeys.isEmpty)
-        XCTAssertFalse(model.handleEventJumpLetter("f"))
-        XCTAssertFalse(model.handleEventJumpLetter("e"))
-        XCTAssertFalse(model.handleEventJumpLetter("c"))
+        XCTAssertTrue(model.handleEventJumpKeystroke("f"))
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "f")
+        XCTAssertFalse(model.handleEventJumpKeystroke("e"))
+        XCTAssertFalse(model.handleEventJumpKeystroke("c"))
+    }
+
+    func testUppercaseDayLettersMatchLowercaseHints() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.viewStore.view = .week
+        model.activateEventJumpMode()
+        XCTAssertTrue(model.handleEventJumpKeystroke("W"))
+        XCTAssertEqual(model.eventJumpSelection.dayJumpBuffer, "w")
     }
 
     /// Web: Shift+T then 1230 creates at 12:30 on Tuesday, not today.
