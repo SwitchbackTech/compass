@@ -84,7 +84,7 @@ enum NativeImageSnapshotSupport {
             XCTFail("Invalid parity export URL for \(name)", file: file, line: line)
             return nil
         }
-        NSWorkspace.shared.open(url)
+        openCaptureURL(url)
 
         let fileURL = URL(fileURLWithPath: outDir, isDirectory: true).appendingPathComponent("\(name).png")
         let exportedValue = "parity-exported:\(name)"
@@ -99,6 +99,21 @@ enum NativeImageSnapshotSupport {
         }
         XCTFail("Timed out waiting for parity export \(name) at \(fileURL.path)", file: file, line: line)
         return nil
+    }
+
+    /// Route debug URLs to the running test build, rather than another installed Compass.
+    @MainActor
+    private static func openCaptureURL(_ url: URL) {
+        XCUIApplication().activate()
+        guard let applicationURL = NSWorkspace.shared.frontmostApplication?.bundleURL else {
+            XCTFail("Could not resolve the running capture application")
+            return
+        }
+        NSWorkspace.shared.open(
+            [url],
+            withApplicationAt: applicationURL,
+            configuration: NSWorkspace.OpenConfiguration(),
+            completionHandler: nil)
     }
 
     /// Attaches a full-window screenshot; `record-macos-parity-captures.sh` crops the title bar slice.
@@ -139,7 +154,7 @@ enum NativeImageSnapshotSupport {
             return
         }
         if let url = URL(string: "compass://debug/parity-apply-capture-window") {
-            NSWorkspace.shared.open(url)
+            openCaptureURL(url)
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.6))
         }
         RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.4))
@@ -147,7 +162,7 @@ enum NativeImageSnapshotSupport {
             XCTFail("Invalid title bar reference export URL", file: file, line: line)
             return
         }
-        NSWorkspace.shared.open(exportURL)
+        openCaptureURL(exportURL)
         let fileURL = URL(fileURLWithPath: outDir, isDirectory: true)
             .appendingPathComponent("mac-title-bar-full-window.png")
         let deadline = Date().addingTimeInterval(15)
