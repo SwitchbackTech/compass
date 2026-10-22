@@ -59,13 +59,14 @@ public struct SidebarMonthPicker: View {
         daysAreClickable: Bool = false,
         captionPicker: Bool = false,
         minimumDate: Date? = nil,
-        maximumDate: Date? = nil
+        maximumDate: Date? = nil,
+        focusedDate: Date? = nil
     ) {
         _displayedMonth = displayedMonth
         self.selectedDate = selectedDate
         self.onSelectDate = onSelectDate
         self.visibleDayCount = 1
-        self.focusedDate = nil
+        self.focusedDate = focusedDate
         self.today = today
         self.daysAreClickable = daysAreClickable
         self.captionPicker = captionPicker

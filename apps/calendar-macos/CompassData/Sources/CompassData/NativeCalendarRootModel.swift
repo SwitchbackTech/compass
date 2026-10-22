@@ -91,6 +91,8 @@ public final class NativeCalendarRootModel {
     var pendingInvitationDraft: GridEventDraft?
     var pendingSaveInvitation: InvitationEnum?
     public var isGuestEmailInputFocused = false
+    /// The form date field owning Return (and its open calendar's keys); the key router lets them through.
+    public var eventFormDateKeyOwner: EventFormDateFieldKeys.Owner?
     public var eventFormFocusedField: EventFormField = .title
     /// Keyboard focus inside the color swatches while `eventFormFocusedField == .color`.
     public internal(set) var colorSwatchFocusIndex = 0
@@ -535,6 +537,7 @@ public final class NativeCalendarRootModel {
         undoStore.clear()
         loadedEvents = []
         isGuestEmailInputFocused = false
+        eventFormDateKeyOwner = nil
         sidebandEvents = []
         pendingBookingCancellation = nil
         isCancellingBookedMeeting = false

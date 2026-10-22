@@ -462,6 +462,9 @@ final class NativeGridKeyboardRouter {
     }
 
     private func handleEventFormKeys(_ keyEvent: KeyEvent) -> Bool {
+        if EventFormDateFieldKeys.fieldOwnsKey(keyEvent, owner: model.eventFormDateKeyOwner) {
+            return false
+        }
         if matchesBinding(keyEvent, id: .editCancelMeeting) {
             guard model.hasBookedMeetingActions else { return false }
             Task { await model.triggerBookedMeetingCancellation() }
