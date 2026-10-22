@@ -11,3 +11,9 @@ export function isGuestMeetStaticPath(pathname: string): boolean {
     path.startsWith("/book/")
   );
 }
+
+/** Bare `/meet` marketing landing (not a host slug or guest booking flow). */
+export function isBareMeetLandingPath(pathname: string): boolean {
+  const path = pathname.split("?")[0]?.replace(/\/+$/, "") || "/";
+  return path === "/meet";
+}

@@ -1,3 +1,4 @@
+import { writeMeetLandingHtml } from "./render-meet-landing-html";
 import path from "node:path";
 
 export async function copyStaticAssets(outdir: string) {
@@ -11,4 +12,6 @@ export async function copyStaticAssets(outdir: string) {
     path.join(outdir, "index.html"),
     Bun.file(path.resolve(import.meta.dir, "src/index.html")),
   );
+
+  await writeMeetLandingHtml(outdir);
 }

@@ -1,5 +1,8 @@
 import { COMPRESSIBLE_STATIC_TYPES } from "../apps/calendar-web/compressible-static-types";
-import { isGuestMeetStaticPath } from "../apps/calendar-web/guest-meet-static-path";
+import {
+  isBareMeetLandingPath,
+  isGuestMeetStaticPath,
+} from "../apps/calendar-web/guest-meet-static-path";
 import { type Stats } from "node:fs";
 import { realpath, stat } from "node:fs/promises";
 import path from "node:path";
@@ -260,6 +263,17 @@ const server = Bun.serve({
 
     if (!servesGuestMeet && isGuestMeetStaticPath(pathname)) {
       return new Response("Not Found", { status: 404 });
+    }
+
+    if (servesGuestMeet && isBareMeetLandingPath(pathname)) {
+      const landingResponse = await fileResponse(
+        request,
+        path.join(root, "meet-landing.html"),
+        resolvedRoot,
+      );
+      if (landingResponse) {
+        return landingResponse;
+      }
     }
 
     return indexResponse;
