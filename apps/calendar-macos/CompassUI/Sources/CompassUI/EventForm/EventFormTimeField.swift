@@ -16,6 +16,12 @@ struct EventFormTimeField: View {
         _showsMenu = State(initialValue: openPicker)
     }
 
+    /// The row for the selected time, or the quarter hour before it (3:10 opens on 3 PM).
+    private var selectedQuarterHourLabel: String {
+        let quarter = (date.timeIntervalSince1970 / 900).rounded(.down) * 900
+        return EventFormTimeFormat.formatLabel(for: Date(timeIntervalSince1970: quarter))
+    }
+
     var body: some View {
         Button {
             showsMenu = true
@@ -39,32 +45,37 @@ struct EventFormTimeField: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier(accessibilityIdentifier)
         .popover(isPresented: $showsMenu, arrowEdge: .bottom) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(EventFormTimeFormat.quarterHourLabels(), id: \.self) { label in
-                        Button {
-                            if let merged = EventFormTimeFormat.mergeTime(into: date, label: label) {
-                                date = merged
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(EventFormTimeFormat.quarterHourLabels(), id: \.self) { label in
+                            Button {
+                                if let merged = EventFormTimeFormat.mergeTime(into: date, label: label) {
+                                    date = merged
+                                }
+                                showsMenu = false
+                            } label: {
+                                Text(label)
+                                    .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
+                                    .foregroundStyle(
+                                        label == EventFormTimeFormat.formatLabel(for: date)
+                                            ? theme.onAccentColor : theme.textColor
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        label == EventFormTimeFormat.formatLabel(for: date)
+                                            ? theme.accentColor : Color.clear
+                                    )
                             }
-                            showsMenu = false
-                        } label: {
-                            Text(label)
-                                .font(.rubik(NativeWebLayoutTokens.fontSizeBody))
-                                .foregroundStyle(
-                                    label == EventFormTimeFormat.formatLabel(for: date)
-                                        ? theme.onAccentColor : theme.textColor
-                                )
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(
-                                    label == EventFormTimeFormat.formatLabel(for: date)
-                                        ? theme.accentColor : Color.clear
-                                )
+                            .buttonStyle(.plain)
+                            .id(label)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
+                // Web opens the list centered on the selected time, not at 12 AM.
+                .onAppear { proxy.scrollTo(selectedQuarterHourLabel, anchor: .center) }
             }
             .frame(width: 120, height: 220)
             .background(theme.surfacePanelColor)
