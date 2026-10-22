@@ -1,10 +1,7 @@
 import { useContext, useEffect, useId, useRef, useState } from "react";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { SessionContext } from "@web/auth/compass/session/session.context";
-import {
-  trackSignupStartedAtClick,
-  trackSignupStep,
-} from "@web/auth/posthog/signup-funnel";
+import { trackSignupStartedAtClick } from "@web/auth/posthog/signup-funnel";
 import { track } from "@web/auth/posthog/track";
 import {
   CONNECT_CALENDAR_LABEL,
@@ -28,12 +25,20 @@ import { WelcomeFaqList } from "./WelcomeFaqList";
 import { WelcomeLinks } from "./WelcomeLinks";
 import { WelcomeSteps } from "./WelcomeSteps";
 import { welcomeGuideActions } from "./welcome.guide.store";
-import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
+import {
+  hasSeenWelcome,
+  isWelcomeOnboardingPathBlockedFromWindow,
+  markWelcomeSeen,
+} from "./welcome.modal.util";
 import {
   welcomeTrialCardTermsLine,
   welcomeTrialPrimaryLabel,
   welcomeTrialPrimaryProvider,
 } from "./welcome-account-choice.util";
+import {
+  emitWelcomeIntroAnalyticsOnce,
+  emitWelcomeStepViewedOnce,
+} from "./welcome-analytics.util";
 import { shouldDelegateEnterToWelcomePrimary } from "./welcome-modal-enter.util";
 import {
   nextWelcomeStep,
@@ -71,7 +76,11 @@ export function WelcomeModal() {
   // runs before ShowcasePlayLink's consume effect can mark welcome seen, so
   // the param itself has to keep this modal closed.
   const [isOpen, setIsOpen] = useState(
-    () => !authenticated && !hasSeenWelcome() && !hasPlayDeepLink(),
+    () =>
+      !authenticated &&
+      !hasSeenWelcome() &&
+      !hasPlayDeepLink() &&
+      !isWelcomeOnboardingPathBlockedFromWindow(),
   );
   const [step, setStep] = useState<WelcomeStep>(1);
   const { closing, beginDismiss, cancelDismiss } =
@@ -117,28 +126,20 @@ export function WelcomeModal() {
     setHandingOff(false);
   }, [isLoading]);
 
-  const shownRef = useRef(false);
   useEffect(() => {
     if (visible) {
       skipFocusRestoreRef.current = false;
-      if (!shownRef.current) {
-        shownRef.current = true;
-        track("welcome_modal_shown");
-        trackSignupStep("welcome_viewed");
-      }
+      emitWelcomeIntroAnalyticsOnce();
     }
   }, [visible]);
 
   // Each screen seats its own primary button (OverlayPanel only seats focus
   // once, on mount) so Enter keeps meaning "the obvious next thing", and
-  // counts as viewed once no matter how often Back revisits it.
-  const viewedStepsRef = useRef(new Set<WelcomeStep>());
+  // counts as viewed once per tab session no matter how often Back revisits it.
   useEffect(() => {
     if (!visible) return;
     primaryRef.current?.focus();
-    if (viewedStepsRef.current.has(step)) return;
-    viewedStepsRef.current.add(step);
-    track("welcome_step_viewed", { step });
+    emitWelcomeStepViewedOnce(step);
   }, [step, visible]);
 
   useEffect(() => {

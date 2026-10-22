@@ -43,6 +43,8 @@ public enum DayJumpKeys {
 
     /// Web `DIGIT_AMBIGUOUS_COMMIT_MS`.
     public static let ambiguousCommitDelay: Duration = .milliseconds(400)
+    /// Web column time burst window (`DIGIT_AMBIGUOUS_COMMIT_MS * 2`).
+    public static let typedTimeWindow: TimeInterval = 0.8
 
     /// Same targets, same keys: by day, then start, all-day first, then id.
     public static func assign(_ targets: [Target]) -> [Assignment] {

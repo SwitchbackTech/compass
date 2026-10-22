@@ -99,7 +99,7 @@ const PracticeBlock: FC<{
           }`}
           data-practice-jump-letter={jumpLetter}
         >
-          {jumpLetter.toUpperCase()}
+          {jumpLetter}
         </span>
       )}
     </div>

@@ -108,12 +108,7 @@ function weekDayFocusParts(prefix: DayJumpPrefix): readonly ShortcutTipPart[] {
   const [first, second] = prefix;
   const shifted = { keys: ["Shift", first.toUpperCase()] } as const;
   if (!second) return [shifted, ` jumps to ${dayName}`];
-  return [
-    shifted,
-    " then ",
-    { key: second.toUpperCase() },
-    ` jumps to ${dayName}`,
-  ];
+  return [shifted, " then ", { key: second }, ` jumps to ${dayName}`];
 }
 
 /** The weekday tip names whichever column the sidebar picked, so it teaches the

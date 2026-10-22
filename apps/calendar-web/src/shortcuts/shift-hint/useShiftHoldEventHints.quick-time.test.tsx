@@ -433,7 +433,7 @@ describe("typed-time deferred commit", () => {
       );
     });
 
-    it("still toggles jump off with f after a half-typed column time", () => {
+    it("exits jump with Esc after a half-typed column time", () => {
       const { createAt, type } = mountColumn();
 
       act(() => {
@@ -443,7 +443,7 @@ describe("typed-time deferred commit", () => {
           }),
         );
         type(["9"]);
-        dispatch(keydown("f"));
+        dispatch(keydown("Escape"));
       });
 
       expect(createAt).not.toHaveBeenCalled();
@@ -517,6 +517,40 @@ describe("typed-time deferred commit", () => {
         el.remove();
       }
       fridayElements.splice(0, fridayElements.length);
+    });
+
+    it("opens the fourth Friday event on bare f4 after flash jump, with no draft", async () => {
+      const { createAt, openEvent } = mountFriday();
+      const fourthId = fridayIds[3]!;
+      const fourthEl = fridayElements[3]!;
+
+      act(() => {
+        dispatch(keydown("f"));
+      });
+      expect(useEventJumpStore.getState().isActive).toBe(true);
+      dispatch(keydown("f"));
+      dispatch(digit("4"));
+
+      await act(
+        () =>
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, DIGIT_AMBIGUOUS_COMMIT_MS * 2 + 50);
+          }),
+      );
+
+      expect(document.activeElement).toBe(fourthEl);
+      expect(openEvent).not.toHaveBeenCalled();
+      expect(createAt).not.toHaveBeenCalled();
+
+      const enter = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        key: "Enter",
+      });
+      act(() => {
+        fourthEl.dispatchEvent(enter);
+      });
+      expect(openEvent).toHaveBeenCalledWith(fourthId);
     });
 
     it("opens the fourth Friday event on f then 4 then Enter, with no draft", () => {

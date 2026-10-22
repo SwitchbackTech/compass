@@ -260,14 +260,17 @@ final class NativeParityCaptureTests: XCTestCase {
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
-        XCTAssertTrue(
-            window.descendants(matching: .any)["compass-native-welcome-modal"].waitForExistence(timeout: 15))
+        let welcome = window.descendants(matching: .any)["compass-native-welcome-modal"]
+        XCTAssertTrue(welcome.waitForExistence(timeout: 15))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome")
-        window.buttons["Get started for free"].click()
-        window.buttons["Next"].click()
-        XCTAssertTrue(
-            window.buttons["Start free trial with Google"].waitForExistence(timeout: 8))
+        // Scope to the panel: the grid's own "Next" (week) button is still in
+        // the window's accessibility tree behind the modal.
+        welcome.buttons["Get started for free"].click()
+        welcome.buttons["Next"].click()
+        // The provider buttons depend on the backend config; the local-only
+        // choice is always on the account step.
+        XCTAssertTrue(welcome.buttons["On this device only"].waitForExistence(timeout: 8))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "onboarding-welcome-account-choice")
     }

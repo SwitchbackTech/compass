@@ -1,5 +1,11 @@
 import { type PostHog } from "posthog-js";
+import { isNonHumanUserAgent } from "@core/analytics/posthog-audience.util";
 import * as posthogUtil from "@web/auth/posthog/posthog.util";
+import {
+  filterPosthogAudience,
+  posthogInternalOrTestUserRegistration,
+  shouldRegisterInternalOrTestUserFromBrowser,
+} from "@web/auth/posthog/posthog-audience-filter.util";
 import { filterPosthogBookingTelemetry } from "@web/auth/posthog/posthog-booking-filter.util";
 import { CALENDAR_GRID_DEAD_CLICK_IGNORE_SELECTORS } from "@web/auth/posthog/posthog-calendar-grid.util";
 import { filterPosthogDeadClick } from "@web/auth/posthog/posthog-dead-click-filter.util";
@@ -58,6 +64,7 @@ export function initPosthog(): PostHog | undefined {
       css_selector_ignorelist: [...CALENDAR_GRID_DEAD_CLICK_IGNORE_SELECTORS],
     },
     before_send: [
+      filterPosthogAudience,
       filterPosthogBeforeSend,
       filterPosthogDeadClick,
       filterPosthogCalendarGridGestures,
@@ -112,6 +119,15 @@ export function initPosthog(): PostHog | undefined {
     environment: resolvePosthogEnvironment(),
     version: APP_VERSION,
   });
+  if (shouldRegisterInternalOrTestUserFromBrowser()) {
+    posthog.register(posthogInternalOrTestUserRegistration());
+  }
+  if (
+    typeof navigator !== "undefined" &&
+    isNonHumanUserAgent(navigator.userAgent)
+  ) {
+    posthog.opt_out_capturing();
+  }
 
   client = posthog;
   return client;

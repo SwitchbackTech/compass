@@ -195,13 +195,13 @@ describe("ShortcutShowcase", () => {
     pressKey("Enter");
 
     // Esc-skip to the jump task. With every board task skipped, letters run
-    // over the three seed events alone, so kickoff's chip is A here.
+    // over the three seed events alone, so kickoff's chip is a here.
     for (let i = 0; i < 7; i += 1) pressKey("Escape");
     expect(screen.getByText("Fly across the board")).toBeTruthy();
-    expect(screen.getByText("A")).toBeTruthy();
+    expect(screen.getByText("a")).toBeTruthy();
     pressKey("f");
     // The chips on the blocks join the one already on the card.
-    expect(screen.getAllByText("A").length).toBe(2);
+    expect(screen.getAllByText("a").length).toBe(2);
 
     // Skip past the jump and page-jump tasks to reach the palette task:
     // its Mod+K hint becomes Esc once the palette opens.

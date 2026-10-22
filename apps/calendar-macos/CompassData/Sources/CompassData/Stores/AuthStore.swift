@@ -281,8 +281,12 @@ public final class AuthStore {
         return config.billing.isConfigured && config.billing.enforcement
     }
 
+    public func signupTrialLengthDays() -> Int {
+        Int(configStore.config?.billing.trialLengthDays ?? 7)
+    }
+
     public func trialChargeDateLabel(reference: Date = Date()) -> String {
-        let days = Int(configStore.config?.billing.trialLengthDays ?? 7)
+        let days = signupTrialLengthDays()
         let charge = Calendar.current.date(byAdding: .day, value: days, to: reference) ?? reference
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
