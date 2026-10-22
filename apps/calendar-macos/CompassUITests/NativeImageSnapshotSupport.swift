@@ -105,8 +105,11 @@ enum NativeImageSnapshotSupport {
     @MainActor
     private static func openCaptureURL(_ url: URL) {
         XCUIApplication().activate()
-        guard let applicationURL = NSWorkspace.shared.frontmostApplication?.bundleURL else {
-            XCTFail("Could not resolve the running capture application")
+        guard let application = NSWorkspace.shared.frontmostApplication,
+              application.bundleIdentifier == "com.compasscalendar.desktop",
+              let applicationURL = application.bundleURL
+        else {
+            XCTFail("Compass is not the foreground capture application")
             return
         }
         NSWorkspace.shared.open(
