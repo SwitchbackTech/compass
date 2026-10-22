@@ -210,8 +210,8 @@ export const RUN_TASKS: readonly GameTask[] = [
     type: "eventJump",
     title: "Fly across the board",
     instruction:
-      "Press F to reveal jump letters, then type the one on Team kickoff.",
-    hint: "Press F and letters appear on every block. Type the letter sitting on Team kickoff.",
+      "Press f to reveal jump labels, then type the one on Team kickoff.",
+    hint: "Press f and labels appear on every block. Type the lowercase label on Team kickoff.",
     keycaps: KEYMAP.eventJump.keycaps,
     targetEventId: "game-kickoff",
   },

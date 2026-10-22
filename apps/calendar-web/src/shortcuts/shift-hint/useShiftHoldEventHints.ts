@@ -174,7 +174,8 @@ const buildDayJumpAssignments = (
  * its first one. Shift is what makes the day columns always available: bare
  * `t`, `p`, and `m` keep their own commands. Once jump mode is on, the labels
  * are typed bare (`w`, `w1`…) and win over global shortcuts. Esc exits, a
- * second `f` toggles off. `s` is only the Sunday/Saturday prefix. `e` is not
+ * Esc exits jump mode (`f` is Friday's column letter while jump is on). `s` is
+ * only the Sunday/Saturday prefix. `e` is not
  * a day prefix: jump yields to an armed (or about-to-arm) edit sequence so
  * `e` then `t` edits the title instead of selecting Tuesday. `c` is left
  * unclaimed too, so the create shortcuts can consume the selected column.
@@ -604,15 +605,6 @@ export function useShiftHoldEventHints({
         return;
       }
 
-      // The flash letter is also Friday's day prefix; bare F toggles off instead
-      // of jumping to Friday (Shift+F still enters Friday from idle).
-      if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
-        event.preventDefault();
-        event.stopPropagation();
-        deactivate();
-        return;
-      }
-
       // Empty buffer: digits are times. Once a day letter is typed ("w"),
       // 1-2 digits still index that day's events. A four-digit HHMM still
       // creates on the selected column so focusing Tuesday then 1230 lands
@@ -749,7 +741,7 @@ export function useShiftHoldEventHints({
       eventJumpActions.setActiveDayKeys([assignment.dayKey]);
       eventJumpActions.setPointerHint({
         eventId: assignment.eventId,
-        key: assignment.hint.toUpperCase(),
+        key: assignment.hint,
       });
       setHints(toActiveHints(assignments, visibleByIdRef.current));
       // Focus now so the advertised Enter path works, including when this
@@ -830,7 +822,7 @@ export function useShiftHoldEventHints({
       if (!assignment) {
         eventJumpActions.setPointerHint(null);
       } else {
-        const nextKey = assignment.hint.toUpperCase();
+        const nextKey = assignment.hint;
         if (nextKey !== useEventJumpStore.getState().pointerHintKey) {
           eventJumpActions.setPointerHint({
             eventId: assignment.eventId,

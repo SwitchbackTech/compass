@@ -88,9 +88,9 @@ final class KeyboardEngineTests: XCTestCase {
         XCTAssertEqual(page.token, .named(.pageDown))
     }
 
-    func testMonthChordsMatchModAltShiftJK() throws {
+    func testMonthChordsMatchModAltJK() throws {
         let dispatcher = try ShortcutDispatcher(registry: registry)
-        let modifiers: KeyModifiers = [.command, .option, .shift]
+        let modifiers: KeyModifiers = [.command, .option]
         XCTAssertEqual(
             dispatcher.dispatch(KeyEvent(key: .character("j"), modifiers: modifiers)),
             .navMonthPrev)

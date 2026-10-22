@@ -29,7 +29,7 @@ const MONTH_PICKER_NEXT_OPTIONS = {
 };
 
 /**
- * Mod+Alt+Shift+J / Mod+Alt+Shift+K step the picker's displayed month the same
+ * Mod+Alt+J / Mod+Alt+K step the picker's displayed month the same
  * way the chevrons do. Registered only while the owner enables it (sidebar
  * picker, or a grid popover on the day grid). Mod chords fire in inputs.
  */

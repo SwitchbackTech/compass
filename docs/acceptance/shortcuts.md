@@ -307,23 +307,23 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Pressing `F` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event, if it has one; an empty column is still selected, so `C`, `Shift+C`, Shift+Arrow, and typed digits (`1400`) create on it. A following digit focuses that index. From idle, a column is entered with Shift and its day letter (`Shift+W`, `Shift+S` then `U`/`A` for the weekend), which always works: bare `T` stays “go to today”, bare `M` stays “open event menu”, and bare `P` focuses the latest notice. Day view keeps bare digits, since `Shift+1` is `!`. `Esc` exits (a second `F` also toggles off). Holding Mod reveals the same day prefixes on week column headers, shown as `⇧W` while jump mode is off. Bare Shift and Shift+Tab do not show jump chips.
+Pressing `f` shows event-jump chips. Week view chips use day prefixes (`su`/`m`/`t`/`w`/`r`/`f`/`sa`) plus a per-day index (`w4`, `su1`). Day view uses numeric chips (`1`, `2`, …). Type the lowercase label on a chip to focus that event (`f4`, `w2`). Uppercase letters work the same. Pressing a day letter highlights that column and focuses its first event, if it has one; an empty column is still selected, so `c`, `Shift+c`, Shift+Arrow, and typed digits (`1400`) create on it. A following digit focuses that index. From idle, a column is entered with Shift and its day letter (`Shift+w`, `Shift+s` then `u`/`a` for the weekend), which always works: bare `t` stays “go to today”, bare `m` stays “open event menu”, and bare `p` focuses the latest notice. Day view keeps bare digits, since `Shift+1` is `!`. `Esc` exits jump mode. Holding Mod reveals the same day prefixes on week column headers, shown as `⇧w` while jump mode is off. Bare Shift and Shift+Tab do not show jump chips.
 
 ### Steps
 
 1. Navigate to `/week` with timed events on at least two different days.
-2. Press `F` once; chips should appear.
-3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
+2. Press `f` once; chips should appear.
+3. Press the day letter on a chip (for example `w` for Wednesday), then optionally a digit (`2`) or use arrow keys.
 4. Press `Esc` to exit.
-5. Without pressing `F`, press `Shift+W` (or `Shift+S` then `A`) and confirm the matching event is focused; a following digit still refines to `W2`.
+5. Without pressing `f`, press `Shift+w` (or `Shift+s` then `a`) and confirm the matching event is focused; a following digit still refines to `w2`.
 6. Press Shift alone or Shift+Tab and confirm jump mode does not activate.
 
 ### Expected Results
 
-- Chips appear on events currently visible in the grid when `F` is pressed and stay until Esc. Scrolled-off events keep their jump keys but hide their chips.
-- A day letter highlights that column and focuses the first event; digits refine to `Wn`. On a column with no events the highlight still appears, nothing focuses, and `C` or a typed `HHMM` creates there.
-- Shift + the day letter enters a column from idle, including while an event is focused; `F` flashes every chip (a second bare `F` exits; bare `F` is not Friday's column letter while jump is on). Weekend columns use `Shift+S` then `A` / `U`.
-- Bare `T` still goes to today while jump is off. With an event focused, bare `M` still opens the event menu. With a visible notice, bare `P` still focuses that notice.
+- Chips appear on events currently visible in the grid when `f` is pressed and stay until Esc. Labels are lowercase and match the keys you type. Scrolled-off events keep their jump keys but hide their chips.
+- A day letter highlights that column and focuses the first event; digits refine to `wn`. On a column with no events the highlight still appears, nothing focuses, and `c` or a typed `HHMM` creates there.
+- Shift + the day letter enters a column from idle, including while an event is focused; `f` flashes every chip. While jump is on, `f` is also Friday's column letter (`f` then `4` focuses `f4`). Weekend columns use `Shift+s` then `a` / `u`.
+- Bare `t` still goes to today while jump is off. With an event focused, bare `m` still opens the event menu. With a visible notice, bare `p` still focuses that notice.
 - Arrow keys keep jump mode on so letter-then-arrows works.
 - Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
 - While a modal holds the app lock, or focus is in an editable field, `F` and leaderless jump tokens do not activate jump mode.
@@ -357,13 +357,13 @@ On Day view, holding Mod reveals numbered chips left to right: `1` on the view d
 
 ### UX
 
-The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Alt+Shift+J` / `Mod+Alt+Shift+K` (same J/K direction as grid period nav) and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. The chord works from inputs while the sidebar picker or an open grid date popover is on the day grid. Clicking a day does nothing; hovering the picker shows `I focuses the picker`, focusing it reveals the arrow keycaps, and using an arrow adds `Enter opens it`. Repeated clicks surface the keyboard hint.
+The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold Mod and press the picker's digit) lands on the cursor week's first day. In Week view every arrow key moves the cursor one week row; Day view moves one day. Enter opens the cursor week (or day). `Mod+Alt+J` / `Mod+Alt+K` (same J/K direction as grid period nav) and the header chevrons change the month and keep a focusable day in the new month, so arrows keep working. The chord works from inputs while the sidebar picker or an open grid date popover is on the day grid. Clicking a day does nothing; hovering the picker shows `I focuses the picker`, focusing it reveals the arrow keycaps, and using an arrow adds `Enter opens it`. Repeated clicks surface the keyboard hint.
 
 ### Steps
 
 1. Navigate to `/week` with the sidebar open and press `I`.
 2. Press ArrowDown twice, then ArrowRight once.
-3. Press `Mod+Alt+Shift+K`.
+3. Press `Mod+Alt+K`.
 4. Press Enter.
 5. Click any day in the picker three or four times.
 
@@ -371,7 +371,7 @@ The sidebar month picker is a keyboard cursor, not a click target. `I` (or hold 
 
 - After `I`, the first day of the highlighted week row has focus and the whole row shows the focus ring.
 - Each arrow moves the ring to the next week; the calendar grid does not move yet.
-- After `Mod+Alt+Shift+K`, the next month is shown and focus is still on a day in that month.
+- After `Mod+Alt+K`, the next month is shown and focus is still on a day in that month.
 - Enter anchors the week view on the focused row and the muted week capsule matches the visible window. Today is an ink circle, not an accent fill.
 - Clicks do not navigate, and a click shows the keyboard hint. Hovering the picker shows `I focuses the picker`. Focusing it replaces that with up/down arrow keycaps and `move by week`. After an arrow, `Enter opens it` appears with `Enter` as a keycap. The keyboard hint says to press `I`, then use the arrow keys and Enter.
 

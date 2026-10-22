@@ -1,14 +1,16 @@
 /**
  * Month-picker month jump: J/K match grid period nav (J back, K forward).
- * Mod+Alt+Shift keeps the chord out of text fields without bare letters and
- * avoids browser-reserved combos: Mod+Alt+J/K (DevTools / web console on Mac),
- * Mod+Shift+J (Downloads / DevTools), Ctrl+Shift+J (DevTools on Windows/Linux).
+ * Mod+Alt keeps a three-key chord that still fires in inputs; the web app
+ * calls preventDefault so browser DevTools/console shortcuts do not win.
  */
-export const MONTH_PICKER_PREV_HOTKEY = "Mod+Alt+Shift+J" as const;
-export const MONTH_PICKER_NEXT_HOTKEY = "Mod+Alt+Shift+K" as const;
+export const MONTH_PICKER_PREV_HOTKEY = "Mod+Alt+J" as const;
+export const MONTH_PICKER_NEXT_HOTKEY = "Mod+Alt+K" as const;
 
-export const MONTH_PICKER_PREV_KEYCAPS = ["Mod", "Alt", "Shift", "j"] as const;
-export const MONTH_PICKER_NEXT_KEYCAPS = ["Mod", "Alt", "Shift", "k"] as const;
+export const MONTH_PICKER_PREV_KEYCAPS = ["Mod", "Alt", "j"] as const;
+export const MONTH_PICKER_NEXT_KEYCAPS = ["Mod", "Alt", "k"] as const;
+
+/** Max keycaps in a single modifier chord shown in the legend (Mod/Alt/Shift + key). */
+export const MOD_CHORD_MAX_KEYCAPS = 3 as const;
 
 export const EVENT_MENU_LETTER = "m";
 export const HIDE_EVENT_LETTER = "x";

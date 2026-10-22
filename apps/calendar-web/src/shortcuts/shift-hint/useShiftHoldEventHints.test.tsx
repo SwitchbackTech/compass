@@ -495,7 +495,7 @@ describe("useShiftHoldEventHints", () => {
 
     expect(useEventJumpStore.getState()).toMatchObject({
       isActive: true,
-      pointerHintKey: "W2",
+      pointerHintKey: "w2",
       pointerHintEventId: EVENT_B,
     });
     expect(focus).toHaveBeenCalledWith(
@@ -571,7 +571,7 @@ describe("useShiftHoldEventHints", () => {
     act(() => {
       requestPointerEventJump(clicked);
     });
-    expect(useEventJumpStore.getState().pointerHintKey).toBe("W2");
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("w2");
     focus.mockClear();
 
     act(() => {
@@ -683,7 +683,7 @@ describe("useShiftHoldEventHints", () => {
     act(() => {
       requestPointerEventJump(EVENT_B);
     });
-    expect(useEventJumpStore.getState().pointerHintKey).toBe("W2");
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("w2");
 
     act(() => {
       rerender({
@@ -694,7 +694,7 @@ describe("useShiftHoldEventHints", () => {
       });
     });
 
-    expect(useEventJumpStore.getState().pointerHintKey).toBe("W3");
+    expect(useEventJumpStore.getState().pointerHintKey).toBe("w3");
   });
 
   it("publishes every visible column as a day key can select empty ones", () => {
@@ -783,20 +783,25 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("toggles off with a second f", () => {
-    const { result } = mountHints();
+  it("selects Friday with bare f while jump mode is on", () => {
+    const friday = WEEK_DAYS[5]!;
+    const fridayId = EventIdSchema.parse("ffffffffffffffffffffffff");
+    const { focus, elements } = mountHints([
+      timedFixture(fridayId, friday.hour(10).format()),
+    ]);
 
     act(() => {
       pressEventJump();
+      dispatch("keydown", "f");
     });
+
     expect(useEventJumpStore.getState().isActive).toBe(true);
-    expect(result.current.hints).toHaveLength(3);
-
-    act(() => {
-      pressEventJump();
-    });
-    expect(useEventJumpStore.getState().isActive).toBe(false);
-    expect(result.current.hints).toEqual([]);
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: fridayId, element: elements[0] }),
+    );
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual([
+      friday.format("YYYY-MM-DD"),
+    ]);
   });
 
   it("focuses Saturday from idle with Shift+S then a", () => {

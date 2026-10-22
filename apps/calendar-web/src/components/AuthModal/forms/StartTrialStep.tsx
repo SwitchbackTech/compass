@@ -1,11 +1,7 @@
 import { type FC, useEffect, useRef } from "react";
 import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { type BillingSubscriptionResponse } from "@core/types/billing.types";
-import dayjs from "@core/util/date/dayjs";
-import {
-  trackTrialStepAbandoned,
-  trackTrialStepViewed,
-} from "@web/auth/posthog/signup-funnel";
+import { trackTrialStepViewed } from "@web/auth/posthog/signup-funnel";
 import {
   useAppConfigQuery,
   useBillingSubscriptionQuery,
@@ -18,16 +14,11 @@ import {
   EmbeddedCheckoutPanel,
 } from "@web/billing/EmbeddedCheckoutPanel";
 import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { welcomeTrialCardTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 type BillingPrice = NonNullable<BillingSubscriptionResponse["price"]>;
-
-/** Charge date copy: "Monday, September 29" from trial length and a reference instant. */
-export function formatTrialChargeDate(
-  trialLengthDays: number,
-  now: dayjs.Dayjs = dayjs(),
-): string {
-  return now.add(trialLengthDays, "day").format("dddd, MMMM D");
-}
 
 /** Same line as Settings > Billing, with no price to show before it loads. */
 export function formatSignupTrialPlanPrice(
@@ -41,20 +32,21 @@ type StartTrialStepProps = {
 };
 
 /**
- * Post-signup trial step: charge-date copy and embedded Checkout inside AuthModal.
+ * Post-signup trial step: card terms and embedded Checkout inside AuthModal.
  */
 export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
   const signupMethod = readSignupTrialMethod();
   const configQuery = useAppConfigQuery();
   const trialLengthDays =
     configQuery.data?.billing.trialLengthDays ?? BILLING_PLAN.TRIAL_LENGTH_DAYS;
-  const chargeDateLabel = formatTrialChargeDate(trialLengthDays);
+  const termsLine = welcomeTrialCardTermsLine(trialLengthDays);
   const publishableKey = useStripePublishableKey();
   const subscriptionQuery = useBillingSubscriptionQuery(true);
   const planPriceLine = formatSignupTrialPlanPrice(
     subscriptionQuery.data?.price,
   );
   const viewedRef = useRef(false);
+  const checkoutRootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkoutPanelActions.holdSource({ kind: "signup_trial_step" });
@@ -69,31 +61,41 @@ export const StartTrialStep: FC<StartTrialStepProps> = ({ onDismiss }) => {
     trackTrialStepViewed({ source: "signup_trial_step", method: signupMethod });
   }, [signupMethod]);
 
-  const handleDismiss = () => {
-    trackTrialStepAbandoned({
-      source: "signup_trial_step",
-      method: signupMethod,
-    });
-    onDismiss();
-  };
+  useAppShortcut(
+    "Enter",
+    () => {
+      const root = checkoutRootRef.current;
+      if (!root) return;
+      const primary = root.querySelector<HTMLButtonElement>(
+        "button:not([disabled])",
+      );
+      primary?.click();
+    },
+    { ignoreInputs: true, ignoreAppLock: true },
+  );
 
   return (
     <div
+      ref={checkoutRootRef}
       className={`flex w-full flex-col items-center gap-4 ${EMBEDDED_CHECKOUT_PANEL_CLASSNAME}`}
     >
-      <p className="text-sm text-text-muted">
-        Your card will not be charged until {chargeDateLabel}. Cancel anytime
-        from Settings and you will not be billed.
-      </p>
+      <p className="text-center text-sm text-text-muted">{termsLine}</p>
       {planPriceLine ? (
         <p className="text-sm text-text">{planPriceLine}</p>
       ) : null}
       {publishableKey ? (
-        <EmbeddedCheckoutPanel
-          onBack={handleDismiss}
-          onCheckoutComplete={onDismiss}
-          publishableKey={publishableKey}
-        />
+        <>
+          <p className="inline-flex items-center gap-2 text-text-muted text-xs">
+            Submit card
+            <ShortcutHint>Enter</ShortcutHint>
+          </p>
+          <EmbeddedCheckoutPanel
+            backShortcutLabel="Esc"
+            onBack={onDismiss}
+            onCheckoutComplete={onDismiss}
+            publishableKey={publishableKey}
+          />
+        </>
       ) : (
         <p className="text-sm text-text-muted">Loading checkout...</p>
       )}
