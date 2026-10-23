@@ -10,7 +10,11 @@ import {
   getBrowserTimeZone,
   isValidTimeZone,
 } from "@web/timezone/browser-timezone";
-import { resetTimezoneMismatchSnoozeForTests } from "@web/timezone/timezone-mismatch";
+import {
+  getTimezoneMismatchSnoozedBrowser,
+  resetTimezoneMismatchSnoozeForTests,
+} from "@web/timezone/timezone-mismatch";
+import { isUtcLikeTimeZone } from "@web/timezone/utc-like-timezone";
 
 function readPinnedTimeZone(): string | null {
   const raw = persistentBrowserStore.get(STORAGE_KEYS.DEFAULT_TIMEZONE);
@@ -19,6 +23,28 @@ function readPinnedTimeZone(): string | null {
   }
   return raw;
 }
+
+/** Exported for unit tests; parity harness UTC pins are cleared unless the user kept UTC. */
+export function shouldClearAccidentalUtcPin(pinned: string): boolean {
+  if (!isUtcLikeTimeZone(pinned)) {
+    return false;
+  }
+  const browser = getBrowserTimeZone();
+  if (isUtcLikeTimeZone(browser)) {
+    return false;
+  }
+  return getTimezoneMismatchSnoozedBrowser() !== browser;
+}
+
+function repairAccidentalUtcPinInStorage(): void {
+  const pinned = readPinnedTimeZone();
+  if (pinned === null || !shouldClearAccidentalUtcPin(pinned)) {
+    return;
+  }
+  persistentBrowserStore.remove(STORAGE_KEYS.DEFAULT_TIMEZONE);
+}
+
+repairAccidentalUtcPinInStorage();
 
 const pinnedTimeZoneStore = createExternalStore<string | null>(
   readPinnedTimeZone(),
@@ -40,8 +66,19 @@ function syncEffectiveTimeZone(): void {
 syncEffectiveTimeZone();
 
 function refreshPinnedFromStorage(): void {
+  repairAccidentalUtcPinInStorage();
   pinnedTimeZoneStore.set(readPinnedTimeZone());
   syncEffectiveTimeZone();
+}
+
+/**
+ * Re-read device timezone preferences after the bundle loads. Refreshes Intl
+ * in Auto mode and drops parity-style UTC pins that were never confirmed.
+ */
+export function hydrateEffectiveTimeZonePreference(): void {
+  repairAccidentalUtcPinInStorage();
+  pinnedTimeZoneStore.set(readPinnedTimeZone());
+  refreshEffectiveTimeZoneFromBrowser();
 }
 
 export function getPinnedTimeZone(): string | null {

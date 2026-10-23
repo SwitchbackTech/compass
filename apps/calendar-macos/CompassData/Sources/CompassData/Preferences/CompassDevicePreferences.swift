@@ -63,6 +63,20 @@ public enum CompassDevicePreferences {
         return raw
     }
 
+    /// Drops parity-style UTC pins unless the user kept UTC via the mismatch banner.
+    public static func readPinnedTimeZoneResolvingAccidentalUtc(
+        from storage: CompassDevicePreferencesStorage = UserDefaults.standard
+    ) -> String? {
+        guard let pinned = readPinnedTimeZone(from: storage) else { return nil }
+        guard TimeZoneFormatting.isUtcLikeTimeZone(pinned) else { return pinned }
+        let browser = TimeZone.current.identifier
+        guard !TimeZoneFormatting.isUtcLikeTimeZone(browser) else { return pinned }
+        let snoozed = storage.string(forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+        if snoozed == browser { return pinned }
+        writePinnedTimeZone(nil, to: storage)
+        return nil
+    }
+
     @discardableResult
     public static func writePinnedTimeZone(
         _ timeZone: String?,

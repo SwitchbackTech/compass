@@ -182,7 +182,9 @@ public final class NativeCalendarRootModel {
         // Demo matches web parity: effective UTC via browser timezone, not a pinned override.
         let demoTimeZone = demoPresentation?.timeZone
         let pinnedTimeZone =
-            demoPresentation == nil ? CompassDevicePreferences.readPinnedTimeZone() : nil
+            demoPresentation == nil
+            ? CompassDevicePreferences.readPinnedTimeZoneResolvingAccidentalUtc()
+            : nil
         EffectiveTimeZone.identifier =
             demoTimeZone ?? pinnedTimeZone ?? TimeZone.current.identifier
         eventsStore = environment.eventsStore

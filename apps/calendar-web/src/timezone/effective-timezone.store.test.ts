@@ -2,14 +2,19 @@ import { act, renderHook } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
+import * as browserTimezone from "@web/timezone/browser-timezone";
 import {
   getEffectiveTimeZone,
   getPinnedTimeZone,
+  hydrateEffectiveTimeZonePreference,
   resetEffectiveTimeZoneStoreForTests,
+  setBrowserTimeZoneForTests,
   setPinnedTimeZone,
+  shouldClearAccidentalUtcPin,
   useEffectiveTimeZone,
 } from "@web/timezone/effective-timezone.store";
-import { afterEach, describe, expect, it } from "bun:test";
+import { snoozeTimezoneMismatch } from "@web/timezone/timezone-mismatch";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
 
 const originalVisibilityState = document.visibilityState;
 
@@ -114,6 +119,71 @@ describe("effective-timezone.store", () => {
     });
 
     expect(result.current).toBe("America/Denver");
+  });
+
+  it("clears an accidental UTC pin when the browser zone is not UTC", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.DEFAULT_TIMEZONE, "UTC");
+    const browserSpy = spyOn(
+      browserTimezone,
+      "getBrowserTimeZone",
+    ).mockReturnValue("America/Denver");
+
+    try {
+      act(() => {
+        resetEffectiveTimeZoneStoreForTests();
+        persistentBrowserStore.set(STORAGE_KEYS.DEFAULT_TIMEZONE, "UTC");
+        hydrateEffectiveTimeZonePreference();
+      });
+
+      expect(getPinnedTimeZone()).toBeNull();
+      expect(getEffectiveTimeZone()).toBe("America/Denver");
+    } finally {
+      browserSpy.mockRestore();
+    }
+  });
+
+  it("keeps a deliberate UTC pin after the user snoozed the mismatch banner", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.DEFAULT_TIMEZONE, "UTC");
+    const browserSpy = spyOn(
+      browserTimezone,
+      "getBrowserTimeZone",
+    ).mockReturnValue("America/Denver");
+
+    try {
+      snoozeTimezoneMismatch("America/Denver");
+      expect(shouldClearAccidentalUtcPin("UTC")).toBe(false);
+
+      act(() => {
+        hydrateEffectiveTimeZonePreference();
+      });
+
+      expect(getPinnedTimeZone()).toBe("UTC");
+      expect(getEffectiveTimeZone()).toBe("UTC");
+    } finally {
+      browserSpy.mockRestore();
+    }
+  });
+
+  it("refreshes Auto mode from Intl after a stale browser cache", () => {
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+      setBrowserTimeZoneForTests("UTC");
+    });
+    expect(getEffectiveTimeZone()).toBe("UTC");
+
+    const browserSpy = spyOn(
+      browserTimezone,
+      "getBrowserTimeZone",
+    ).mockReturnValue("America/Denver");
+
+    try {
+      act(() => {
+        hydrateEffectiveTimeZonePreference();
+      });
+      expect(getEffectiveTimeZone()).toBe("America/Denver");
+    } finally {
+      browserSpy.mockRestore();
+    }
   });
 
   it("returns to the browser zone when Auto and the tab becomes visible", () => {
