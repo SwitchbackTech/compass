@@ -44,7 +44,6 @@ Environment variables:
 |---|---|
 | `GOOGLE_CLIENT_ID` | Same Google OAuth client id as staging |
 | `MICROSOFT_CLIENT_ID` | Same Entra client id as staging |
-| `SMOKE_EXPECTED_PROVIDERS` | Comma-separated providers that must not be skipped (for example `microsoft`). Empty means a skip is a warning, not a failure. |
 
 ## Test calendar
 
@@ -97,13 +96,6 @@ Microsoft.
 gh workflow run live-provider-smoke.yml
 # Or against a branch (the Environment has no branch policy):
 gh workflow run live-provider-smoke.yml --ref <branch>
-```
-
-After the first Microsoft proof, set the Environment variable so a skip cannot
-hide behind a green job:
-
-```bash
-gh variable set SMOKE_EXPECTED_PROVIDERS --env provider-smoke --body microsoft
 ```
 
 Apple runs when `SMOKE_APPLE_EMAIL` and `SMOKE_APPLE_APP_PASSWORD` are present
