@@ -12,17 +12,13 @@ import {
   EMBEDDED_CHECKOUT_PANEL_CLASSNAME,
   EmbeddedCheckoutPanel,
 } from "@web/billing/EmbeddedCheckoutPanel";
-import { OVERLAY_LETTER_SHORTCUT } from "@web/billing/overlay-letter-shortcut";
+import { TrialStartAsk } from "@web/billing/TrialStartAsk";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
 import { deferGoogleDelayedToastIfVisible } from "@web/common/utils/toast/google-delayed.toast";
 import { deferGoogleReconnectToastIfVisible } from "@web/common/utils/toast/google-reconnect.toast";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
-import { welcomeTrialCardTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
-import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 type BillingGateModalProps = {
   status: string;
@@ -45,9 +41,9 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
     ? "Finish starting your trial"
     : "Subscribe to keep using Compass";
   const body = isAwaitingCheckout
-    ? welcomeTrialCardTermsLine()
+    ? null
     : "Your trial has ended. Subscribe to keep creating and editing events, including keyboard shortcuts.";
-  const primaryLabel = isAwaitingCheckout ? "Add card" : "Subscribe";
+  const primaryLabel = isAwaitingCheckout ? null : "Subscribe";
 
   useEffect(() => {
     if (shownRef.current || !shouldTrackBillingGateShown(status)) {
@@ -66,17 +62,8 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
 
   const openCheckout = () => {
     track("billing_gate_cta_clicked", { cta: "checkout" });
-    checkoutPanelActions.open();
+    checkoutPanelActions.open(null);
   };
-
-  useAppShortcut(
-    START_TRIAL_SHORTCUT_KEY,
-    () => {
-      if (isCheckoutOpen) return;
-      openCheckout();
-    },
-    OVERLAY_LETTER_SHORTCUT,
-  );
 
   return (
     <OverlayPanel
@@ -96,6 +83,17 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
           onBack={checkoutPanelActions.close}
           publishableKey={publishableKey}
         />
+      ) : isAwaitingCheckout ? (
+        <TrialStartAsk
+          checkoutSource={null}
+          onBeforeOpenCheckout={() => {
+            track("billing_gate_cta_clicked", { cta: "checkout" });
+          }}
+          primaryButtonRef={primaryButtonRef}
+          showMascot
+          showTitle
+          title={title}
+        />
       ) : (
         <div className="flex w-full flex-col items-center gap-4">
           <PixelPirateScouting className="h-14 w-14" />
@@ -110,9 +108,6 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
               type="button"
             >
               {primaryLabel}
-              <ShortcutHint className="ml-2">
-                {START_TRIAL_SHORTCUT_KEY}
-              </ShortcutHint>
             </button>
           </div>
         </div>

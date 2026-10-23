@@ -9,12 +9,10 @@ struct StartTrialStepView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(AccountChoiceCopy.signupTrialStepTermsLine)
+            Text(trialPriceLine)
                 .font(.rubik(13))
                 .foregroundStyle(theme.textMutedColor)
                 .multilineTextAlignment(.leading)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             trialPrimaryButton
@@ -24,6 +22,23 @@ struct StartTrialStepView: View {
         .onAppear {
             Task { await billingStore.refreshStatus() }
         }
+    }
+
+    private var trialPriceLine: String {
+        if let price = billingStore.subscription?.price {
+            return BillingDisplayFormatting.formatTrialStartPriceLine(
+                amountMinor: price.amount,
+                currency: price.currency,
+                interval: price.interval.rawValue,
+                trialLengthDays: authStore.signupTrialLengthDays()
+            )
+        }
+        return BillingDisplayFormatting.formatTrialStartPriceLine(
+            amountMinor: BillingPlanConstants.displayPriceAmountMinor,
+            currency: BillingPlanConstants.displayPriceCurrency,
+            interval: BillingPlanConstants.displayPriceInterval,
+            trialLengthDays: authStore.signupTrialLengthDays()
+        )
     }
 
     private var trialPrimaryButton: some View {

@@ -111,7 +111,7 @@ final class BillingAppAccessTests: XCTestCase {
             ))
         XCTAssertEqual(BillingAppAccessResolver.gateStatus(access: access), .awaitingCheckout)
         let copy = BillingGateCopy.content(for: .awaitingCheckout)
-        XCTAssertEqual(copy.primaryLabel, "Add card")
+        XCTAssertEqual(copy.primaryLabel, "Start free trial")
     }
 
     func testCanceledReadOnlyShowsSubscribeGate() {

@@ -173,6 +173,33 @@ describe("PlanSection", () => {
     setEmbeddedCheckoutForTests(null);
   });
 
+  it("shows trial-not-started billing with Start free trial", async () => {
+    access = {
+      kind: "server",
+      status: "awaiting_checkout",
+      isReadOnly: true,
+      trialEndsAt: null,
+    };
+    getSubscription.mockResolvedValue(
+      activeSummary({
+        subscriptionStatus: "awaiting_checkout",
+        paymentMethod: null,
+      }),
+    );
+    await renderPlan();
+
+    expect(screen.getByText("Trial not started")).toBeInTheDocument();
+    expect(
+      screen.getByText("$12.00/mo after 7 days. Cancel anytime in Settings."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start free trial" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Update card" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders price, renewal, card, and receipts from the summary", async () => {
     await renderPlan();
 

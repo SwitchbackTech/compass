@@ -256,6 +256,14 @@ describe("AuthModal signup trial step", () => {
 
     await waitFor(() => {
       expect(
+        screen.getByRole("button", { name: "Start free trial" }),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Start free trial" }));
+
+    await waitFor(() => {
+      expect(
         screen.getByRole("button", { name: "Submit checkout" }),
       ).toBeInTheDocument();
     });

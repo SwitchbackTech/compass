@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { type FC, useEffect, useRef, useState } from "react";
+import { BILLING_PLAN } from "@core/constants/billing.constants";
 import dayjs from "@core/util/date/dayjs";
 import { BillingApi } from "@web/api/billing.api";
 import { track } from "@web/auth/posthog/track";
 import {
   billingQueryKeys,
   startBillingStatusPoll,
+  useAppConfigQuery,
   useBillingSubscriptionQuery,
   useStripePublishableKey,
 } from "@web/billing/billing.query";
@@ -25,9 +27,23 @@ import {
   useCardUpdateStore,
 } from "@web/billing/card-update.store";
 import {
+  checkoutPanelActions,
+  selectCheckoutPanelOpen,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
+import { EMBEDDED_CHECKOUT_PANEL_CLASSNAME } from "@web/billing/EmbeddedCheckoutPanel";
+import {
   getPlanBadge,
   PLAN_BADGE_TONE_CLASSNAME,
 } from "@web/billing/planBadge";
+import {
+  TRIAL_START_PRIMARY_LABEL,
+  TrialStartAsk,
+} from "@web/billing/TrialStartAsk";
+import {
+  formatTrialStartPriceLine,
+  resolveBillingDisplayPrice,
+} from "@web/billing/trial-start-display.util";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import {
   BILLING_CARD_UPDATED_TOAST_ID,
@@ -36,6 +52,7 @@ import {
 } from "@web/common/constants/toast.constants";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
+  OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
@@ -69,11 +86,23 @@ export const PlanSection: FC<PlanSectionProps> = ({
   const updateCardButtonRef = useRef<HTMLButtonElement>(null);
   const stopCardPollRef = useRef<(() => void) | null>(null);
   const wasCardUpdateOpen = useRef(false);
+  const isAwaitingCheckout =
+    access.kind === "server" && access.status === "awaiting_checkout";
   const subscriptionQuery = useBillingSubscriptionQuery(
     page === "billing" && access.kind === "server",
   );
+  const configQuery = useAppConfigQuery();
+  const isTrialCheckoutOpen = useCheckoutPanelStore(selectCheckoutPanelOpen);
+  const trialLengthDays =
+    configQuery.data?.billing.trialLengthDays ?? BILLING_PLAN.TRIAL_LENGTH_DAYS;
+  const trialPriceLine = formatTrialStartPriceLine(
+    resolveBillingDisplayPrice(subscriptionQuery.data?.price),
+    trialLengthDays,
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [trialAskOpen, setTrialAskOpen] = useState(false);
+  const startTrialButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!subscriptionQuery.isError) return;
@@ -97,6 +126,12 @@ export const PlanSection: FC<PlanSectionProps> = ({
     [],
   );
 
+  useEffect(() => {
+    if (!trialAskOpen) {
+      checkoutPanelActions.close();
+    }
+  }, [trialAskOpen]);
+
   if (!badge) return null;
 
   const trialEndsAt =
@@ -111,6 +146,12 @@ export const PlanSection: FC<PlanSectionProps> = ({
   const canManageCancellation =
     summary != null && MANAGEABLE_STATUSES.has(summary.subscriptionStatus);
   const receipts = summary?.invoices.slice(0, 12) ?? [];
+
+  const closeTrialAsk = () => {
+    checkoutPanelActions.close();
+    setTrialAskOpen(false);
+    startTrialButtonRef.current?.focus({ preventScroll: true });
+  };
 
   const closeConfirm = () => {
     if (isSubmitting) return;
@@ -189,7 +230,9 @@ export const PlanSection: FC<PlanSectionProps> = ({
             >
               {badge.label}
             </span>
-            {summary?.price ? (
+            {isAwaitingCheckout ? (
+              <p className="mt-1 text-sm text-text-muted">{trialPriceLine}</p>
+            ) : summary?.price ? (
               <p className="mt-1 text-sm text-text">
                 {formatBillingPriceLine(summary.price)}
               </p>
@@ -214,7 +257,22 @@ export const PlanSection: FC<PlanSectionProps> = ({
         </div>
       </div>
 
-      {summary ? (
+      {isAwaitingCheckout ? (
+        <OverlayPanelActions align="start">
+          <OverlayPanelActionButton
+            ref={startTrialButtonRef}
+            onClick={() => setTrialAskOpen(true)}
+            shortcut="S"
+            showShortcut={showShortcuts}
+            variant="primary"
+            {...settingsShortcutAttrs("start-trial")}
+          >
+            {TRIAL_START_PRIMARY_LABEL}
+          </OverlayPanelActionButton>
+        </OverlayPanelActions>
+      ) : null}
+
+      {summary && !isAwaitingCheckout ? (
         <>
           <p className="text-sm text-text">
             {summary.paymentMethod
@@ -320,6 +378,28 @@ export const PlanSection: FC<PlanSectionProps> = ({
             </table>
           ) : null}
         </>
+      ) : null}
+
+      {trialAskOpen ? (
+        <OverlayPanel
+          align="center"
+          ariaLabel="Start your free trial"
+          backdropClassName={
+            isTrialCheckoutOpen ? "overflow-y-auto" : undefined
+          }
+          onDismiss={
+            isTrialCheckoutOpen ? checkoutPanelActions.close : closeTrialAsk
+          }
+          panelClassName={EMBEDDED_CHECKOUT_PANEL_CLASSNAME}
+          widthClassName={isTrialCheckoutOpen ? "w-[560px]" : "w-120"}
+        >
+          <TrialStartAsk
+            checkoutSource={{ kind: "settings_trial_ask" }}
+            onCheckoutComplete={closeTrialAsk}
+            showTitle
+            title="Start your free trial"
+          />
+        </OverlayPanel>
       ) : null}
 
       {periodEndLabel ? (

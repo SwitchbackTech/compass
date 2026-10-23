@@ -17,7 +17,17 @@ public struct BillingPlanSectionView: View {
                     .font(.rubik(13))
                     .foregroundStyle(theme.textMutedColor)
                 planBadgeView(badge)
-                if let summary = billingStore.subscription {
+                if isAwaitingCheckout {
+                    Text(awaitingCheckoutPriceLine)
+                        .font(.rubik(12))
+                        .foregroundStyle(theme.textMutedColor)
+                    Button("Start free trial") {
+                        Task { await billingStore.openHostedCheckout() }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.textColor)
+                    .disabled(billingStore.isOpeningHostedSession)
+                } else if let summary = billingStore.subscription {
                     subscriptionDetails(summary)
                     actionButtons(summary)
                     receiptsTable(summary.invoices)
@@ -48,6 +58,28 @@ public struct BillingPlanSectionView: View {
                 }
             }
         }
+    }
+
+    private var isAwaitingCheckout: Bool {
+        if case let .server(server) = billingStore.appAccess {
+            return server.status == .awaitingCheckout
+        }
+        return false
+    }
+
+    private var awaitingCheckoutPriceLine: String {
+        if let price = billingStore.subscription?.price {
+            return BillingDisplayFormatting.formatTrialStartPriceLine(
+                amountMinor: price.amount,
+                currency: price.currency,
+                interval: price.interval.rawValue
+            )
+        }
+        return BillingDisplayFormatting.formatTrialStartPriceLine(
+            amountMinor: BillingPlanConstants.displayPriceAmountMinor,
+            currency: BillingPlanConstants.displayPriceCurrency,
+            interval: BillingPlanConstants.displayPriceInterval
+        )
     }
 
     @ViewBuilder

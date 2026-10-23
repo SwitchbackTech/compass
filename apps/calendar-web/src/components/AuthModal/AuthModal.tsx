@@ -17,6 +17,11 @@ import {
 } from "@web/auth/providers/provider-copy.util";
 import { signInProviderForShortcutLetter } from "@web/auth/providers/sign-in-provider.util";
 import { useSignInProviders } from "@web/auth/providers/useSignInProviders";
+import {
+  checkoutPanelActions,
+  selectCheckoutPanelOpen,
+  useCheckoutPanelStore,
+} from "@web/billing/checkout-panel.store";
 import { useIsEditableFocused } from "@web/common/hooks/useIsEditableFocused";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
@@ -27,7 +32,6 @@ import { AuthButton } from "@web/components/AuthModal/components/AuthButton";
 import { SignInProviderButtons } from "@web/components/AuthModal/components/SignInProviderButtons";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
-import { signupTrialStepTermsLine } from "@web/components/WelcomeModal/welcome-account-choice.util";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { dismissSignupTrialStep } from "./dismiss-signup-trial-step";
@@ -68,6 +72,7 @@ export const AuthModal: FC = () => {
   const navigate = useNavigate();
   const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const isStartTrialView = currentView === "startTrial";
+  const isTrialCheckoutOpen = useCheckoutPanelStore(selectCheckoutPanelOpen);
   const dismissSignupTrial = useCallback(
     () => dismissSignupTrialStep(navigate),
     [navigate],
@@ -248,24 +253,28 @@ export const AuthModal: FC = () => {
           : "Hey, welcome back";
 
   if (isStartTrialView) {
+    const leaveTrialCheckoutOrStep = isTrialCheckoutOpen
+      ? checkoutPanelActions.close
+      : dismissSignupTrial;
+
     return (
       <OverlayPanel
         align="start"
         anchor="top"
         footer={
-          <AuthButton
-            className="inline-flex items-center gap-2"
-            onClick={dismissSignupTrial}
-            type="button"
-            variant="link"
-          >
-            Back
-            <ShortcutHint>Esc</ShortcutHint>
-          </AuthButton>
+          isTrialCheckoutOpen ? null : (
+            <AuthButton
+              className="inline-flex items-center gap-2"
+              onClick={dismissSignupTrial}
+              type="button"
+              variant="link"
+            >
+              Back
+              <ShortcutHint>Esc</ShortcutHint>
+            </AuthButton>
+          )
         }
-        message={signupTrialStepTermsLine()}
-        onDismiss={dismissSignupTrial}
-        scrollChildrenOnly
+        onDismiss={leaveTrialCheckoutOrStep}
         title={title}
         variant="modal"
         widthClassName="w-[560px]"
