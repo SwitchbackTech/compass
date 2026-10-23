@@ -21,11 +21,13 @@ public struct BillingPlanSectionView: View {
                     Text(awaitingCheckoutPriceLine)
                         .font(.rubik(12))
                         .foregroundStyle(theme.textMutedColor)
-                    Button("Start free trial") {
+                    OverlayPanelActionButton(
+                        "Start free trial",
+                        variant: .primary,
+                        shortcut: ["S"]
+                    ) {
                         Task { await billingStore.openHostedCheckout() }
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(theme.textColor)
                     .disabled(billingStore.isOpeningHostedSession)
                 } else if let summary = billingStore.subscription {
                     subscriptionDetails(summary)
@@ -72,13 +74,15 @@ public struct BillingPlanSectionView: View {
             return BillingDisplayFormatting.formatTrialStartPriceLine(
                 amountMinor: price.amount,
                 currency: price.currency,
-                interval: price.interval.rawValue
+                interval: price.interval.rawValue,
+                inSettings: true
             )
         }
         return BillingDisplayFormatting.formatTrialStartPriceLine(
             amountMinor: BillingPlanConstants.displayPriceAmountMinor,
             currency: BillingPlanConstants.displayPriceCurrency,
-            interval: BillingPlanConstants.displayPriceInterval
+            interval: BillingPlanConstants.displayPriceInterval,
+            inSettings: true
         )
     }
 

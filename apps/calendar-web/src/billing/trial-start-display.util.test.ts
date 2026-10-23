@@ -19,4 +19,10 @@ describe("formatTrialStartPriceLine", () => {
       "$12.00/mo after 7 days. Cancel anytime in Settings.",
     );
   });
+
+  it("drops the Settings hint when already in Settings", () => {
+    expect(
+      formatTrialStartPriceLine(BILLING_PLAN.DISPLAY_PRICE, 7, "settings"),
+    ).toBe("$12.00/mo after 7 days. Cancel anytime.");
+  });
 });

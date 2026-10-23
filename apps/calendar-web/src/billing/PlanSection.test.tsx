@@ -190,14 +190,64 @@ describe("PlanSection", () => {
 
     expect(screen.getByText("Trial not started")).toBeInTheDocument();
     expect(
-      screen.getByText("$12.00/mo after 7 days. Cancel anytime in Settings."),
+      screen.getByText("$12.00/mo after 7 days. Cancel anytime."),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Start free trial" }),
-    ).toBeInTheDocument();
+    expect(screen.queryByText("Loading your plan")).not.toBeInTheDocument();
+    const startTrial = screen.getByRole("button", { name: "Start free trial" });
+    expect(startTrial).toBeInTheDocument();
+    expect(within(startTrial).getByText("S")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Update card" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens the trial ask with S on billing", async () => {
+    const user = userEvent.setup({ delay: null });
+    access = {
+      kind: "server",
+      status: "awaiting_checkout",
+      isReadOnly: true,
+      trialEndsAt: null,
+    };
+    getSubscription.mockResolvedValue(
+      activeSummary({
+        subscriptionStatus: "awaiting_checkout",
+        paymentMethod: null,
+      }),
+    );
+    await renderPlan();
+
+    await user.keyboard("s");
+
+    expect(
+      screen.getByRole("dialog", { name: "Start your free trial" }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show loading copy while awaiting checkout", async () => {
+    access = {
+      kind: "server",
+      status: "awaiting_checkout",
+      isReadOnly: true,
+      trialEndsAt: null,
+    };
+    getSubscription.mockImplementation(() => new Promise(() => {}));
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+          })
+        }
+      >
+        <HotkeysProvider>
+          <PlanHarness />
+        </HotkeysProvider>
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText("Trial not started")).toBeInTheDocument();
+    expect(screen.queryByText("Loading your plan")).not.toBeInTheDocument();
   });
 
   it("renders price, renewal, card, and receipts from the summary", async () => {
