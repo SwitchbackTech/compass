@@ -24,7 +24,7 @@ const KeycapGroup: FC<{
   const keys = partKeycaps(part);
 
   return (
-    <span className="inline-flex whitespace-nowrap align-middle pointer-coarse:hidden items-center gap-1">
+    <span className="inline-flex pointer-coarse:hidden items-center gap-1 whitespace-nowrap align-middle">
       {keys.map((key, index) => (
         <ShortcutHint
           // biome-ignore lint/suspicious/noArrayIndexKey: keycap sequences repeat keys; position is the identity
