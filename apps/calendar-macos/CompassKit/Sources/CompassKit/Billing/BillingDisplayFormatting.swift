@@ -40,11 +40,13 @@ public enum BillingDisplayFormatting {
         amountMinor: Double,
         currency: String,
         interval: String,
-        trialLengthDays: Int = BillingPlanConstants.trialLengthDays
+        trialLengthDays: Int = BillingPlanConstants.trialLengthDays,
+        inSettings: Bool = false
     ) -> String {
         let money = formatMoney(amountMinor: amountMinor, currency: currency)
         let short = intervalShort(interval)
-        return "\(money)/\(short) after \(trialLengthDays) days. Cancel anytime in Settings."
+        let cancel = inSettings ? "Cancel anytime." : "Cancel anytime in Settings."
+        return "\(money)/\(short) after \(trialLengthDays) days. \(cancel)"
     }
 
     public static func formatBillingDate(iso: String) -> String {

@@ -98,7 +98,9 @@ export const PlanSection: FC<PlanSectionProps> = ({
   const trialPriceLine = formatTrialStartPriceLine(
     resolveBillingDisplayPrice(subscriptionQuery.data?.price),
     trialLengthDays,
+    "settings",
   );
+  const showPlanLoading = subscriptionQuery.isPending && !isAwaitingCheckout;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [trialAskOpen, setTrialAskOpen] = useState(false);
@@ -250,7 +252,7 @@ export const PlanSection: FC<PlanSectionProps> = ({
                 <ShortcutKeys keys="B" /> to subscribe now.
               </p>
             ) : null}
-            {subscriptionQuery.isPending ? (
+            {showPlanLoading ? (
               <p className="mt-1 text-text-muted text-xs">Loading your plan</p>
             ) : null}
           </div>
@@ -263,7 +265,7 @@ export const PlanSection: FC<PlanSectionProps> = ({
             ref={startTrialButtonRef}
             onClick={() => setTrialAskOpen(true)}
             shortcut="S"
-            showShortcut={showShortcuts}
+            showShortcut
             variant="primary"
             {...settingsShortcutAttrs("start-trial")}
           >
@@ -396,6 +398,7 @@ export const PlanSection: FC<PlanSectionProps> = ({
           <TrialStartAsk
             checkoutSource={{ kind: "settings_trial_ask" }}
             onCheckoutComplete={closeTrialAsk}
+            priceLineContext="settings"
             showTitle
             title="Start your free trial"
           />

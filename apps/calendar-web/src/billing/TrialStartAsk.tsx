@@ -18,6 +18,7 @@ import { readSignupTrialMethod } from "@web/billing/signup-trial.util";
 import {
   formatTrialStartPriceLine,
   resolveBillingDisplayPrice,
+  type TrialStartPriceLineContext,
 } from "@web/billing/trial-start-display.util";
 import {
   consumeTrialStepTrigger,
@@ -41,6 +42,7 @@ type TrialStartAskProps = {
   showMascot?: boolean;
   trackSignupView?: boolean;
   onBeforeOpenCheckout?: () => void;
+  priceLineContext?: TrialStartPriceLineContext;
 };
 
 /**
@@ -56,6 +58,7 @@ export const TrialStartAsk: FC<TrialStartAskProps> = ({
   showMascot = false,
   trackSignupView = false,
   onBeforeOpenCheckout,
+  priceLineContext = "default",
 }) => {
   const isCheckoutOpen = useCheckoutPanelStore(selectCheckoutPanelOpen);
   const publishableKey = useStripePublishableKey();
@@ -66,6 +69,7 @@ export const TrialStartAsk: FC<TrialStartAskProps> = ({
   const priceLine = formatTrialStartPriceLine(
     resolveBillingDisplayPrice(subscriptionQuery.data?.price),
     trialLengthDays,
+    priceLineContext,
   );
   const viewedRef = useRef(false);
   const writeLeadRef = useRef(consumeTrialStepTrigger() === "write");

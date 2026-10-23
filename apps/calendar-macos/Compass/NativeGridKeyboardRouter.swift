@@ -206,6 +206,15 @@ final class NativeGridKeyboardRouter {
                     return true
                 }
             }
+            if model.settingsStore.isPresented, model.settingsStore.page == .billing,
+                model.settingsStore.timezoneDialogPurpose == nil, !editingText,
+                key.modifiers.isEmpty, case .character(let letter) = key.key, letter == "s",
+                case let .server(server) = model.billingStore.appAccess,
+                server.status == .awaitingCheckout
+            {
+                Task { await model.billingStore.openHostedCheckout() }
+                return true
+            }
             if key.key == .named(.escape), key.modifiers.isEmpty {
                 if model.settingsStore.timezoneDialogPurpose != nil {
                     model.settingsStore.dismissTimezoneDialog()

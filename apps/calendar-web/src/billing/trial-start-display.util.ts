@@ -23,12 +23,17 @@ const INTERVAL_SHORT: Record<BillingDisplayPrice["interval"], string> = {
   year: "yr",
 };
 
+export type TrialStartPriceLineContext = "default" | "settings";
+
 /** Trial ask copy: "$12/mo after 7 days. Cancel anytime in Settings." */
 export function formatTrialStartPriceLine(
   price: ResolvedBillingPrice,
   trialLengthDays: number = BILLING_PLAN.TRIAL_LENGTH_DAYS,
+  context: TrialStartPriceLineContext = "default",
 ): string {
   const money = formatBillingMoney(price.amount, price.currency);
   const interval = INTERVAL_SHORT[price.interval];
-  return `${money}/${interval} after ${trialLengthDays} days. Cancel anytime in Settings.`;
+  const cancel =
+    context === "settings" ? "Cancel anytime." : "Cancel anytime in Settings.";
+  return `${money}/${interval} after ${trialLengthDays} days. ${cancel}`;
 }

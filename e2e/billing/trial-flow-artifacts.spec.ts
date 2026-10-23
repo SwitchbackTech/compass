@@ -3,7 +3,9 @@ import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
-const TRIAL_PRICE_LINE = "$12.00/mo after 7 days. Cancel anytime in Settings.";
+const TRIAL_ASK_PRICE_LINE =
+  "$12.00/mo after 7 days. Cancel anytime in Settings.";
+const SETTINGS_BILLING_PRICE_LINE = "$12.00/mo after 7 days. Cancel anytime.";
 
 const jsonResponse = (body: unknown) => ({
   status: 200,
@@ -126,7 +128,7 @@ test("capture trial flow screenshots", async ({ page }) => {
     name: "Start your 7-day free trial",
   });
   await expect(signupDialog).toBeVisible({ timeout: 15000 });
-  await expect(signupDialog.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(signupDialog.getByText(TRIAL_ASK_PRICE_LINE)).toBeVisible();
   await signupDialog.screenshot({
     path: "/opt/cursor/artifacts/trial-step-ask.png",
   });
@@ -173,7 +175,12 @@ test("capture trial flow screenshots", async ({ page }) => {
     settingsDialog.getByRole("button", { name: "Start free trial" }),
   ).toBeVisible({ timeout: 15000 });
   await expect(settingsDialog.getByText("Trial not started")).toBeVisible();
-  await expect(settingsDialog.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(
+    settingsDialog.getByText(SETTINGS_BILLING_PRICE_LINE),
+  ).toBeVisible();
+  await expect(
+    settingsDialog.getByRole("button", { name: "Start free trial" }),
+  ).toContainText("S");
   await settingsDialog.screenshot({
     path: "/opt/cursor/artifacts/billing-settings-trial-not-started.png",
   });
@@ -184,7 +191,9 @@ test("capture trial flow screenshots", async ({ page }) => {
   const settingsTrialAsk = page.getByRole("dialog", {
     name: "Start your free trial",
   });
-  await expect(settingsTrialAsk.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(
+    settingsTrialAsk.getByText(SETTINGS_BILLING_PRICE_LINE),
+  ).toBeVisible();
   await settingsTrialAsk.screenshot({
     path: "/opt/cursor/artifacts/trial-follow-up-settings-ask.png",
   });
