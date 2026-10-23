@@ -6,6 +6,7 @@ import {
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type SyncConnectionSummary } from "@core/types/user.types";
+import { bookingSlugParseMessage } from "@web/booking/booking.util";
 import { BookingSetupAddressStep } from "@web/booking/setup/BookingSetupAddressStep";
 import { BookingSetupDestinationStep } from "@web/booking/setup/BookingSetupDestinationStep";
 import { BookingSetupDurationStep } from "@web/booking/setup/BookingSetupDurationStep";
@@ -112,12 +113,30 @@ export function BookingSetupWizard({
   const isFirstStep = setupStep === visibleSetupSteps(writableCalendarCount)[0];
   const canContinue =
     !(setupStep === "destination" && writableCalendarCount === 0) && !isPending;
+  const addressSlugReady =
+    setupStep === "address" &&
+    bookingSlugParseMessage(form.slug ?? "") == null &&
+    (form.slug ?? "").length > 0;
+  const continueLabel = isGoLive
+    ? guestGoLive
+      ? "Start your free trial to publish your meeting page"
+      : "Turn on and copy link"
+    : addressSlugReady
+      ? "Use this address"
+      : "Continue";
 
+  // addressSlugReady is intentionally omitted from deps: refocusing Continue
+  // when the slug becomes valid mid-edit steals focus from the input.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above
   useEffect(() => {
     if (setupStep === "address" && (forceAddressInvalid || setupError)) {
       stepBodyRef.current
         ?.querySelector<HTMLElement>("#booking-address")
         ?.focus();
+      return;
+    }
+    if (setupStep === "address" && addressSlugReady) {
+      continueRef.current?.focus();
       return;
     }
     if (setupStep === "live") {
@@ -242,11 +261,7 @@ export function BookingSetupWizard({
           variant="primary"
           {...settingsShortcutAttrs("save-booking")}
         >
-          {isGoLive
-            ? guestGoLive
-              ? "Start your free trial to publish your meeting page"
-              : "Turn on and copy link"
-            : "Continue"}
+          {continueLabel}
         </OverlayPanelActionButton>
       </OverlayPanelActions>
     </div>

@@ -69,7 +69,9 @@ function GuestWizardShell() {
 async function advanceGuestWizardToGoLive(
   user: ReturnType<typeof userEvent.setup>,
 ) {
-  await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+  await user.click(
+    await screen.findByRole("button", { name: /^(Use this address|Continue)/ }),
+  );
   await user.click(screen.getByRole("button", { name: /^Continue/ }));
   await user.click(screen.getByRole("button", { name: /^Continue/ }));
   await screen.findByText("Step 4 of 4");

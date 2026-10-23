@@ -35,6 +35,8 @@ export const STORAGE_KEYS = {
     "compass.onboarding.has-dismissed-meeting-page-nudge",
   // Anonymous meeting-page setup draft from the public /meet footer CTA.
   GUEST_MEETING_SETUP_DRAFT: "compass.booking.guest-meeting-setup-draft",
+  // Stable id for guest setup slug suggestions on this browser.
+  GUEST_MEETING_SETUP_SLUG_SEED: "compass.booking.guest-setup-slug-seed",
   // Set when the user finishes or skips the Shortcut Showcase, so it never
   // auto-launches twice (palette replay ignores it).
   HAS_SEEN_SHORTCUT_SHOWCASE: "compass.onboarding.has-seen-shortcut-showcase",

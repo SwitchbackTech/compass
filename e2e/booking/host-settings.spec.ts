@@ -194,8 +194,9 @@ test("first visit: keyboard setup wizard through go live", async ({
     "hostuser",
   );
 
-  await dispatchFill(settingsDialog.getByLabel("Page address"), "hostuser");
-  await settingsDialog.getByLabel("Page address").press("Enter");
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: /^Use this address/ }),
+  );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({

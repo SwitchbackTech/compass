@@ -125,6 +125,17 @@ describe("buildInitialForm", () => {
     expect(form.blockingCalendarIds).toEqual([writableId]);
   });
 
+  it("seeds the form slug from the server suggestedSlug", () => {
+    const form = buildInitialForm(
+      setupPage({ suggestedSlug: "tyler-dane" }),
+      zone,
+      [],
+      [],
+    );
+
+    expect(form.slug).toBe("tyler-dane");
+  });
+
   it("keeps a stored destination the host can still write to", () => {
     const storedId = calendarId();
     const otherId = calendarId();

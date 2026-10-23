@@ -168,6 +168,20 @@ describe("BookingSetupWizard", () => {
     expect(screen.queryByText("Compass")).not.toBeInTheDocument();
   });
 
+  it("focuses Continue when the address is already valid", async () => {
+    const { continueRef } = renderWizard({
+      setupStep: "address",
+      writableCalendarCount: 1,
+    });
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(continueRef.current);
+    });
+    expect(
+      screen.getByRole("button", { name: /^Use this address/ }),
+    ).toBeInTheDocument();
+  });
+
   it("focuses the address field after a SLUG_TAKEN error", async () => {
     renderWizard({
       forceAddressInvalid: true,

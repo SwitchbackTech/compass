@@ -91,6 +91,7 @@ import {
   prevSetupStep,
   type SetupStepId,
 } from "@web/booking/setup/setup-steps";
+import { suggestGuestMeetingSetupSlug } from "@web/booking/suggest-meeting-setup-slug.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
@@ -229,6 +230,7 @@ export function BookingSettingsSection({
   const [setupStep, setSetupStep] = useState<SetupStepId | null>(null);
   const setupContinueRef = useRef<HTMLButtonElement>(null);
   const focusSwitchAfterSetupRef = useRef(false);
+  const guestSetupSeededRef = useRef(false);
   // The settings fieldset is disabled while a save is in flight, so focusing
   // from onError is a no-op. Wait until the mutation settles and the field
   // is enabled again.
@@ -296,16 +298,40 @@ export function BookingSettingsSection({
   ]);
 
   useEffect(() => {
-    if (!guestPreview) return;
+    if (!guestPreview || guestSetupSeededRef.current) return;
+    guestSetupSeededRef.current = true;
     const draft = readGuestMeetingSetupDraft();
-    if (draft) {
-      setForm(draft);
-      setMinNoticeText(String(draft.minNoticeHours));
-      setHorizonText(String(draft.maxHorizonDays));
-      baselineFormRef.current = draft;
-    }
+    const guestBase = buildInitialForm(
+      undefined,
+      effectiveTimeZone,
+      writableCalendars,
+      availabilityCalendars,
+    );
+    const suggestedSlug = suggestGuestMeetingSetupSlug();
+    const withSuggestedSlug = (
+      input: AdminPutBookingPageInput,
+    ): AdminPutBookingPageInput => {
+      if (
+        input.slug != null &&
+        input.slug.length > 0 &&
+        bookingSlugParseMessage(input.slug) == null
+      ) {
+        return input;
+      }
+      return { ...input, slug: suggestedSlug };
+    };
+    const seeded = withSuggestedSlug(draft ?? guestBase);
+    setForm(seeded);
+    setMinNoticeText(String(seeded.minNoticeHours));
+    setHorizonText(String(seeded.maxHorizonDays));
+    baselineFormRef.current = seeded;
     setSetupStep((current) => current ?? "address");
-  }, [guestPreview]);
+  }, [
+    availabilityCalendars,
+    effectiveTimeZone,
+    guestPreview,
+    writableCalendars,
+  ]);
 
   useEffect(() => {
     if (!guestPreview) return;
