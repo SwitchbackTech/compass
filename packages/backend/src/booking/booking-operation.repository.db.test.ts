@@ -323,4 +323,46 @@ describe("bookingOperationRepository", () => {
     expect(Date.now() - started).toBeLessThan(250);
     expect(emitSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("ignores exhausted failed creates for overlap scans but keeps guest intent resumable", async () => {
+    const pageId = new ObjectId();
+    const slotStart = new Date("2026-09-14T10:00:00.000Z");
+    const slotEnd = new Date("2026-09-14T10:30:00.000Z");
+    const created = await bookingOperationRepository.insertCreate({
+      _id: new ObjectId("000000000000000000000001"),
+      kind: "create",
+      status: "pending",
+      pageId,
+      userId: new ObjectId(),
+      calendarId: new ObjectId().toHexString(),
+      eventId: new ObjectId().toHexString(),
+      reservationId: new ObjectId(),
+      slotStart,
+      slotEnd,
+      guestName: "Ada Lovelace",
+      guestEmail: "ada@example.com",
+      notes: null,
+      guestTimeZone: "UTC" as TimeZone,
+      cancelToken: "cancel-token",
+    });
+    await bookingOperationRepository.markFailed(
+      created._id,
+      "PROVIDER_FAILURE",
+    );
+
+    const overlapping =
+      await bookingOperationRepository.listInFlightOverlapping(
+        pageId,
+        slotStart,
+        slotEnd,
+      );
+    expect(overlapping).toHaveLength(0);
+
+    const intent = await bookingOperationRepository.findActiveCreateByIntent(
+      pageId,
+      slotStart,
+      "ada@example.com",
+    );
+    expect(intent?.status).toBe("failed");
+  });
 });
