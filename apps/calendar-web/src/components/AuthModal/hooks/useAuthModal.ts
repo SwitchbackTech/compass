@@ -69,10 +69,15 @@ export function validateAuthSearch(
   };
 }
 
+type OpenStartTrialStepOptions = {
+  replace?: boolean;
+};
+
 interface AuthModalContextValue {
   isOpen: boolean;
   currentView: AuthView;
   openModal: (view?: AuthView) => void;
+  openStartTrialStep: (options?: OpenStartTrialStepOptions) => void;
   closeModal: () => void;
   setView: (view: AuthView) => void;
 }
@@ -81,6 +86,7 @@ const defaultContextValue: AuthModalContextValue = {
   isOpen: false,
   currentView: "login",
   openModal: () => {},
+  openStartTrialStep: () => {},
   closeModal: () => {},
   setView: () => {},
 };
@@ -139,14 +145,30 @@ export function useAuthModalState(): AuthModalContextValue {
     });
   }, [authenticated, auth, navigate, view]);
 
+  const openStartTrialStep = useCallback(
+    (options?: OpenStartTrialStepOptions) => {
+      const replace = options?.replace ?? !(view === null);
+      navigate({
+        to: ".",
+        replace,
+        search: (prev) => ({
+          ...prev,
+          auth: VIEW_TO_PARAM.startTrial,
+        }),
+      });
+    },
+    [navigate, view],
+  );
+
   return useMemo(
     () => ({
       isOpen: view !== null && (!authenticated || view === "startTrial"),
       currentView: view ?? "login",
       openModal: (nextView: AuthView = "login") => setAuthView(nextView),
+      openStartTrialStep,
       closeModal: () => setAuthView(null),
       setView: (nextView: AuthView) => setAuthView(nextView),
     }),
-    [authenticated, view, setAuthView],
+    [authenticated, view, setAuthView, openStartTrialStep],
   );
 }

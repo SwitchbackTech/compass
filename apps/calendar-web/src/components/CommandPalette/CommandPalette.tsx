@@ -19,7 +19,7 @@ import {
 } from "@core/event/search-events-by-title";
 import dayjs from "@core/util/date/dayjs";
 import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
-import { useShortcutWriteLocked } from "@web/billing/useBillingWriteLock";
+import { useShortcutWriteLockedAtIntent } from "@web/billing/useBillingWriteLock";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { goToDateAnnouncement } from "@web/common/utils/datetime/web.date.util";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
@@ -396,7 +396,7 @@ export const CommandPalette = ({
     ? DESKTOP_QUICK_ADD_PALETTE_PLACEHOLDER
     : placeholder;
   useAppLockReason("commandPalette", open);
-  const writeLocked = useShortcutWriteLocked();
+  const writeLocked = useShortcutWriteLockedAtIntent();
   const eventItems = writeLocked
     ? eventCommandPaletteItems.map((item) => ({
         ...item,

@@ -37,6 +37,10 @@ afterAll(() => {
 
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
+  resetBillingWriteLockForTests,
+  setBillingWriteLock,
+} from "@web/billing/billing-write-lock";
+import {
   CONFERENCE_LINK_ADDED_TOAST_ID,
   EVENT_DELETED_TOAST_ID,
 } from "@web/common/constants/toast.constants";
@@ -2727,5 +2731,35 @@ describe("undo history recording", () => {
         expect.objectContaining({ with_conference: false }),
       );
     });
+  });
+
+  test("does not optimistic-create while awaiting checkout billing gate blocks commit", () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        calendarId: event().calendarId,
+        content: {
+          kind: "details",
+          title: "Blocked create",
+          description: "",
+          location: "",
+        },
+        schedule: timedSchedule(
+          "2026-07-02T16:00:00.000Z",
+          "2026-07-02T17:00:00.000Z",
+        ),
+        recurrence: { kind: "single" },
+      }),
+    );
+
+    expect(context.calls).toHaveLength(0);
+    expect(context.hook.result.current.hasPending).toBe(false);
+    const cached =
+      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)!;
+    expect(cached.ids).toHaveLength(0);
+    resetBillingWriteLockForTests();
   });
 });

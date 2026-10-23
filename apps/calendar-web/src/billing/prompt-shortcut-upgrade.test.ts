@@ -51,7 +51,7 @@ describe("promptShortcutUpgrade", () => {
     expect(track).not.toHaveBeenCalled();
   });
 
-  it("opens the trial step for awaiting_checkout instead of a toast", () => {
+  it("defers awaiting_checkout event shortcuts to commit", () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade({
@@ -61,10 +61,7 @@ describe("promptShortcutUpgrade", () => {
     });
 
     expect(mocks.toast).not.toHaveBeenCalled();
-    expect(requestTrialStep).toHaveBeenCalledWith({
-      trigger: "write",
-      eventAction: "replace",
-    });
+    expect(requestTrialStep).not.toHaveBeenCalled();
   });
 
   it("no-ops while the billing gate owns the screen", () => {
@@ -81,7 +78,7 @@ describe("promptShortcutUpgrade", () => {
     setAppLockReason("billingGate", false);
   });
 
-  it("routes keyed shortcuts to the trial step while awaiting checkout", () => {
+  it("does not open the trial step for create shortcuts while awaiting checkout", () => {
     setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
     promptShortcutUpgrade({
@@ -92,10 +89,7 @@ describe("promptShortcutUpgrade", () => {
     });
 
     expect(mocks.toast).not.toHaveBeenCalled();
-    expect(requestTrialStep).toHaveBeenCalledWith({
-      trigger: "write",
-      eventAction: "create",
-    });
+    expect(requestTrialStep).not.toHaveBeenCalled();
     expect(getShortcutHint("create-event").parts.length).toBeGreaterThan(0);
   });
 

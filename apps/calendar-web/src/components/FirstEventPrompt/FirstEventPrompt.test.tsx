@@ -72,6 +72,7 @@ describe("FirstEventPrompt", () => {
           isOpen: true,
           currentView: "login",
           openModal: () => {},
+          openStartTrialStep: () => {},
           closeModal: () => {},
           setView: () => {},
         }}

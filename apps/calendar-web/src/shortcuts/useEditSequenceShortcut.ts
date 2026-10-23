@@ -5,6 +5,7 @@ import {
   EDIT_SEQUENCE_LETTER_FIELDS,
 } from "@core/shortcuts/edit-sequence.fields";
 import { KEYMAP } from "@core/shortcuts/keymap";
+import { defersAwaitingCheckoutGateToCommit } from "@web/billing/awaiting-checkout-explore.util";
 import { isBillingWriteLocked } from "@web/billing/billing-write-lock";
 import { promptShortcutUpgrade } from "@web/billing/prompt-shortcut-upgrade";
 import {
@@ -167,7 +168,11 @@ export function useEditSequenceShortcut<
           disarm();
           return;
         }
-        if (!ignoreAppLock && isBillingWriteLocked()) {
+        if (
+          !ignoreAppLock &&
+          isBillingWriteLocked() &&
+          !defersAwaitingCheckoutGateToCommit()
+        ) {
           disarm();
           promptShortcutUpgrade({
             featureArea: "event_editing",
@@ -220,7 +225,11 @@ export function useEditSequenceShortcut<
         return;
       }
 
-      if (!ignoreAppLock && isBillingWriteLocked()) {
+      if (
+        !ignoreAppLock &&
+        isBillingWriteLocked() &&
+        !defersAwaitingCheckoutGateToCommit()
+      ) {
         const isMod = isModLeader(event);
         const isLeader =
           isMod ||

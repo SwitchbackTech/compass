@@ -93,10 +93,13 @@ production.
   completes, but there is no automatic trial modal and no full-screen gate.
   A top banner (**Start your 7-day free trial to plan your week**, `S`) is
   the calm opt-in. **Dismiss** hides it for the current browser session only
-  (`sessionStorage`). Keyboard and UI **event** writes (create, edit, move,
-  resize, delete, including recurring scope) open **Start your 7-day free trial**
-  in the auth modal (`StartTrialStep.tsx`, `?auth=trial`). Settings, preferences,
-  and view changes do not. Analytics: `trial_gate_triggered` with
+  (`sessionStorage`). Users can start event drafts (keyboard `c`, drag on the
+  grid, command palette) and edit locally; **committing** an event write
+  (create, edit save, move, resize, delete, including recurring scope) opens
+  **Start your 7-day free trial** in the auth modal (`StartTrialStep.tsx`,
+  `?auth=trial`). The gate runs before optimistic mutations so closing the
+  step leaves no ghost events. Settings, preferences, and view changes do
+  not. Analytics: `trial_gate_triggered` with
   `source: write | banner` and `event_action: create | replace | delete` on
   write (plus existing `billing_gate_shown` / funnel events). Embedded Checkout runs in the modal
   with `trial_period_days: 7`. On `onComplete`, Compass polls

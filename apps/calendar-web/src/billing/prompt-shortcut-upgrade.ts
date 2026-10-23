@@ -1,16 +1,12 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
 import { track } from "@web/auth/posthog/track";
+import { defersAwaitingCheckoutGateToCommit } from "@web/billing/awaiting-checkout-explore.util";
 import {
   getBillingWriteLockStatus,
-  isAwaitingCheckoutWriteLocked,
   isBillingWriteLocked,
 } from "@web/billing/billing-write-lock";
 import { type CheckoutPanelSource } from "@web/billing/checkout-panel.store";
-import {
-  requestTrialStep,
-  type TrialGateEventAction,
-} from "@web/billing/trial-step-request";
 import { importOrReload } from "@web/common/utils/browser/missing-chunk-reload.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { hasAppLockReason } from "@web/shortcuts/app-lock";
@@ -77,18 +73,6 @@ const promptCopy = (input: ShortcutUpgradePromptInput): ShortcutUpgradeCopy => {
   };
 };
 
-function trialGateEventActionForShortcut(
-  input: ShortcutUpgradePromptInput,
-): TrialGateEventAction | null {
-  if (input.featureArea === "event_creation") {
-    return "create";
-  }
-  if (input.featureArea === "event_editing") {
-    return "replace";
-  }
-  return null;
-}
-
 /**
  * Shows a focused upgrade toast when a write shortcut is blocked by billing.
  * While the full-screen gate is up, the gate already owns the ask.
@@ -100,11 +84,7 @@ export function promptShortcutUpgrade(
   if (!isBillingWriteLocked()) return;
   if (hasAppLockReason("billingGate")) return;
 
-  if (isAwaitingCheckoutWriteLocked()) {
-    const eventAction = trialGateEventActionForShortcut(input);
-    if (eventAction) {
-      void requestTrialStep({ trigger: "write", eventAction });
-    }
+  if (defersAwaitingCheckoutGateToCommit()) {
     return;
   }
 
