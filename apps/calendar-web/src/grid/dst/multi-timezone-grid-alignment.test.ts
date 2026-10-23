@@ -33,6 +33,7 @@ const topRowOf = (
       isAllDay: false,
       position: { widthMultiplier: 1 },
       startDate: startAt,
+      timeZone: zone,
     } as never,
     { measurements, visibleDates: visible(dayKey, zone), isDraft: false },
   ).top / hourHeight;

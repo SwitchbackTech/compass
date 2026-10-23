@@ -30,7 +30,7 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import { gridRecurrenceFromEvent } from "@web/events/grid-event-recurrence";
-import { getEffectiveTimeZone, getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import {
   calendarDateInEffectiveTimeZone,
   inEffectiveTimeZone,

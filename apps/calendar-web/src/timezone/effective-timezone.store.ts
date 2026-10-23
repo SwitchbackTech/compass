@@ -61,10 +61,6 @@ function applyDayjsDefault(timeZone: string): void {
   dayjs.setDefaultTimezone(timeZone);
 }
 
-export function getCalendarTimeZoneHint(): string | null {
-  return calendarTimeZoneHintStore.get();
-}
-
 export function setCalendarTimeZoneHint(timeZone: string | null): void {
   if (timeZone !== null && !isValidTimeZone(timeZone)) {
     return;
@@ -116,11 +112,6 @@ export function hydrateEffectiveTimeZonePreference(): void {
   repairAccidentalUtcPinInStorage();
   pinnedTimeZoneStore.set(readPinnedTimeZone());
   refreshEffectiveTimeZoneFromBrowser();
-}
-
-/** Called when calendar list or hint changes after initial hydrate. */
-export function syncEffectiveTimeZoneFromPreferences(): void {
-  syncEffectiveTimeZone();
 }
 
 export function getPinnedTimeZone(): string | null {

@@ -7,13 +7,11 @@ import {
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { formatInstantInTimeZone } from "@core/util/date/civil-day";
-import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   resetEffectiveTimeZoneStoreForTests,
   setPinnedTimeZone,
 } from "@web/timezone/effective-timezone.store";
-import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import {
   allDayGridSchedule,
   createGridEventDraft,

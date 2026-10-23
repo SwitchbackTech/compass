@@ -1,3 +1,4 @@
+import { TimeZoneSchema } from "@core/types/domain-primitives";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { pickCalendarTimeZoneHint } from "@web/timezone/calendar-timezone-hint";
 import { describe, expect, it } from "bun:test";
@@ -7,12 +8,12 @@ describe("pickCalendarTimeZoneHint", () => {
     const calendars = [
       createMockCalendar({
         name: "Work",
-        timeZone: "America/New_York",
+        timeZone: TimeZoneSchema.parse("America/New_York"),
         isPrimary: true,
       }),
       createMockCalendar({
         name: "Other",
-        timeZone: "America/Denver",
+        timeZone: TimeZoneSchema.parse("America/Denver"),
         isPrimary: false,
       }),
     ];
@@ -23,12 +24,12 @@ describe("pickCalendarTimeZoneHint", () => {
     const calendars = [
       createMockCalendar({
         name: "UTC cal",
-        timeZone: "UTC",
+        timeZone: TimeZoneSchema.parse("UTC"),
         isPrimary: false,
       }),
       createMockCalendar({
         name: "Denver",
-        timeZone: "America/Denver",
+        timeZone: TimeZoneSchema.parse("America/Denver"),
         isPrimary: false,
       }),
     ];

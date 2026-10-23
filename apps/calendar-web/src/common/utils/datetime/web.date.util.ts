@@ -55,7 +55,7 @@ export const getHourLabels = (
   timeZone: string = getEffectiveTimeZone(),
 ) =>
   civilHourLineInstants(referenceDay, timeZone, includeMidnight).map(
-    (instant) => instant.tz(timeZone).format(HOURS_AM_SHORT_FORMAT),
+    (instant) => instant.format(HOURS_AM_SHORT_FORMAT),
   );
 
 const getTimeLabel = (value: string) => value.replace(":00", "");
