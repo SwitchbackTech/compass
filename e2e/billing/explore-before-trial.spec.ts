@@ -256,6 +256,8 @@ test("event create opens the draft without the trial step", async ({
     path: "/opt/cursor/artifacts/explore-draft-open-before-save.png",
     fullPage: true,
   });
+  await page.keyboard.press("Escape");
+  await expect(titleInput).toHaveCount(0);
 });
 
 test("save opens the trial step and closing keeps the draft without a ghost event", async ({

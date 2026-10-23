@@ -437,9 +437,7 @@ export const openTimedEventFormWithKeyboard = async (page: Page) => {
   const titleInput = getFormTitleInput(page);
 
   if (!(await titleInput.isVisible().catch(() => false))) {
-    await blurActiveElement(page);
-    await page.locator("#mainGrid").focus();
-    await page.keyboard.press("c");
+    await dispatchDocumentKey(page, "c");
   }
 
   await titleInput.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
