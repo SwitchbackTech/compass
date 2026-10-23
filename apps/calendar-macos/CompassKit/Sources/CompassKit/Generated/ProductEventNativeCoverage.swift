@@ -12,7 +12,8 @@ public enum ProductEventNativeCoverage: Sendable {
         .accountDeleted,
         .shortcutInvoked,
         .shortcutLevelUp,
-        .shortcutLevelBadgeToggled
+        .shortcutLevelBadgeToggled,
+        .hintShortcutFirstUsed
     ]
 
     /// Events owned by the web client until a native call site is registered.
@@ -74,7 +75,6 @@ public enum ProductEventNativeCoverage: Sendable {
         .notificationsSkipped,
         .shortcutSuggestionShown,
         .shortcutSuggestionEngaged,
-        .hintShortcutFirstUsed,
         .shortcutUnavailableAttempt,
         .pointerHintShown,
         .pointerHintDismissed,
