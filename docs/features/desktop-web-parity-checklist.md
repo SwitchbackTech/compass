@@ -122,7 +122,11 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Hold-Mod day header keycaps (⇧SU, ⇧M, ...) | ✅ | Week headers swap the weekday for `WeekDayColumnHeaderControl` keycaps while Mod is held; bare letters in event-jump mode |
 | Hold-Mod sidebar chips (month picker, Up next, calendar list) | ✅ | Anchors merge with nested ones, so the sidebar no longer hides the month picker and Up next chips; the calendar list digit sits on the list, not the sidebar corner. |
 | Per-account page-jump targets | ✅ | One Mod+digit target per connected account heading after Up next, like web `buildCalendarPageJumpTargets`; a collapsed heading expands on jump; one "calendars" slot with no accounts |
-| Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
+| Sticky form actions row (icons + shortcuts) | 🟡 | Header keyboard behavior and shortcut help verified; exact icon/spacing parity still needs visual comparison |
+| Close unchanged / edited event | ✅ | 2026-10-23: only changed existing events prompt, like web. Unchanged edits, reverted edits, and create drafts close immediately. Four model regressions pass; native tests verify Close prompts instead of saving edits, Cancel preserves them, and Shift+Escape discards without saving |
+| Header actions keyboard focus | ✅ | Mod+0 focuses the first toolbar button after the parent releases title focus, including repeated jumps. Tab / Shift+Tab move through actions, Return / Space activate them, and shortcut help names the keys. Native screenshot inspection at 720×630 confirms a visible Close focus outline; three focused native regressions and full strict verification pass |
+| Form duplicate undo / redo | ✅ | Form duplication records its create in undo history. Model and native tests verify duplicate → undo → redo without modifying the original |
+| Calendar / recurrence / RSVP shortcut focus | 🟡 | [#4783](https://github.com/KeepSoftwareSimple/compass-calendar/issues/4783): source audit found these sections use `focusField` for a painted highlight without binding keyboard focus to their menu or buttons. Live acceptance and fixes remain, including signed-in RSVP |
 
 #### 2026-10-22 popover and capture verification
 

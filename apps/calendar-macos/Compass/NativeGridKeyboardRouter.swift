@@ -465,6 +465,11 @@ final class NativeGridKeyboardRouter {
         if EventFormDateFieldKeys.fieldOwnsKey(keyEvent, owner: model.eventFormDateKeyOwner) {
             return false
         }
+        if keyEvent.key == .named(.escape), keyEvent.modifiers == [.shift] {
+            if model.eventFormDateKeyOwner?.calendarOpen == true { return false }
+            model.discardDraftConfirmed()
+            return true
+        }
         if matchesBinding(keyEvent, id: .editCancelMeeting) {
             guard model.hasBookedMeetingActions else { return false }
             Task { await model.triggerBookedMeetingCancellation() }
@@ -548,6 +553,15 @@ final class NativeGridKeyboardRouter {
                 model.jumpEventFormField(digit: char)
                 model.formFieldDigitHintsVisible = false
                 return true
+            }
+        }
+
+        // Header buttons own activation and Tab navigation. Otherwise Return
+        // reaches edit-open below and saves instead of pressing the button.
+        if model.isEventFormActionFocused {
+            if keyEvent.key == .named(.enter), keyEvent.modifiers.isEmpty { return false }
+            if keyEvent.key == .named(.tab), keyEvent.modifiers.isEmpty || keyEvent.modifiers == [.shift] {
+                return false
             }
         }
 
