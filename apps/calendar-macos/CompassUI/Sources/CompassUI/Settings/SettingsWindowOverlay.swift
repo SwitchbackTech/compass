@@ -14,7 +14,7 @@ public struct SettingsWindowOverlay: View {
         if model.settingsStore.isPresented {
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
-                    PanelBackdropView()
+                    theme.panelBackdropColor
                         .ignoresSafeArea()
                         .onTapGesture { model.closeSettingsIfAllowed() }
                     VStack(alignment: .leading, spacing: 24) {
@@ -44,6 +44,8 @@ public struct SettingsWindowOverlay: View {
                     .padding(.top, geometry.size.height * 0.05)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(.isModal)
             .accessibilityIdentifier("compass-native-settings")
         }
         if model.settingsStore.timezoneDialogPurpose != nil {

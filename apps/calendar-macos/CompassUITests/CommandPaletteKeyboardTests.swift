@@ -2,6 +2,29 @@ import XCTest
 
 final class CommandPaletteKeyboardTests: XCTestCase {
     @MainActor
+    func testBackdropClickClosesPalette() {
+        for theme in ["light-beach", "dark-abyss"] {
+            let app = XCUIApplication.compassUITest()
+            app.launchArguments += ["-COMPASS_FIXTURE", "demo", "-compass.theme", theme]
+            app.launch()
+            let window = app.windows["Compass"]
+            XCTAssertTrue(window.waitForExistence(timeout: 15))
+            window.typeKey("k", modifierFlags: [.command])
+            let palette = window.descendants(matching: .any)["compass-native-command-palette"]
+            XCTAssertTrue(palette.waitForExistence(timeout: 8))
+            let evidence = XCTAttachment(screenshot: window.screenshot())
+            evidence.name = "Command palette modal backdrop, \(theme)"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            window.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 20, dy: 200))
+                .click()
+            XCTAssertTrue(palette.waitForNonExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
+    @MainActor
     func testArrowSelectionCreatesTheSelectedAllDayEvent() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]

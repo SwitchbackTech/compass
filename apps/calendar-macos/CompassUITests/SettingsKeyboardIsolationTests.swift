@@ -2,6 +2,33 @@ import XCTest
 
 final class SettingsKeyboardIsolationTests: XCTestCase {
     @MainActor
+    func testBackdropAndEscapeCloseSettingsInBothThemes() {
+        for theme in ["light-beach", "dark-abyss"] {
+            let app = XCUIApplication.compassUITest()
+            app.launchArguments += ["-COMPASS_FIXTURE", "demo", "-compass.theme", theme]
+            app.launch()
+            let window = app.windows["Compass"]
+            XCTAssertTrue(window.waitForExistence(timeout: 15))
+            window.typeKey(",", modifierFlags: [.command])
+            let settings = window.descendants(matching: .any)["compass-native-settings"]
+            XCTAssertTrue(settings.waitForExistence(timeout: 8))
+            let evidence = XCTAttachment(screenshot: window.screenshot())
+            evidence.name = "Settings modal backdrop, \(theme)"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            window.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: 20, dy: 200))
+                .click()
+            XCTAssertTrue(settings.waitForNonExistence(timeout: 5))
+            window.typeKey(",", modifierFlags: [.command])
+            XCTAssertTrue(settings.waitForExistence(timeout: 8))
+            window.typeKey(.escape, modifierFlags: [])
+            XCTAssertTrue(settings.waitForNonExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
+    @MainActor
     func testSettingsDoesNotCreateAnEventBehindTheDialog() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
@@ -23,12 +50,17 @@ final class SettingsKeyboardIsolationTests: XCTestCase {
     func testExportSavePanelOwnsTypingAndCanBeCancelled() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
+        // Match the compact window from the CI hit-testing regression.
+        app.launchArguments += ["-NSWindow Frame CompassMainWindow", "0 0 720 630 0 0 1024 768 "]
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
+        XCTAssertEqual(window.frame.width, 720, accuracy: 1)
         window.typeKey(",", modifierFlags: .command)
-        let export = window.buttons["Export data"]
+        let export = window.buttons["settings-export-data"]
         XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertEqual(export.label, "Export data")
+        XCTAssertTrue(export.isHittable)
         export.click()
         let sheet = window.sheets.firstMatch
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))

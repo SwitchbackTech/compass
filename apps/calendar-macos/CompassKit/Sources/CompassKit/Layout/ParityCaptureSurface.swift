@@ -14,6 +14,7 @@ public enum ParityCaptureSurface: String, CaseIterable, Sendable {
     case eventFormMeetingLink = "event-form-meeting-link"
     case commandPalette = "command-palette"
     case settings = "settings"
+    case lifeViewIntro = "life-view-intro"
     case onboardingWelcome = "onboarding-welcome"
     case onboardingWelcomeAccountChoice = "onboarding-welcome-account-choice"
 

@@ -59,7 +59,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Web | macOS | Status | Notes |
 | --- | --- | --- | --- | --- |
 | `--shadow-default` on elevated buttons | `c-button-elevated` | Limited native elevation | 🟡 | Save bar / primary buttons |
-| Command palette panel shadow | Floating overlay | Token-colored shadow, 24pt radius and 16pt vertical offset | ✅ | `CommandPaletteOverlay.swift`; native paint parameters remain platform-specific |
+| Command palette panel shadow | Floating overlay | Token-colored shadow, 28pt radius and 16pt vertical offset | ✅ | `CommandPaletteOverlay.swift`; native paint parameters remain platform-specific |
 
 ### 1.5 Focus rings
 
@@ -124,6 +124,13 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Per-account page-jump targets | ✅ | One Mod+digit target per connected account heading after Up next, like web `buildCalendarPageJumpTargets`; a collapsed heading expands on jump; one "calendars" slot with no accounts |
 | Sticky form actions row (icons + shortcuts) | 🟡 | Web `FormActionsRow.tsx`; macOS `EventFormToolbarView` SF Symbols, fewer keycaps |
 
+#### 2026-10-22 popover and capture verification
+
+Date and time pickers open below their fields in native user flows at both the normal window size and the canonical 1280×820 capture size. Date keyboard selection/Escape and time selection pass. Fresh exported images also show the popovers below their fields, correcting the earlier placement finding. Sidebar-only crops can cut off the portion of the calendar that extends over the grid.
+
+Found a separate capture reliability defect with multiple installed Compass builds: generic debug URL opening can target another build, causing export timeouts. Capture helpers now activate the test target and route debug URLs to its running bundle path. The existing date/time capture checks assert placement and verify that export preserves the open picker and event form. Signed-in acceptance remains outstanding.
+
+
 ### 2.4 Mini-calendar (month picker)
 
 | Item | Status | Notes |
@@ -156,7 +163,9 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | --- | --- | --- |
 | Accounts, default calendar, timezone, theme | ✅ | WP-29 |
 | Launch at login, global Quick Add | ✅ | macOS-only (expected) |
-| Visual match to web settings overlay | 🟡 | Section spacing, toggles |
+| Visual match to web settings overlay | 🟡 | Web background tint and 8pt blur verified locally in both themes; section spacing and navigation focus still differ |
+
+2026-10-22: Settings uses the existing background tint at 85% opacity with a 8pt blur on the content behind the panel. Both-theme native tests verify outside-click and Escape dismissal. Native window captures show the blur; view-level parity exports render background compositing differently, so they do not establish full visual equality.
 
 ### 2.8 Onboarding / welcome
 
@@ -362,9 +371,9 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | --- | --- | --- | --- | --- |
 | Week grid | ✅ | ✅ | 🟡 | Both week view; hour labels sit on their events (#4719). macOS shot has no demo events banner, scrolls about an hour later, and the sidebar tip rotates to a different line |
 | Mini-calendar | ✅ | ✅ | ✅ | Selected-day ring and selected-week wash match; web also shows a transient ↑ ↓ move-by-week hint |
-| Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; date and time popovers draw beside the field instead of below it; guest row only on macOS (demo fixture) |
-| Command palette | ✅ | ✅ | 🟡 | Undo/redo rows on macOS; web still has Phosphor icons + more nav rows; native keycaps + inset ring improved |
-| Settings | ✅ | ✅ | 🟡 | Both modal on a light backdrop (#4718); timezone reads Auto (UTC) vs UTC (UTC) only because the web fixture pins UTC; web shows a focus ring on Accounts |
+| Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; local 2026-10-22 native flow and export checks confirm both popovers open below their fields; guest row only on macOS (demo fixture) |
+| Command palette | ✅ | ✅ | 🟡 | Local 2026-10-22 capture confirms background tint and 8pt blur match the web treatment; palette row/layout differences still need review. Outside-click dismissal is covered in both themes |
+| Settings | ✅ | ✅ | 🟡 | Local 2026-10-22 native captures verify the background tint and blur in both themes; view-level export does not reproduce the blur faithfully. Timezone fixture and Accounts focus-ring differences remain |
 | Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
 
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
@@ -374,3 +383,17 @@ Re-run `desktop-web-parity-screenshots.yml` on `main` after each merged batch (#
 ### 2026-10-22 source reconciliation
 
 Rechecked against `main` at `7a44b191a` after the overnight merge batch. Corrected stale entries for theme accessor coverage, palette shadow, Quick Add placeholder, weekday targeting, notice focus, save keycaps and screenshot automation. These are source-backed findings, not a new signed-in acceptance run. Remaining partial visual and live-flow entries still require direct verification. Existing Life intro (#4709) and title-bar capture (#4667) PRs must be reconciled before duplicating their changes.
+
+### 2026-10-22 native verification follow-up
+
+Life intro PR #4709 passes strict verification, including native package and UI tests. Enter dismissal and returning to Life without a repeat intro pass in the native regression; signed-in server persistence has not received a new live acceptance run.
+
+Compared the command palette against the web image in run 39786084114. The native palette used the dark overlay token instead of web's background at 85% opacity. The palette now uses the matching background tint, with a 8pt blur applied to the content behind it. Local screenshot inspection confirms the calendar remains faintly visible behind the panel. Both-theme outside-click checks protect hit testing; this does not establish pixel equality for the full palette.
+
+The same completed comparison shows the sidebar toggle on the native title bar. Reconcile draft #4667 against current rendering before adopting its older experiments. Date/time popover placement is verified above; the remaining signed-in acceptance flows are still open audit items.
+
+### 2026-10-22 CI reliability follow-up
+
+The Life intro capture exposed a parity-mode layout update that reapplied the Week fixture after switching views. Layout measurement now preserves the selected view; a model regression fails on the previous reset. Registered `life-view-intro` as an allowed export surface, with a native assertion that export preserves the intro modal. Settings data actions now form an explicit accessibility group, preserving the export button identity. Life intro store tests use isolated defaults and wait for dismissal completion rather than a fixed sleep.
+
+The compact-window CI follow-up reproduces Settings export hit testing at 720×630. Explicit modal accessibility grouping keeps Settings separate from the obscured calendar; the export button remains hittable and the native save panel can be typed into and cancelled at that size.

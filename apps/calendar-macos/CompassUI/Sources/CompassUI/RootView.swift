@@ -143,6 +143,7 @@ public struct RootView: View {
                 BillingGateOverlay(billingStore: model.billingStore)
             }
         }
+        .blur(radius: model.settingsStore.isPresented ? NativeWebLayoutTokens.blurSmall : 0)
         .overlay {
             SettingsWindowOverlay(model: model)
         }
@@ -153,6 +154,7 @@ public struct RootView: View {
 
     private var calendarWithTools: some View {
         calendarWithOnboarding
+        .blur(radius: model.overlayStores.palette.isOpen ? NativeWebLayoutTokens.blurSmall : 0)
         .overlay {
             CommandPaletteOverlay(model: model)
         }
