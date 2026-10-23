@@ -21,8 +21,12 @@ const SUPERSEDED_BASE_META_TAGS = [
   /<meta\s+name="description"[\s\S]*?\/>/,
   /<meta\s+property="og:title"[\s\S]*?\/>/,
   /<meta\s+property="og:description"[\s\S]*?\/>/,
+  /<meta\s+property="og:image"[\s\S]*?\/>/,
+  /<meta\s+property="og:image:width"[\s\S]*?\/>/,
+  /<meta\s+property="og:image:height"[\s\S]*?\/>/,
   /<meta\s+name="twitter:title"[\s\S]*?\/>/,
   /<meta\s+name="twitter:description"[\s\S]*?\/>/,
+  /<meta\s+name="twitter:image"[\s\S]*?\/>/,
 ];
 
 /** Static HTML shell for bare `/meet`: SEO tags plus crawlable copy before React boots. */
@@ -54,9 +58,13 @@ export function renderMeetLandingHtml(baseIndexHtml: string): string {
     <meta name="twitter:image" content="${MEET_LANDING_OG_IMAGE_URL}" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
-  const html = SUPERSEDED_BASE_META_TAGS.reduce(
-    (shell, tag) => shell.replace(tag, ""),
-    baseIndexHtml.replace(/<title>[\s\S]*?<\/title>/, headExtras),
+  const shellWithoutGenericSeo = SUPERSEDED_BASE_META_TAGS.reduce(
+    (html, tag) => html.replace(tag, ""),
+    baseIndexHtml,
+  );
+  const html = shellWithoutGenericSeo.replace(
+    /<title>[\s\S]*?<\/title>/,
+    headExtras,
   );
 
   const noscript = `
