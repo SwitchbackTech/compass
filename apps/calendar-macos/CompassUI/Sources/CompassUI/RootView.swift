@@ -116,6 +116,7 @@ public struct RootView: View {
                 AuthModalOverlay(authStore: model.authStore, billingStore: model.billingStore)
             }
         }
+        .blur(radius: model.isWelcomeModalActive ? NativeWebLayoutTokens.blurSmall : 0)
         .overlay {
             OnboardingOverlay(model: model)
         }

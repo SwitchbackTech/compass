@@ -14,7 +14,7 @@ struct WelcomeModalView: View {
 
     var body: some View {
         ZStack {
-            PanelBackdropView()
+            theme.panelBackdropColor
                 .ignoresSafeArea()
             // Web `OverlayPanel` centers the panel and scrolls (`py-8`) only
             // when it is taller than the window.
@@ -175,11 +175,11 @@ struct WelcomeModalView: View {
                     .font(.rubik(14, weight: .medium))
                 ShortcutHintChip(label: hint)
             }
-            .foregroundStyle(theme.surfaceColor)
+            .foregroundStyle(theme.onAccentColor)
             .frame(maxWidth: .infinity, minHeight: 40)
             .background(theme.accentColor)
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+            .shadow(color: theme.shadowDefaultColor, radius: 6, y: 3)
         }
         .buttonStyle(.plain)
         // The keycap is a visual hint; the title alone names the button.
