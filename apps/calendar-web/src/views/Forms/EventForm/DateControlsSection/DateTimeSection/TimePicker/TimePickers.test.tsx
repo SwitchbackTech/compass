@@ -7,6 +7,7 @@ import {
   createGridEventDraft,
   replaceGridDraftSchedule,
   scheduleDatesFromDraft,
+  scheduleTimeZoneFromDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
@@ -90,11 +91,15 @@ function Harness({
   );
 
   const { startDate, endDate } = scheduleDatesFromDraft(draft);
-  const formDates = getFormDates(startDate, endDate);
   const schedule = draft.values.schedule;
   if (schedule.kind !== "timed") {
     throw new Error("expected timed schedule");
   }
+  const formDates = getFormDates(
+    startDate,
+    endDate,
+    scheduleTimeZoneFromDraft(draft),
+  );
 
   return (
     <>
@@ -166,7 +171,7 @@ describe("TimePickers", () => {
     await user.type(dateInput, "10/25");
     await user.keyboard("{Enter}");
 
-    expectDraft("2026-10-25T14:00:00+00:00", "2026-10-25T15:00:00+00:00");
+    expectDraft("2026-10-25T14:00:00Z", "2026-10-25T15:00:00Z");
   });
 
   // The compliment correction is computed on a fixed calendar-day anchor. When
@@ -186,7 +191,7 @@ describe("TimePickers", () => {
 
     // 30-minute duration preserved by starting the previous evening, rather
     // than 11:30 PM on the 24th, which would end before it starts.
-    expectDraft("2026-04-23T23:30:00+00:00", "2026-04-24T00:00:00+00:00");
+    expectDraft("2026-04-23T23:30:00Z", "2026-04-24T00:00:00Z");
   });
 
   it("moves the end to the next day when correcting it forwards past midnight", async () => {
@@ -200,7 +205,7 @@ describe("TimePickers", () => {
 
     await pick(user, "Start time", "11:30 PM");
 
-    expectDraft("2026-04-24T23:30:00+00:00", "2026-04-25T00:30:00+00:00");
+    expectDraft("2026-04-24T23:30:00Z", "2026-04-25T00:30:00Z");
   });
 
   // The day carry belongs on the date of the side the user changed. Applying
@@ -217,7 +222,7 @@ describe("TimePickers", () => {
 
     await pick(user, "Start time", "11 PM");
 
-    expectDraft("2026-04-24T23:00:00+00:00", "2026-04-25T22:00:00+00:00");
+    expectDraft("2026-04-24T23:00:00Z", "2026-04-25T22:00:00Z");
   });
 
   it("shifts the end later to keep the duration when start moves past it", async () => {
@@ -232,7 +237,7 @@ describe("TimePickers", () => {
     await pick(user, "Start time", "8 AM");
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expectDraft("2026-04-24T08:00:00+00:00", "2026-04-24T09:00:00+00:00");
+    expectDraft("2026-04-24T08:00:00Z", "2026-04-24T09:00:00Z");
   });
 
   it("shifts the start earlier to keep the duration when end moves before it", async () => {
@@ -247,7 +252,7 @@ describe("TimePickers", () => {
     await pick(user, "End time", "5 AM");
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expectDraft("2026-04-24T04:00:00+00:00", "2026-04-24T05:00:00+00:00");
+    expectDraft("2026-04-24T04:00:00Z", "2026-04-24T05:00:00Z");
   });
 
   it("shifts the start from a keyboard commit that would invert the times", async () => {
@@ -264,7 +269,7 @@ describe("TimePickers", () => {
     await user.keyboard("5 AM{Enter}");
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expectDraft("2026-04-24T04:00:00+00:00", "2026-04-24T05:00:00+00:00");
+    expectDraft("2026-04-24T04:00:00Z", "2026-04-24T05:00:00Z");
   });
 
   it("does not change the draft when Tabbing through the time pickers", async () => {
@@ -287,7 +292,7 @@ describe("TimePickers", () => {
     expect(screen.queryByText("12 AM")).not.toBeInTheDocument();
     expect(screen.getByText("1 PM")).toBeInTheDocument();
     expect(screen.getByText("2:15 PM")).toBeInTheDocument();
-    expectDraft("2026-04-24T13:00:00+00:00", "2026-04-24T14:15:00+00:00");
+    expectDraft("2026-04-24T13:00:00Z", "2026-04-24T14:15:00Z");
   });
 
   it("types 1145 on the end field after 11:30 AM as 11:45 AM", async () => {
@@ -325,7 +330,7 @@ describe("TimePickers", () => {
     await user.type(start, "12:45");
     dispatchFormModEnter(start);
 
-    expectDraft("2026-04-24T00:45:00+00:00", "2026-04-24T10:45:00+00:00");
+    expectDraft("2026-04-24T00:45:00Z", "2026-04-24T10:45:00Z");
     expect(onFormSave).toHaveBeenCalledTimes(1);
 
     onFormSave.mockClear();
@@ -352,7 +357,7 @@ describe("TimePickers", () => {
     await user.type(end, "1145");
     dispatchFormModEnter(end);
 
-    expectDraft("2026-04-24T11:30:00+00:00", "2026-04-24T11:45:00+00:00");
+    expectDraft("2026-04-24T11:30:00Z", "2026-04-24T11:45:00Z");
     expect(onFormSave).toHaveBeenCalledTimes(1);
   });
 

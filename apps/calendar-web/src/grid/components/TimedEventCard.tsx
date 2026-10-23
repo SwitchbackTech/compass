@@ -221,7 +221,7 @@ const TimedEventCardBase = (
   const eventTitle = event.title || "Untitled event";
   const timeRange =
     !event.isAllDay && event.startDate && event.endDate
-      ? getTimesLabel(event.startDate, event.endDate)
+      ? getTimesLabel(event.startDate, event.endDate, event.timeZone)
       : null;
   const recurringPrefix = isRecurring ? "Recurring " : "";
   const baseAccessibleLabel = event.isAllDay

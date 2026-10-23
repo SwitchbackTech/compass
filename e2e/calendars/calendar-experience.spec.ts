@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import dayjs from "@core/util/date/dayjs";
 import {
   ensureSidebarOpen,
   getViewSwitcherButton,
@@ -98,32 +99,19 @@ function calendar(overrides: {
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
-// Formats a local Date as RFC3339 with an explicit numeric offset (never
-// "Z"), matching the DateTimeSchema contract and staying correct regardless
-// of which timezone the test happens to run in.
+// Format an instant in the fixture calendar zone (matches pinned/hint Denver).
 function toOffsetDateTime(date: Date): string {
-  const offsetMinutes = -date.getTimezoneOffset();
-  const sign = offsetMinutes >= 0 ? "+" : "-";
-  const hours = pad(Math.floor(Math.abs(offsetMinutes) / 60));
-  const minutes = pad(Math.abs(offsetMinutes) % 60);
-  const datePart = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  const timePart = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-
-  return `${datePart}T${timePart}${sign}${hours}:${minutes}`;
+  return dayjs(date).tz(TIME_ZONE).format();
 }
 
-// A Date at today + the given minute offset from midnight local time -
-// always inside the currently-viewed week, regardless of the app's
-// week-start convention.
+// Today at `minutesFromMidnight` in the fixture calendar zone so day/week
+// views anchored on the effective calendar day still render the events.
 function todayAtMinutes(minutesFromMidnight: number): Date {
-  const now = new Date();
-  return new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    minutesFromMidnight,
-  );
+  return dayjs()
+    .tz(TIME_ZONE)
+    .startOf("day")
+    .add(minutesFromMidnight, "minute")
+    .toDate();
 }
 
 function buildEvent(

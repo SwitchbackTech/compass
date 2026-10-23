@@ -37,13 +37,9 @@ export const getTimedEventPosition = (
   event: GridEvent,
   input: EventPositionInput,
 ): EventPosition => {
-  const timeZone = getEffectiveTimeZone();
-  const start = inEffectiveTimeZone(
-    formatInstantInTimeZone(event.startDate, timeZone),
-  );
-  const end = inEffectiveTimeZone(
-    formatInstantInTimeZone(event.endDate, timeZone),
-  );
+  const timeZone = event.timeZone ?? getEffectiveTimeZone();
+  const start = inEffectiveTimeZone(event.startDate, timeZone);
+  const end = inEffectiveTimeZone(event.endDate, timeZone);
   const dateIndex =
     input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {

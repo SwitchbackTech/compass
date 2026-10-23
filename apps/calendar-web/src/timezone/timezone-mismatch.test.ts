@@ -37,6 +37,12 @@ describe("shouldShowTimezoneMismatch", () => {
     ).toBe(false);
   });
 
+  it("hides when the browser zone is an unreliable UTC spoof", () => {
+    expect(shouldShowTimezoneMismatch("America/Denver", "UTC", null)).toBe(
+      false,
+    );
+  });
+
   it("shows again after the browser zone changes", () => {
     expect(
       shouldShowTimezoneMismatch(

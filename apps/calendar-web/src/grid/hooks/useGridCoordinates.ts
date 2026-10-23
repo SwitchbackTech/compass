@@ -4,7 +4,6 @@ import {
   gridMinutesFromCivilMidnight,
   startOfCivilDay,
 } from "@core/util/date/civil-day";
-import dayjs from "@core/util/date/dayjs";
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { GRID_TIME_STEP, timedGridTopPx } from "@web/grid/grid.constants";
 import { useGridMarginLeft } from "@web/grid/grid-margin";
@@ -13,6 +12,7 @@ import {
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { nowInEffectiveTimeZone } from "@web/timezone/in-time-zone";
 
 export const useGridCoordinates = (
   measurements: GridMeasurements,
@@ -55,7 +55,10 @@ export const useGridCoordinates = (
   const getDateByXY = (x: number, y: number) => {
     const visibleDate = visibleDates[getVisibleDateIndexByX(x)]?.date;
     const timeZone = getEffectiveTimeZone();
-    const dayStart = startOfCivilDay(visibleDate ?? dayjs(), timeZone);
+    const dayStart = startOfCivilDay(
+      visibleDate ?? nowInEffectiveTimeZone(timeZone),
+      timeZone,
+    );
     const civilMinutes = civilDayLengthMinutes(dayStart, timeZone);
     const minute = Math.min(getMinuteByY(y), civilMinutes);
 

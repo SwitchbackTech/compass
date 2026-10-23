@@ -1,11 +1,20 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
+const CIVIL_DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+function civilDateKey(day: Dayjs | Date | string, timeZone: string): string {
+  if (typeof day === "string" && CIVIL_DATE_KEY.test(day.trim())) {
+    return day.trim();
+  }
+  return dayjs(day).tz(timeZone).format("YYYY-MM-DD");
+}
+
 /** Midnight at the start of `day` in `timeZone` (calendar date from `day`). */
 export function startOfCivilDay(
   day: Dayjs | Date | string,
   timeZone: string,
 ): Dayjs {
-  const key = dayjs(day).format("YYYY-MM-DD");
+  const key = civilDateKey(day, timeZone);
   return dayjs.tz(key, timeZone).startOf("day");
 }
 

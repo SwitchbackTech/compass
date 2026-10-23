@@ -28,6 +28,16 @@ describe("TimezoneMismatchBannerGate", () => {
     expect(mismatchRegion()).not.toBeInTheDocument();
   });
 
+  it("does not render when the browser reports an unreliable UTC zone", () => {
+    act(() => {
+      setBrowserTimeZoneForTests("UTC");
+      setPinnedTimeZone("America/Denver");
+    });
+
+    render(<TimezoneMismatchBannerGate />);
+    expect(mismatchRegion()).not.toBeInTheDocument();
+  });
+
   it("does not render when the pin matches the browser", () => {
     act(() => {
       setBrowserTimeZoneForTests("America/Denver");
