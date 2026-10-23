@@ -50,9 +50,12 @@ final class SettingsKeyboardIsolationTests: XCTestCase {
     func testExportSavePanelOwnsTypingAndCanBeCancelled() {
         let app = XCUIApplication.compassUITest()
         app.launchArguments += ["-COMPASS_FIXTURE", "demo"]
+        // Match the compact window from the CI hit-testing regression.
+        app.launchArguments += ["-NSWindow Frame CompassMainWindow", "0 0 720 630 0 0 1024 768 "]
         app.launch()
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
+        XCTAssertEqual(window.frame.width, 720, accuracy: 1)
         window.typeKey(",", modifierFlags: .command)
         let export = window.buttons["settings-export-data"]
         XCTAssertTrue(export.waitForExistence(timeout: 5))

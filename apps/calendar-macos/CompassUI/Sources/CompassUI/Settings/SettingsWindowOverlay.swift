@@ -44,6 +44,8 @@ public struct SettingsWindowOverlay: View {
                     .padding(.top, geometry.size.height * 0.05)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(.isModal)
             .accessibilityIdentifier("compass-native-settings")
         }
         if model.settingsStore.timezoneDialogPurpose != nil {

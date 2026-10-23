@@ -395,3 +395,5 @@ The same completed comparison shows the sidebar toggle on the native title bar. 
 ### 2026-10-22 CI reliability follow-up
 
 The Life intro capture exposed a parity-mode layout update that reapplied the Week fixture after switching views. Layout measurement now preserves the selected view; a model regression fails on the previous reset. Registered `life-view-intro` as an allowed export surface, with a native assertion that export preserves the intro modal. Settings data actions now form an explicit accessibility group, preserving the export button identity. Life intro store tests use isolated defaults and wait for dismissal completion rather than a fixed sleep.
+
+The compact-window CI follow-up reproduces Settings export hit testing at 720×630. Explicit modal accessibility grouping keeps Settings separate from the obscured calendar; the export button remains hittable and the native save panel can be typed into and cancelled at that size.
