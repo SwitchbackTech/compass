@@ -1,4 +1,9 @@
 import { MICROSOFT_REQUEST_TIMEOUT_MS } from "@sync/providers/microsoft/microsoft-http.constants";
+import {
+  isRetryableProviderHttpStatus,
+  parseRetryAfterMs,
+  withRetryableProviderHttp,
+} from "@sync/providers/provider-http-retry.util";
 
 export interface MicrosoftGraphRequestInit {
   readonly accessToken: string;
@@ -12,6 +17,24 @@ export interface MicrosoftGraphRequestInit {
 }
 
 export async function microsoftGraphRequest<T>(
+  init: MicrosoftGraphRequestInit,
+): Promise<T> {
+  return withRetryableProviderHttp(
+    () => executeMicrosoftGraphRequest<T>(init),
+    {
+      isRetryable: (error) =>
+        isRetryableProviderHttpStatus(
+          (error as { response?: { status?: number } })?.response?.status,
+        ),
+      readRetryAfterMs: (error) =>
+        parseRetryAfterMs(
+          (error as { retryAfter?: string | null })?.retryAfter ?? undefined,
+        ),
+    },
+  );
+}
+
+async function executeMicrosoftGraphRequest<T>(
   init: MicrosoftGraphRequestInit,
 ): Promise<T> {
   const headers: Record<string, string> = {
@@ -36,6 +59,7 @@ export async function microsoftGraphRequest<T>(
       response.status,
       await parseJsonOrEmpty(response),
       init.fallbackError,
+      response.headers.get("Retry-After"),
     );
   }
 
@@ -43,7 +67,12 @@ export async function microsoftGraphRequest<T>(
     error?: { message?: string };
   };
   if (!response.ok) {
-    throw microsoftGraphHttpError(response.status, data, init.fallbackError);
+    throw microsoftGraphHttpError(
+      response.status,
+      data,
+      init.fallbackError,
+      response.headers.get("Retry-After"),
+    );
   }
   return data;
 }
@@ -52,12 +81,14 @@ function microsoftGraphHttpError(
   status: number,
   data: unknown,
   fallbackError: string,
+  retryAfter: string | null,
 ): Error {
   const message =
     (data as { error?: { message?: string } } | undefined)?.error?.message ??
     fallbackError;
   return Object.assign(new Error(message), {
     response: { status, data },
+    retryAfter,
   });
 }
 

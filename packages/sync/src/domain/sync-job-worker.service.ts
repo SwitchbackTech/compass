@@ -4,6 +4,7 @@ import {
   dispatchSyncJob,
   type SyncJobDispatchDeps,
 } from "@sync/domain/sync-job-dispatch.service";
+import { isTransientProviderError } from "@sync/providers/provider-transient-error.util";
 import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 
@@ -42,8 +43,11 @@ export interface SyncJobWorkerOptions {
   // scheduler's drain onError only sees claim/settle failures; per-job engine
   // throws were previously swallowed, which left staging imports opaque. Takes
   // the job (mirroring onDrop below) so a caller can log identifiers without
-  // parsing them back out of the error message.
+  // parsing them back out of the error message. Skipped for transient provider
+  // failures that still have retries left; use onTransientRetry for those.
   onError?: (error: unknown, job: JobRecord) => void;
+  // Transient provider failure with retries remaining: log at warn, not error.
+  onTransientRetry?: (error: unknown, job: JobRecord) => void;
   // Called when dispatch drops a job (settled complete without doing its work:
   // vanished target, unusable credential). Drops are correct behavior, but an
   // invisible drop path made a mass credential problem look like a dead sweep
@@ -115,6 +119,7 @@ export class SyncJobWorker {
   readonly #backoff: (attempt: number, now: Date) => Date;
   readonly #now: () => Date;
   readonly #onError: (error: unknown, job: JobRecord) => void;
+  readonly #onTransientRetry: (error: unknown, job: JobRecord) => void;
   readonly #onDrop: (job: JobRecord, reason: string) => void;
   readonly #onFail: (job: JobRecord, error?: unknown) => void;
   readonly #excludeKinds?: JobRecord["kind"][];
@@ -138,6 +143,7 @@ export class SyncJobWorker {
       ((attempt, now) => jitteredBackoff(attempt, now, random));
     this.#now = options.now ?? (() => new Date());
     this.#onError = options.onError ?? (() => {});
+    this.#onTransientRetry = options.onTransientRetry ?? (() => {});
     this.#onDrop = options.onDrop ?? (() => {});
     this.#onFail = options.onFail ?? (() => {});
     this.#excludeKinds = options.excludeKinds;
@@ -203,15 +209,19 @@ export class SyncJobWorker {
       // failure kind collapses into one opaque "attempt N failed" issue and
       // the real error hides in event properties.
       const lastError = sanitizeJobLastError(error);
-      this.#onError(
-        new Error(
-          `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed${
-            lastError ? `: ${lastError}` : ""
-          }`,
-          { cause: error instanceof Error ? error : undefined },
-        ),
-        job,
+      const wrapped = new Error(
+        `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed${
+          lastError ? `: ${lastError}` : ""
+        }`,
+        { cause: error instanceof Error ? error : undefined },
       );
+      const willRetry =
+        isTransientProviderError(wrapped) && job.attempt < this.#maxAttempts;
+      if (willRetry) {
+        this.#onTransientRetry(wrapped, job);
+      } else {
+        this.#onError(wrapped, job);
+      }
       await this.#settleFailure(job, error);
       return;
     }

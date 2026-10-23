@@ -60,6 +60,30 @@ describe("microsoftGraphRequest", () => {
     }
   });
 
+  it("retries a 429 after Retry-After and then succeeds", async () => {
+    const fetchMock = mock(() => {
+      if (fetchMock.mock.calls.length === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: { message: "throttled" } }), {
+            status: 429,
+            headers: { "Retry-After": "0", "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return Promise.resolve(jsonResponse(200, { id: "cal-2" }));
+    });
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const data = await microsoftGraphRequest<{ id: string }>({
+      accessToken: "token-1",
+      url: "https://graph.microsoft.com/v1.0/me/calendars",
+      fallbackError: "microsoft_calendar_list_failed",
+    });
+
+    expect(data).toEqual({ id: "cal-2" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("skips the JSON body on a successful emptyOk delete", async () => {
     const fetchMock = mock(() =>
       Promise.resolve(new Response(null, { status: 204 })),

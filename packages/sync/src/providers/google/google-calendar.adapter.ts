@@ -8,6 +8,7 @@ import {
 } from "@core/types/gcal";
 import { type CalendarAccessRole } from "@core/types/sync/connection.contracts";
 import { capabilitiesForAccessRole } from "@sync/providers/calendar-role-capabilities";
+import { withGoogleApiRetry } from "@sync/providers/google/google-api-retry";
 import {
   googleFailureCause,
   googleStatus,
@@ -20,6 +21,7 @@ import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
+import { mapWithConcurrency } from "@sync/util/map-with-concurrency";
 
 // One page of a Google calendar-list read, narrowed to the fields discovery
 // needs. Google returns `nextSyncToken` only on the final page; intermediate
@@ -58,6 +60,8 @@ export type GoogleCalendarListApiFactory = (
   accessToken: string,
 ) => GoogleCalendarListApi;
 
+const GOOGLE_CALENDAR_LABEL_FETCH_CONCURRENCY = 4;
+
 const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
@@ -68,15 +72,17 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
   });
   return {
     async listPage({ pageToken, syncToken }) {
-      const { data } = await gcal.calendarList.list({
-        pageToken,
-        syncToken,
-        // Default false on a full list, which would silently omit hidden and
-        // deleted calendars rather than let us report them inactive. Opt in so
-        // discovery sees the same set an incremental (syncToken) list forces.
-        showHidden: true,
-        showDeleted: true,
-      });
+      const { data } = await withGoogleApiRetry(() =>
+        gcal.calendarList.list({
+          pageToken,
+          syncToken,
+          // Default false on a full list, which would silently omit hidden and
+          // deleted calendars rather than let us report them inactive. Opt in so
+          // discovery sees the same set an incremental (syncToken) list forces.
+          showHidden: true,
+          showDeleted: true,
+        }),
+      );
       return {
         items: data.items ?? [],
         nextPageToken: data.nextPageToken ?? null,
@@ -86,7 +92,9 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
     async getEventLabels(calendarId) {
       let data: gSchema$Calendar;
       try {
-        ({ data } = await gcal.calendars.get({ calendarId }));
+        ({ data } = await withGoogleApiRetry(() =>
+          gcal.calendars.get({ calendarId }),
+        ));
       } catch {
         // A label-fetch failure (permissions, transient error) should never
         // fail calendar discovery — the calendar just discovers with no
@@ -129,8 +137,10 @@ export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
       const page = await this.#listPage(api, { pageToken, syncToken });
       // Label resolution is a per-calendar network call; run a page's calendars
       // concurrently rather than paying N sequential round-trips.
-      const mapped = await Promise.all(
-        page.items.map((item) => mapCalendar(item, api)),
+      const mapped = await mapWithConcurrency(
+        page.items,
+        GOOGLE_CALENDAR_LABEL_FETCH_CONCURRENCY,
+        (item) => mapCalendar(item, api),
       );
       for (const calendar of mapped) {
         if (calendar) calendars.push(calendar);

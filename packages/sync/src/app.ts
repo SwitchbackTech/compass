@@ -647,6 +647,13 @@ function buildSchedulers(
       },
       owner,
       {
+        onTransientRetry: (error, job) =>
+          logger.warn(
+            `Sync job engine will retry for resource ${
+              job.resourceId ?? "none (connection-wide)"
+            } on connection ${job.connectionId}`,
+            error,
+          ),
         onError: (error, job) =>
           logSyncJobEngineError(
             logger,
