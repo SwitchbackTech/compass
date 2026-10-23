@@ -190,7 +190,6 @@ extension NativeCalendarRootModel {
     /// that day's events (W1, W12). Before that they belong to quick-time, so
     /// this returns false.
     public func handleEventJumpDigit(_ digit: Character) -> Bool {
-        defer { eventJumpTimeBurstEndedAt = Date() }
         let buffer = eventJumpSelection.dayJumpBuffer
         guard !buffer.isEmpty, buffer != "s" else { return false }
         eventJumpCommitTask?.cancel()
@@ -222,23 +221,20 @@ extension NativeCalendarRootModel {
     private func commitTypedTimeOnPickedDay(appending digit: Character) -> Bool {
         guard eventJumpSelection.activeDayKeys.count == 1 else { return false }
         let now = Date()
-        if let ended = eventJumpTimeBurstEndedAt,
-            now.timeIntervalSince(ended) >= DayJumpKeys.typedTimeWindow
-        {
-            eventJumpTimeBurstDigits = ""
+        let recent = eventJumpTimeBurst.filter {
+            now.timeIntervalSince($0.at) < DayJumpKeys.typedTimeWindow
         }
-        eventJumpTimeBurstDigits.append(digit)
-        guard !QuickTime.canBufferGrow(eventJumpTimeBurstDigits) else { return false }
-        let burst = eventJumpTimeBurstDigits
-        resetEventJumpTimeBurst()
+        eventJumpTimeBurst = recent + [(digit: digit, at: now)]
+        let burst = String(eventJumpTimeBurst.map(\.digit))
+        guard !QuickTime.canBufferGrow(burst) else { return false }
+        eventJumpTimeBurst = []
         draftStore.setQuickTimeDigits(burst)
         commitQuickTimeIfBuffered()
         return true
     }
 
     private func resetEventJumpTimeBurst() {
-        eventJumpTimeBurstDigits = ""
-        eventJumpTimeBurstEndedAt = nil
+        eventJumpTimeBurst = []
     }
 
     /// Web `commitFocus`: keep the day selected so the next digit picks again.

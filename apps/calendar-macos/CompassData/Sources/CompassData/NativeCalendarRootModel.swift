@@ -141,9 +141,7 @@ public final class NativeCalendarRootModel {
     var blockPartyModHoldTask: Task<Void, Never>?
     var eventJumpCommitTask: Task<Void, Never>?
     /// Digits typed after a day pick, for web's typed-time create on that column.
-    @ObservationIgnored var eventJumpTimeBurstDigits = ""
-    /// When the last digit handler finished; gaps measure idle time between key events.
-    @ObservationIgnored var eventJumpTimeBurstEndedAt: Date?
+    @ObservationIgnored var eventJumpTimeBurst: [(digit: Character, at: Date)] = []
     /// Parked create target after an empty-grid click (web `event-jump.store` pointer draft).
     @ObservationIgnored var pointerDraftDateKey: String?
     @ObservationIgnored var pointerDraftStartISO: String?
