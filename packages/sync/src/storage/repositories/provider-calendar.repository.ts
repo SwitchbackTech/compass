@@ -103,6 +103,31 @@ export class ProviderCalendarRepository {
     return retired.map((r) => r._id);
   }
 
+  // Mark inactive specific calendars (still listed at the provider but events
+  // reads prove gone). Returns ids that transitioned active -> inactive.
+  async deactivateByIds(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    ids: readonly ProviderCalendarId[],
+  ): Promise<ProviderCalendarId[]> {
+    if (ids.length === 0) return [];
+    const filter: Filter<ProviderCalendarRecord> = {
+      tenantId,
+      principalId,
+      _id: { $in: [...ids] },
+      active: true,
+    };
+    const retired = await this.collection
+      .find(filter)
+      .project<{ _id: ProviderCalendarId }>({ _id: 1 })
+      .toArray();
+    if (retired.length === 0) return [];
+    await this.collection.updateMany(filter, {
+      $set: { active: false, updatedAt: new Date() },
+    });
+    return retired.map((r) => r._id);
+  }
+
   async listByConnection(
     tenantId: TenantId,
     principalId: PrincipalId,

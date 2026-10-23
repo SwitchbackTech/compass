@@ -2,6 +2,7 @@ import {
   type ProviderCalendarId,
   type ProviderCalendarSourceId,
 } from "@core/types/sync/identity.contracts";
+import { applyInactiveCalendarSideEffects } from "@sync/domain/calendar-retirement";
 import { discoverCalendarsWithAuthRetry } from "@sync/domain/discover-calendars-with-auth-retry";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
@@ -227,16 +228,11 @@ export async function syncCalendarList(
     ]),
   ];
   if (inactiveIds.length > 0) {
-    await deps.resources.clearSubscriptionsByCalendarIds(
+    await applyInactiveCalendarSideEffects(
+      deps.resources,
       tenantId,
       principalId,
       inactiveIds,
-    );
-    await deps.resources.setCalendarActiveByCalendarIds(
-      tenantId,
-      principalId,
-      inactiveIds,
-      false,
     );
   }
   const activeIds = upserted.filter((r) => r.active).map((r) => r._id);
