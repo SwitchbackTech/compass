@@ -79,7 +79,7 @@ const FORM_TIMEOUT = 10000;
  * swallowed by Chromium chrome; this matches the app's pressKey utility and
  * the `]` sidebar helper that already works in e2e.
  */
-const pressShortcut = async (
+export const pressShortcut = async (
   page: Page,
   key: string,
   modifiers: {
@@ -437,7 +437,9 @@ export const openTimedEventFormWithKeyboard = async (page: Page) => {
   const titleInput = getFormTitleInput(page);
 
   if (!(await titleInput.isVisible().catch(() => false))) {
-    await dispatchDocumentKey(page, "c");
+    await blurActiveElement(page);
+    await page.locator("#mainGrid").focus();
+    await page.keyboard.press("c");
   }
 
   await titleInput.waitFor({ state: "visible", timeout: FORM_TIMEOUT });

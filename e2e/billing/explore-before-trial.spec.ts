@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+  dispatchDocumentKey,
   getViewSwitcherButton,
-  openTimedEventFormWithKeyboard,
 } from "../utils/event-test-utils";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
@@ -243,8 +243,7 @@ test("event create opens the draft without the trial step", async ({
   await expect(
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
-  await openTimedEventFormWithKeyboard(page);
-
+  await dispatchDocumentKey(page, "c");
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
   await expect(titleInput).toBeVisible();
   await expect(
@@ -273,7 +272,7 @@ test("save opens the trial step and closing keeps the draft without a ghost even
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
   await calendarsLoaded;
-  await openTimedEventFormWithKeyboard(page);
+  await dispatchDocumentKey(page, "c");
   const draftTitle = "Explore gate on save";
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
   await expect(titleInput).toBeVisible({ timeout: 15000 });
