@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { isPublicBookingPath } from "@core/booking/booking-telemetry";
 import {
-  posthogInternalOrTestUserRegistration,
-  shouldRegisterInternalOrTestUserFromEmail,
+  shouldRegisterSyntheticAccount,
+  syntheticAccountPosthogRegistration,
 } from "@web/auth/posthog/posthog-audience-filter.util";
 import { usePostHog } from "@web/auth/posthog/posthog-react";
 
@@ -15,6 +15,7 @@ import { usePostHog } from "@web/auth/posthog/posthog-react";
 export function useIdentifyUser(
   profileEmail: string | null,
   userId: string | null,
+  isSynthetic?: boolean | null,
 ): void {
   const posthog = usePostHog();
   useEffect(() => {
@@ -30,10 +31,16 @@ export function useIdentifyUser(
       posthog &&
       typeof posthog.identify === "function"
     ) {
-      posthog.identify(userId, { email: profileEmail, user_id: userId });
-      if (shouldRegisterInternalOrTestUserFromEmail(profileEmail)) {
-        posthog.register(posthogInternalOrTestUserRegistration());
+      posthog.identify(userId, {
+        email: profileEmail,
+        user_id: userId,
+        ...(isSynthetic ? { is_synthetic: true } : {}),
+      });
+      if (
+        shouldRegisterSyntheticAccount({ email: profileEmail, isSynthetic })
+      ) {
+        posthog.register(syntheticAccountPosthogRegistration());
       }
     }
-  }, [profileEmail, posthog, userId]);
+  }, [isSynthetic, profileEmail, posthog, userId]);
 }

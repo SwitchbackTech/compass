@@ -133,6 +133,14 @@ const CompassConfigSchema = z
         webhookSecret: optionalString,
         priceId: optionalString,
         publishableKey: optionalString,
+        /** 100% off coupon or promotion_code id for synthetic journey checkout only. */
+        syntheticJourneyDiscountId: optionalString,
+      })
+      .nullish(),
+    journeys: z
+      .object({
+        /** Base emails for Playwright journey legs (same values as GitHub secrets). */
+        syntheticEmails: z.array(z.string()).optional(),
       })
       .nullish(),
     // Operator pause switch for trial/billing gates, independent of whether

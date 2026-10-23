@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { COMPASS_SYNTHETIC_ACCOUNT_HEADER } from "@core/analytics/synthetic-account.util";
 import {
   createEventTitle,
   expectTimedEventVisible,
@@ -28,6 +29,11 @@ const credentialEnvPrefix = (): string => {
 
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1280, height: 800 } });
+test.use({
+  extraHTTPHeaders: {
+    [COMPASS_SYNTHETIC_ACCOUNT_HEADER]: "true",
+  },
+});
 
 test(`staging full journey (${provider || "unset"})`, async ({ page }) => {
   test.skip(

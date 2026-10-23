@@ -16,6 +16,7 @@ import {
 import { BookingRoutes } from "@backend/booking/booking.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { type CommonRoutesConfig } from "@backend/common/common.routes.config";
+import { syntheticSignupHeaderMiddleware } from "@backend/common/context/synthetic-signup.context";
 import corsWhitelist from "@backend/common/middleware/cors.middleware";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
 import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
@@ -60,6 +61,7 @@ export const initExpressServer = () => {
   // 400, so this route is handled before either of them.
   mountStripeWebhook(app);
   mountResendEmailWebhook(app);
+  app.use(syntheticSignupHeaderMiddleware());
   app.use(supertokensMiddleware());
   app.use(express.json({ limit: HTTP_JSON_BODY_LIMIT }));
 

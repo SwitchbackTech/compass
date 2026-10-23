@@ -4,6 +4,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { emailSendRepository } from "@backend/email/email-send.repository";
 import { buildWelcomeEnrollmentRows } from "@backend/email/welcome-sequence";
 import { isPreviewLoopRecipient } from "@backend/email/welcome-sequence.preview-loop";
+import { resolveSyntheticAccountFromEmail } from "@backend/user/synthetic-account.service";
 
 export function isWelcomeEmailEnabled(): boolean {
   return CONFIG.EMAIL_PROVIDER !== undefined;
@@ -21,9 +22,15 @@ export async function enrollWelcomeSequenceForNewUser(
 
   const user = await mongoService.user.findOne(
     { _id: userId },
-    { projection: { email: 1 } },
+    { projection: { email: 1, isSynthetic: 1 } },
   );
   if (user?.email && isPreviewLoopRecipient(user.email)) {
+    return;
+  }
+  if (
+    user?.email &&
+    resolveSyntheticAccountFromEmail(user.email, user.isSynthetic)
+  ) {
     return;
   }
 

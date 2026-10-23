@@ -17,3 +17,17 @@ Create GitHub Environment `staging-journey` with:
 
 Each matrix leg sets `STAGING_JOURNEY_PROVIDER` and fails fast when that leg's
 email/password secrets are missing.
+
+## Synthetic accounts
+
+Journey signups are tagged server-side (`isSynthetic`, PostHog
+`$internal_or_test_user` and `is_synthetic`), excluded from welcome email and
+billing funnel analytics, and marked with the `X-Compass-Synthetic-Account:
+true` header from Playwright.
+
+On staging/production backend config (`compass.yaml`), set
+`journeys.syntheticEmails` to the same base addresses as the GitHub secrets
+below (comma-separated via deploy env `SYNTHETIC_JOURNEY_EMAILS` when needed).
+For prod journey checkout, set `stripe.syntheticJourneyDiscountId` to a 100%
+off Stripe coupon or promotion code id (`STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID`
+in deploy env).
