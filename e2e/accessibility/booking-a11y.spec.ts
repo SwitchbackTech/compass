@@ -20,6 +20,7 @@ import {
   preparePublicBookingReschedulePage,
   prepareSignedInBookingSettingsPage,
   releaseSettingsMod,
+  SETUP_WIZARD_FORWARD_BUTTON,
 } from "../booking/booking-harness";
 import { expectNoAxeViolations } from "../utils/axe-assertion";
 
@@ -691,7 +692,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog
@@ -704,7 +705,7 @@ test.describe("settings booking section", () => {
       }),
     ).toBeVisible();
     await expect(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     ).toBeEnabled();
     await expect(
       settingsDialog.getByRole("combobox", { name: "Monday start" }),
@@ -724,7 +725,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog
@@ -732,7 +733,7 @@ test.describe("settings booking section", () => {
         .filter({ hasText: /^Step 2 of \d+$/ }),
     ).toBeVisible();
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /^Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog.getByRole("heading", { name: "How long is a meeting?" }),
@@ -753,7 +754,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog
@@ -761,10 +762,10 @@ test.describe("settings booking section", () => {
         .filter({ hasText: /^Step 2 of \d+$/ }),
     ).toBeVisible();
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /^Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /^Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog
@@ -780,7 +781,7 @@ test.describe("settings booking section", () => {
       settingsDialog.getByRole("button", { name: "Connect Google Calendar" }),
     ).toBeVisible();
     await expect(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     ).toBeDisabled();
     await expectNoAxeViolations(page, {
       checkpoint: "settings booking first-run zero-calendar destination",
@@ -797,7 +798,7 @@ test.describe("settings booking section", () => {
     });
     const settingsDialog = page.getByRole("dialog", { name: "Settings" });
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog
@@ -805,10 +806,10 @@ test.describe("settings booking section", () => {
         .filter({ hasText: /^Step 2 of \d+$/ }),
     ).toBeVisible();
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /^Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /^Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog.getByRole("heading", { name: "Ready to go live" }),
@@ -846,7 +847,7 @@ test.describe("settings booking section", () => {
         .filter({ hasText: /^Step 1 of \d+$/ }),
     ).toBeVisible();
     await dispatchClick(
-      settingsDialog.getByRole("button", { name: /Continue/ }),
+      settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
     );
     await expect(
       settingsDialog.getByRole("alert").filter({
