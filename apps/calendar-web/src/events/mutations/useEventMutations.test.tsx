@@ -2762,4 +2762,34 @@ describe("undo history recording", () => {
     expect(cached.ids).toHaveLength(0);
     resetBillingWriteLockForTests();
   });
+
+  test("blocks promoted recurring writes while awaiting checkout", () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId);
+    context.queryClient.setQueryData(calendarKey, normalized(first));
+
+    recurrenceScopeOpportunityActions.begin({
+      kind: "delete",
+      original: first,
+      source: "local",
+    });
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (!opportunity) throw new Error("Expected a recurrence opportunity");
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    expect(context.calls).toHaveLength(0);
+    expect(
+      useRecurrenceScopeOpportunityStore.getState().opportunity,
+    ).toBeNull();
+    resetBillingWriteLockForTests();
+  });
 });

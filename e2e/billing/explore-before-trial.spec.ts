@@ -230,6 +230,8 @@ test("opening settings does not open the trial step", async ({ page }) => {
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
 });
 
 test("event create opens the draft without the trial step", async ({
@@ -269,8 +271,7 @@ test("save opens the trial step and closing keeps the draft without a ghost even
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
   await calendarsLoaded;
-  await page.locator("#mainGrid").focus();
-  await page.keyboard.press("c");
+  await openTimedEventFormWithKeyboard(page);
   const draftTitle = "Explore gate on save";
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
   await expect(titleInput).toBeVisible({ timeout: 15000 });
