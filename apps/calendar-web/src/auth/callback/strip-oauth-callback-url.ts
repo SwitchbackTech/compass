@@ -19,8 +19,15 @@ export function oauthCallbackSearchHasParams(search: string): boolean {
 /**
  * Drops provider callback query params from the address bar so a reload cannot
  * re-enter the OAuth exchange. Call after reading `location.search` into memory.
+ *
+ * Prefer `replaceInHistory` (TanStack Router's history) so the SPA stack stays
+ * aligned with the browser when the user later uses back/forward.
  */
-export function stripOAuthCallbackQueryFromHistory(): void {
+export function stripOAuthCallbackQueryFromHistory(
+  replaceInHistory: (pathWithHash: string) => void = (pathWithHash) => {
+    window.history.replaceState(window.history.state, "", pathWithHash);
+  },
+): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -30,5 +37,5 @@ export function stripOAuthCallbackQueryFromHistory(): void {
   }
 
   const nextUrl = `${window.location.pathname}${window.location.hash}`;
-  window.history.replaceState(window.history.state, "", nextUrl);
+  replaceInHistory(nextUrl);
 }

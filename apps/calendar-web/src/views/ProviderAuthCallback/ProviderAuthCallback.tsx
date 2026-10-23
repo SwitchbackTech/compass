@@ -8,6 +8,7 @@ import { reportAuthCallbackCrash } from "@web/auth/callback/report-auth-callback
 import { resolveStaleProviderOAuthReplay } from "@web/auth/callback/resolve-stale-provider-oauth-replay";
 import { stripOAuthCallbackQueryFromHistory } from "@web/auth/callback/strip-oauth-callback-url";
 import { useOneShotAuthCallback } from "@web/auth/callback/useOneShotAuthCallback";
+import { useRedirectStaleProviderOAuthReplay } from "@web/auth/callback/useRedirectStaleProviderOAuthReplay";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { trackOAuthSignupFailed } from "@web/auth/posthog/oauth-signup-funnel";
 import {
@@ -42,7 +43,9 @@ export async function completeProviderAuthCallback({
   navigate,
   search,
 }: CompleteProviderAuthCallbackOptions): Promise<void> {
-  stripOAuthCallbackQueryFromHistory();
+  stripOAuthCallbackQueryFromHistory((path) =>
+    navigate(path, { replace: true }),
+  );
 
   const staleReturnPath = await resolveStaleProviderOAuthReplay({
     provider,
@@ -108,6 +111,15 @@ export function ProviderAuthCallbackView() {
     providerParam &&
     isSignInProviderKind(providerParam) &&
     shouldRelayDesktopOAuthCallback(oauthState, false);
+
+  useRedirectStaleProviderOAuthReplay(
+    providerParam && isSignInProviderKind(providerParam)
+      ? providerParam
+      : "google",
+    Boolean(
+      providerParam && isSignInProviderKind(providerParam) && !shouldRelay,
+    ),
+  );
 
   useOneShotAuthCallback(() => {
     if (shouldRelay) {
