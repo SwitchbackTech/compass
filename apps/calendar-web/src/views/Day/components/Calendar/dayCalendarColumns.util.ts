@@ -4,6 +4,7 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEventVisibleOnGrid } from "@web/events/visibility/filter-events-visible-on-grid";
+import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { isAllDayEventOnDay } from "./dayAllDayRows.util";
 
@@ -34,8 +35,17 @@ const eligibleCalendarsInOrder = (calendars: Calendar[]): Calendar[] => {
   return calendars.slice(0, 1);
 };
 
-const isTimedEventOnDay = (event: GridEvent, dateInView: Dayjs) =>
-  inEffectiveTimeZone(event.startDate).isSame(dateInView, "day");
+const isTimedEventOnDay = (event: GridEvent, dateInView: Dayjs) => {
+  const viewZone = getEffectiveTimeZone();
+  const eventZone = event.timeZone ?? viewZone;
+  const viewDay = inEffectiveTimeZone(dateInView, viewZone).format(
+    "YYYY-MM-DD",
+  );
+  const eventDay = inEffectiveTimeZone(event.startDate, eventZone).format(
+    "YYYY-MM-DD",
+  );
+  return viewDay === eventDay;
+};
 
 export const calendarIdsWithVisibleEventsOnDay = ({
   allDayEvents,
