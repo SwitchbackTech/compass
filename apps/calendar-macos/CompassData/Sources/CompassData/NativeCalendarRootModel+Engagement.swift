@@ -110,6 +110,10 @@ extension NativeCalendarRootModel {
             openBookingSettings()
         case "s" where showsLocalModeConnectPrompt:
             startTrialFromLocalModePrompt()
+        case "h" where timezoneMismatchCopy != nil:
+            switchToDeviceTimeZone()
+        case "p" where timezoneMismatchCopy != nil:
+            keepPinnedTimeZone()
         default:
             return false
         }

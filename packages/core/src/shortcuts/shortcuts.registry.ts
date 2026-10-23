@@ -570,6 +570,18 @@ export const SHORTCUTS_REGISTRY = [
     label: "Show second timezone",
     section: "other",
   },
+  {
+    id: "other-timezone-mismatch-switch",
+    keys: ["H"],
+    label: "Switch to device timezone (mismatch banner)",
+    section: "other",
+  },
+  {
+    id: "other-timezone-mismatch-keep",
+    keys: ["P"],
+    label: "Keep calendar timezone (mismatch banner)",
+    section: "other",
+  },
 ] as const satisfies readonly Shortcut[];
 
 export type ShortcutRegistryId = (typeof SHORTCUTS_REGISTRY)[number]["id"];

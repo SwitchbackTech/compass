@@ -856,6 +856,22 @@
       ],
       "label": "Show second timezone",
       "section": "other"
+    },
+    {
+      "id": "other-timezone-mismatch-switch",
+      "keys": [
+        "H"
+      ],
+      "label": "Switch to device timezone (mismatch banner)",
+      "section": "other"
+    },
+    {
+      "id": "other-timezone-mismatch-keep",
+      "keys": [
+        "P"
+      ],
+      "label": "Keep calendar timezone (mismatch banner)",
+      "section": "other"
     }
   ],
   "bindings": {
@@ -1135,6 +1151,12 @@
     ],
     "other-time-travel": [
       "z"
+    ],
+    "other-timezone-mismatch-switch": [
+      "H"
+    ],
+    "other-timezone-mismatch-keep": [
+      "P"
     ]
   },
   "keymap": {

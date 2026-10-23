@@ -5,6 +5,14 @@ import {
 } from "@core/shortcuts/shortcuts.registry";
 import { shortcutWhenMatches } from "@web/shortcuts/shortcut-when.util";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
+import {
+  getPinnedTimeZone,
+  getTrackedBrowserTimeZone,
+} from "@web/timezone/effective-timezone.store";
+import {
+  getTimezoneMismatchSnoozedBrowser,
+  isTimezoneMismatchBannerActive,
+} from "@web/timezone/timezone-mismatch";
 
 export { SHORTCUTS_REGISTRY, type ShortcutRegistryId };
 
@@ -53,6 +61,17 @@ export const filterShortcutsByContext = (
   }));
 
   return shortcuts.filter((shortcut) => {
+    if (
+      shortcut.id === "other-timezone-mismatch-switch" ||
+      shortcut.id === "other-timezone-mismatch-keep"
+    ) {
+      return isTimezoneMismatchBannerActive(
+        getPinnedTimeZone(),
+        getTrackedBrowserTimeZone(),
+        getTimezoneMismatchSnoozedBrowser(),
+      );
+    }
+
     // Filter by view
     if (view === "life") {
       // Life view shows only life-specific navigate + other shortcuts, plus

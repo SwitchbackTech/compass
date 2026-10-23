@@ -1,3 +1,9 @@
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  TIMEZONE_MISMATCH_KEEP_SHORTCUT_KEY,
+  TIMEZONE_MISMATCH_SWITCH_SHORTCUT_KEY,
+  useNoticeActionShortcut,
+} from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 import { timezoneMismatchCopy } from "@web/timezone/timezone-mismatch";
 
 export function TimezoneMismatchBanner({
@@ -16,6 +22,9 @@ export function TimezoneMismatchBanner({
     calendarZone,
   );
 
+  useNoticeActionShortcut(TIMEZONE_MISMATCH_SWITCH_SHORTCUT_KEY, onSwitch);
+  useNoticeActionShortcut(TIMEZONE_MISMATCH_KEEP_SHORTCUT_KEY, onKeep);
+
   return (
     <section
       aria-label="Timezone mismatch"
@@ -25,18 +34,20 @@ export function TimezoneMismatchBanner({
       <p>{message}</p>
       <div className="flex shrink-0 gap-2">
         <button
-          className="c-focus-ring rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
+          className="c-focus-ring inline-flex items-center gap-2 rounded-xs px-2 py-1 font-medium text-text hover:bg-surface-overlay"
           onClick={onSwitch}
           type="button"
         >
           {switchLabel}
+          <ShortcutKeys keys={TIMEZONE_MISMATCH_SWITCH_SHORTCUT_KEY} />
         </button>
         <button
-          className="c-focus-ring rounded-xs px-2 py-1 text-text hover:bg-surface-overlay"
+          className="c-focus-ring inline-flex items-center gap-2 rounded-xs px-2 py-1 text-text hover:bg-surface-overlay"
           onClick={onKeep}
           type="button"
         >
           {keepLabel}
+          <ShortcutKeys keys={TIMEZONE_MISMATCH_KEEP_SHORTCUT_KEY} />
         </button>
       </div>
     </section>
