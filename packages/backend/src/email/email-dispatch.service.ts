@@ -130,6 +130,9 @@ export class EmailDispatchService {
   };
 
   #runCycle = (): void => {
+    if (this.#pendingCycle) {
+      return;
+    }
     const cycle = this.dispatchDue().catch((error: unknown) => {
       logger.error(
         "Welcome email dispatch cycle failed",
@@ -234,6 +237,21 @@ export class EmailDispatchService {
     }
 
     try {
+      const freshContext = await loadBookingHostEmailDispatchContext({
+        userId: row.userId,
+        reservationId: row.reservationId!,
+      });
+      if (
+        !freshContext ||
+        isBookingHostEmailStopped(freshContext.user.emailPreferences)
+      ) {
+        await emailSendRepository.markCanceled(row._id);
+        return;
+      }
+      if (!(await emailSendRepository.isQueued(row._id))) {
+        return;
+      }
+
       const result = await this.getProvider().send({
         idempotencyKey: row._id,
         to: context.user.email,
@@ -242,7 +260,13 @@ export class EmailDispatchService {
         text: rendered.text,
         headers,
       });
-      await emailSendRepository.markSent(row._id, result.messageId);
+      const marked = await emailSendRepository.markSent(
+        row._id,
+        result.messageId,
+      );
+      if (!marked) {
+        return;
+      }
       void emailAnalytics.capture({
         event: "email_sent",
         userId: userIdHex,
@@ -375,6 +399,15 @@ export class EmailDispatchService {
     }
 
     try {
+      const freshUser = await loadWelcomeSequenceUser(row.userId);
+      if (!freshUser || isEmailSequenceStopped(freshUser.emailPreferences)) {
+        await emailSendRepository.markCanceled(row._id);
+        return;
+      }
+      if (!(await emailSendRepository.isQueued(row._id))) {
+        return;
+      }
+
       const result = await this.getProvider().send({
         idempotencyKey: row._id,
         to: user.email,
@@ -384,7 +417,13 @@ export class EmailDispatchService {
         },
         headers,
       });
-      await emailSendRepository.markSent(row._id, result.messageId);
+      const marked = await emailSendRepository.markSent(
+        row._id,
+        result.messageId,
+      );
+      if (!marked) {
+        return;
+      }
       void emailAnalytics.capture({
         event: "email_sent",
         userId: userIdHex,
