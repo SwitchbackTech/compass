@@ -243,9 +243,20 @@ test("event create opens the draft without the trial step", async ({
   await expect(
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
+  await page.waitForFunction(() => {
+    const lock = (
+      window as Window & {
+        __COMPASS_E2E_BILLING_WRITE_LOCK__?: {
+          locked: boolean;
+          status: string | null;
+        };
+      }
+    ).__COMPASS_E2E_BILLING_WRITE_LOCK__;
+    return lock?.locked === true && lock.status === "awaiting_checkout";
+  });
   await dispatchDocumentKey(page, "c");
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
+  await expect(titleInput).toBeVisible({ timeout: 15000 });
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
