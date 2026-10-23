@@ -120,12 +120,20 @@ class EmailSendRepository {
     id: string,
     providerMessageId: string,
   ): Promise<EmailSendRecord | null> {
-    return patchRow({ _id: id }, (now) => ({
+    return patchRow({ _id: id, status: "queued" }, (now) => ({
       status: "sent",
       providerMessageId,
       sentAt: now,
       lastError: null,
     }));
+  }
+
+  async isQueued(id: string): Promise<boolean> {
+    const row = await mongoService.emailSend.findOne(
+      { _id: id, status: "queued" },
+      { projection: { _id: 1 } },
+    );
+    return row !== null;
   }
 
   async markSkipped(

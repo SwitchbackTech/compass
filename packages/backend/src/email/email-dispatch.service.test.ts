@@ -7,7 +7,15 @@ import { emailSendRepository } from "@backend/email/email-send.repository";
 import * as emailClient from "@backend/email/providers/email.client";
 import * as welcomeContext from "@backend/email/welcome-sequence.context";
 import * as previewLoop from "@backend/email/welcome-sequence.preview-loop";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const baseRow = (overrides: Partial<EmailSendRecord> = {}): EmailSendRecord => {
   const userId = overrides.userId ?? new ObjectId();
@@ -35,6 +43,10 @@ const baseRow = (overrides: Partial<EmailSendRecord> = {}): EmailSendRecord => {
 describe("EmailDispatchService", () => {
   const originalProvider = CONFIG.EMAIL_PROVIDER;
   const originalAllowlist = [...CONFIG.EMAIL_ALLOWLIST];
+
+  beforeEach(() => {
+    spyOn(emailSendRepository, "isQueued").mockResolvedValue(true);
+  });
 
   afterEach(() => {
     CONFIG.EMAIL_PROVIDER = originalProvider;
@@ -210,6 +222,37 @@ describe("EmailDispatchService", () => {
     expect(send.mock.calls[0]?.[0].headers["List-Unsubscribe-Post"]).toBe(
       "List-Unsubscribe=One-Click",
     );
+  });
+
+  it("cancels before send when the user unsubscribes after the row was claimed", async () => {
+    CONFIG.EMAIL_PROVIDER = "log";
+    const row = baseRow();
+    const send = mock(async () => ({ messageId: "msg-1" }));
+    spyOn(emailClient, "buildEmailProvider").mockReturnValue({
+      send,
+      verifyWebhook: () => [],
+    });
+    spyOn(emailSendRepository, "claimDue").mockResolvedValue([row]);
+    spyOn(emailSendRepository, "isQueued").mockResolvedValue(true);
+    const markCanceled = spyOn(
+      emailSendRepository,
+      "markCanceled",
+    ).mockResolvedValue(row);
+    const loadUser = spyOn(welcomeContext, "loadWelcomeSequenceUser");
+    loadUser.mockResolvedValueOnce({
+      email: "guest@example.com",
+      billing: undefined,
+    });
+    loadUser.mockResolvedValueOnce({
+      email: "guest@example.com",
+      billing: undefined,
+      emailPreferences: { unsubscribedAt: new Date() },
+    });
+
+    await new EmailDispatchService().dispatchDue();
+
+    expect(markCanceled).toHaveBeenCalledWith(row._id);
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("cancels queued rows for unsubscribed users without calling the provider", async () => {

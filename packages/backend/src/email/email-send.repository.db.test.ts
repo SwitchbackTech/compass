@@ -149,4 +149,16 @@ describe("emailSendRepository", () => {
     expect(byStep["queued-step"]).toBe("canceled");
     expect(byStep["sent-step"]).toBe("sent");
   });
+
+  it("markSent leaves canceled rows unchanged", async () => {
+    const row = buildRow();
+    await emailSendRepository.insertMany([row]);
+    await emailSendRepository.markCanceled(row._id!);
+
+    const marked = await emailSendRepository.markSent(row._id!, "msg-late");
+    expect(marked).toBeNull();
+
+    const stored = await mongoService.emailSend.findOne({ _id: row._id });
+    expect(stored?.status).toBe("canceled");
+  });
 });
