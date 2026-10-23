@@ -2,29 +2,9 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { parseUserDate } from "@web/common/utils/datetime/web.date.util";
 import { formatEventFormDateLabel } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateField.util";
 
-export type EventFormDateFieldClosedKey =
-  | "ArrowDown"
-  | "ArrowUp"
-  | "Enter"
-  | " ";
+const CLOSED_FIELD_KEYS = ["ArrowDown", "ArrowUp", "Enter", " "] as const;
 
-export type EventFormDateCalendarKey =
-  | "ArrowLeft"
-  | "ArrowRight"
-  | "ArrowUp"
-  | "ArrowDown"
-  | "Enter"
-  | " "
-  | "Escape";
-
-const CLOSED_FIELD_KEYS = new Set<string>([
-  "ArrowDown",
-  "ArrowUp",
-  "Enter",
-  " ",
-]);
-
-const CALENDAR_KEYS = new Set<string>([
+const CALENDAR_KEYS = [
   "ArrowLeft",
   "ArrowRight",
   "ArrowUp",
@@ -32,15 +12,22 @@ const CALENDAR_KEYS = new Set<string>([
   "Enter",
   " ",
   "Escape",
-]);
+] as const;
+
+export type EventFormDateFieldClosedKey = (typeof CLOSED_FIELD_KEYS)[number];
+
+export type EventFormDateCalendarKey = (typeof CALENDAR_KEYS)[number];
+
+const closedFieldKeys: ReadonlySet<string> = new Set(CLOSED_FIELD_KEYS);
+const calendarKeys: ReadonlySet<string> = new Set(CALENDAR_KEYS);
 
 export const isEventFormDateFieldClosedKey = (
   key: string,
-): key is EventFormDateFieldClosedKey => CLOSED_FIELD_KEYS.has(key);
+): key is EventFormDateFieldClosedKey => closedFieldKeys.has(key);
 
 export const isEventFormDateCalendarKey = (
   key: string,
-): key is EventFormDateCalendarKey => CALENDAR_KEYS.has(key);
+): key is EventFormDateCalendarKey => calendarKeys.has(key);
 
 type EventFormDateCalendarAction =
   | { kind: "moveCursor"; days: number }

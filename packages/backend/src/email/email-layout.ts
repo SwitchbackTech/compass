@@ -1,4 +1,4 @@
-import { escapeHtml } from "@backend/common/helpers/escape-html";
+import { escapeHtml } from "@core/util/escape-html.util";
 import { type WelcomeEmailContentEntry } from "@backend/email/welcome-sequence.content";
 
 const UTM_PARAMS = "utm_source=email&utm_campaign=welcome";

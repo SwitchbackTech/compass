@@ -1,3 +1,4 @@
+import { escapeHtml } from "@core/util/escape-html.util";
 import { meetingSetupRootHref } from "@web/booking/meeting-setup.search";
 import {
   MEET_LANDING_CANONICAL_URL,
@@ -14,6 +15,15 @@ const MEET_LANDING_OG_IMAGE_URL =
 
 const MEET_LANDING_OG_TITLE =
   "Simple booking page for your calendar | Compass Calendar";
+
+/** Base shell tags the landing page replaces with its own SEO values. */
+const SUPERSEDED_BASE_META_TAGS = [
+  /<meta\s+name="description"[\s\S]*?\/>/,
+  /<meta\s+property="og:title"[\s\S]*?\/>/,
+  /<meta\s+property="og:description"[\s\S]*?\/>/,
+  /<meta\s+name="twitter:title"[\s\S]*?\/>/,
+  /<meta\s+name="twitter:description"[\s\S]*?\/>/,
+];
 
 /** Static HTML shell for bare `/meet`: SEO tags plus crawlable copy before React boots. */
 export function renderMeetLandingHtml(baseIndexHtml: string): string {
@@ -33,31 +43,28 @@ export function renderMeetLandingHtml(baseIndexHtml: string): string {
 
   const headExtras = `
     <title>${MEET_LANDING_HTML_TITLE}</title>
-    <meta name="description" content="${escapeHtmlAttr(MEET_LANDING_META_DESCRIPTION)}" />
+    <meta name="description" content="${escapeHtml(MEET_LANDING_META_DESCRIPTION)}" />
     <link rel="canonical" href="${MEET_LANDING_CANONICAL_URL}" />
     <meta property="og:url" content="${MEET_LANDING_CANONICAL_URL}" />
-    <meta property="og:title" content="${escapeHtmlAttr(MEET_LANDING_OG_TITLE)}" />
-    <meta property="og:description" content="${escapeHtmlAttr(MEET_LANDING_META_DESCRIPTION)}" />
+    <meta property="og:title" content="${escapeHtml(MEET_LANDING_OG_TITLE)}" />
+    <meta property="og:description" content="${escapeHtml(MEET_LANDING_META_DESCRIPTION)}" />
     <meta property="og:image" content="${MEET_LANDING_OG_IMAGE_URL}" />
-    <meta name="twitter:title" content="${escapeHtmlAttr(MEET_LANDING_OG_TITLE)}" />
-    <meta name="twitter:description" content="${escapeHtmlAttr(MEET_LANDING_META_DESCRIPTION)}" />
+    <meta name="twitter:title" content="${escapeHtml(MEET_LANDING_OG_TITLE)}" />
+    <meta name="twitter:description" content="${escapeHtml(MEET_LANDING_META_DESCRIPTION)}" />
     <meta name="twitter:image" content="${MEET_LANDING_OG_IMAGE_URL}" />
     <script type="application/ld+json">${jsonLd}</script>`;
 
-  let html = baseIndexHtml.replace(/<title>[\s\S]*?<\/title>/, headExtras);
-
-  html = html.replace(/<meta\s+name="description"[\s\S]*?\/>/, "");
-  html = html.replace(/<meta\s+property="og:title"[\s\S]*?\/>/, "");
-  html = html.replace(/<meta\s+property="og:description"[\s\S]*?\/>/, "");
-  html = html.replace(/<meta\s+name="twitter:title"[\s\S]*?\/>/, "");
-  html = html.replace(/<meta\s+name="twitter:description"[\s\S]*?\/>/, "");
+  const html = SUPERSEDED_BASE_META_TAGS.reduce(
+    (shell, tag) => shell.replace(tag, ""),
+    baseIndexHtml.replace(/<title>[\s\S]*?<\/title>/, headExtras),
+  );
 
   const noscript = `
     <noscript>
       <main>
-        <h1>${escapeHtmlText(MEET_LANDING_HEADLINE)}</h1>
-        <p>${escapeHtmlText(MEET_LANDING_SUPPORTING)}</p>
-        <p><a href="${meetingSetupRootHref()}">${escapeHtmlText(MEET_LANDING_CTA_LABEL)}</a></p>
+        <h1>${escapeHtml(MEET_LANDING_HEADLINE)}</h1>
+        <p>${escapeHtml(MEET_LANDING_SUPPORTING)}</p>
+        <p><a href="${meetingSetupRootHref()}">${escapeHtml(MEET_LANDING_CTA_LABEL)}</a></p>
       </main>
     </noscript>`;
 
@@ -65,20 +72,6 @@ export function renderMeetLandingHtml(baseIndexHtml: string): string {
     '<div id="root"></div>',
     `${noscript}\n    <div id="root"></div>`,
   );
-}
-
-function escapeHtmlAttr(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("<", "&lt;");
-}
-
-function escapeHtmlText(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
 }
 
 export async function writeMeetLandingHtml(outdir: string): Promise<void> {
