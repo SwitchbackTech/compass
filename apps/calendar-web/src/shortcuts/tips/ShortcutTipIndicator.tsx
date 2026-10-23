@@ -11,7 +11,7 @@ import {
   getHintPlainText,
   type RankedShortcutHint,
 } from "@web/shortcuts/tips/shortcut-tips.data";
-import { setTipsMuted } from "@web/shortcuts/tips/shortcut-tips-muted.store";
+import { visibleShortcutHintActions } from "@web/shortcuts/tips/visible-shortcut-hint.store";
 
 const isWriteHint = (featureArea: RankedShortcutHint["featureArea"]) =>
   featureArea === "event_creation" || featureArea === "event_editing";
@@ -38,6 +38,11 @@ export const ShortcutTipIndicator: FC<{
     [actionId, featureArea, id, reasonCode, suggestionText],
   );
 
+  useEffect(() => {
+    visibleShortcutHintActions.setSidebarHint({ id, parts: hint.parts });
+    return () => visibleShortcutHintActions.clearSidebarHint();
+  }, [hint.parts, id]);
+
   const showLock = locked && isWriteHint(featureArea);
   const hintBody = (
     <span
@@ -49,7 +54,7 @@ export const ShortcutTipIndicator: FC<{
       role="status"
       tabIndex={showLock ? 0 : undefined}
     >
-      <ShortcutTipParts parts={hint.parts} />
+      <ShortcutTipParts hintId={id} parts={hint.parts} />
       {showLock ? (
         <>
           <span className="sr-only"> Premium shortcut.</span>
@@ -68,15 +73,6 @@ export const ShortcutTipIndicator: FC<{
   );
 
   return (
-    <div className="flex w-full min-w-0 flex-col items-center gap-0.5">
-      {body}
-      <button
-        className="c-focus-ring rounded-xs px-1 text-text-muted text-xs leading-5 opacity-80 hover:text-text-primary hover:opacity-100"
-        onClick={() => setTipsMuted(true)}
-        type="button"
-      >
-        Hide tips
-      </button>
-    </div>
+    <div className="flex w-full min-w-0 flex-col items-center">{body}</div>
   );
 };

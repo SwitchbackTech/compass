@@ -6,6 +6,7 @@ enum ShortcutUsageStorageKeys {
     static let tipsMuted = "compass.shortcuts.tips-muted"
     static let levelCelebrated = "compass.shortcuts.level-celebrated"
     static let tipRotationIndex = "compass.shortcuts.tip-rotation-index"
+    static let hintFirstUsed = "compass.shortcuts.hint-first-used"
 }
 
 struct ShortcutUsageProfile: Codable, Equatable, Sendable {

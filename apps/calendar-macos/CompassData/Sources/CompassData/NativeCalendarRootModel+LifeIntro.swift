@@ -11,7 +11,8 @@ extension NativeCalendarRootModel {
             onLifeView: viewStore.view == .life,
             authenticated: isSignedIn,
             userMetadataLoaded: onboardingStore.userMetadataLoaded,
-            seenOnServer: LifeViewIntroGating.readSeenFromMetadata(syncConnectionsStore.userMetadata))
+            seenOnServer: LifeViewIntroGating.readSeenFromMetadata(
+                syncConnectionsStore.lastLoadedMetadata))
     }
 
     public func dismissLifeViewIntro(reason: LifeViewIntroDismissReason) {

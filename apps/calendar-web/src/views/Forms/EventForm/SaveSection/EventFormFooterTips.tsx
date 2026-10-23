@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { buildEventFormFooterTipParts } from "@core/shortcuts/event-form-footer-tips";
 import {
   selectFirstEventCelebrating,
@@ -10,14 +11,12 @@ import {
   useEventFormFocusStore,
 } from "@web/shortcuts/tips/event-form-focus.store";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
-import {
-  getShortcutHint,
-  type ShortcutTipPart,
-} from "@web/shortcuts/tips/shortcut-tips.data";
+import { getShortcutHint } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
   setTipsMuted,
   useIsTipsMuted,
 } from "@web/shortcuts/tips/shortcut-tips-muted.store";
+import { visibleShortcutHintActions } from "@web/shortcuts/tips/visible-shortcut-hint.store";
 
 /** Context-aware keyboard tips pinned under the Save bar in the event form. */
 export function EventFormFooterTips() {
@@ -29,18 +28,38 @@ export function EventFormFooterTips() {
   const firstEventDone = useFirstEventPromptStore(selectFirstEventDone);
   const isCelebrating = useFirstEventPromptStore(selectFirstEventCelebrating);
 
-  if (tipsMuted || !focusInsideForm) return null;
-
-  let parts: readonly ShortcutTipPart[];
-  if (!firstEventDone && !isCelebrating) {
-    parts = getShortcutHint("first-event-save").parts;
-  } else {
-    parts = buildEventFormFooterTipParts({
+  const hint = useMemo(() => {
+    if (tipsMuted || !focusInsideForm) return null;
+    if (!firstEventDone && !isCelebrating) {
+      return getShortcutHint("first-event-save");
+    }
+    const parts = buildEventFormFooterTipParts({
       focusInsideForm,
       tabNavigationApplies,
     });
-  }
-  if (parts.length === 0) return null;
+    if (parts.length === 0) return null;
+    return { id: "save-draft" as const, parts };
+  }, [
+    firstEventDone,
+    focusInsideForm,
+    isCelebrating,
+    tabNavigationApplies,
+    tipsMuted,
+  ]);
+
+  useEffect(() => {
+    if (!hint) {
+      visibleShortcutHintActions.clearFormFooterHint();
+      return;
+    }
+    visibleShortcutHintActions.setFormFooterHint({
+      id: hint.id,
+      parts: hint.parts,
+    });
+    return () => visibleShortcutHintActions.clearFormFooterHint();
+  }, [hint]);
+
+  if (!hint) return null;
 
   return (
     <div
@@ -51,7 +70,7 @@ export function EventFormFooterTips() {
         aria-live="polite"
         className="block w-full text-pretty break-words text-center text-text-muted text-xs leading-5 opacity-80"
       >
-        <ShortcutTipParts parts={parts} />
+        <ShortcutTipParts hintId={hint.id} parts={hint.parts} />
       </p>
       <button
         className="c-focus-ring rounded-xs px-1 text-text-muted text-xs leading-5 opacity-80 hover:text-text-primary hover:opacity-100"

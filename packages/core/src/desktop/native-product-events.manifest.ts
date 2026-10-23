@@ -12,4 +12,5 @@ export const NATIVE_PRODUCT_EVENT_CALL_SITES = [
   "shortcut_invoked",
   "shortcut_level_up",
   "shortcut_level_badge_toggled",
+  "hint_shortcut_first_used",
 ] as const;
