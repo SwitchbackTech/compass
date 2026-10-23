@@ -203,6 +203,8 @@ export const REGISTRY_RUNTIME_KEY_SOURCES: Record<string, readonly string[]> = {
   "other-undo": hotkeyKeycaps(KEYMAP.undo.hotkey),
   "other-redo": hotkeyKeycaps(KEYMAP.redo.hotkey),
   "other-time-travel": APP_SHORTCUT_BINDINGS.otherTimeTravel.keycaps,
+  "notice-timezone-switch": ["H"],
+  "notice-timezone-keep": ["P"],
 };
 
 /** Edit-sequence legend rows derive from the shared field table. */

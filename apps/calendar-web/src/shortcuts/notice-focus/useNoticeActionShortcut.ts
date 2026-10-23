@@ -33,6 +33,12 @@ export const COPY_LINK_SHORTCUT_KEY = "L" as const;
  * nav-up-next, so this banner does not claim it. */
 export const NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY = "A" as const;
 
+/** Timezone mismatch banner: switch the pin to the device zone. */
+export const TIMEZONE_MISMATCH_SWITCH_SHORTCUT_KEY = "H" as const;
+
+/** Timezone mismatch banner: keep the pinned calendar zone. */
+export const TIMEZONE_MISMATCH_KEEP_SHORTCUT_KEY = "P" as const;
+
 export type NoticeActionKey =
   | typeof TOAST_PRIMARY_ACTION_KEY
   | typeof START_TRIAL_SHORTCUT_KEY
@@ -40,7 +46,9 @@ export type NoticeActionKey =
   | typeof DEMO_EVENTS_BANNER_SHORTCUT_KEY
   | typeof MEETING_PAGE_NUDGE_SHORTCUT_KEY
   | typeof COPY_LINK_SHORTCUT_KEY
-  | typeof NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY;
+  | typeof NOTIFICATION_PERMISSION_BANNER_SHORTCUT_KEY
+  | typeof TIMEZONE_MISMATCH_SWITCH_SHORTCUT_KEY
+  | typeof TIMEZONE_MISMATCH_KEEP_SHORTCUT_KEY;
 
 const activeNoticeActionKeys = new Set<NoticeActionKey>();
 

@@ -9,6 +9,10 @@ public enum TimeZoneFormatting {
         utcLikeTimeZoneIds.contains(identifier)
     }
 
+    public static func isTrustedDeviceTimeZone(_ identifier: String) -> Bool {
+        !isUtcLikeTimeZone(identifier)
+    }
+
     public static func isValidTimeZone(_ identifier: String) -> Bool {
         TimeZone(identifier: identifier) != nil
     }

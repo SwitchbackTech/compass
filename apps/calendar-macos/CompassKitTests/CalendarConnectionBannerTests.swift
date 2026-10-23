@@ -55,6 +55,8 @@ final class TimezoneMismatchTests: XCTestCase {
         XCTAssertFalse(TimezoneMismatch.shouldShow(pinned: "America/Denver", device: "America/Denver", snoozedFor: nil))
         XCTAssertTrue(TimezoneMismatch.shouldShow(pinned: "Europe/Paris", device: "America/Denver", snoozedFor: nil))
         XCTAssertFalse(TimezoneMismatch.shouldShow(pinned: "Europe/Paris", device: "America/Denver", snoozedFor: "America/Denver"))
+        XCTAssertFalse(TimezoneMismatch.shouldShow(pinned: "America/Denver", device: "UTC", snoozedFor: nil))
+        XCTAssertFalse(TimezoneMismatch.shouldShow(pinned: "America/Denver", device: "UTC", snoozedFor: nil))
     }
 
     func testCopyNamesBothCities() {

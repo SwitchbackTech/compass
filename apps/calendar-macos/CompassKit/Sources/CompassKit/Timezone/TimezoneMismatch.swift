@@ -11,6 +11,7 @@ public enum TimezoneMismatch {
 
     public static func shouldShow(pinned: String?, device: String, snoozedFor: String?) -> Bool {
         guard let pinned else { return false }
+        guard TimeZoneFormatting.isTrustedDeviceTimeZone(device) else { return false }
         return pinned != device && snoozedFor != device
     }
 

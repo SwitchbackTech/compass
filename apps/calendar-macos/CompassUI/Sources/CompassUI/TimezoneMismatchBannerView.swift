@@ -22,8 +22,16 @@ public struct TimezoneMismatchBannerView: View {
                 .foregroundStyle(theme.textMutedColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 8) {
-                BannerTextButton(label: copy.switchLabel, weight: .medium, action: onSwitch)
-                BannerTextButton(label: copy.keepLabel, weight: .regular, action: onKeep)
+                BannerTextButton(
+                    label: copy.switchLabel,
+                    shortcut: "H",
+                    weight: .medium,
+                    action: onSwitch)
+                BannerTextButton(
+                    label: copy.keepLabel,
+                    shortcut: "P",
+                    weight: .regular,
+                    action: onKeep)
             }
             .fixedSize()
         }
@@ -43,18 +51,22 @@ private struct BannerTextButton: View {
     @Environment(\.nativeWebTheme) private var theme
     @State private var isHovered = false
     let label: String
+    let shortcut: String
     let weight: RubikWeight
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(label)
-                .font(.rubik(12, weight: weight))
-                .foregroundStyle(theme.textColor)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(isHovered ? theme.surfaceOverlayColor : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
+            HStack(spacing: 6) {
+                Text(label)
+                    .font(.rubik(12, weight: weight))
+                    .foregroundStyle(theme.textColor)
+                ShortcutHintChip(label: shortcut)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(isHovered ? theme.surfaceOverlayColor : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault))
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }

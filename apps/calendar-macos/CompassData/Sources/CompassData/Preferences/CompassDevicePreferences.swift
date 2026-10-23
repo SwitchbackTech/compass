@@ -69,9 +69,15 @@ public enum CompassDevicePreferences {
     ) -> String? {
         guard let pinned = readPinnedTimeZone(from: storage) else { return nil }
         guard TimeZoneFormatting.isUtcLikeTimeZone(pinned) else { return pinned }
-        let browser = TimeZone.current.identifier
-        guard !TimeZoneFormatting.isUtcLikeTimeZone(browser) else { return pinned }
         let snoozed = storage.string(forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+        if let snoozed, !TimeZoneFormatting.isUtcLikeTimeZone(snoozed) {
+            return pinned
+        }
+        let browser = TimeZone.current.identifier
+        if TimeZoneFormatting.isUtcLikeTimeZone(browser) {
+            writePinnedTimeZone(nil, to: storage)
+            return nil
+        }
         if snoozed == browser { return pinned }
         writePinnedTimeZone(nil, to: storage)
         return nil
