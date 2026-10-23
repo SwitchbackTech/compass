@@ -81,6 +81,7 @@ const eventToGridEvent = (
     isAllDay,
     startDate,
     endDate,
+    ...(schedule.kind === "timed" ? { timeZone: schedule.timeZone } : {}),
     recurrence: gridRecurrenceFromEvent(event),
     updatedAt: event.updatedAt ?? undefined,
     position: gridEventDefaultPosition,

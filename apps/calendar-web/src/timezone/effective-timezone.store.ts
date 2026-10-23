@@ -16,6 +16,8 @@ import {
 } from "@web/timezone/timezone-mismatch";
 import { isUtcLikeTimeZone } from "@web/timezone/utc-like-timezone";
 
+const calendarTimeZoneHintStore = createExternalStore<string | null>(null);
+
 function readPinnedTimeZone(): string | null {
   const raw = persistentBrowserStore.get(STORAGE_KEYS.DEFAULT_TIMEZONE);
   if (!raw || raw.trim().length === 0 || !isValidTimeZone(raw)) {
@@ -29,11 +31,15 @@ export function shouldClearAccidentalUtcPin(pinned: string): boolean {
   if (!isUtcLikeTimeZone(pinned)) {
     return false;
   }
-  const browser = getBrowserTimeZone();
-  if (isUtcLikeTimeZone(browser)) {
+  const snoozed = getTimezoneMismatchSnoozedBrowser();
+  if (snoozed !== null && !isUtcLikeTimeZone(snoozed)) {
     return false;
   }
-  return getTimezoneMismatchSnoozedBrowser() !== browser;
+  const browser = getBrowserTimeZone();
+  if (isUtcLikeTimeZone(browser)) {
+    return true;
+  }
+  return snoozed !== browser;
 }
 
 function repairAccidentalUtcPinInStorage(): void {
@@ -55,8 +61,39 @@ function applyDayjsDefault(timeZone: string): void {
   dayjs.setDefaultTimezone(timeZone);
 }
 
+export function getCalendarTimeZoneHint(): string | null {
+  return calendarTimeZoneHintStore.get();
+}
+
+export function setCalendarTimeZoneHint(timeZone: string | null): void {
+  if (timeZone !== null && !isValidTimeZone(timeZone)) {
+    return;
+  }
+  if (calendarTimeZoneHintStore.get() === timeZone) {
+    return;
+  }
+  calendarTimeZoneHintStore.set(timeZone);
+  syncEffectiveTimeZone();
+}
+
+function autoEffectiveTimeZone(): string {
+  const hint = calendarTimeZoneHintStore.get();
+  if (hint) {
+    return hint;
+  }
+  const browser = browserTimeZoneStore.get();
+  if (!isUtcLikeTimeZone(browser)) {
+    return browser;
+  }
+  return browser;
+}
+
 function currentEffectiveTimeZone(): string {
-  return pinnedTimeZoneStore.get() ?? browserTimeZoneStore.get();
+  const pinned = pinnedTimeZoneStore.get();
+  if (pinned !== null) {
+    return pinned;
+  }
+  return autoEffectiveTimeZone();
 }
 
 function syncEffectiveTimeZone(): void {
@@ -79,6 +116,11 @@ export function hydrateEffectiveTimeZonePreference(): void {
   repairAccidentalUtcPinInStorage();
   pinnedTimeZoneStore.set(readPinnedTimeZone());
   refreshEffectiveTimeZoneFromBrowser();
+}
+
+/** Called when calendar list or hint changes after initial hydrate. */
+export function syncEffectiveTimeZoneFromPreferences(): void {
+  syncEffectiveTimeZone();
 }
 
 export function getPinnedTimeZone(): string | null {
@@ -132,6 +174,7 @@ if (typeof document !== "undefined") {
 function subscribe(onChange: () => void): () => void {
   const unsubscribePinned = pinnedTimeZoneStore.subscribe(onChange);
   const unsubscribeBrowser = browserTimeZoneStore.subscribe(onChange);
+  const unsubscribeHint = calendarTimeZoneHintStore.subscribe(onChange);
   const unsubscribeStorage = subscribeToStorageKey(
     STORAGE_KEYS.DEFAULT_TIMEZONE,
     refreshPinnedFromStorage,
@@ -140,6 +183,7 @@ function subscribe(onChange: () => void): () => void {
   return () => {
     unsubscribePinned();
     unsubscribeBrowser();
+    unsubscribeHint();
     unsubscribeStorage();
   };
 }
@@ -152,8 +196,12 @@ export function usePinnedTimeZone(): string | null {
   return useSyncExternalStore(subscribe, getPinnedTimeZone);
 }
 
-function getStoredBrowserTimeZone(): string {
+export function getTrackedBrowserTimeZone(): string {
   return browserTimeZoneStore.get();
+}
+
+function getStoredBrowserTimeZone(): string {
+  return getTrackedBrowserTimeZone();
 }
 
 export function useBrowserTimeZone(): string {
@@ -179,6 +227,7 @@ export function setBrowserTimeZoneForTests(timeZone: string): void {
 export function resetEffectiveTimeZoneStoreForTests(): void {
   persistentBrowserStore.remove(STORAGE_KEYS.DEFAULT_TIMEZONE);
   pinnedTimeZoneStore.set(null);
+  calendarTimeZoneHintStore.set(null);
   browserTimeZoneStore.set(getBrowserTimeZone());
   syncEffectiveTimeZone();
   resetTimezoneMismatchSnoozeForTests();

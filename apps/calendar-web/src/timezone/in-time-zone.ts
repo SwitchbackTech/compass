@@ -16,3 +16,10 @@ export function calendarDateInEffectiveTimeZone(
 ): dayjs.Dayjs {
   return dayjs.tz(ymd, timeZone);
 }
+
+/** Current instant as wall clock in the effective calendar zone. */
+export function nowInEffectiveTimeZone(
+  timeZone: string = getEffectiveTimeZone(),
+): dayjs.Dayjs {
+  return dayjs().tz(timeZone);
+}

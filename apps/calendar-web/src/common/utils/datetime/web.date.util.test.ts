@@ -20,7 +20,10 @@ import {
   toUTCOffset,
   tryMapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
-import { setPinnedTimeZone } from "@web/timezone/effective-timezone.store";
+import {
+  resetEffectiveTimeZoneStoreForTests,
+  setPinnedTimeZone,
+} from "@web/timezone/effective-timezone.store";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import {
   afterAll,
@@ -368,6 +371,32 @@ describe("getHourLabels", () => {
     ];
     expect(dayTimes).toEqual(expected);
   });
+
+  it("labels civil hours in the calendar zone when reference is a UTC host Date", () => {
+    const denver = "America/Denver";
+    setPinnedTimeZone(denver);
+    const labels = getHourLabels(
+      true,
+      new Date("2026-10-21T17:00:00.000Z"),
+      denver,
+    );
+    expect(labels[5]).toBe("6 AM");
+    expect(labels[11]).toBe("12 PM");
+    resetEffectiveTimeZoneStoreForTests();
+  });
+});
+
+describe("getTimeOptionByValue in calendar zone", () => {
+  const denver = "America/Denver";
+
+  it("formats instants in Denver, not the host local zone", () => {
+    const option = getTimeOptionByValue(
+      dayjs("2026-10-21T18:00:00.000Z"),
+      denver,
+    );
+    expect(option.value).toBe("12:00 PM");
+    expect(option.label).toBe("12 PM");
+  });
 });
 
 describe("getColorsByHour", () => {
@@ -432,12 +461,18 @@ describe("toUTCOffset", () => {
   });
 
   it("includes a TZ offset - when passing Date object", () => {
-    const result = toUTCOffset(new Date());
-    validateResult(result);
+    setPinnedTimeZone("America/Denver");
+    try {
+      const result = toUTCOffset(new Date("2026-10-21T18:00:00.000Z"));
+      validateResult(result);
+      expect(result).toContain("T12:00:00");
+    } finally {
+      resetEffectiveTimeZoneStoreForTests();
+    }
   });
 
   it("includes a TZ offset - when passing a dayjs object", () => {
-    const d = dayjs();
+    const d = dayjs("2026-10-21T18:00:00.000Z");
     const resultFromDayJsObj = toUTCOffset(d);
     validateResult(resultFromDayJsObj);
   });

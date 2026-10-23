@@ -16,7 +16,11 @@ import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
-import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
+import {
+  calendarDateInEffectiveTimeZone,
+  inEffectiveTimeZone,
+  nowInEffectiveTimeZone,
+} from "@web/timezone/in-time-zone";
 
 interface SelectedDates {
   startDate: Date;
@@ -47,17 +51,20 @@ export const getDayjsByTimeValue = (timeValue: string) => {
 
 export const getHourLabels = (
   includeMidnight = false,
-  referenceDay: Dayjs | Date | string = dayjs(),
+  referenceDay: Dayjs | Date | string = nowInEffectiveTimeZone(),
   timeZone: string = getEffectiveTimeZone(),
 ) =>
   civilHourLineInstants(referenceDay, timeZone, includeMidnight).map(
-    (instant) => instant.format(HOURS_AM_SHORT_FORMAT),
+    (instant) => instant.tz(timeZone).format(HOURS_AM_SHORT_FORMAT),
   );
 
 const getTimeLabel = (value: string) => value.replace(":00", "");
 
-export const getTimeOptionByValue = (date: Dayjs): TimeOption => {
-  const value = dayjs(date).format(HOURS_AM_FORMAT);
+export const getTimeOptionByValue = (
+  date: Dayjs,
+  timeZone: string = getEffectiveTimeZone(),
+): TimeOption => {
+  const value = inEffectiveTimeZone(date, timeZone).format(HOURS_AM_FORMAT);
   const label = getTimeLabel(value);
 
   return {
@@ -214,7 +221,9 @@ export const parseUserTime = (
     ));
   }
 
-  return getTimeOptionByValue(dayjs().startOf("day").hour(hour).minute(minute));
+  return getTimeOptionByValue(
+    nowInEffectiveTimeZone().startOf("day").hour(hour).minute(minute),
+  );
 };
 
 const MONTH_NAME_TO_INDEX: Record<string, number> = {
@@ -428,9 +437,13 @@ export const filterTimeOption = (
   );
 };
 
-export const getTimesLabel = (startDate: string, endDate: string) => {
-  const start = _getTimeLabel(startDate);
-  const end = _getTimeLabel(endDate);
+export const getTimesLabel = (
+  startDate: string,
+  endDate: string,
+  timeZone: string = getEffectiveTimeZone(),
+) => {
+  const start = _getTimeLabel(startDate, timeZone);
+  const end = _getTimeLabel(endDate, timeZone);
   const startMinimal = _cleanStartMeridiem(start, end);
 
   const label = `${startMinimal} - ${end}`;
@@ -474,13 +487,20 @@ export { getBrowserTimeZone } from "@web/timezone/browser-timezone";
 
 export const mapToBackend = (s: SelectedDates): EventSchedule => {
   if (s.isAllDay) {
-    const startDate = dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT);
-    let endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
+    const timeZone = getEffectiveTimeZone();
+    const startDate = inEffectiveTimeZone(s.startDate, timeZone).format(
+      YEAR_MONTH_DAY_FORMAT,
+    );
+    let endDate = inEffectiveTimeZone(s.endDate, timeZone).format(
+      YEAR_MONTH_DAY_FORMAT,
+    );
 
     // A same-day selection is normalized to an exclusive end by adding one
     // day; a multi-day selection's end already represents an exclusive day.
     if (startDate === endDate) {
-      endDate = dayjs(endDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
+      endDate = calendarDateInEffectiveTimeZone(endDate, timeZone)
+        .add(1, "day")
+        .format(YEAR_MONTH_DAY_FORMAT);
     }
 
     return EventScheduleSchema.parse({
@@ -519,15 +539,22 @@ export const tryMapToBackend = (s: SelectedDates): MapToBackendResult => {
 // convert to a string format that the backend/gcal/mongo accepts:
 // '2022-02-04 12:15' -> '2022-02-04T12:15:00-06:00'
 export const toUTCOffset = (date: string | Dayjs | Date) => {
-  if (typeof date === "string" || date instanceof Date) {
+  if (typeof date === "string") {
     return dayjs(date).format();
-  } else return date.format(); // then already a DayJs object
+  }
+  if (date instanceof Date) {
+    return inEffectiveTimeZone(date).format();
+  }
+  return date.format();
 };
 
 const _addTimesToDates = (dt: SelectedDates, timeZone: string) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
+  const startYmd = inEffectiveTimeZone(dt.startDate, timeZone).format(
+    YEAR_MONTH_DAY_FORMAT,
+  );
   const startDate = dayjs
-    .tz(dt.startDate, timeZone)
+    .tz(startYmd, timeZone)
     .hour(start.hour())
     .minute(start.minute())
     .second(0)
@@ -538,8 +565,11 @@ const _addTimesToDates = (dt: SelectedDates, timeZone: string) => {
   // Use endDate (not startDate) so overnight / multi-day timed drafts keep
   // their real end calendar day. Applying the end clock time onto startDate
   // made 11:30 PM → 12:30 AM parse as inverted and blocked Save.
+  const endYmd = inEffectiveTimeZone(dt.endDate, timeZone).format(
+    YEAR_MONTH_DAY_FORMAT,
+  );
   const endDate = dayjs
-    .tz(dt.endDate, timeZone)
+    .tz(endYmd, timeZone)
     .hour(end.hour())
     .minute(end.minute())
     .second(0)
@@ -561,8 +591,10 @@ const _cleanStartMeridiem = (start: string, end: string) => {
   return start;
 };
 
-const _getTimeLabel = (date: string) =>
-  getTimeLabel(inEffectiveTimeZone(date).format(HOURS_AM_FORMAT));
+const _getTimeLabel = (
+  date: string,
+  timeZone: string = getEffectiveTimeZone(),
+) => getTimeLabel(inEffectiveTimeZone(date, timeZone).format(HOURS_AM_FORMAT));
 
 export const computeCurrentEventDateRange = (
   to: {

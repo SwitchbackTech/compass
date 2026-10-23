@@ -37,7 +37,7 @@ export function CalendarTimeColumn({ at }: { at: Date }) {
   return (
     <div
       aria-hidden="true"
-      className="absolute top-0 z-1 h-full"
+      className="absolute top-0 z-1 flex h-full flex-row"
       style={
         {
           width: marginLeft,

@@ -4,16 +4,33 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 import { createStorageBackedStore } from "@web/common/utils/external-store.util";
 import { formatTimeZoneAbbreviation } from "@web/timezone/format-timezone-abbreviation";
 import { timeZoneCityName } from "@web/timezone/timezone-catalog";
+import { isTrustedDeviceTimeZone } from "@web/timezone/utc-like-timezone";
 
 export function shouldShowTimezoneMismatch(
   pinnedTimeZone: string | null,
   browserTimeZone: string,
   snoozedForBrowser: string | null,
 ): boolean {
+  if (pinnedTimeZone === null) {
+    return false;
+  }
+  if (!isTrustedDeviceTimeZone(browserTimeZone)) {
+    return false;
+  }
   return (
-    pinnedTimeZone !== null &&
-    pinnedTimeZone !== browserTimeZone &&
-    snoozedForBrowser !== browserTimeZone
+    pinnedTimeZone !== browserTimeZone && snoozedForBrowser !== browserTimeZone
+  );
+}
+
+export function isTimezoneMismatchBannerActive(
+  pinnedTimeZone: string | null,
+  browserTimeZone: string,
+  snoozedForBrowser: string | null,
+): boolean {
+  return shouldShowTimezoneMismatch(
+    pinnedTimeZone,
+    browserTimeZone,
+    snoozedForBrowser,
   );
 }
 

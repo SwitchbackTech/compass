@@ -68,6 +68,7 @@ import {
   patchGridDraftFields,
   replaceGridDraftSchedule,
   scheduleDatesFromDraft,
+  scheduleTimeZoneFromDraft,
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -78,6 +79,7 @@ import { keyboardKey } from "@web/shortcuts/is-bare-letter-key";
 import { useEventFormFocusStore } from "@web/shortcuts/tips/event-form-focus.store";
 import { shortcutHintProgressActions } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { AttendeeField } from "@web/views/Forms/EventForm/AttendeeField/AttendeeField";
 import { EnableContactSuggestionsNudge } from "@web/views/Forms/EventForm/AttendeeField/EnableContactSuggestionsNudge";
 import { useContactSuggestions } from "@web/views/Forms/EventForm/AttendeeField/useContactSuggestions";
@@ -349,7 +351,12 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDatesFromDraft(draft);
-    const formDates = getFormDates(eventStartDate, eventEndDate);
+    const scheduleTimeZone = scheduleTimeZoneFromDraft(draft);
+    const formDates = getFormDates(
+      eventStartDate,
+      eventEndDate,
+      scheduleTimeZone,
+    );
     const selectedStartDate = formDates.startDate;
     const selectedEndDate = formDates.endDate;
     const displayEndDate = dayjs(formDates.displayEndDate).toDate();
@@ -557,6 +564,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       const submitFormDates = getFormDates(
         submitScheduleDates.startDate,
         submitScheduleDates.endDate,
+        scheduleTimeZoneFromDraft(draftToSubmit),
       );
       const selectedDateTimes = {
         startDate: submitFormDates.startDate,
@@ -627,7 +635,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
       const startMinute =
         getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_HOUR * 60;
-      const timedStart = dayjs(selectedStartDate)
+      const timedStart = inEffectiveTimeZone(selectedStartDate)
         .startOf("day")
         .add(startMinute, "minute");
       const timedEnd = timedStart.add(1, "hour");

@@ -73,6 +73,8 @@ const GridEventSchema = WebEventSchema.extend({
     .optional(),
   /** Timed event shown in the all-day row because it spans midnight. */
   isTimedMultiDayDisplay: z.boolean().optional(),
+  /** IANA zone for timed events (grid labels and layout). */
+  timeZone: z.string().optional(),
   // Optional Google-mapped event color tag. Joined like calendarId — not part
   // of CompassEvent — so cards can paint a per-event fill without widening
   // the shared core type.

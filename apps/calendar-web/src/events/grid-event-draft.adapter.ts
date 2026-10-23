@@ -30,7 +30,7 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import { gridRecurrenceFromEvent } from "@web/events/grid-event-recurrence";
-import { getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
+import { getEffectiveTimeZone, getEffectiveTimeZone } from "@web/timezone/effective-timezone.store";
 import {
   calendarDateInEffectiveTimeZone,
   inEffectiveTimeZone,
@@ -297,6 +297,7 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
     endDate: isAllDay
       ? toDateOnlyString(schedule.end)
       : formatInstantInTimeZone(schedule.end, timedZone),
+    ...(schedule.kind === "timed" ? { timeZone: timedZone } : {}),
     recurrence: legacyRecurrenceFromDraft(draft),
     position: gridEventDefaultPosition,
     calendarId: draft.values.calendarId ?? undefined,
@@ -314,6 +315,14 @@ export function resolveDraftRecurrenceRules(
   return Array.isArray(rule) ? [...rule] : [];
 }
 
+export function scheduleTimeZoneFromDraft(draft: GridEventDraft): string {
+  const { schedule } = draft.values;
+  if (schedule.kind === "timed") {
+    return schedule.timeZone ?? getEffectiveTimeZone();
+  }
+  return getEffectiveTimeZone();
+}
+
 export function scheduleDatesFromDraft(draft: GridEventDraft) {
   const { schedule } = draft.values;
 
@@ -324,12 +333,10 @@ export function scheduleDatesFromDraft(draft: GridEventDraft) {
     };
   }
 
+  const timeZone = schedule.timeZone ?? getEffectiveTimeZone();
   return {
-    startDate:
-      dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
-    endDate:
-      dayjs(schedule.end).format() ||
-      dayjs().add(1, "hour").toRFC3339OffsetString(),
+    startDate: formatInstantInTimeZone(schedule.start, timeZone),
+    endDate: formatInstantInTimeZone(schedule.end, timeZone),
   };
 }
 

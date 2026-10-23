@@ -9,6 +9,7 @@ import {
   hydrateEffectiveTimeZonePreference,
   resetEffectiveTimeZoneStoreForTests,
   setBrowserTimeZoneForTests,
+  setCalendarTimeZoneHint,
   setPinnedTimeZone,
   shouldClearAccidentalUtcPin,
   useEffectiveTimeZone,
@@ -181,6 +182,32 @@ describe("effective-timezone.store", () => {
         hydrateEffectiveTimeZonePreference();
       });
       expect(getEffectiveTimeZone()).toBe("America/Denver");
+    } finally {
+      browserSpy.mockRestore();
+    }
+  });
+
+  it("uses a calendar hint in Auto when the browser zone is UTC", () => {
+    act(() => {
+      resetEffectiveTimeZoneStoreForTests();
+      setBrowserTimeZoneForTests("UTC");
+      setCalendarTimeZoneHint("America/Denver");
+    });
+    expect(getEffectiveTimeZone()).toBe("America/Denver");
+  });
+
+  it("clears a UTC pin when the browser zone is also UTC", () => {
+    persistentBrowserStore.set(STORAGE_KEYS.DEFAULT_TIMEZONE, "UTC");
+    const browserSpy = spyOn(
+      browserTimezone,
+      "getBrowserTimeZone",
+    ).mockReturnValue("UTC");
+
+    try {
+      act(() => {
+        hydrateEffectiveTimeZonePreference();
+      });
+      expect(getPinnedTimeZone()).toBeNull();
     } finally {
       browserSpy.mockRestore();
     }

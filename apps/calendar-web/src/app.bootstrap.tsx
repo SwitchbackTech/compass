@@ -17,11 +17,13 @@ import {
 import { App } from "@web/components/App/App";
 import { router } from "@web/routers";
 import { hydrateEffectiveTimeZonePreference } from "@web/timezone/effective-timezone.store";
+import { repairAccidentalUtcTimeTravelZone } from "@web/timezone/time-travel.store";
 import { preloadEventFormOnFirstInput } from "@web/views/Forms/EventForm/EventForm.lazy";
 import "./index.css";
 
 export async function bootstrapApp(): Promise<void> {
   hydrateEffectiveTimeZonePreference();
+  repairAccidentalUtcTimeTravelZone();
   configureGoogleRevocationApiHandler();
 
   // Read before the router mounts: validateAuthSearch strips unrecognized

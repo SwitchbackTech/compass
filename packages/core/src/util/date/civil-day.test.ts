@@ -6,6 +6,7 @@ import {
   gridMinutesFromCivilMidnight,
   maxCivilHourSlotCount,
   minutesFromCivilMidnight,
+  startOfCivilDay,
 } from "./civil-day";
 import { describe, expect, it } from "bun:test";
 
@@ -79,6 +80,18 @@ describe("minutesFromCivilMidnight", () => {
     expect(minutesFromCivilMidnight("2026-11-01T01:30:00-07:00", denver)).toBe(
       150,
     );
+  });
+});
+
+describe("startOfCivilDay", () => {
+  it("uses the calendar zone for the civil date key, not the host local zone", () => {
+    const instant = new Date("2026-10-21T17:00:00.000Z");
+    const start = startOfCivilDay(instant, denver);
+    expect(start.format("YYYY-MM-DD HH:mm Z")).toBe("2026-10-21 00:00 -06:00");
+    const labels = civilHourLineInstants(instant, denver, true)
+      .slice(5, 8)
+      .map((line) => line.tz(denver).format("h A"));
+    expect(labels).toEqual(["6 AM", "7 AM", "8 AM"]);
   });
 });
 
