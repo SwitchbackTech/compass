@@ -48,18 +48,25 @@ struct LifeViewIntroModalView: View {
                         .font(.rubik(14, weight: .medium))
                     ShortcutHintChip(label: "Enter")
                 }
-                .foregroundStyle(theme.surfaceColor)
+                .foregroundStyle(theme.onAccentColor)
                 .frame(maxWidth: .infinity, minHeight: 40)
                 .background(theme.accentColor)
                 .clipShape(Capsule())
-                .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+                .shadow(color: theme.shadowDefaultColor, radius: 6, y: 3)
             }
             .buttonStyle(.plain)
             .focused($primaryFocused)
         }
         .padding(28)
         .frame(width: 480)
-        .overlayPanelChrome()
+        // Web Life intro overrides the shared panel with a surface fill and border.
+        .background(theme.surfaceColor)
+        .clipShape(RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusPanel))
+        .overlay {
+            RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusPanel)
+                .stroke(theme.borderColor, lineWidth: 1)
+        }
+        .shadow(color: theme.shadowDefaultColor, radius: 12, y: 10)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
         .accessibilityLabel(LifeViewIntroCopy.title)

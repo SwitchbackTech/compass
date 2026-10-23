@@ -202,6 +202,7 @@ This checklist compares **apps/calendar-web** (reference UI) with **apps/calenda
 | Item | Status | Notes |
 | --- | --- | --- |
 | Grid + sidebar | 🟡 | Founder visual QA noted on #4331 |
+| Intro panel theme colors | ✅ | Surface fill and border match web Life intro overrides; primary text and shadows use semantic tokens. Both-theme native screenshots and Enter dismissal verified locally (#4764) |
 
 ### 2.13 Window chrome
 

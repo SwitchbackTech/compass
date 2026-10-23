@@ -43,24 +43,32 @@ final class NativeLaunchTests: XCTestCase {
 
     @MainActor
     func testLifeViewShowsIntroModalOnce() {
-        let app = XCUIApplication.compassUITest(lifeViewIntroSeen: false)
-        app.launchArguments += [
-            "-COMPASS_FIXTURE", "demo",
-            "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
-        ]
-        app.launch()
+        for theme in ["light-beach", "dark-abyss"] {
+            let app = XCUIApplication.compassUITest(lifeViewIntroSeen: false)
+            app.launchArguments += [
+                "-COMPASS_FIXTURE", "demo",
+                "-compass.theme", theme,
+                "-\(OnboardingStorageKeys.hasSeenWelcome)", "true",
+            ]
+            app.launch()
 
-        let window = app.windows["Compass"]
-        XCTAssertTrue(window.waitForExistence(timeout: 15))
-        window.typeKey("l", modifierFlags: [])
-        let intro = window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
-        XCTAssertTrue(intro.waitForExistence(timeout: 10))
-        window.typeKey(.return, modifierFlags: [])
-        XCTAssertTrue(intro.waitForNonExistence(timeout: 5))
+            let window = app.windows["Compass"]
+            XCTAssertTrue(window.waitForExistence(timeout: 15))
+            window.typeKey("l", modifierFlags: [])
+            let intro = window.descendants(matching: .any)["compass-native-life-view-intro-modal"]
+            XCTAssertTrue(intro.waitForExistence(timeout: 10))
+            let evidence = XCTAttachment(screenshot: window.screenshot())
+            evidence.name = "Life intro, \(theme)"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            window.typeKey(.return, modifierFlags: [])
+            XCTAssertTrue(intro.waitForNonExistence(timeout: 5))
 
-        window.typeKey("w", modifierFlags: [])
-        window.typeKey("l", modifierFlags: [])
-        XCTAssertFalse(intro.exists)
+            window.typeKey("w", modifierFlags: [])
+            window.typeKey("l", modifierFlags: [])
+            XCTAssertFalse(intro.exists)
+            app.terminate()
+        }
     }
 
     @MainActor
