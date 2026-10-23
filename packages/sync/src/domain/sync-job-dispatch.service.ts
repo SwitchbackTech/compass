@@ -7,6 +7,10 @@ import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
+import {
+  isEventsCalendarNotFoundDetail,
+  retireProviderCalendars,
+} from "@sync/domain/calendar-retirement";
 import { refreshConnectionStateAfterJob } from "@sync/domain/connection-state-refresh.service";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
@@ -223,7 +227,18 @@ export async function dispatchSyncJob(
     ) {
       const detail =
         error.cause instanceof Error ? error.cause.message : error.message;
+      let retiredCalendarId: ProviderCalendarRecord["_id"] | null = null;
       if (job.resourceId) {
+        const resource = await deps.resources.findById(
+          job.tenantId,
+          job.principalId,
+          job.resourceId,
+        );
+        const priorNotFound =
+          resource?.resourceKind === "events" &&
+          resource.lastReadFailureDetail != null &&
+          isEventsCalendarNotFoundDetail(resource.lastReadFailureDetail);
+        const currentNotFound = isEventsCalendarNotFoundDetail(detail);
         await deps.resources.markReadFailure(
           job.tenantId,
           job.principalId,
@@ -231,8 +246,24 @@ export async function dispatchSyncJob(
           now(),
           detail,
         );
+        if (priorNotFound && currentNotFound && resource?.calendarId != null) {
+          const retired = await retireProviderCalendars(
+            deps,
+            job.tenantId,
+            job.principalId,
+            [resource.calendarId as ProviderCalendarRecord["_id"]],
+            `Sync retired calendar ${resource.calendarId} after persistent events read notFound (404) on connection ${job.connectionId}`,
+          );
+          retiredCalendarId = retired[0] ?? null;
+        }
       }
       await refreshConnectionStateAfterJob(deps, job, now);
+      if (retiredCalendarId) {
+        return {
+          result: "drop",
+          reason: `calendar ${retiredCalendarId} retired after persistent notFound (404); sync resumes if the calendar is reactivated`,
+        };
+      }
       return {
         result: "drop",
         reason: `provider durably rejected reads for resource ${job.resourceId} (${detail}); sync resumes once the calendar is readable again`,

@@ -1712,4 +1712,116 @@ describe("dispatchSyncJob", () => {
     );
     expect(after).toEqual(before);
   });
+
+  const calendarNotFoundReadError = () =>
+    new ProviderEventReadError("readFailed", "Google rejected the read", {
+      cause: new Error("Not Found (HTTP 404, reason notFound)"),
+    });
+
+  it("does not retire a calendar after a single notFound read failure", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const warnings: string[] = [];
+
+    const outcome = await dispatchSyncJob(
+      {
+        ...deps(new FakeReader([], calendarNotFoundReadError())),
+        log: { warn: (m) => warnings.push(m) },
+      },
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    const cal = await calendars.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      calendar._id,
+    );
+    expect(cal?.active).toBe(true);
+    const stored = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(stored?.calendarActive).toBe(true);
+    expect(
+      warnings.filter((message) => message.startsWith("Sync retired calendar")),
+    ).toEqual([]);
+  });
+
+  it("retires a calendar after a second consecutive notFound read failure", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader([], calendarNotFoundReadError());
+    const warnings: string[] = [];
+    const dispatchDeps = {
+      ...deps(reader),
+      log: { warn: (m: string) => warnings.push(m) },
+    };
+
+    await dispatchSyncJob(
+      dispatchDeps,
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    const outcome = await dispatchSyncJob(
+      dispatchDeps,
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    expect(outcome.reason).toContain("retired");
+    const cal = await calendars.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      calendar._id,
+    );
+    expect(cal?.active).toBe(false);
+    const stored = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(stored?.calendarActive).toBe(false);
+    const retiredLog = warnings.filter((message) =>
+      message.startsWith("Sync retired calendar"),
+    );
+    expect(retiredLog).toHaveLength(1);
+    expect(retiredLog[0]).toContain(String(calendar._id));
+    expect(retiredLog[0]).toContain("notFound");
+  });
+
+  it("does not retire when a notFound read failure is followed by a successful pull", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await dispatchSyncJob(
+      deps(new FakeReader([], calendarNotFoundReadError())),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    await dispatchSyncJob(
+      deps(
+        new FakeReader([page([single("ok")], { nextSyncToken: "cursor-1" })]),
+      ),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    const cal = await calendars.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      calendar._id,
+    );
+    expect(cal?.active).toBe(true);
+    const stored = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(stored?.lastReadFailureAt).toBeNull();
+    expect(stored?.calendarActive).toBe(true);
+  });
 });
