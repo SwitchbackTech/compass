@@ -62,7 +62,8 @@ public struct AuthAPI: Sendable {
         guard (200 ..< 300).contains(payload.statusCode) else {
             throw CompassAPIError.httpStatus(payload.statusCode, body: payload.body)
         }
-        let createdNewRecipeUser = Self.parseCreatedNewRecipeUser(from: payload.body)
+        let bodyData = payload.body.data(using: .utf8) ?? Data()
+        let createdNewRecipeUser = Self.parseCreatedNewRecipeUser(from: bodyData)
         try await client.storeSession(from: payload)
         return SignInUpResult(createdNewRecipeUser: createdNewRecipeUser)
     }
