@@ -156,13 +156,17 @@ describe("SyncJobWorker", () => {
   // can assert on the wrapper message and that the original cause is attached.
   const workerRecordingErrors = (reader: FakeReader) => {
     const errors: { error: Error; job: JobRecord }[] = [];
+    const transientRetries: { error: Error; job: JobRecord }[] = [];
     const w = new SyncJobWorker(deps(reader), OWNER, {
       now,
       onError: (error, job) => {
         if (error instanceof Error) errors.push({ error, job });
       },
+      onTransientRetry: (error, job) => {
+        if (error instanceof Error) transientRetries.push({ error, job });
+      },
     });
-    return { worker: w, errors };
+    return { worker: w, errors, transientRetries };
   };
 
   const workerWith = (
@@ -530,25 +534,45 @@ describe("SyncJobWorker", () => {
     expect(after!.runAfter.getTime()).toBeGreaterThan(now().getTime());
   });
 
-  it("reports the failing job and preserves the cause when the engine throws", async () => {
+  it("routes a retryable transient failure to onTransientRetry, not onError", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     const job = await enqueue(resource, "incrementalPull");
     const cause = new ProviderEventReadError("transient", "flaky");
 
-    const { worker, errors } = workerRecordingErrors(new FakeReader([], cause));
+    const { worker, errors, transientRetries } = workerRecordingErrors(
+      new FakeReader([], cause),
+    );
     await worker.runOnce();
 
-    expect(errors).toHaveLength(1);
+    expect(errors).toHaveLength(0);
+    expect(transientRetries).toHaveLength(1);
     // The sanitized cause must be IN the message: the PostHog exception title
     // is built from the message alone, so a bare "attempt N failed" hides the
     // real error in event properties.
-    expect(errors[0]?.error.message).toBe(
+    expect(transientRetries[0]?.error.message).toBe(
       `Sync job incrementalPull (${job._id}) attempt 1 failed: flaky`,
     );
-    expect(errors[0]?.error.cause).toBe(cause);
-    expect(errors[0]?.job.resourceId).toBe(job.resourceId);
-    expect(errors[0]?.job.connectionId).toEqual(job.connectionId);
+    expect(transientRetries[0]?.error.cause).toBe(cause);
+    expect(transientRetries[0]?.job.resourceId).toBe(job.resourceId);
+    expect(transientRetries[0]?.job.connectionId).toEqual(job.connectionId);
+  });
+
+  it("reports onError when a transient failure exhausts retries", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+    const cause = new ProviderEventReadError("transient", "flaky");
+    const errorsTerminal: { error: Error; job: JobRecord }[] = [];
+    const w = new SyncJobWorker(deps(new FakeReader([], cause)), OWNER, {
+      now,
+      maxAttempts: 1,
+      onError: (error, job) => {
+        if (error instanceof Error) errorsTerminal.push({ error, job });
+      },
+    });
+    await w.runOnce();
+    expect(errorsTerminal).toHaveLength(1);
   });
 
   it("fails a transient job once its retries are exhausted", async () => {
