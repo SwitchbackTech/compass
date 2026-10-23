@@ -3,12 +3,28 @@ import {
   dispatchClick,
   dispatchFill,
   prepareGuestMeetingSetup,
+  SETUP_WIZARD_FORWARD_BUTTON,
 } from "./booking-harness";
 
 const GUEST_GO_LIVE = "Start your free trial to publish your meeting page";
 
 // The `/meet` landing link itself is covered by meet-landing.spec.ts. This
 // starts where that link lands: a signed-out visitor on `/?meetingSetup=1`.
+test("guest setup prefills a suggested address on step 1", async ({ page }) => {
+  await prepareGuestMeetingSetup(page);
+
+  const settingsDialog = page.getByRole("dialog", { name: "Settings" });
+  await expect(settingsDialog.getByText(/^Step 1 of \d+$/)).toBeVisible({
+    timeout: 15000,
+  });
+  const address = settingsDialog.getByLabel("Page address");
+  await expect(address).not.toHaveValue("");
+  await expect(address).toHaveValue(/^[a-z0-9-]+$/);
+  await expect(
+    settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
+  ).toBeVisible();
+});
+
 test("guest setup survives sign-up and fixes a taken address before going live", async ({
   page,
   context,
@@ -21,7 +37,7 @@ test("guest setup survives sign-up and fixes a taken address before going live",
   const settingsDialog = page.getByRole("dialog", { name: "Settings" });
   const address = settingsDialog.getByLabel("Page address");
   const continueButton = settingsDialog.getByRole("button", {
-    name: /^Continue/,
+    name: SETUP_WIZARD_FORWARD_BUTTON,
   });
 
   await expect(settingsDialog.getByText(/^Step 1 of \d+$/)).toBeVisible({

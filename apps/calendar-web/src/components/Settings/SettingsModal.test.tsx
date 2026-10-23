@@ -1462,9 +1462,9 @@ describe("SettingsModal", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole("button", { name: /^Continue/ })).getByText(
-        "Enter",
-      ),
+      within(
+        screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+      ).getByText("Enter"),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: BOOKING_SAVE_CHANGES_LABEL }),
@@ -1493,9 +1493,15 @@ describe("SettingsModal", () => {
       page: "booking",
     });
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
     expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
     await user.keyboard("{Escape}");
 

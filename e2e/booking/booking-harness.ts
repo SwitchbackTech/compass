@@ -1497,6 +1497,9 @@ export async function prepareGuestMeetingSetup(
   return { putBodies, completeSignUp };
 }
 
+/** Setup wizard forward action: step 1 may read "Use this address". */
+export const SETUP_WIZARD_FORWARD_BUTTON = /^(Use this address|Continue)/;
+
 /** Dispatches a DOM click for OverlayPanel buttons that re-render during Playwright clicks. */
 export const dispatchClick = async (
   locator: import("@playwright/test").Locator,

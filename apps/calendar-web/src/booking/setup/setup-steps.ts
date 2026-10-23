@@ -19,7 +19,7 @@ export const SETUP_STEPS: readonly SetupStepDefinition[] = [
     id: "address",
     title: "Pick your address",
     sentence:
-      "Choose the link people will use to book time with you. You can change it later.",
+      "We suggested a link below. Click Use this address to keep it, or edit it first.",
   },
   {
     id: "hours",

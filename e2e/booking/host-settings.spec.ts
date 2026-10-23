@@ -11,6 +11,7 @@ import {
   prepareSignedInBookingSettingsPage,
   publicBookingAppUrl,
   releaseSettingsMod,
+  SETUP_WIZARD_FORWARD_BUTTON,
 } from "./booking-harness";
 
 test.use({ viewport: { width: 1600, height: 900 } });
@@ -194,8 +195,9 @@ test("first visit: keyboard setup wizard through go live", async ({
     "hostuser",
   );
 
-  await dispatchFill(settingsDialog.getByLabel("Page address"), "hostuser");
-  await settingsDialog.getByLabel("Page address").press("Enter");
+  await dispatchClick(
+    settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
+  );
 
   await expect.poll(() => captured.putBodies.length).toBe(1);
   expect(captured.putBodies[0]).toMatchObject({
@@ -210,7 +212,7 @@ test("first visit: keyboard setup wizard through go live", async ({
       .filter({ hasText: /^Step 2 of \d+$/ }),
   ).toBeVisible();
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: /^Continue/ }),
+    settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
   );
   await expect(
     settingsDialog
@@ -218,7 +220,7 @@ test("first visit: keyboard setup wizard through go live", async ({
       .filter({ hasText: /^Step 3 of \d+$/ }),
   ).toBeVisible();
   await dispatchClick(
-    settingsDialog.getByRole("button", { name: /^Continue/ }),
+    settingsDialog.getByRole("button", { name: SETUP_WIZARD_FORWARD_BUTTON }),
   );
   await expect(
     settingsDialog

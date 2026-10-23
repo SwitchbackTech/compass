@@ -648,9 +648,11 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await userEvent
-      .setup({ delay: null })
-      .click(await screen.findByRole("button", { name: /^Continue/ }));
+    await userEvent.setup({ delay: null }).click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
 
     expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
     expect(
@@ -791,7 +793,7 @@ describe("BookingSettingsSection", () => {
     });
   });
 
-  it("shows step 1 of 4 on an unconfigured page with the address input focused", async () => {
+  it("shows step 1 of 4 on an unconfigured page with Continue focused", async () => {
     userMetadataActions.set(healthyGoogleMetadata);
 
     server.use(
@@ -812,13 +814,16 @@ describe("BookingSettingsSection", () => {
       await screen.findByRole("heading", { name: "Pick your address" }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Page address")).toHaveValue("hostuser");
-    expect(screen.getByLabelText("Page address")).toHaveFocus();
     expect(
       screen.getByText(`Your link: ${window.location.origin}/meet/hostuser`),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^Continue/ }),
-    ).toBeInTheDocument();
+    const continueButton = screen.getByRole("button", {
+      name: /^Use this address/,
+    });
+    expect(continueButton).toBeInTheDocument();
+    await waitFor(() => {
+      expect(continueButton).toHaveFocus();
+    });
     expect(screen.queryByLabelText("Duration")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("switch", { name: "Meeting page" }),
@@ -864,6 +869,42 @@ describe("BookingSettingsSection", () => {
     expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
   });
 
+  it("Use this address saves the suggested slug without typing", async () => {
+    const user = userEvent.setup({ delay: null });
+    let savedBody: unknown;
+    userMetadataActions.set(healthyGoogleMetadata);
+
+    server.use(
+      http.get(bookingPageUrl, () => HttpResponse.json(unconfiguredPage())),
+      http.put(bookingPageUrl, async ({ request }) => {
+        savedBody = await request.json();
+        return HttpResponse.json(
+          putSavedPage(savedBody as Record<string, unknown>),
+        );
+      }),
+    );
+
+    const { wrapper, queryClient } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [writableCalendar]);
+    render(
+      <HotkeysProvider>
+        <BookingSettingsSection />
+      </HotkeysProvider>,
+      { wrapper },
+    );
+
+    await screen.findByText("Step 1 of 4");
+    await user.click(screen.getByRole("button", { name: /^Use this address/ }));
+
+    await waitFor(() => {
+      expect(savedBody).toMatchObject({
+        enabled: false,
+        slug: "hostuser",
+      });
+    });
+    expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
+  });
+
   it("Continue saves a disabled draft with the typed slug and shows step 2 of 4", async () => {
     const user = userEvent.setup({ delay: null });
     let savedBody: unknown;
@@ -892,7 +933,9 @@ describe("BookingSettingsSection", () => {
     const address = screen.getByLabelText("Page address");
     await user.clear(address);
     await user.type(address, "my-page");
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
 
     await waitFor(() => {
       expect(savedBody).toMatchObject({
@@ -957,7 +1000,11 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
 
     expect(await screen.findByText("Step 1 of 4")).toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -998,7 +1045,9 @@ describe("BookingSettingsSection", () => {
     const address = screen.getByLabelText("Page address");
     await user.clear(address);
     await user.type(address, "ab");
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
 
     await waitFor(() => {
       expect(screen.getByLabelText("Page address")).toHaveAttribute(
@@ -1069,8 +1118,14 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
 
     const durationGroup = screen.getByRole("radiogroup", {
@@ -1115,9 +1170,17 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     expect(screen.getByText("Step 4 of 4")).toBeInTheDocument();
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(screen.getByText("UTC (UTC)")).toBeInTheDocument();
@@ -1176,12 +1239,24 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     expect(await screen.findByText("Step 4 of 5")).toBeInTheDocument();
     expect(screen.getByLabelText("Destination calendar")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
     expect(await screen.findByText("Step 5 of 5")).toBeInTheDocument();
     expect(screen.getByText("Timezone")).toBeInTheDocument();
     expect(screen.getByText("UTC (UTC)")).toBeInTheDocument();
@@ -1216,9 +1291,17 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     expect(await screen.findByText("Step 4 of 5")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -1228,7 +1311,9 @@ describe("BookingSettingsSection", () => {
     expect(
       screen.getByRole("button", { name: CONNECT_CALENDAR_LABEL.google }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Continue/ })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    ).toBeDisabled();
     expect(screen.queryByText("Step 5 of 5")).not.toBeInTheDocument();
   });
 
@@ -1262,9 +1347,17 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     await user.click(
       await screen.findByRole("button", { name: /Turn on and copy link/ }),
     );
@@ -1275,6 +1368,31 @@ describe("BookingSettingsSection", () => {
     expect(screen.getByText("Step 4 of 4")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(await screen.findByText("Step 3 of 4")).toBeInTheDocument();
+  });
+
+  it("prefills a suggested address for guest setup before sign-up", async () => {
+    isSessionMocked = false;
+    try {
+      clearGuestMeetingSetupDraft();
+      settingsActions.beginGuestMeetingSetup();
+      const { wrapper } = createStoreWrapper();
+      render(
+        <HotkeysProvider>
+          <BookingSettingsSection />
+        </HotkeysProvider>,
+        { wrapper },
+      );
+
+      const address = await screen.findByLabelText("Page address");
+      expect(address.getAttribute("value")).toMatch(/^[a-z0-9-]{3,32}$/);
+      expect(
+        screen.getByRole("button", { name: /^Use this address/ }),
+      ).toBeInTheDocument();
+    } finally {
+      isSessionMocked = true;
+      settingsActions.closeSettings();
+      clearGuestMeetingSetupDraft();
+    }
   });
 
   it("returns a resumed guest to the address step when go-live finds it taken", async () => {
@@ -1332,7 +1450,9 @@ describe("BookingSettingsSection", () => {
 
       await user.clear(address);
       await user.type(address, "free-name");
-      await user.click(screen.getByRole("button", { name: /^Continue/ }));
+      await user.click(
+        screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+      );
       expect(await screen.findByText("Step 2 of 4")).toBeInTheDocument();
       expect(savedBodies.at(-1)).toMatchObject({
         enabled: false,
@@ -1642,9 +1762,17 @@ describe("BookingSettingsSection", () => {
       { wrapper },
     );
 
-    await user.click(await screen.findByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
-    await user.click(screen.getByRole("button", { name: /^Continue/ }));
+    await user.click(
+      await screen.findByRole("button", {
+        name: /^(Use this address|Continue)/,
+      }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^(Use this address|Continue)/ }),
+    );
     await user.click(
       await screen.findByRole("button", { name: /Turn on and copy link/ }),
     );
