@@ -31,6 +31,7 @@ import eventService from "@backend/event/services/event.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import hiddenEventService from "@backend/user/services/hidden-event.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
+import { userAnalytics } from "@backend/user/user.analytics";
 
 const logger = Logger("app:user.service");
 const ACCOUNT_DELETION_RETRY_INTERVAL_MS = 10 * 60_000;
@@ -301,6 +302,8 @@ class UserService {
       { $setOnInsert: { createdAt: new Date() } },
       { upsert: true },
     );
+
+    void userAnalytics.capture({ event: "account_deleted", userId });
 
     // This has to precede deletion of the user row, which is our only durable
     // Stripe customer mapping. If Stripe cannot confirm cancellation, leave

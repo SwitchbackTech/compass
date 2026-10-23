@@ -4,6 +4,7 @@ import { session } from "@web/auth/compass/session/Session";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { clearAuthenticationState } from "@web/auth/compass/state/auth.state.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
+import { track } from "@web/auth/posthog/track";
 
 const SIGN_OUT_TIMEOUT_MS = 4000;
 
@@ -36,6 +37,10 @@ export function useLogout() {
     // failed, handleSessionMissing never ran, so this is the only place that
     // tears down the SSE stream, metadata, and source.
     clearAccountScopedClientState();
+
+    track("logout_completed", {
+      signed_out_remotely: signedOutRemotely,
+    });
 
     // A deliberate logout, not an expired session (that path is
     // handleSessionMissing, which doesn't call this hook) - safe to detach

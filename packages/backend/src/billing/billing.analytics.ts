@@ -11,7 +11,9 @@ import { getBackendPostHogClient } from "@backend/common/helpers/backend-posthog
 export type BillingServerEvent =
   | "checkout_completed"
   | "checkout_expired"
-  | "trial_will_end";
+  | "trial_will_end"
+  | "payment_succeeded"
+  | "payment_failed";
 
 export const billingAnalytics = {
   /**

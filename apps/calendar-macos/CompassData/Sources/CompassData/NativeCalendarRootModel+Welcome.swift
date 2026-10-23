@@ -35,11 +35,17 @@ extension NativeCalendarRootModel {
     }
 
     public func welcomeSignUp() {
+        environment.productAnalytics.track(
+            .signupStarted,
+            properties: ["source": .string("welcome_modal")])
         exitWelcome(reason: "sign_up")
         authStore.openModal(.signUp)
     }
 
     public func welcomeSignIn(with provider: SignInProviderKind) {
+        environment.productAnalytics.track(
+            .signupStarted,
+            properties: ["source": .string("welcome_modal")])
         exitWelcome(reason: "sign_up_\(provider.rawValue)")
         authStore.signInWithProvider(provider)
     }

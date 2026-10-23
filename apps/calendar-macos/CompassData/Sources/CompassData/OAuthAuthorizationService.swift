@@ -2,7 +2,7 @@ import CompassKit
 import Foundation
 
 public enum OAuthAuthorizationOutcome: Sendable {
-    case completed
+    case completed(isNewUser: Bool)
     case userCancelled
     case failed(message: String)
 }
@@ -75,7 +75,7 @@ public final class OAuthAuthorizationService {
                     provider: provider))
             switch begin {
             case .connected:
-                return .completed
+                return .completed(isNewUser: false)
             case let .redirect(url):
                 return await presentOAuth(
                     url: url,
@@ -130,7 +130,7 @@ public final class OAuthAuthorizationService {
             return .failed(message: "We couldn't finish connecting your calendar.")
         }
         if DesktopOAuthState.queryValue("status", fromDeepLinkQuery: parsed.query) == "connected" {
-            return .completed
+            return .completed(isNewUser: false)
         }
         return .failed(message: "We couldn't finish connecting your calendar.")
     }
@@ -218,8 +218,8 @@ public final class OAuthAuthorizationService {
                     user: user),
                 pkceCodeVerifier: nil))
         do {
-            try await authAPI.signInUp(request)
-            return .completed
+            let result = try await authAPI.signInUp(request)
+            return .completed(isNewUser: result.createdNewRecipeUser)
         } catch {
             return .failed(message: "We couldn't finish signing you in. Please try again.")
         }

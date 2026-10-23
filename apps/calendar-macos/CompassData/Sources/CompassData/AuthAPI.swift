@@ -46,7 +46,11 @@ public struct AuthAPI: Sendable {
         self.client = client
     }
 
-    public func signInUp(_ request: SignInUpRequest) async throws {
+    public struct SignInUpResult: Sendable {
+        public let createdNewRecipeUser: Bool
+    }
+
+    public func signInUp(_ request: SignInUpRequest) async throws -> SignInUpResult {
         let payload = try await client.sendRaw(
             method: "POST",
             path: "signinup",
@@ -58,7 +62,17 @@ public struct AuthAPI: Sendable {
         guard (200 ..< 300).contains(payload.statusCode) else {
             throw CompassAPIError.httpStatus(payload.statusCode, body: payload.body)
         }
+        let createdNewRecipeUser = Self.parseCreatedNewRecipeUser(from: payload.body)
         try await client.storeSession(from: payload)
+        return SignInUpResult(createdNewRecipeUser: createdNewRecipeUser)
+    }
+
+    private static func parseCreatedNewRecipeUser(from body: Data) -> Bool {
+        guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+        else {
+            return false
+        }
+        return json["createdNewRecipeUser"] as? Bool ?? false
     }
 
     public func refresh() async throws {

@@ -20,6 +20,8 @@ export const EmailSendServerEventSchema = z.enum([
   "email_bounced",
   "email_complained",
   "email_unsubscribed",
+  "email_delayed",
+  "email_suppressed",
 ]);
 export type EmailSendServerEvent = z.infer<typeof EmailSendServerEventSchema>;
 

@@ -86,6 +86,8 @@ public final class AuthStore {
     private let configStore: ConfigStore
     private let oauthService: OAuthAuthorizationService
     private let analyticsIdentity: AnalyticsIdentityCoordinator
+    private var pendingAuthAnalyticsMethod: String?
+    private var pendingAuthAnalyticsIsSignup = false
     private let usesFixtureTransport: Bool
     private let userMetadataRepository: UserMetadataRepository?
     private let localEventSync: LocalEventSync?
@@ -182,7 +184,9 @@ public final class AuthStore {
                 let clients = OAuthPublicClients(oauth: configStore.config?.oauth)
                 let outcome = await oauthService.startSignIn(provider: kind, oauthClients: clients)
                 switch outcome {
-                case .completed:
+                case let .completed(isNewUser):
+                    pendingAuthAnalyticsMethod = kind.rawValue
+                    pendingAuthAnalyticsIsSignup = isNewUser
                     try await completeAuthentication(closeAfter: true)
                 case .userCancelled:
                     submitError = nil
@@ -197,8 +201,12 @@ public final class AuthStore {
         guard let outcome = await oauthService.handleAuthDeepLink(urlString) else {
             return false
         }
+        let provider =
+            DesktopOAuthState.parseDesktopAuthDeepLink(urlString)?.provider ?? "unknown"
         switch outcome {
-        case .completed:
+        case let .completed(isNewUser):
+            pendingAuthAnalyticsMethod = provider
+            pendingAuthAnalyticsIsSignup = isNewUser
             do {
                 try await completeAuthentication(closeAfter: true)
                 return true
@@ -310,6 +318,8 @@ public final class AuthStore {
     private func handleSignInOutcome(_ outcome: AuthEmailPasswordOutcome, fallback: String) async throws {
         switch outcome {
         case .success:
+            pendingAuthAnalyticsMethod = "email"
+            pendingAuthAnalyticsIsSignup = false
             try await completeAuthentication(closeAfter: true)
         case .wrongCredentials:
             throw AuthStoreError(message: "Incorrect email or password.")
@@ -321,6 +331,8 @@ public final class AuthStore {
     private func handleSignUpOutcome(_ outcome: AuthEmailPasswordOutcome) async throws {
         switch outcome {
         case .success:
+            pendingAuthAnalyticsMethod = "email"
+            pendingAuthAnalyticsIsSignup = true
             if shouldOfferSignupTrialStep() {
                 try await completeAuthentication(closeAfter: false)
                 currentView = .startTrial
@@ -410,7 +422,15 @@ public final class AuthStore {
             userId = profile.userId
             await analyticsIdentity.identify(userId: profile.userId)
             guard revision == sessionRevision, authenticated else { return }
-            await analyticsIdentity.trackLoginCompleted()
+            guard let method = pendingAuthAnalyticsMethod else { return }
+            let isSignup = pendingAuthAnalyticsIsSignup
+            pendingAuthAnalyticsMethod = nil
+            pendingAuthAnalyticsIsSignup = false
+            if isSignup {
+                await analyticsIdentity.trackSignupCompleted(method: method)
+            } else {
+                await analyticsIdentity.trackLoginCompleted(method: method)
+            }
         } catch {}
     }
 }

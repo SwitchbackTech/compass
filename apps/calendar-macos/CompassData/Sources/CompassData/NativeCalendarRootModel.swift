@@ -1458,6 +1458,10 @@ public final class NativeCalendarRootModel {
     }
 
     private func configureAnalyticsFromConfig() async {
+        let override = UserDefaults.standard.string(forKey: "COMPASS_APP_URL")
+        let host = override.flatMap { URL(string: $0)?.host }
+            ?? AppHostPreference.load().url.host
+        await analyticsIdentity.setPostHogEnvironment(hostname: host)
         await analyticsIdentity.applyPostHogConfig(configStore.config?.posthog)
     }
 
