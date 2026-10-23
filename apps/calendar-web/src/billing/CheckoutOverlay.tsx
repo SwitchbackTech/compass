@@ -1,6 +1,7 @@
 import { type FC } from "react";
 import { useStripePublishableKey } from "@web/billing/billing.query";
 import {
+  type CheckoutPanelSource,
   checkoutPanelActions,
   selectCheckoutPanelOpen,
   useCheckoutPanelStore,
@@ -16,11 +17,15 @@ import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
  * upgrade toast, and any other writable-session Subscribe now path.
  * The billing gate hosts its own overlay.
  */
+const hostsCheckoutInline = (source: CheckoutPanelSource | null): boolean =>
+  source?.kind === "signup_trial_step" || source?.kind === "settings_trial_ask";
+
 export const CheckoutOverlay: FC = () => {
   const isOpen = useCheckoutPanelStore(selectCheckoutPanelOpen);
+  const source = useCheckoutPanelStore((state) => state.source);
   const publishableKey = useStripePublishableKey();
 
-  if (!isOpen || !publishableKey) return null;
+  if (!isOpen || !publishableKey || hostsCheckoutInline(source)) return null;
 
   return (
     <OverlayPanel

@@ -56,9 +56,9 @@ describe("getPlanBadge", () => {
     });
   });
 
-  it("labels an account that has not checked out yet Free", () => {
+  it("labels an account that has not started a trial yet", () => {
     expect(getPlanBadge(server("awaiting_checkout"))).toEqual({
-      label: "Free",
+      label: "Trial not started",
       tone: "neutral",
     });
   });

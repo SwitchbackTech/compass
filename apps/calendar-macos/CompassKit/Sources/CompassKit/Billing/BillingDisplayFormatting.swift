@@ -26,6 +26,27 @@ public enum BillingDisplayFormatting {
         "\(formatMoney(amountMinor: amountMinor, currency: currency)) per \(interval)"
     }
 
+    private static func intervalShort(_ interval: String) -> String {
+        switch interval {
+        case "month": "mo"
+        case "week": "wk"
+        case "year": "yr"
+        default: interval
+        }
+    }
+
+    /// Mirrors `formatTrialStartPriceLine` in `trial-start-display.util.ts`.
+    public static func formatTrialStartPriceLine(
+        amountMinor: Double,
+        currency: String,
+        interval: String,
+        trialLengthDays: Int = BillingPlanConstants.trialLengthDays
+    ) -> String {
+        let money = formatMoney(amountMinor: amountMinor, currency: currency)
+        let short = intervalShort(interval)
+        return "\(money)/\(short) after \(trialLengthDays) days. Cancel anytime in Settings."
+    }
+
     public static func formatBillingDate(iso: String) -> String {
         guard let date = BillingISO8601.date(from: iso) else { return iso }
         let out = DateFormatter()

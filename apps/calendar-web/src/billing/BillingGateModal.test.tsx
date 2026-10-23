@@ -20,6 +20,7 @@ import {
   type EmbeddedCheckoutProps,
   setEmbeddedCheckoutForTests,
 } from "@web/billing/embedded-checkout/embedded-checkout.seam";
+import { TRIAL_START_PRIMARY_LABEL } from "@web/billing/TrialStartAsk";
 import { BillingGateModal } from "./BillingGateModal";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
@@ -44,6 +45,8 @@ const GATE_CONFIG = {
     publishableKey: "pk_test_gate",
   },
 };
+
+const TRIAL_PRICE_LINE = "$12.00/mo after 7 days. Cancel anytime in Settings.";
 
 const renderGate = (status = "awaiting_checkout") => {
   const queryClient = new QueryClient({
@@ -83,11 +86,13 @@ describe("BillingGateModal", () => {
     resetBillingGateAttentionForTests();
   });
 
-  it("opens embedded Checkout inside the gate from Add card", async () => {
+  it("opens embedded Checkout inside the gate from Start free trial", async () => {
     const user = userEvent.setup();
     renderGate();
 
-    await user.click(screen.getByRole("button", { name: "Add card" }));
+    await user.click(
+      screen.getByRole("button", { name: TRIAL_START_PRIMARY_LABEL }),
+    );
 
     expect(
       within(
@@ -96,36 +101,26 @@ describe("BillingGateModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows shortcut keycaps and focuses Add card", () => {
+  it("shows shortcut keycaps and focuses Start free trial", () => {
     renderGate();
 
-    expect(screen.getByRole("button", { name: "Add card" })).toHaveFocus();
     expect(
-      within(screen.getByRole("button", { name: "Add card" })).getByText("S"),
+      screen.getByRole("button", { name: TRIAL_START_PRIMARY_LABEL }),
+    ).toHaveFocus();
+    expect(
+      within(
+        screen.getByRole("button", { name: TRIAL_START_PRIMARY_LABEL }),
+      ).getByText("S"),
     ).toBeTruthy();
     expect(
       screen.queryByRole("button", { name: "Export my data" }),
     ).not.toBeInTheDocument();
   });
 
-  it("does not mention a price on the start-trial or subscribe copy", () => {
-    const { unmount } = renderGate();
+  it("shows the trial price line before subscription data loads", () => {
+    renderGate();
 
-    expect(
-      screen.getByText(
-        "7-day free trial. Card required, no charge until it ends.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
-    unmount();
-
-    renderGate("canceled");
-    expect(
-      screen.getByText(
-        "Your trial has ended. Subscribe to keep creating and editing events, including keyboard shortcuts.",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/\$|\/month/i)).not.toBeInTheDocument();
+    expect(screen.getByText(TRIAL_PRICE_LINE)).toBeInTheDocument();
   });
 
   it("opens Checkout with S, returns to the buttons with Back, and does not dismiss on Escape", async () => {
@@ -149,7 +144,7 @@ describe("BillingGateModal", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
 
     expect(
-      screen.getByRole("button", { name: "Add card" }),
+      screen.getByRole("button", { name: TRIAL_START_PRIMARY_LABEL }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Complete checkout" }),
@@ -230,11 +225,13 @@ describe("BillingGateModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps focus on Add card when tabbing", async () => {
+  it("keeps focus on Start free trial when tabbing", async () => {
     const user = userEvent.setup();
     renderGate();
 
-    const start = screen.getByRole("button", { name: "Add card" });
+    const start = screen.getByRole("button", {
+      name: TRIAL_START_PRIMARY_LABEL,
+    });
     expect(start).toHaveFocus();
 
     await user.tab();

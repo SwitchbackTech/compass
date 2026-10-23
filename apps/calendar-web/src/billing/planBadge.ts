@@ -42,7 +42,7 @@ export function getPlanBadge(access: AppAccess): PlanBadge | null {
     case "past_due":
       return { label: "Payment due", tone: "attention" };
     case "awaiting_checkout":
-      return { label: "Free", tone: "neutral" };
+      return { label: "Trial not started", tone: "neutral" };
     case "expired":
     case "canceled":
       return { label: "Expired", tone: "attention" };

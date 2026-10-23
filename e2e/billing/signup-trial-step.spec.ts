@@ -3,7 +3,7 @@ import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
-const TRIAL_TERMS = "Card required. No charge until the trial ends.";
+const TRIAL_PRICE_LINE = "$12.00/mo after 7 days. Cancel anytime in Settings.";
 
 const jsonResponse = (body: unknown) => ({
   status: 200,
@@ -32,6 +32,9 @@ test("awaiting checkout can explore the calendar and opt into the trial step", a
       "true",
     );
     localStorage.setItem("compass.onboarding.first-event-done", "dismissed");
+    sessionStorage.removeItem(
+      "compass.billing.awaiting-checkout-banner-dismissed-session",
+    );
   });
 
   await page.route("**/api/**", async (route) => {
@@ -141,11 +144,17 @@ test("awaiting checkout can explore the calendar and opt into the trial step", a
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toBeVisible({ timeout: 15000 });
 
-  await expect(page.getByText(TRIAL_TERMS)).toBeVisible();
+  await expect(page.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start free trial" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Start free trial" }).click();
+
+  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Start free trial" }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
 
   if (process.env.CAPTURE_SIGNUP_TRIAL_SCREENSHOT === "1") {
     const dialog = page.getByRole("dialog", {
@@ -157,6 +166,19 @@ test("awaiting checkout can explore the calendar and opt into the trial step", a
   }
 
   await page.keyboard.press("Escape");
+
+  await expect(
+    page.getByRole("dialog", { name: "Start your 7-day free trial" }),
+  ).toBeVisible();
+  await expect(page.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start free trial" }),
+  ).toBeVisible();
+
+  const trialDialogAfterBack = page.getByRole("dialog", {
+    name: "Start your 7-day free trial",
+  });
+  await trialDialogAfterBack.getByRole("button", { name: "Back" }).click();
 
   await expect(
     page.getByRole("dialog", { name: "Finish starting your trial" }),

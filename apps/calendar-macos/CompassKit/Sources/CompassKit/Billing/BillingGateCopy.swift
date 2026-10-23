@@ -18,8 +18,12 @@ public enum BillingGateCopy {
         if status == .awaitingCheckout {
             return Content(
                 title: "Finish starting your trial",
-                body: AccountChoiceCopy.welcomeTrialCardTermsLine(),
-                primaryLabel: "Add card"
+                body: BillingDisplayFormatting.formatTrialStartPriceLine(
+                    amountMinor: BillingPlanConstants.displayPriceAmountMinor,
+                    currency: BillingPlanConstants.displayPriceCurrency,
+                    interval: BillingPlanConstants.displayPriceInterval
+                ),
+                primaryLabel: "Start free trial"
             )
         }
         return Content(

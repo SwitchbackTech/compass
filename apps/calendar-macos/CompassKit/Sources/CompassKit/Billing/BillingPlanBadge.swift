@@ -44,7 +44,7 @@ public enum BillingPlanBadgeResolver {
         case .pastDue:
             return BillingPlanBadge(label: "Payment due", tone: .attention)
         case .awaitingCheckout:
-            return BillingPlanBadge(label: "Free", tone: .neutral)
+            return BillingPlanBadge(label: "Trial not started", tone: .neutral)
         case .expired, .canceled:
             return BillingPlanBadge(label: "Expired", tone: .attention)
         case .none:

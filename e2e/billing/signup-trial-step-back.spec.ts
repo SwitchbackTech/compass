@@ -7,7 +7,7 @@ test.use({ viewport: { width: 1600, height: 900 } });
 const CALLBACK_PATH = "/auth/google/callback";
 const INTENT_STORAGE_PREFIX = "compass.googleAuthorizationIntent";
 const REQUIRED_SCOPES = [...GOOGLE_SCOPES];
-const TRIAL_TERMS = "Card required. No charge until the trial ends.";
+const TRIAL_PRICE_LINE = "$12.00/mo after 7 days. Cancel anytime in Settings.";
 
 const getIntentStorageKey = (state: string) =>
   `${INTENT_STORAGE_PREFIX}.${state}`;
@@ -167,7 +167,7 @@ test("trial step back avoids oauth replay and duplicate billing_gate_shown", asy
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toBeVisible({ timeout: 15000 });
-  await expect(page.getByText(TRIAL_TERMS)).toBeVisible();
+  await expect(page.getByText(TRIAL_PRICE_LINE)).toBeVisible();
   expect(loginOrSignupRequests).toHaveLength(1);
 
   await page.evaluate(() => {
@@ -205,7 +205,16 @@ test("trial step back avoids oauth replay and duplicate billing_gate_shown", asy
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toBeVisible({ timeout: 15000 });
 
-  await page.getByRole("button", { name: /^Back\b/ }).click();
+  const trialDialog = page.getByRole("dialog", {
+    name: "Start your 7-day free trial",
+  });
+  await trialDialog.getByRole("button", { name: "Start free trial" }).click();
+  await trialDialog.getByRole("button", { name: /^Back\b/ }).click();
+  await expect(page.getByText(TRIAL_PRICE_LINE)).toBeVisible();
+  await expect(
+    trialDialog.getByRole("button", { name: "Start free trial" }),
+  ).toBeVisible();
+  await trialDialog.getByRole("button", { name: "Back" }).click();
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);

@@ -1,7 +1,8 @@
+import { BILLING_PLAN } from "@core/constants/billing.constants";
 import dayjs from "@core/util/date/dayjs";
 import { shouldOfferSignupTrialStep } from "@web/billing/billing.query";
 import { formatTrialChargeDate } from "@web/billing/signup-trial-format.util";
-import { formatSignupTrialPlanPrice } from "@web/components/AuthModal/forms/StartTrialStep";
+import { formatTrialStartPriceLine } from "@web/billing/trial-start-display.util";
 import { describe, expect, it } from "bun:test";
 
 describe("shouldOfferSignupTrialStep", () => {
@@ -53,14 +54,10 @@ describe("formatTrialChargeDate", () => {
   });
 });
 
-describe("formatSignupTrialPlanPrice", () => {
-  it("matches the settings plan price line", () => {
-    expect(
-      formatSignupTrialPlanPrice({
-        amount: 1200,
-        currency: "usd",
-        interval: "month",
-      }),
-    ).toBe("$12.00 per month");
+describe("formatTrialStartPriceLine", () => {
+  it("matches the trial ask copy", () => {
+    expect(formatTrialStartPriceLine(BILLING_PLAN.DISPLAY_PRICE, 7)).toBe(
+      "$12.00/mo after 7 days. Cancel anytime in Settings.",
+    );
   });
 });
