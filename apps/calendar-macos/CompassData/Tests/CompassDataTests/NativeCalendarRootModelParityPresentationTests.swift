@@ -44,6 +44,18 @@ final class NativeCalendarRootModelParityPresentationTests: XCTestCase {
         XCTAssertEqual(model.timeGridState.scenario.visibleDateKeys.count, 5)
     }
 
+    func testParityLayoutUpdatePreservesLifeView() async throws {
+        let fixture = try DemoSeedFixture.load()
+        let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)
+        let model = NativeCalendarRootModel(environment: environment, demoPresentation: fixture)
+        await model.start()
+        model.handleShortcut(.navLifeView)
+
+        model.updateContentTrackWidth(CGFloat(ParityCaptureGeometry.contentTrackWidth))
+
+        XCTAssertEqual(model.viewStore.view, .life)
+    }
+
     func testGoToTodayDoesNotShiftAnchorWhenDemoDayAlreadyVisible() async throws {
         let fixture = try DemoSeedFixture.load()
         let environment = try NativeCalendarEnvironment(inMemoryDatabase: true)

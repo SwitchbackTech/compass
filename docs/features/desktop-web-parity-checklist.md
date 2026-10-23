@@ -390,4 +390,8 @@ Life intro PR #4709 passes strict verification, including native package and UI 
 
 Compared the command palette against the web image in run 39786084114. The native palette used the dark overlay token instead of web's background at 85% opacity. The palette now uses the matching background tint, with a 8pt blur applied to the content behind it. Local screenshot inspection confirms the calendar remains faintly visible behind the panel. Both-theme outside-click checks protect hit testing; this does not establish pixel equality for the full palette.
 
-The same completed comparison shows the sidebar toggle on the native title bar. Reconcile draft #4667 against current rendering before adopting its older experiments. Date/time popover placement and the remaining signed-in acceptance flows are still open audit items.
+The same completed comparison shows the sidebar toggle on the native title bar. Reconcile draft #4667 against current rendering before adopting its older experiments. Date/time popover placement is verified above; the remaining signed-in acceptance flows are still open audit items.
+
+### 2026-10-22 CI reliability follow-up
+
+The Life intro capture exposed a parity-mode layout update that reapplied the Week fixture after switching views. Layout measurement now preserves the selected view; a model regression fails on the previous reset. Registered `life-view-intro` as an allowed export surface, with a native assertion that export preserves the intro modal. Settings data actions now form an explicit accessibility group, preserving the export button identity. Life intro store tests use isolated defaults and wait for dismissal completion rather than a fixed sleep.

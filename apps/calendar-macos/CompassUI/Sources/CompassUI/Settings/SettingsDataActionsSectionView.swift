@@ -37,6 +37,7 @@ struct SettingsDataActionsSectionView: View {
                 }
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings-section-data-actions")
     }
 

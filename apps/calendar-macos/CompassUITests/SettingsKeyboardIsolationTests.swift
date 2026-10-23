@@ -54,8 +54,10 @@ final class SettingsKeyboardIsolationTests: XCTestCase {
         let window = app.windows["Compass"]
         XCTAssertTrue(window.waitForExistence(timeout: 15))
         window.typeKey(",", modifierFlags: .command)
-        let export = window.buttons["Export data"]
+        let export = window.buttons["settings-export-data"]
         XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertEqual(export.label, "Export data")
+        XCTAssertTrue(export.isHittable)
         export.click()
         let sheet = window.sheets.firstMatch
         XCTAssertTrue(sheet.waitForExistence(timeout: 5))

@@ -573,7 +573,6 @@ public final class NativeCalendarRootModel {
 
     public func updateContentTrackWidth(_ width: CGFloat) {
         if UITestLaunchPolicy.isParityCapture {
-            applyParityCapturePresentationIfNeeded()
             let resolved = max(width, CGFloat(ParityCaptureGeometry.contentTrackWidth))
             if abs(resolved - contentTrackWidth) > 0.5 {
                 contentTrackWidth = resolved

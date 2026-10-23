@@ -281,6 +281,9 @@ final class NativeParityCaptureTests: XCTestCase {
                 .waitForExistence(timeout: 10))
         sleep(1)
         NativeImageSnapshotSupport.captureWindow(window, named: "life-view-intro")
+        XCTAssertTrue(
+            window.descendants(matching: .any)["compass-native-life-view-intro-modal"].exists,
+            "Export must preserve the Life intro")
     }
 
     @MainActor
