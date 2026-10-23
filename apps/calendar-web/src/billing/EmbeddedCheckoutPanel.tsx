@@ -5,8 +5,6 @@ import { fetchEmbeddedCheckoutSecret } from "@web/billing/checkout-client-secret
 import { completeCheckoutSession } from "@web/billing/complete-checkout-session";
 import { getEmbeddedCheckoutComponent } from "@web/billing/embedded-checkout/embedded-checkout.seam";
 import { focusOnPointerEnter } from "@web/common/utils/focus-on-pointer-enter";
-import { AuthButton } from "@web/components/AuthModal/components/AuthButton";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 export const EMBEDDED_CHECKOUT_PANEL_CLASSNAME =
   "max-w-full gap-4 border border-border bg-surface text-center text-text shadow-xl";
@@ -21,9 +19,6 @@ type EmbeddedCheckoutPanelProps = {
   publishableKey: string;
   onBack?: () => void;
   onCheckoutComplete?: () => void;
-  /** When set, shows a keycap beside Back and should match Escape handling. */
-  backShortcutLabel?: string;
-  backVariant?: "button" | "link";
 };
 
 /**
@@ -34,8 +29,6 @@ export const EmbeddedCheckoutPanel: FC<EmbeddedCheckoutPanelProps> = ({
   publishableKey,
   onBack,
   onCheckoutComplete,
-  backShortcutLabel,
-  backVariant = "button",
 }) => {
   const queryClient = useQueryClient();
   const EmbeddedCheckout = getEmbeddedCheckoutComponent();
@@ -59,31 +52,14 @@ export const EmbeddedCheckoutPanel: FC<EmbeddedCheckoutPanelProps> = ({
         />
       </Suspense>
       {onBack ? (
-        backVariant === "link" ? (
-          <AuthButton
-            className="inline-flex items-center gap-2 self-start"
-            onClick={onBack}
-            type="button"
-            variant="link"
-          >
-            Back
-            {backShortcutLabel ? (
-              <ShortcutHint>{backShortcutLabel}</ShortcutHint>
-            ) : null}
-          </AuthButton>
-        ) : (
-          <button
-            className={`${SECONDARY_BUTTON_CLASSNAME} self-center`}
-            onClick={onBack}
-            onPointerEnter={focusOnPointerEnter}
-            type="button"
-          >
-            Back
-            {backShortcutLabel ? (
-              <ShortcutHint className="ml-2">{backShortcutLabel}</ShortcutHint>
-            ) : null}
-          </button>
-        )
+        <button
+          className={`${SECONDARY_BUTTON_CLASSNAME} self-center`}
+          onClick={onBack}
+          onPointerEnter={focusOnPointerEnter}
+          type="button"
+        >
+          Back
+        </button>
       ) : null}
     </div>
   );

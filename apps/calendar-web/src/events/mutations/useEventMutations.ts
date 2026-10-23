@@ -44,8 +44,10 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { billingQueryKeys } from "@web/billing/billing.query";
-import { blockAwaitingCheckoutEventWrite } from "@web/billing/billing-write-guard";
-import { requestTrialStep } from "@web/billing/trial-step-request";
+import {
+  blockAwaitingCheckoutEventWrite,
+  requestTrialStep,
+} from "@web/billing/trial-step-request";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,

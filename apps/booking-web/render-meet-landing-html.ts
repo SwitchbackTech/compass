@@ -1,3 +1,4 @@
+import { meetingSetupRootHref } from "@web/booking/meeting-setup.search";
 import {
   MEET_LANDING_CANONICAL_URL,
   MEET_LANDING_CTA_LABEL,
@@ -56,7 +57,7 @@ export function renderMeetLandingHtml(baseIndexHtml: string): string {
       <main>
         <h1>${escapeHtmlText(MEET_LANDING_HEADLINE)}</h1>
         <p>${escapeHtmlText(MEET_LANDING_SUPPORTING)}</p>
-        <p><a href="/?meetingSetup=1">${escapeHtmlText(MEET_LANDING_CTA_LABEL)}</a></p>
+        <p><a href="${meetingSetupRootHref()}">${escapeHtmlText(MEET_LANDING_CTA_LABEL)}</a></p>
       </main>
     </noscript>`;
 

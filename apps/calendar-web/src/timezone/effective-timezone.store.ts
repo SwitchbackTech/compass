@@ -76,8 +76,7 @@ function refreshPinnedFromStorage(): void {
  * in Auto mode and drops parity-style UTC pins that were never confirmed.
  */
 export function hydrateEffectiveTimeZonePreference(): void {
-  repairAccidentalUtcPinInStorage();
-  pinnedTimeZoneStore.set(readPinnedTimeZone());
+  refreshPinnedFromStorage();
   refreshEffectiveTimeZoneFromBrowser();
 }
 

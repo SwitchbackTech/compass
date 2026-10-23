@@ -3,6 +3,7 @@ import { type Id } from "react-toastify";
 import { track } from "@web/auth/posthog/track";
 import {
   getBillingWriteLockStatus,
+  isAwaitingCheckoutWriteLocked,
   isBillingWriteLocked,
 } from "@web/billing/billing-write-lock";
 import { type CheckoutPanelSource } from "@web/billing/checkout-panel.store";
@@ -99,7 +100,7 @@ export function promptShortcutUpgrade(
   if (!isBillingWriteLocked()) return;
   if (hasAppLockReason("billingGate")) return;
 
-  if (getBillingWriteLockStatus() === "awaiting_checkout") {
+  if (isAwaitingCheckoutWriteLocked()) {
     const eventAction = trialGateEventActionForShortcut(input);
     if (eventAction) {
       void requestTrialStep({ trigger: "write", eventAction });

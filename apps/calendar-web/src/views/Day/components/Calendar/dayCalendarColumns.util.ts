@@ -7,7 +7,7 @@ import { isEventVisibleOnGrid } from "@web/events/visibility/filter-events-visib
 import { inEffectiveTimeZone } from "@web/timezone/in-time-zone";
 import { isAllDayEventOnDay } from "./dayAllDayRows.util";
 
-export type DayViewCalendarColumnInput = {
+type DayViewCalendarColumnInput = {
   allDayEvents: GridEvent[];
   calendars: Calendar[];
   dateInView: Dayjs;
@@ -16,6 +16,8 @@ export type DayViewCalendarColumnInput = {
   pinnedCalendarIds?: ReadonlySet<CalendarId>;
   timedEvents: GridEvent[];
 };
+
+const EMPTY_PINNED_CALENDAR_IDS: ReadonlySet<CalendarId> = new Set();
 
 const eligibleCalendarsInOrder = (calendars: Calendar[]): Calendar[] => {
   const eligible = calendars.filter(
@@ -79,7 +81,7 @@ export const getDayViewCalendars = ({
   dateInView,
   defaultTargetCalendar,
   hiddenEventIds,
-  pinnedCalendarIds = new Set(),
+  pinnedCalendarIds = EMPTY_PINNED_CALENDAR_IDS,
   timedEvents,
 }: DayViewCalendarColumnInput): Calendar[] => {
   const ordered = eligibleCalendarsInOrder(calendars);
