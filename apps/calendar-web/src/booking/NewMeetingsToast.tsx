@@ -4,6 +4,7 @@ import {
   type BookingNewMeetingsClaimReservation,
   type BookingNewMeetingsClaimResponse,
 } from "@core/types/booking.contracts";
+import { track } from "@web/auth/posthog/track";
 import {
   rememberPendingNewMeetings,
   shouldDeferAttentionToasts,
@@ -65,6 +66,10 @@ export function NewMeetingsToast({
   const timeZone = useEffectiveTimeZone();
 
   const handleShow = () => {
+    track("booking_new_meetings_toast_clicked", {
+      count,
+      kind: latest.kind,
+    });
     dismissToastAndOpenWeekForSlot(toastId, latest.slotStart, timeZone);
   };
 
@@ -88,6 +93,11 @@ export function showNewMeetingsToast(
     rememberPendingNewMeetings(claim);
     return;
   }
+
+  track("booking_new_meetings_toast_shown", {
+    count: claim.count,
+    kind: claim.latest.kind,
+  });
 
   getToast()(
     createElement(NewMeetingsToast, {

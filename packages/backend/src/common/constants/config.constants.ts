@@ -88,6 +88,7 @@ const ConfigSchema = z
       .positive()
       .max(50)
       .optional(),
+    BOOKING_HOST_EMAIL_ENABLED: BooleanFromInput.default(true),
   })
   .strict()
   .superRefine((env, context) => {
@@ -282,6 +283,7 @@ export function parseRawConfig(config: CompassConfig): Config {
       config.email?.previewLoop?.scheduleProfile,
     EMAIL_PREVIEW_LOOP_GAP_DAYS: config.email?.previewLoop?.gapDays,
     EMAIL_PREVIEW_LOOP_MAX_PER_DAY: config.email?.previewLoop?.maxEmailsPerDay,
+    BOOKING_HOST_EMAIL_ENABLED: config.email?.bookingHostEmailEnabled ?? true,
   });
 }
 
@@ -365,6 +367,7 @@ export function parseConfigFromEnv(
     EMAIL_PREVIEW_LOOP_MAX_PER_DAY: rawEnv["EMAIL_PREVIEW_LOOP_MAX_PER_DAY"]
       ? Number.parseInt(rawEnv["EMAIL_PREVIEW_LOOP_MAX_PER_DAY"], 10)
       : undefined,
+    BOOKING_HOST_EMAIL_ENABLED: nonEmpty(rawEnv["BOOKING_HOST_EMAIL_ENABLED"]),
   });
 }
 

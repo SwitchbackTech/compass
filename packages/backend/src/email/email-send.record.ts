@@ -10,11 +10,15 @@ export const EmailSendStatusSchema = z.enum([
 ]);
 export type EmailSendStatus = z.infer<typeof EmailSendStatusSchema>;
 
+export const EmailSendSequenceSchema = z.enum(["welcome", "booking-host"]);
+export type EmailSendSequence = z.infer<typeof EmailSendSequenceSchema>;
+
 export const EmailSendRecordSchema = z.strictObject({
   _id: z.string(),
   userId: zObjectId,
-  sequence: z.literal("welcome"),
+  sequence: EmailSendSequenceSchema,
   stepKey: z.string().trim().min(1).max(64),
+  reservationId: zObjectId.optional(),
   status: EmailSendStatusSchema,
   sendAt: z.date(),
   attemptCount: z.number().int().nonnegative(),

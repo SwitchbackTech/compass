@@ -41,6 +41,8 @@ import {
   publicBookingSlotsLog,
 } from "@backend/booking/services/public-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import mongoService from "@backend/common/services/mongo.service";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import eventController from "@backend/event/controllers/event.controller";
@@ -48,6 +50,7 @@ import { eventMutationError } from "@backend/event/event.error";
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -3195,6 +3198,66 @@ describe("PublicBookingService", () => {
 
     expect(res.status).toHaveBeenCalledWith(Status.NO_CONTENT);
     expect(submitCommand).toHaveBeenCalledTimes(1);
+  });
+
+  describe("host email enqueue", () => {
+    const originalProvider = CONFIG.EMAIL_PROVIDER;
+    const originalBookingHostEnabled = CONFIG.BOOKING_HOST_EMAIL_ENABLED;
+
+    afterEach(() => {
+      CONFIG.EMAIL_PROVIDER = originalProvider;
+      CONFIG.BOOKING_HOST_EMAIL_ENABLED = originalBookingHostEnabled;
+    });
+
+    it("enqueues booked, cancelled, and rescheduled booking-host rows", async () => {
+      CONFIG.EMAIL_PROVIDER = "log";
+      CONFIG.BOOKING_HOST_EMAIL_ENABLED = true;
+      const { slug } = await enableBookingPage();
+      const slotStart = `${BOOKING_MONDAY}T10:00:00.000Z`;
+      const created = await service.createReservation(slug, {
+        slotStart,
+        guestName: "Ada Lovelace",
+        guestEmail: "ada@example.com",
+        guestTimeZone: "Europe/London",
+        durationMinutes: 30,
+      });
+      const reservationId = new ObjectId(created.reservationId);
+      const bookedRows = await mongoService.emailSend
+        .find({ sequence: "booking-host", stepKey: "booked" })
+        .toArray();
+      expect(bookedRows).toHaveLength(1);
+      expect(bookedRows[0]?.reservationId?.toHexString()).toBe(
+        reservationId.toHexString(),
+      );
+
+      const token = new URL(created.cancelUrl).searchParams.get("token");
+      expect(token).toBeTruthy();
+      await service.cancelReservation(reservationId, { token: token! });
+      const cancelledRows = await mongoService.emailSend
+        .find({ sequence: "booking-host", stepKey: "cancelled" })
+        .toArray();
+      expect(cancelledRows).toHaveLength(1);
+
+      const rebooked = await service.createReservation(slug, {
+        slotStart: `${BOOKING_MONDAY}T11:00:00.000Z`,
+        guestName: "Grace Hopper",
+        guestEmail: "grace@example.com",
+        guestTimeZone: "America/New_York",
+        durationMinutes: 30,
+      });
+      const rebookedId = new ObjectId(rebooked.reservationId);
+      const rebookToken = new URL(rebooked.cancelUrl).searchParams.get("token");
+      await service.rescheduleReservation(rebookedId, {
+        token: rebookToken!,
+        slotStart: `${BOOKING_MONDAY}T12:00:00.000Z`,
+        guestTimeZone: "America/New_York",
+        durationMinutes: 30,
+      });
+      const rescheduledRows = await mongoService.emailSend
+        .find({ sequence: "booking-host", stepKey: "rescheduled" })
+        .toArray();
+      expect(rescheduledRows).toHaveLength(1);
+    });
   });
 });
 

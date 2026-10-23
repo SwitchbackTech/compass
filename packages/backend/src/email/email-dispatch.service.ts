@@ -1,6 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
 import { emailListIncludes } from "@core/util/email.util";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import { renderBookingHostEmail } from "@backend/email/booking-host-email.content";
+import { loadBookingHostEmailDispatchContext } from "@backend/email/booking-host-email.context";
+import { type BookingHostEmailKind } from "@backend/email/booking-host-email.id";
 import { emailAnalytics } from "@backend/email/email.analytics";
 import {
   EMAIL_SEND_BATCH_SIZE,
@@ -19,6 +22,7 @@ import { emailSendRepository } from "@backend/email/email-send.repository";
 import {
   buildUnsubscribeTokenForUser,
   buildUnsubscribeUrls,
+  isBookingHostEmailStopped,
   isEmailSequenceStopped,
 } from "@backend/email/email-unsubscribe";
 import { buildEmailProvider } from "@backend/email/providers/email.client";
@@ -114,7 +118,11 @@ export class EmailDispatchService {
     );
 
     for (const row of claimed) {
-      await this.#dispatchRow(row);
+      if (row.sequence === "booking-host") {
+        await this.#dispatchBookingHostRow(row);
+      } else {
+        await this.#dispatchWelcomeRow(row);
+      }
       await sleep(EMAIL_SEND_PROVIDER_SPACING_MS);
     }
 
@@ -138,7 +146,145 @@ export class EmailDispatchService {
     });
   };
 
-  async #dispatchRow(row: EmailSendRecord): Promise<void> {
+  async #dispatchBookingHostRow(row: EmailSendRecord): Promise<void> {
+    const userIdHex = row.userId.toHexString();
+    const kind = row.stepKey as BookingHostEmailKind;
+    const analyticsBase = {
+      sequence: "booking-host",
+      kind,
+      reservation_id: row.reservationId?.toHexString() ?? "",
+    };
+
+    const skip = async (reason: string) => {
+      await emailSendRepository.markSkipped(row._id, reason);
+      void emailAnalytics.capture({
+        event: "email_skipped",
+        userId: userIdHex,
+        step: row.stepKey,
+        properties: analyticsBase,
+      });
+      logger.info("Booking host email skipped", {
+        rowId: row._id,
+        stepKey: row.stepKey,
+        reason,
+      });
+    };
+
+    if (!row.reservationId) {
+      await skip("Missing reservation");
+      return;
+    }
+
+    const context = await loadBookingHostEmailDispatchContext({
+      userId: row.userId,
+      reservationId: row.reservationId,
+    });
+    if (!context) {
+      await skip("Missing booking context");
+      return;
+    }
+
+    if (context.user.isSynthetic) {
+      await skip("Synthetic account");
+      return;
+    }
+
+    if (isBookingHostEmailStopped(context.user.emailPreferences)) {
+      await emailSendRepository.markCanceled(row._id);
+      return;
+    }
+
+    if (!isAllowlistedRecipient(context.user.email)) {
+      await skip("Recipient not allowlisted");
+      return;
+    }
+
+    const reservation = context.reservation;
+    if (!reservation) {
+      await skip("Reservation not found");
+      return;
+    }
+
+    const unsubscribeToken = buildUnsubscribeTokenForUser(userIdHex);
+    const unsubscribe =
+      unsubscribeToken !== null
+        ? buildUnsubscribeUrls(unsubscribeToken, "booking-host")
+        : undefined;
+
+    const rendered = renderBookingHostEmail({
+      kind,
+      guestName: reservation.guestName,
+      guestEmail: reservation.guestEmail,
+      notes: reservation.notes,
+      durationMinutes: context.durationMinutes,
+      pageTimeZone: context.page!.timeZone,
+      guestTimeZone: reservation.guestTimeZone,
+      slotStart: reservation.slotStart,
+      slotEnd: reservation.slotEnd,
+      previousSlotStart: reservation.previousSlotStart,
+      conference: context.conference,
+      openInCompassUrl: context.openInCompassUrl,
+      unsubscribe,
+    });
+
+    const headers: Record<string, string> = {};
+    if (unsubscribe) {
+      headers["List-Unsubscribe"] = unsubscribe.listUnsubscribeHeader;
+      headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+    }
+
+    try {
+      const result = await this.getProvider().send({
+        idempotencyKey: row._id,
+        to: context.user.email,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        headers,
+      });
+      await emailSendRepository.markSent(row._id, result.messageId);
+      void emailAnalytics.capture({
+        event: "email_sent",
+        userId: userIdHex,
+        step: row.stepKey,
+        properties: analyticsBase,
+      });
+      logger.info("Booking host email sent", {
+        rowId: row._id,
+        stepKey: row.stepKey,
+      });
+    } catch (error) {
+      const message = errorMessage(error);
+      if (isInvalidRecipientError(error)) {
+        await skip(message);
+        return;
+      }
+
+      const nextAttemptAt = new Date(
+        Date.now() + emailSendBackoffMs(row.attemptCount + 1),
+      );
+      const updated = await emailSendRepository.recordFailure(
+        row._id,
+        message,
+        nextAttemptAt,
+      );
+      if (updated?.status === "failed") {
+        void emailAnalytics.capture({
+          event: "email_failed",
+          userId: userIdHex,
+          step: row.stepKey,
+          properties: analyticsBase,
+        });
+      }
+      logger.warn("Booking host email send failed", {
+        rowId: row._id,
+        stepKey: row.stepKey,
+        message,
+      });
+    }
+  }
+
+  async #dispatchWelcomeRow(row: EmailSendRecord): Promise<void> {
     const userIdHex = row.userId.toHexString();
     const previewLoop = isPreviewLoopRow(row);
     const analyticsBase = previewLoop ? { preview_loop: true } : undefined;

@@ -1,11 +1,19 @@
 import { type Request, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import mongoService from "@backend/common/services/mongo.service";
-import { parseUnsubscribeUserId } from "@backend/email/email-unsubscribe";
 import {
+  type EmailUnsubscribeScope,
+  parseUnsubscribeUserId,
+} from "@backend/email/email-unsubscribe";
+import {
+  markBookingHostEmailDisabled,
   markUserUnsubscribed,
   resolveUserIdFromUnsubscribeToken,
 } from "@backend/email/services/email-suppression.service";
+
+const parseScope = (value: unknown): EmailUnsubscribeScope => {
+  return value === "booking-host" ? "booking-host" : "welcome";
+};
 
 const pageShell = (title: string, body: string): string => `<!DOCTYPE html>
 <html lang="en">
@@ -28,23 +36,38 @@ const invalidPage = (): string =>
      <p style="margin:0;font-size:16px;line-height:24px;color:#4b5563;">The unsubscribe link may have expired or already been used.</p>`,
   );
 
-const confirmPage = (token: string): string =>
-  pageShell(
+const confirmPage = (token: string, scope: EmailUnsubscribeScope): string => {
+  const isBookingHost = scope === "booking-host";
+  const description = isBookingHost
+    ? "You will stop receiving email when guests book, cancel, or reschedule meetings on your Compass meeting page."
+    : "You will stop receiving welcome sequence messages from Compass Calendar.";
+  const scopeField =
+    scope === "booking-host"
+      ? `<input type="hidden" name="scope" value="booking-host" />`
+      : "";
+  return pageShell(
     "Unsubscribe",
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:30px;color:#111827;">Unsubscribe from Compass emails</h1>
-     <p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#4b5563;">You will stop receiving welcome sequence messages from Compass Calendar.</p>
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:30px;color:#111827;">${isBookingHost ? "Turn off booking alert emails" : "Unsubscribe from Compass emails"}</h1>
+     <p style="margin:0 0 20px;font-size:16px;line-height:24px;color:#4b5563;">${description}</p>
      <form method="post" action="/api/email/unsubscribe">
        <input type="hidden" name="token" value="${token.replace(/"/g, "&quot;")}" />
-       <button type="submit" style="background:#2563eb;color:#ffffff;border:none;border-radius:6px;padding:12px 20px;font-size:16px;cursor:pointer;">Confirm unsubscribe</button>
+       ${scopeField}
+       <button type="submit" style="background:#2563eb;color:#ffffff;border:none;border-radius:6px;padding:12px 20px;font-size:16px;cursor:pointer;">Confirm</button>
      </form>`,
   );
+};
 
-const donePage = (): string =>
-  pageShell(
+const donePage = (scope: EmailUnsubscribeScope): string => {
+  const description =
+    scope === "booking-host"
+      ? "You will not receive further booking alert emails from Compass Calendar."
+      : "You will not receive further welcome sequence emails from Compass Calendar.";
+  return pageShell(
     "Unsubscribed",
-    `<h1 style="margin:0 0 12px;font-size:22px;line-height:30px;color:#111827;">You are unsubscribed</h1>
-     <p style="margin:0;font-size:16px;line-height:24px;color:#4b5563;">You will not receive further welcome sequence emails from Compass Calendar.</p>`,
+    `<h1 style="margin:0 0 12px;font-size:22px;line-height:30px;color:#111827;">${scope === "booking-host" ? "Booking alerts are off" : "You are unsubscribed"}</h1>
+     <p style="margin:0;font-size:16px;line-height:24px;color:#4b5563;">${description}</p>`,
   );
+};
 
 export class EmailUnsubscribeController {
   showConfirmation = async (req: Request, res: Response): Promise<void> => {
@@ -54,7 +77,8 @@ export class EmailUnsubscribeController {
       res.status(Status.OK).type("html").send(invalidPage());
       return;
     }
-    res.status(Status.OK).type("html").send(confirmPage(token));
+    const scope = parseScope(req.query["scope"]);
+    res.status(Status.OK).type("html").send(confirmPage(token, scope));
   };
 
   confirmUnsubscribe = async (req: Request, res: Response): Promise<void> => {
@@ -64,6 +88,9 @@ export class EmailUnsubscribeController {
         : typeof req.query["token"] === "string"
           ? req.query["token"]
           : "";
+    const scope = parseScope(
+      req.body?.scope ?? (req.query ? req.query["scope"] : undefined),
+    );
     const userId = await resolveUserIdFromUnsubscribeToken(token);
     if (!userId) {
       res.status(Status.OK).type("html").send(invalidPage());
@@ -76,8 +103,12 @@ export class EmailUnsubscribeController {
       return;
     }
 
-    await markUserUnsubscribed(userId);
-    res.status(Status.OK).type("html").send(donePage());
+    if (scope === "booking-host") {
+      await markBookingHostEmailDisabled(userId);
+    } else {
+      await markUserUnsubscribed(userId);
+    }
+    res.status(Status.OK).type("html").send(donePage(scope));
   };
 }
 

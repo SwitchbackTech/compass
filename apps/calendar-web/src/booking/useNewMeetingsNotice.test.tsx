@@ -53,6 +53,11 @@ const mockClaimNewMeetings = mock(
   }),
 );
 const mockNavigate = mock();
+const mockTrack = mock(() => undefined);
+
+mock.module("@web/auth/posthog/track", () => ({
+  track: mockTrack,
+}));
 
 let isBookingApiMocked = true;
 afterAll(() => {
@@ -204,6 +209,11 @@ describe("useNewMeetingsNotice", () => {
       screen.getByText("Bob booked a meeting: Thu, Sep 24, 12:00 PM"),
     ).toBeInTheDocument();
 
+    expect(mockTrack).toHaveBeenCalledWith("booking_new_meetings_toast_shown", {
+      count: 1,
+      kind: "booked",
+    });
+
     await userEvent.click(screen.getByRole("button", { name: "Show" }));
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith({
@@ -211,6 +221,13 @@ describe("useNewMeetingsNotice", () => {
         params: { dateString: "2026-09-24" },
       });
     });
+    expect(mockTrack).toHaveBeenCalledWith(
+      "booking_new_meetings_toast_clicked",
+      {
+        count: 1,
+        kind: "booked",
+      },
+    );
   });
 
   it("shows the cancelled sentence for one cancel", async () => {

@@ -27,6 +27,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useRef } from "react";
 import { RescheduleBookingReservationInputSchema } from "@core/types/booking.contracts";
+import { track } from "@web/auth/posthog/track";
 
 /**
  * The guest reschedule flow. The shared slot picker lives in
@@ -174,6 +175,9 @@ export function usePublicBookingRescheduleFlow() {
           durationMinutes: pageQuery.data.durationMinutes,
         }),
       );
+      track("booking_reservation_rescheduled", {
+        duration_minutes: pageQuery.data.durationMinutes,
+      });
       await navigate({
         to: ROOT_ROUTES.BOOK_CONFIRMED,
         params: { reservationId },

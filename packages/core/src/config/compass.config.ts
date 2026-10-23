@@ -108,6 +108,8 @@ const CompassConfigSchema = z
             maxEmailsPerDay: z.number().int().positive().max(50).optional(),
           })
           .optional(),
+        /** When false, booking host alert emails are not enqueued. Default on. */
+        bookingHostEmailEnabled: z.boolean().optional(),
       })
       .nullish(),
     posthog: z

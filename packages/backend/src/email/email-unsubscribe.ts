@@ -30,13 +30,20 @@ export function parseUnsubscribeUserId(token: string): string | null {
   return verifyUnsubscribeToken(token, secret);
 }
 
-export function buildUnsubscribeUrls(token: string): {
+export type EmailUnsubscribeScope = "welcome" | "booking-host";
+
+export function buildUnsubscribeUrls(
+  token: string,
+  scope?: EmailUnsubscribeScope,
+): {
   httpsUrl: string;
   mailtoUrl: string;
   listUnsubscribeHeader: string;
 } {
   // BASEURL is `backend.apiUrl`, which already ends in `/api`.
-  const httpsUrl = `${CONFIG.BASEURL}/email/unsubscribe?token=${encodeURIComponent(token)}`;
+  const scopeQuery =
+    scope && scope !== "welcome" ? `&scope=${encodeURIComponent(scope)}` : "";
+  const httpsUrl = `${CONFIG.BASEURL}/email/unsubscribe?token=${encodeURIComponent(token)}${scopeQuery}`;
   const domain = extractMailboxDomain(CONFIG.EMAIL_FROM ?? "");
   const mailtoUrl = `mailto:unsubscribe@${domain}?subject=${encodeURIComponent("Unsubscribe")}&body=${encodeURIComponent(token)}`;
   const listUnsubscribeHeader = `<${mailtoUrl}>, <${httpsUrl}>`;
@@ -47,4 +54,17 @@ export function isEmailSequenceStopped(
   preferences: { unsubscribedAt?: Date; suppressedAt?: Date } | undefined,
 ): boolean {
   return Boolean(preferences?.unsubscribedAt ?? preferences?.suppressedAt);
+}
+
+export function isBookingHostEmailStopped(
+  preferences:
+    | {
+        suppressedAt?: Date;
+        bookingHostEmailDisabledAt?: Date;
+      }
+    | undefined,
+): boolean {
+  return Boolean(
+    preferences?.suppressedAt ?? preferences?.bookingHostEmailDisabledAt,
+  );
 }
