@@ -64,6 +64,8 @@ const ConfigSchema = z
     STRIPE_WEBHOOK_SECRET: z.string().nonempty().optional(),
     STRIPE_PRICE_ID: z.string().nonempty().optional(),
     STRIPE_PUBLISHABLE_KEY: z.string().nonempty().optional(),
+    STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID: z.string().nonempty().optional(),
+    SYNTHETIC_JOURNEY_EMAILS: z.array(z.string()).default([]),
     // Operator pause switch: when false, trial/billing gates stay off for
     // everyone regardless of Stripe configuration.
     BILLING_ENFORCEMENT: BooleanFromInput.default(false),
@@ -260,6 +262,10 @@ export function parseRawConfig(config: CompassConfig): Config {
     STRIPE_WEBHOOK_SECRET: nonEmpty(config.stripe?.webhookSecret),
     STRIPE_PRICE_ID: nonEmpty(config.stripe?.priceId),
     STRIPE_PUBLISHABLE_KEY: nonEmpty(config.stripe?.publishableKey),
+    STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID: nonEmpty(
+      config.stripe?.syntheticJourneyDiscountId,
+    ),
+    SYNTHETIC_JOURNEY_EMAILS: toEmailList(config.journeys?.syntheticEmails),
     BILLING_ENFORCEMENT: config.billing?.enforcement,
     BILLING_BYPASS_EMAILS: toEmailList(config.billing?.bypassEmails),
     EMAIL_PROVIDER: config.email?.provider,
@@ -324,6 +330,12 @@ export function parseConfigFromEnv(
     STRIPE_WEBHOOK_SECRET: nonEmpty(rawEnv["STRIPE_WEBHOOK_SECRET"]),
     STRIPE_PRICE_ID: nonEmpty(rawEnv["STRIPE_PRICE_ID"]),
     STRIPE_PUBLISHABLE_KEY: nonEmpty(rawEnv["STRIPE_PUBLISHABLE_KEY"]),
+    STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID: nonEmpty(
+      rawEnv["STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID"],
+    ),
+    SYNTHETIC_JOURNEY_EMAILS: toEmailList(
+      rawEnv["SYNTHETIC_JOURNEY_EMAILS"]?.split(","),
+    ),
     BILLING_ENFORCEMENT: nonEmpty(rawEnv["BILLING_ENFORCEMENT"]),
     BILLING_BYPASS_EMAILS: toEmailList(
       rawEnv["BILLING_BYPASS_EMAILS"]?.split(","),

@@ -10,6 +10,7 @@ export const UserProfileSchema = z.object({
   email: z.string(),
   locale: z.string(),
   picture: z.string(),
+  isSynthetic: z.boolean().optional(),
 });
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 

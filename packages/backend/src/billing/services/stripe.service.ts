@@ -1,4 +1,5 @@
 import type Stripe from "stripe";
+import { isSyntheticAccountEmail } from "@core/analytics/synthetic-account.util";
 import { buildDesktopBillingReturnUrl } from "@core/desktop/desktop-billing-return.util";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -28,7 +29,23 @@ import { isStripeConfigured } from "@backend/common/constants/config.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 /** Bump when Checkout Session create params change so Stripe does not replay a failed create. */
-const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v7-";
+const CHECKOUT_IDEMPOTENCY_PREFIX = "compass-checkout-v8-";
+
+function syntheticJourneyCheckoutDiscounts(user: {
+  email: string;
+  isSynthetic?: boolean;
+}): Array<{ coupon: string } | { promotion_code: string }> | undefined {
+  const discountId = CONFIG.STRIPE_SYNTHETIC_JOURNEY_DISCOUNT_ID;
+  if (!discountId) return undefined;
+  const synthetic =
+    user.isSynthetic === true ||
+    isSyntheticAccountEmail(user.email, CONFIG.SYNTHETIC_JOURNEY_EMAILS);
+  if (!synthetic) return undefined;
+  if (discountId.startsWith("promo_")) {
+    return [{ promotion_code: discountId }];
+  }
+  return [{ coupon: discountId }];
+}
 
 /**
  * Desktop and web send different create params for the same user, so they need
@@ -217,6 +234,8 @@ export class StripeService {
       );
     }
 
+    const discounts = syntheticJourneyCheckoutDiscounts(user);
+
     const session = await this.stripe
       .createCheckoutSession(
         {
@@ -224,6 +243,7 @@ export class StripeService {
           customer: customerId,
           client_reference_id: userId,
           line_items: [{ price: getStripePriceId(), quantity: 1 }],
+          ...(discounts ? { discounts } : {}),
           // Card is required to start the trial. Default is `always`, but pin
           // it so a Dashboard setting cannot silently skip collection.
           payment_method_collection: "always",

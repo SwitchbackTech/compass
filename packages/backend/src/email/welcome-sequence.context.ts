@@ -17,5 +17,6 @@ export async function loadWelcomeSequenceUser(
     firstName: typed.firstName,
     billing: typed.billing,
     emailPreferences: typed.emailPreferences,
+    isSynthetic: typed.isSynthetic,
   };
 }

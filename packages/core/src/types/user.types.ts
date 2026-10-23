@@ -78,6 +78,12 @@ export interface Schema_User {
     /** The provider reported a hard bounce or complaint. */
     suppressedAt?: Date;
   };
+  /**
+   * Automation / journey test account. Excluded from billing funnels and
+   * lifecycle email. Set at first signup when the email or request header
+   * matches operator synthetic rules.
+   */
+  isSynthetic?: boolean;
 }
 
 /**

@@ -11,6 +11,7 @@ export type WelcomeSequenceUser = {
   firstName?: string;
   billing?: Schema_UserBilling;
   emailPreferences?: Schema_User["emailPreferences"];
+  isSynthetic?: boolean;
 };
 
 export type EmailStep = {

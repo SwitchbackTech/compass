@@ -30,6 +30,7 @@ import { enrollWelcomeSequenceForNewUser } from "@backend/email/welcome-sequence
 import eventService from "@backend/event/services/event.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import hiddenEventService from "@backend/user/services/hidden-event.service";
+import { resolveSyntheticAccountFromEmail } from "@backend/user/synthetic-account.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
 import { userAnalytics } from "@backend/user/user.analytics";
 
@@ -102,6 +103,7 @@ class UserService {
           name: 1,
           email: 1,
           locale: 1,
+          isSynthetic: 1,
         },
       },
     );
@@ -174,6 +176,11 @@ class UserService {
       input.identities,
     );
 
+    const isSynthetic = resolveSyntheticAccountFromEmail(
+      email,
+      existingUser?.isSynthetic,
+    );
+
     const nextUser: Schema_User = {
       email,
       name,
@@ -184,6 +191,7 @@ class UserService {
       lastLoggedInAt: new Date(),
       ...(google ? { google } : {}),
       ...(identities ? { identities } : {}),
+      ...(isSynthetic ? { isSynthetic: true } : {}),
     };
 
     const { signedUpAt: nextSignedUpAt, ...updatableUser } = nextUser;
@@ -210,12 +218,14 @@ class UserService {
     // in their sidebar and an empty column in their day view.
     if (isNewUser) {
       await calendarService.ensureLocalCalendar(userId, session);
-      await enrollWelcomeSequenceForNewUser(
-        userId,
-        signedUpAt,
-        isNewUser,
-        session,
-      );
+      if (!isSynthetic) {
+        await enrollWelcomeSequenceForNewUser(
+          userId,
+          signedUpAt,
+          isNewUser,
+          session,
+        );
+      }
     }
 
     return {

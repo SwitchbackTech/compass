@@ -1,6 +1,7 @@
 import { captureSafely } from "@core/logger/posthog-capture";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { getBackendPostHogClient } from "@backend/common/helpers/backend-posthog-client";
+import { isSyntheticCompassUserId } from "@backend/user/synthetic-account.service";
 
 /**
  * Server-side billing events. The web app's `trial_converted` fires only when
@@ -21,11 +22,14 @@ export const billingAnalytics = {
    * distinct id the web app passes to `posthog.identify`, so server and
    * browser events land on one person. Never throws.
    */
-  capture(input: {
+  async capture(input: {
     event: BillingServerEvent;
     userId: string;
     properties?: Record<string, boolean | number | string>;
   }): Promise<boolean> {
+    if (await isSyntheticCompassUserId(input.userId)) {
+      return false;
+    }
     return captureSafely(getBackendPostHogClient(), {
       event: input.event,
       distinctId: input.userId,

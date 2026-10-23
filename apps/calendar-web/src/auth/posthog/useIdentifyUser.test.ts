@@ -66,6 +66,23 @@ describe("useIdentifyUser", () => {
       useIdentifyUser("tyler@keepsoftwaresimple.com", "user-123"),
     );
 
-    expect(register).toHaveBeenCalledWith({ $internal_or_test_user: true });
+    expect(register).toHaveBeenCalledWith({
+      $internal_or_test_user: true,
+      is_synthetic: true,
+    });
+  });
+
+  it("flags server-marked synthetic accounts", () => {
+    renderHook(() => useIdentifyUser("runner@example.com", "user-123", true));
+
+    expect(identify).toHaveBeenCalledWith("user-123", {
+      email: "runner@example.com",
+      user_id: "user-123",
+      is_synthetic: true,
+    });
+    expect(register).toHaveBeenCalledWith({
+      $internal_or_test_user: true,
+      is_synthetic: true,
+    });
   });
 });

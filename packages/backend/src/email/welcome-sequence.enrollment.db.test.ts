@@ -89,6 +89,22 @@ describe("welcome sequence enrollment", () => {
     expect(count).toBe(WELCOME_SEQUENCE.length);
   });
 
+  it("does not enroll synthetic journey signups", async () => {
+    const userId = new ObjectId().toString();
+    const result = await userService.upsertUserFromAuth({
+      userId,
+      email: "runner+journey1@compasscaltest.invalid",
+      name: "Journey Bot",
+    });
+    expect(result.isNewUser).toBe(true);
+    expect(result.user.isSynthetic).toBe(true);
+
+    const count = await mongoService.emailSend.countDocuments({
+      userId: new ObjectId(userId),
+    });
+    expect(count).toBe(0);
+  });
+
   it("is a no-op when email is disabled", async () => {
     CONFIG.EMAIL_PROVIDER = undefined;
     const userId = new ObjectId();

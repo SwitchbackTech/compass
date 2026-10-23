@@ -1732,15 +1732,17 @@ public struct UserMetadataSync: Codable, Hashable, Sendable {
 public struct UserProfile: Codable, Hashable, Sendable {
     public let email: String
     public let firstName: String
+    public let isSynthetic: Bool?
     public let lastName: String
     public let locale: String
     public let name: String
     public let picture: String
     public let userId: String
 
-    public init(email: String, firstName: String, lastName: String, locale: String, name: String, picture: String, userId: String) {
+    public init(email: String, firstName: String, isSynthetic: Bool? = nil, lastName: String, locale: String, name: String, picture: String, userId: String) {
         self.email = email
         self.firstName = firstName
+        self.isSynthetic = isSynthetic
         self.lastName = lastName
         self.locale = locale
         self.name = name

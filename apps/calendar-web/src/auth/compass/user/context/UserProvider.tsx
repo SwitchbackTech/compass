@@ -11,7 +11,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const { email, profile, profileEmail, userId } = useLoadProfile(
     hasAuthenticatedBefore,
   );
-  useIdentifyUser(profileEmail, userId);
+  useIdentifyUser(profileEmail, userId, profile?.isSynthetic);
 
   return (
     <UserContext.Provider

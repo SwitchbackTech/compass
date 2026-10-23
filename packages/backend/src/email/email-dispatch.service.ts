@@ -170,6 +170,11 @@ export class EmailDispatchService {
       return;
     }
 
+    if (user.isSynthetic) {
+      await skip("Synthetic account");
+      return;
+    }
+
     if (step.skipIf?.(welcomeUserForSkipIf(user, previewLoop))) {
       await skip("Step skipped by skipIf");
       return;

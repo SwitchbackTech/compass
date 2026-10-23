@@ -1,6 +1,10 @@
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import { billingAnalytics } from "@backend/billing/billing.analytics";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
+
+mock.module("@backend/user/synthetic-account.service", () => ({
+  isSyntheticCompassUserId: mock(async () => false),
+}));
 
 describe("billingAnalytics.capture", () => {
   const realFetch = globalThis.fetch;
@@ -59,6 +63,26 @@ describe("billingAnalytics.capture", () => {
         },
       },
     ]);
+  });
+
+  it("skips billing funnel events for synthetic users", async () => {
+    using _env = mockEnv({ POSTHOG_KEY: "phc_test" });
+    const { isSyntheticCompassUserId } = await import(
+      "@backend/user/synthetic-account.service"
+    );
+    (isSyntheticCompassUserId as ReturnType<typeof mock>).mockImplementation(
+      async () => true,
+    );
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls += 1;
+      return { ok: true, status: 200 } as Response;
+    }) as unknown as typeof fetch;
+
+    await expect(
+      billingAnalytics.capture({ event: "checkout_completed", userId: "u1" }),
+    ).resolves.toBe(false);
+    expect(calls).toBe(0);
   });
 
   it("never throws when PostHog rejects the capture", async () => {
