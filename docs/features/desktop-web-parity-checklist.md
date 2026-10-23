@@ -171,7 +171,7 @@ Found a separate capture reliability defect with multiple installed Compass buil
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Welcome modal steps | ✅ | |
+| Welcome modal steps | ✅ | Both-theme click and keyboard regression added in #4766; execution and fresh captures pending an interactive desktop |
 | Connect / first-event prompts | 🟡 | |
 | Pixel pirate / illustration colors | 🟡 | Hardcoded in `PixelPirateView.swift` |
 
@@ -375,7 +375,7 @@ Automated captures: workflow `desktop-web-parity-screenshots.yml` (PR #4596). Co
 | Event form | ✅ | ✅ | 🟡 | MM.DD.YY date, ⌘ Enter save bar and web color order match; local 2026-10-22 native flow and export checks confirm both popovers open below their fields; guest row only on macOS (demo fixture) |
 | Command palette | ✅ | ✅ | 🟡 | Local 2026-10-22 capture confirms background tint and 8pt blur match the web treatment; palette row/layout differences still need review. Outside-click dismissal is covered in both themes |
 | Settings | ✅ | ✅ | 🟡 | Local 2026-10-22 native captures verify the background tint and blur in both themes; view-level export does not reproduce the blur faithfully. Timezone fixture and Accounts focus-ring differences remain |
-| Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); web blurs the grid behind the panel, the macOS capture shows a solid backdrop |
+| Onboarding welcome | ✅ | ✅ | 🟡 | Centered panel and copy match (#4718); #4766 aligns the source backdrop tint and blur with web. Fresh native captures remain pending |
 
 **Keyboard / tips (non-screenshot):** Shift+weekday column jump wired; weekend Shift+S→U/A on macOS; digit jump after day pick wired (W1, SU2 chips); bare day letters in jump mode wired; HHMM create on the picked column wired (web `useShiftHoldEventHints` column time burst).
 
@@ -398,3 +398,9 @@ The same completed comparison shows the sidebar toggle on the native title bar. 
 The Life intro capture exposed a parity-mode layout update that reapplied the Week fixture after switching views. Layout measurement now preserves the selected view; a model regression fails on the previous reset. Registered `life-view-intro` as an allowed export surface, with a native assertion that export preserves the intro modal. Settings data actions now form an explicit accessibility group, preserving the export button identity. Life intro store tests use isolated defaults and wait for dismissal completion rather than a fixed sleep.
 
 The compact-window CI follow-up reproduces Settings export hit testing at 720×630. Explicit modal accessibility grouping keeps Settings separate from the obscured calendar; the export button remains hittable and the native save panel can be typed into and cancelled at that size.
+
+### 2026-10-22 welcome backdrop follow-up
+
+The welcome modal now uses the existing background tint and applies the shared 8pt blur only to the content behind it, matching the web OverlayPanel treatment. Primary-button text and shadow use semantic theme colors. A native regression covers forward and backward navigation through the three welcome steps in both themes without starting authentication.
+
+Local UI validation is pending: the host lock screen prevented app activation and intercepted the baseline test capture. No interaction or visual pass is claimed for this increment until the test runs on an interactive desktop. Swift contract and desktop export checks pass. See #4766.
