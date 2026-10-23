@@ -42,6 +42,7 @@ import {
   type BusyAvailabilityResponse,
 } from "@core/types/sync/availability.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { escapeHtml } from "@core/util/escape-html.util";
 import { isDuplicateKeyError } from "@core/util/mongo-duplicate-key.util";
 import { BookingException, bookingError } from "@backend/booking/booking.error";
 import {
@@ -92,7 +93,6 @@ import {
 import { type CalendarBookingPort } from "@backend/booking/services/calendar-booking.port";
 import { CalendarBookingService } from "@backend/booking/services/calendar-booking.service";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { escapeHtml } from "@backend/common/helpers/escape-html";
 import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";

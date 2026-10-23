@@ -57,10 +57,6 @@ const pinnedTimeZoneStore = createExternalStore<string | null>(
 );
 const browserTimeZoneStore = createExternalStore(getBrowserTimeZone());
 
-function applyDayjsDefault(timeZone: string): void {
-  dayjs.setDefaultTimezone(timeZone);
-}
-
 export function setCalendarTimeZoneHint(timeZone: string | null): void {
   if (timeZone !== null && !isValidTimeZone(timeZone)) {
     return;
@@ -72,28 +68,17 @@ export function setCalendarTimeZoneHint(timeZone: string | null): void {
   syncEffectiveTimeZone();
 }
 
-function autoEffectiveTimeZone(): string {
-  const hint = calendarTimeZoneHintStore.get();
-  if (hint) {
-    return hint;
-  }
-  const browser = browserTimeZoneStore.get();
-  if (!isUtcLikeTimeZone(browser)) {
-    return browser;
-  }
-  return browser;
-}
-
+/** A pin wins, then the calendar's own zone hint, then the device zone. */
 function currentEffectiveTimeZone(): string {
   const pinned = pinnedTimeZoneStore.get();
   if (pinned !== null) {
     return pinned;
   }
-  return autoEffectiveTimeZone();
+  return calendarTimeZoneHintStore.get() || browserTimeZoneStore.get();
 }
 
 function syncEffectiveTimeZone(): void {
-  applyDayjsDefault(currentEffectiveTimeZone());
+  dayjs.setDefaultTimezone(currentEffectiveTimeZone());
 }
 
 syncEffectiveTimeZone();
@@ -190,12 +175,8 @@ export function getTrackedBrowserTimeZone(): string {
   return browserTimeZoneStore.get();
 }
 
-function getStoredBrowserTimeZone(): string {
-  return getTrackedBrowserTimeZone();
-}
-
 export function useBrowserTimeZone(): string {
-  return useSyncExternalStore(subscribe, getStoredBrowserTimeZone);
+  return useSyncExternalStore(subscribe, getTrackedBrowserTimeZone);
 }
 
 /** Test-only: pin in memory (and storage when available) without extra UI. */

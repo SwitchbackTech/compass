@@ -1,4 +1,4 @@
-import { escapeHtml } from "@backend/common/helpers/escape-html";
+import { escapeHtml } from "@core/util/escape-html.util";
 import { describe, expect, it } from "bun:test";
 
 describe("escapeHtml", () => {

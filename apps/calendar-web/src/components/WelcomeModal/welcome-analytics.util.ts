@@ -24,11 +24,6 @@ function readViewedSteps(): Set<WelcomeStep> {
   }
 }
 
-function writeViewedSteps(steps: Set<WelcomeStep>): void {
-  if (!sessionBrowserStore.isAvailable()) return;
-  sessionBrowserStore.set(viewedStepsKey, JSON.stringify([...steps]));
-}
-
 function claimIntroOnce(): boolean {
   if (sessionBrowserStore.isAvailable()) {
     if (sessionBrowserStore.get(STORAGE_KEYS.WELCOME_INTRO_ANALYTICS_SESSION)) {
@@ -57,12 +52,11 @@ export function emitWelcomeIntroAnalyticsOnce(): void {
 export function emitWelcomeStepViewedOnce(step: WelcomeStep): void {
   const steps = readViewedSteps();
   if (steps.has(step)) return;
-  if (!sessionBrowserStore.isAvailable()) {
-    if (stepsEmittedInMemory.has(step)) return;
-    stepsEmittedInMemory.add(step);
+  steps.add(step);
+  if (sessionBrowserStore.isAvailable()) {
+    sessionBrowserStore.set(viewedStepsKey, JSON.stringify([...steps]));
   } else {
-    steps.add(step);
-    writeViewedSteps(steps);
+    stepsEmittedInMemory.add(step);
   }
   track("welcome_step_viewed", { step });
 }

@@ -37,17 +37,12 @@ const eligibleCalendarsInOrder = (calendars: Calendar[]): Calendar[] => {
   return calendars.slice(0, 1);
 };
 
-const isTimedEventOnDay = (event: GridEvent, dateInView: Dayjs) => {
-  const viewZone = getEffectiveTimeZone();
-  const eventZone = event.timeZone ?? viewZone;
-  const viewDay = inEffectiveTimeZone(dateInView, viewZone).format(
-    "YYYY-MM-DD",
+const CIVIL_DAY_FORMAT = "YYYY-MM-DD";
+
+const timedEventCivilDay = (event: GridEvent, viewZone: string) =>
+  inEffectiveTimeZone(event.startDate, event.timeZone ?? viewZone).format(
+    CIVIL_DAY_FORMAT,
   );
-  const eventDay = inEffectiveTimeZone(event.startDate, eventZone).format(
-    "YYYY-MM-DD",
-  );
-  return viewDay === eventDay;
-};
 
 export const calendarIdsWithVisibleEventsOnDay = ({
   allDayEvents,
@@ -59,12 +54,16 @@ export const calendarIdsWithVisibleEventsOnDay = ({
   "allDayEvents" | "dateInView" | "hiddenEventIds" | "timedEvents"
 >): Set<CalendarId> => {
   const ids = new Set<CalendarId>();
+  const viewZone = getEffectiveTimeZone();
+  const viewDay = inEffectiveTimeZone(dateInView, viewZone).format(
+    CIVIL_DAY_FORMAT,
+  );
 
   for (const event of timedEvents) {
     if (
       !event.calendarId ||
       !isEventVisibleOnGrid(event, hiddenEventIds) ||
-      !isTimedEventOnDay(event, dateInView)
+      timedEventCivilDay(event, viewZone) !== viewDay
     ) {
       continue;
     }
