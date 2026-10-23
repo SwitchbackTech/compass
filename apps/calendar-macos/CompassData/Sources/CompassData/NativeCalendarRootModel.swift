@@ -498,6 +498,8 @@ public final class NativeCalendarRootModel {
         guard revision == sessionRevision, isSignedIn else { return }
         onboardingStore.markUserMetadataLoaded()
         onboardingStore.refreshConnectCalendarSnooze()
+    levelsStore.mergeHintShortcutCelebration(
+      hintFirstUsed: syncConnectionsStore.lastLoadedMetadata?.shortcuts?.hintFirstUsed)
         refreshLifeViewIntro()
         await reloadCalendars()
         guard revision == sessionRevision, isSignedIn else { return }

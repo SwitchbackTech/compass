@@ -49,6 +49,12 @@ export const UserMetadataSchema = z.object({
       lifeViewIntroSeenAt: z.string().optional(),
     })
     .optional(),
+  shortcuts: z
+    .object({
+      /** Hint keycap groups the user has already celebrated (first use). */
+      hintFirstUsed: z.array(z.string()).optional(),
+    })
+    .optional(),
   connections: z.array(SyncConnectionSummarySchema).optional(),
 });
 export type UserMetadata = z.infer<typeof UserMetadataSchema>;

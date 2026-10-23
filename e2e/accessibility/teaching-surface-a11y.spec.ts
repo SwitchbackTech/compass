@@ -53,7 +53,7 @@ test("exploring without an account returns focus to the week view without trappi
   );
 });
 
-test("the sidebar Hide tips control is keyboard reachable", async ({
+test("the sidebar shortcut tip omits an inline Hide tips control", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -67,12 +67,10 @@ test("the sidebar Hide tips control is keyboard reachable", async ({
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });
 
-  const hideTips = page.getByRole("button", { name: "Hide tips" });
-  await expect(hideTips).toBeVisible({ timeout: 15000 });
-  await hideTips.focus();
-  await expect(hideTips).toBeFocused();
-  await page.keyboard.press("Enter");
-  await expect(hideTips).toHaveCount(0);
+  await expect(page.getByRole("status").first()).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByRole("button", { name: "Hide tips" })).toHaveCount(0);
 });
 
 test("a pointer-sourced teaching pill exposes status semantics without axe violations", async ({

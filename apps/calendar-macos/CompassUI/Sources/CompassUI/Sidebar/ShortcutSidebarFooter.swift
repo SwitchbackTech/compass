@@ -39,7 +39,7 @@ struct ShortcutSidebarFooter: View {
                     Text("F shows event and open-time shortcuts")
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
-                    ShortcutHintChip(label: "F")
+                    ShortcutHintChip(label: "F", celebrate: chipCelebrate)
                 }
                 .frame(maxWidth: .infinity)
             } else if let tip = levelsStore.currentTip, tip.shortcutId == "focus-page-jump" {
@@ -52,14 +52,23 @@ struct ShortcutSidebarFooter: View {
                         .font(.rubik(11))
                         .foregroundStyle(theme.textMutedColor)
                     ForEach(tip.keycaps, id: \.self) { key in
-                        ShortcutHintChip(label: KeycapGlyphs.display([key]))
+                        ShortcutHintChip(
+                            label: KeycapGlyphs.display([key]),
+                            celebrate: chipCelebrate)
                     }
                 }
                 .frame(maxWidth: .infinity)
             }
-            hideTipsButton
         }
         .accessibilityIdentifier("compass-native-shortcut-tip")
+    }
+
+    private var chipCelebrate: Bool {
+        guard let pulseKey = levelsStore.hintShortcutChipPulseKey else { return false }
+        if let tip = levelsStore.currentTip {
+            return tip.shortcutId == pulseKey
+        }
+        return pulseKey == "focus-page-jump"
     }
 
     private var pageJumpHint: some View {
@@ -67,21 +76,14 @@ struct ShortcutSidebarFooter: View {
             Text("Hold")
                 .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)
-            ShortcutHintChip(label: KeycapGlyphs.display(["Mod"]))
+            ShortcutHintChip(
+                label: KeycapGlyphs.display(["Mod"]),
+                celebrate: chipCelebrate)
             Text("to see jump targets")
                 .font(.rubik(11))
                 .foregroundStyle(theme.textMutedColor)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private var hideTipsButton: some View {
-        Button("Hide tips") {
-            levelsStore.setTipsMuted(true)
-        }
-        .buttonStyle(.plain)
-        .font(.rubik(11))
-        .foregroundStyle(theme.textMutedColor)
     }
 
 }

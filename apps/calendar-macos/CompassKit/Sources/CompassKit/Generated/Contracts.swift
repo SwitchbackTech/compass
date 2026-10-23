@@ -1672,11 +1672,13 @@ public enum SubscriptionStatusEnum: String, Codable, Hashable, Sendable, CaseIte
 public struct UserMetadata: Codable, Hashable, Sendable {
     public let connections: [UserMetadataConnections]?
     public let onboarding: UserMetadataOnboarding?
+    public let shortcuts: UserMetadataShortcuts?
     public let sync: UserMetadataSync?
 
-    public init(connections: [UserMetadataConnections]? = nil, onboarding: UserMetadataOnboarding? = nil, sync: UserMetadataSync? = nil) {
+    public init(connections: [UserMetadataConnections]? = nil, onboarding: UserMetadataOnboarding? = nil, shortcuts: UserMetadataShortcuts? = nil, sync: UserMetadataSync? = nil) {
         self.connections = connections
         self.onboarding = onboarding
+        self.shortcuts = shortcuts
         self.sync = sync
     }
 }
@@ -1718,6 +1720,14 @@ public struct UserMetadataOnboarding: Codable, Hashable, Sendable {
 
     public init(lifeViewIntroSeenAt: String? = nil) {
         self.lifeViewIntroSeenAt = lifeViewIntroSeenAt
+    }
+}
+
+public struct UserMetadataShortcuts: Codable, Hashable, Sendable {
+    public let hintFirstUsed: [String]?
+
+    public init(hintFirstUsed: [String]? = nil) {
+        self.hintFirstUsed = hintFirstUsed
     }
 }
 

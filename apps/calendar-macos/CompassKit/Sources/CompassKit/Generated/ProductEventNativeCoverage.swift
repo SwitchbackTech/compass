@@ -74,6 +74,7 @@ public enum ProductEventNativeCoverage: Sendable {
         .notificationsSkipped,
         .shortcutSuggestionShown,
         .shortcutSuggestionEngaged,
+        .hintShortcutFirstUsed,
         .shortcutUnavailableAttempt,
         .pointerHintShown,
         .pointerHintDismissed,

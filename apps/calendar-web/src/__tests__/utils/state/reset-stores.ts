@@ -83,10 +83,12 @@ import {
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { resetEventFormFocusStoreForTests } from "@web/shortcuts/tips/event-form-focus.store";
+import { resetHintShortcutCelebrationTimerForTests } from "@web/shortcuts/tips/hint-shortcut-celebration.store";
 import { resetShortcutUsageProfileStoreForTests } from "@web/shortcuts/tips/shortcut-personalization.storage";
 import { resetShortcutTelemetryForTests } from "@web/shortcuts/tips/shortcut-telemetry";
 import { resetShortcutHintProgressStoreForTests } from "@web/shortcuts/tips/shortcut-tips.progress.store";
 import { resetShortcutTipsMutedStoreForTests } from "@web/shortcuts/tips/shortcut-tips-muted.store";
+import { resetVisibleShortcutHintStoreForTests } from "@web/shortcuts/tips/visible-shortcut-hint.store";
 import { resetEffectiveTimeZoneStoreForTests } from "@web/timezone/effective-timezone.store";
 import { resetTimeTravelStoreForTests } from "@web/timezone/time-travel.store";
 import { useTimezoneDialogStore } from "@web/timezone/timezone-dialog.store";
@@ -145,6 +147,8 @@ const storeResets: StoreReset[] = [
   () => useCheckoutPanelStore.setState(initialCheckoutPanelState, true),
   () => useCardUpdateStore.setState(initialCardUpdateState, true),
   resetShortcutHintProgressStoreForTests,
+  resetHintShortcutCelebrationTimerForTests,
+  resetVisibleShortcutHintStoreForTests,
   resetShortcutTipsMutedStoreForTests,
   resetEventFormFocusStoreForTests,
   resetShortcutTelemetryForTests,

@@ -76,9 +76,10 @@ public struct NativeCalendarEnvironment: Sendable {
             apiClient: apiClient,
             appURL: appURL,
             webAuthPresenter: nil)
-        syncConnectionsStore = SyncConnectionsStore(
-            oauthService: oauthService,
-            userAPI: UserAPI(client: apiClient),
+    let userAPI = UserAPI(client: apiClient)
+    syncConnectionsStore = SyncConnectionsStore(
+      oauthService: oauthService,
+      userAPI: userAPI,
             configStore: configStore,
             calendarRepository: calendarRepository)
         authStore = AuthStore(
@@ -106,7 +107,13 @@ public struct NativeCalendarEnvironment: Sendable {
         bookingStore = BookingStore(apiClient: apiClient, analytics: analytics)
         shortcutRegistry = try ShortcutRegistry()
         levelsStore = LevelsStore(registry: shortcutRegistry, analytics: analytics)
-        onboardingStore = OnboardingStore(analytics: analytics)
+    levelsStore.onHintFirstUsedAccountSync = { keys in
+      Task {
+        _ = try? await userAPI.updateMetadata(
+          UserMetadata(shortcuts: UserMetadataShortcuts(hintFirstUsed: keys)))
+      }
+    }
+    onboardingStore = OnboardingStore(analytics: analytics)
         blockPartyStore = BlockPartyStore(analytics: analytics)
         productAnalytics = analytics
         self.analyticsIdentity = analyticsIdentity

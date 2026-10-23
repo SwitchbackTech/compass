@@ -17,6 +17,7 @@ import {
   dismissGoogleReconnectToast,
   dismissGoogleReconnectToastIfRecovered,
 } from "@web/common/utils/toast/google-reconnect.toast";
+import { mergeHintShortcutCelebrationFromMetadata } from "@web/shortcuts/tips/hint-shortcut-celebration.storage";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 let hasShownDelayedToastThisLoad = false;
@@ -31,6 +32,7 @@ let metadataFetchEpoch = 0;
  * failed write (`handleConnectionRevoked`).
  */
 export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
+  mergeHintShortcutCelebrationFromMetadata(metadata);
   const connections = findSyncConnectionsFromMetadata(metadata);
   syncReconnectRequiredFromConnections(connections);
 

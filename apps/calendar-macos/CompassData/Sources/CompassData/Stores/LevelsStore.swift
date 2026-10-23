@@ -41,6 +41,7 @@ public final class LevelsStore {
     public private(set) var badgePulsing = false
     public private(set) var currentTip: ShortcutTipSnapshot?
     public private(set) var pendingLevelUpToast: LevelUpToastSnapshot?
+    public private(set) var hintShortcutChipPulseKey: String?
 
     private let registryIds: [String]
     private let registryRows: [ShortcutRegistryEntry]
@@ -76,7 +77,7 @@ public final class LevelsStore {
     }
 
     public var badgeLabel: String {
-        "L\(levelSnapshot.level)"
+        "Lv \(levelSnapshot.level)"
     }
 
     public func recordShortcutInvocation(_ id: ShortcutId, section: String) {
@@ -97,6 +98,8 @@ public final class LevelsStore {
                 "outcome": .string("handled"),
                 "source": .string("keyboard"),
             ])
+
+        tryCelebrateVisibleHintShortcut(id.rawValue)
 
         let previousLevel = levelSnapshot.level
         recomputeLevel()
@@ -222,6 +225,61 @@ public final class LevelsStore {
         defaults.set(tipRotationIndex, forKey: ShortcutUsageStorageKeys.tipRotationIndex)
         refreshTip()
     }
+
+    private func celebratedHintShortcutKeys() -> Set<String> {
+        guard
+            let data = defaults.data(forKey: ShortcutUsageStorageKeys.hintFirstUsed),
+            let keys = try? JSONDecoder().decode([String].self, from: data)
+        else {
+            return []
+        }
+        return Set(keys)
+    }
+
+    private func markHintShortcutCelebrated(_ key: String) {
+        var keys = celebratedHintShortcutKeys()
+        keys.insert(key)
+        guard let data = try? JSONEncoder().encode(Array(keys).sorted()) else { return }
+        defaults.set(data, forKey: ShortcutUsageStorageKeys.hintFirstUsed)
+    }
+
+    /// Merges account-level hint celebrations into device storage (e.g. after sign-in).
+    public func mergeHintShortcutCelebration(hintFirstUsed: [String]?) {
+        guard let hintFirstUsed, !hintFirstUsed.isEmpty else { return }
+        var keys = celebratedHintShortcutKeys()
+        let before = keys
+        for key in hintFirstUsed {
+            keys.insert(key)
+        }
+        guard keys != before else { return }
+        guard let data = try? JSONEncoder().encode(Array(keys).sorted()) else { return }
+        defaults.set(data, forKey: ShortcutUsageStorageKeys.hintFirstUsed)
+    }
+
+    private func claimHintShortcutCelebration(_ shortcutId: String) -> Bool {
+        guard !celebratedHintShortcutKeys().contains(shortcutId) else { return false }
+        markHintShortcutCelebrated(shortcutId)
+        return true
+    }
+
+    private func tryCelebrateVisibleHintShortcut(_ shortcutId: String) {
+        guard let tip = currentTip, tip.shortcutId == shortcutId else { return }
+        guard claimHintShortcutCelebration(shortcutId) else { return }
+        hintShortcutChipPulseKey = shortcutId
+        analytics.track(
+            .hintShortcutFirstUsed,
+            properties: ["shortcut": .string(shortcutId)])
+        onHintFirstUsedAccountSync?(Array(celebratedHintShortcutKeys()).sorted())
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            if hintShortcutChipPulseKey == shortcutId {
+                hintShortcutChipPulseKey = nil
+            }
+        }
+    }
+
+    /// When set, invoked with the full local hint-first-used list after a new claim.
+    public var onHintFirstUsedAccountSync: (([String]) -> Void)?
 }
 
 public enum ShortcutTelemetrySection {

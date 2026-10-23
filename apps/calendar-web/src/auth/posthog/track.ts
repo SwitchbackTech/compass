@@ -83,6 +83,7 @@ export type ProductEvent =
   | "shortcut_suggestion_shown"
   | "shortcut_invoked"
   | "shortcut_suggestion_engaged"
+  | "hint_shortcut_first_used"
   | "shortcut_unavailable_attempt"
   | "shortcut_level_up"
   | "shortcut_level_badge_toggled"

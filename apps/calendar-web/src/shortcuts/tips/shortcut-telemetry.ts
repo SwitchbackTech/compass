@@ -8,6 +8,7 @@ import { track } from "@web/auth/posthog/track";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { getAppLockReasons } from "@web/shortcuts/app-lock";
 import { type ShortcutRegistryId } from "@web/shortcuts/shortcuts.registry";
+import { REGISTRY_HINT_SHORTCUT_CELEBRATION_KEYS } from "@web/shortcuts/tips/hint-shortcut-celebration.registry";
 import {
   readShortcutUsageProfile,
   type ShortcutActionUsage,
@@ -21,6 +22,10 @@ import {
   type ShortcutHint,
   type ShortcutHintId,
 } from "@web/shortcuts/tips/shortcut-tips.data";
+import {
+  tryCelebrateHintShortcutForHintId,
+  tryCelebrateHintShortcutUse,
+} from "@web/shortcuts/tips/try-celebrate-hint-shortcut";
 
 const IMPRESSION_WINDOW_MS = 24 * 60 * 60 * 1000;
 const PRESENTATION_DEDUPE_MS = 30 * 1000;
@@ -147,6 +152,8 @@ export function recordHandledShortcutInvocation(
   const section = sectionForRegistryId(shortcutId);
   updateShortcutUsage(shortcutId, now);
   noteAnonymousShortcutEngagementIfEligible();
+  const celebrationKey = REGISTRY_HINT_SHORTCUT_CELEBRATION_KEYS[shortcutId];
+  if (celebrationKey) tryCelebrateHintShortcutUse(celebrationKey);
   if (!emitEvent || !section) return;
 
   track("shortcut_invoked", {
@@ -273,6 +280,8 @@ export function recordShortcutInvocation(
       was_suggested: true,
     });
   }
+
+  tryCelebrateHintShortcutForHintId(hintId);
 }
 
 const VIEW_BY_ROUTE = [

@@ -66,6 +66,7 @@ public enum ProductEvent: String, Codable, Hashable, Sendable, CaseIterable {
     case shortcutSuggestionShown = "shortcut_suggestion_shown"
     case shortcutInvoked = "shortcut_invoked"
     case shortcutSuggestionEngaged = "shortcut_suggestion_engaged"
+    case hintShortcutFirstUsed = "hint_shortcut_first_used"
     case shortcutUnavailableAttempt = "shortcut_unavailable_attempt"
     case shortcutLevelUp = "shortcut_level_up"
     case shortcutLevelBadgeToggled = "shortcut_level_badge_toggled"

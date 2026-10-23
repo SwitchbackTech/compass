@@ -56,6 +56,8 @@ export const STORAGE_KEYS = {
   // Demonstrated sidebar shortcut-tip ids (JSON). Device-local; an unknown
   // id is skipped on read, not an error.
   SHORTCUT_TIPS_DEMONSTRATED: "compass.shortcuts.tips-demonstrated",
+  /** Hint keycap groups celebrated on first use (JSON string array). */
+  SHORTCUT_HINT_FIRST_USED: "compass.shortcuts.hint-first-used",
   // Privacy-safe, device-local shortcut counters and timestamps used to rank
   // eligible sidebar tips without a network read.
   SHORTCUT_PERSONALIZATION: "compass.shortcuts.personalization",
