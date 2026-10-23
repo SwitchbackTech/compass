@@ -96,6 +96,8 @@ public final class NativeCalendarRootModel {
     /// The form date field owning Return (and its open calendar's keys); the key router lets them through.
     public var eventFormDateKeyOwner: EventFormDateFieldKeys.Owner?
     public var eventFormFocusedField: EventFormField = .title
+    public internal(set) var eventFormActionsFocusRequest = 0
+    public var isEventFormActionFocused = false
     /// Keyboard focus inside the color swatches while `eventFormFocusedField == .color`.
     public internal(set) var colorSwatchFocusIndex = 0
     public var formFieldDigitHintsVisible = false

@@ -12,6 +12,7 @@ extension NativeCalendarRootModel {
     }
 
     public func focusEventFormField(_ field: EventFormField) {
+        if field == .actions { eventFormActionsFocusRequest += 1 }
         if field == .color {
             colorSwatchFocusIndex = Self.colorSwatchOptions.firstIndex(of: draftStore.gridDraft?.color) ?? 0
         }
@@ -114,7 +115,7 @@ extension NativeCalendarRootModel {
     public func requestCloseEventForm() {
         guard draftStore.status.isFormOpen else { return }
         cancelBookedMeetingConfirmation()
-        if draftStore.hasUnsavedFormChanges || hasMeaningfulDraftTitle() {
+        if draftStore.gridDraft?.kind == .edit && draftStore.hasUnsavedFormChanges {
             pendingDiscardDraftConfirmation = true
             return
         }
@@ -152,6 +153,7 @@ extension NativeCalendarRootModel {
             try await eventsStore.createOptimistic(input: input, optimisticEvent: optimistic)
             guard revision == sessionRevision else { return }
             loadedEvents = try eventsStore.fetchAllEvents()
+            recordCreateUndo(for: optimistic)
             rebuildPresentation()
             focusEvent(eventId: savedId)
         } catch {}
@@ -182,11 +184,6 @@ extension NativeCalendarRootModel {
             let anchorId = row.field == "actions" ? "form-actions" : "form-\(row.field)"
             return PageJumpTarget(id: anchorId, digit: row.digit, label: row.label)
         }
-    }
-
-    private func hasMeaningfulDraftTitle() -> Bool {
-        guard let draft = draftStore.gridDraft else { return false }
-        return !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     public func baselineEvent(for draft: GridEventDraft) -> Event? {
