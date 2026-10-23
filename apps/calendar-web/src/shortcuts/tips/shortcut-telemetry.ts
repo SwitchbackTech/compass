@@ -1,7 +1,7 @@
 import {
   formatHotkey,
+  parseHotkey,
   type RegisterableHotkey,
-  rawHotkeyToParsedHotkey,
 } from "@tanstack/react-hotkeys";
 import { noteAnonymousShortcutEngagementIfEligible } from "@web/auth/posthog/note-anonymous-explorer-engagement";
 import { track } from "@web/auth/posthog/track";
@@ -305,7 +305,9 @@ function lockContext(): string {
 /** Static registration string for a hotkey (e.g. "Shift+ArrowLeft"). */
 function registeredHotkeyLabel(hotkey: RegisterableHotkey): string {
   if (typeof hotkey === "string") return hotkey;
-  return formatHotkey(rawHotkeyToParsedHotkey(hotkey));
+  const parsed = parseHotkey(hotkey);
+  const formatted = formatHotkey(parsed);
+  return Array.isArray(formatted) ? formatted.join(", ") : formatted;
 }
 
 export type ShortcutUnavailableAttempt = {
