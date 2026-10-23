@@ -62,8 +62,8 @@ export const filterShortcutsByContext = (
 
   return shortcuts.filter((shortcut) => {
     if (
-      shortcut.id === "notice-timezone-switch" ||
-      shortcut.id === "notice-timezone-keep"
+      shortcut.id === "other-timezone-mismatch-switch" ||
+      shortcut.id === "other-timezone-mismatch-keep"
     ) {
       return isTimezoneMismatchBannerActive(
         getPinnedTimeZone(),

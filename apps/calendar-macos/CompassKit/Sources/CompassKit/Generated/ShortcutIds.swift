@@ -90,4 +90,6 @@ public enum ShortcutId: String, Codable, Hashable, Sendable, CaseIterable {
     case otherUndo = "other-undo"
     case otherRedo = "other-redo"
     case otherTimeTravel = "other-time-travel"
+    case otherTimezoneMismatchSwitch = "other-timezone-mismatch-switch"
+    case otherTimezoneMismatchKeep = "other-timezone-mismatch-keep"
 }

@@ -571,13 +571,13 @@ export const SHORTCUTS_REGISTRY = [
     section: "other",
   },
   {
-    id: "notice-timezone-switch",
+    id: "other-timezone-mismatch-switch",
     keys: ["H"],
     label: "Switch to device timezone (mismatch banner)",
     section: "other",
   },
   {
-    id: "notice-timezone-keep",
+    id: "other-timezone-mismatch-keep",
     keys: ["P"],
     label: "Keep calendar timezone (mismatch banner)",
     section: "other",
