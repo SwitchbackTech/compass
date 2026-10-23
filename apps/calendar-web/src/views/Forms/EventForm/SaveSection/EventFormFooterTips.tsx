@@ -12,10 +12,7 @@ import {
 } from "@web/shortcuts/tips/event-form-focus.store";
 import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { getShortcutHint } from "@web/shortcuts/tips/shortcut-tips.data";
-import {
-  setTipsMuted,
-  useIsTipsMuted,
-} from "@web/shortcuts/tips/shortcut-tips-muted.store";
+import { useIsTipsMuted } from "@web/shortcuts/tips/shortcut-tips-muted.store";
 import { visibleShortcutHintActions } from "@web/shortcuts/tips/visible-shortcut-hint.store";
 
 /** Context-aware keyboard tips pinned under the Save bar in the event form. */
@@ -62,23 +59,12 @@ export function EventFormFooterTips() {
   if (!hint) return null;
 
   return (
-    <div
-      className="flex min-h-10 w-full flex-col items-center justify-center gap-0.5"
+    <p
+      aria-live="polite"
+      className="flex min-h-10 w-full items-center justify-center text-pretty break-words text-center text-text-muted text-xs leading-5 opacity-80"
       data-testid="event-form-footer-tips"
     >
-      <p
-        aria-live="polite"
-        className="block w-full text-pretty break-words text-center text-text-muted text-xs leading-5 opacity-80"
-      >
-        <ShortcutTipParts hintId={hint.id} parts={hint.parts} />
-      </p>
-      <button
-        className="c-focus-ring rounded-xs px-1 text-text-muted text-xs leading-5 opacity-80 hover:text-text-primary hover:opacity-100"
-        onClick={() => setTipsMuted(true)}
-        type="button"
-      >
-        Hide tips
-      </button>
-    </div>
+      <ShortcutTipParts hintId={hint.id} parts={hint.parts} />
+    </p>
   );
 }

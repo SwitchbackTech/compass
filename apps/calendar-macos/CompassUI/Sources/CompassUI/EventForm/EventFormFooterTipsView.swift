@@ -36,12 +36,6 @@ struct EventFormFooterTipsView: View {
                         .foregroundStyle(theme.textMutedColor)
                 }
                 .frame(maxWidth: .infinity)
-                Button("Hide tips") {
-                    model.levelsStore.setTipsMuted(true)
-                }
-                .buttonStyle(.plain)
-                .font(.rubik(11))
-                .foregroundStyle(theme.textMutedColor)
             }
             .frame(minHeight: 40)
             .accessibilityIdentifier("compass-event-form-footer-tips")

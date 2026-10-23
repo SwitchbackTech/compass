@@ -32,6 +32,7 @@ test("form footer tips teach tab navigation and Mod+0 actions", async ({
   await expect(tips).toBeVisible();
   await expect(tips).toContainText("between fields");
   await expect(tips).toContainText("0 for actions");
+  await expect(page.getByRole("button", { name: "Hide tips" })).toHaveCount(0);
 
   await page.screenshot({
     path: testInfo.outputPath("event-form-footer-tips.png"),
