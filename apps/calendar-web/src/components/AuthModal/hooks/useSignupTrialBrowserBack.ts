@@ -1,6 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { isProviderAuthCallbackPath } from "@web/auth/callback/is-provider-auth-callback-path";
 import { dismissSignupTrialStep } from "@web/components/AuthModal/dismiss-signup-trial-step";
 
 /** Browser Back from the signup trial step must not replay OAuth callbacks. */
@@ -16,14 +15,6 @@ export function useSignupTrialBrowserBack(isActive: boolean): void {
 
     const onPopState = () => {
       if (!activeRef.current || dismissingRef.current) return;
-
-      const { pathname } = window.location;
-      if (isProviderAuthCallbackPath(pathname)) {
-        dismissingRef.current = true;
-        dismissSignupTrialStep(navigate, { trackAbandon: true });
-        dismissingRef.current = false;
-        return;
-      }
 
       dismissingRef.current = true;
       dismissSignupTrialStep(navigate, { trackAbandon: true });

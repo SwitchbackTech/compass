@@ -17,7 +17,32 @@ export type EventFormDateCalendarKey =
   | " "
   | "Escape";
 
-export type EventFormDateCalendarAction =
+const CLOSED_FIELD_KEYS = new Set<string>([
+  "ArrowDown",
+  "ArrowUp",
+  "Enter",
+  " ",
+]);
+
+const CALENDAR_KEYS = new Set<string>([
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Enter",
+  " ",
+  "Escape",
+]);
+
+export const isEventFormDateFieldClosedKey = (
+  key: string,
+): key is EventFormDateFieldClosedKey => CLOSED_FIELD_KEYS.has(key);
+
+export const isEventFormDateCalendarKey = (
+  key: string,
+): key is EventFormDateCalendarKey => CALENDAR_KEYS.has(key);
+
+type EventFormDateCalendarAction =
   | { kind: "moveCursor"; days: number }
   | { kind: "pickCursor" }
   | { kind: "close" };
@@ -66,7 +91,7 @@ export const closedFieldAction = (
 /** Open-calendar keys (web `react-datepicker` parity with Mac). */
 export const calendarAction = (
   key: EventFormDateCalendarKey,
-): EventFormDateCalendarAction | null => {
+): EventFormDateCalendarAction => {
   switch (key) {
     case "ArrowLeft":
       return { kind: "moveCursor", days: -1 };
@@ -81,8 +106,6 @@ export const calendarAction = (
       return { kind: "pickCursor" };
     case "Escape":
       return { kind: "close" };
-    default:
-      return null;
   }
 };
 

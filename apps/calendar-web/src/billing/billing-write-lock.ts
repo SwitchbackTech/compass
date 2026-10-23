@@ -26,6 +26,13 @@ export function getBillingWriteLockStatus(): BillingSubscriptionStatus | null {
   return state.status;
 }
 
+export function isAwaitingCheckoutWriteLocked(): boolean {
+  return (
+    isBillingWriteLocked() &&
+    getBillingWriteLockStatus() === "awaiting_checkout"
+  );
+}
+
 export function resetBillingWriteLockForTests(): void {
   state = unlocked;
 }

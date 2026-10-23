@@ -1,6 +1,11 @@
-import { isWriteLockedAccess } from "@web/billing/billing-write-lock";
+import {
+  isAwaitingCheckoutWriteLocked,
+  isWriteLockedAccess,
+  resetBillingWriteLockForTests,
+  setBillingWriteLock,
+} from "@web/billing/billing-write-lock";
 import { type AppAccess } from "@web/billing/useAppAccess";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 describe("isWriteLockedAccess", () => {
   it("is false for anonymous and self-hosted visitors", () => {
@@ -23,5 +28,21 @@ describe("isWriteLockedAccess", () => {
 
     expect(isWriteLockedAccess(locked)).toBe(true);
     expect(isWriteLockedAccess(writable)).toBe(false);
+  });
+});
+
+describe("isAwaitingCheckoutWriteLocked", () => {
+  afterEach(() => {
+    resetBillingWriteLockForTests();
+  });
+
+  it("is true only for awaiting_checkout write locks", () => {
+    expect(isAwaitingCheckoutWriteLocked()).toBe(false);
+
+    setBillingWriteLock({ locked: true, status: "expired" });
+    expect(isAwaitingCheckoutWriteLocked()).toBe(false);
+
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+    expect(isAwaitingCheckoutWriteLocked()).toBe(true);
   });
 });

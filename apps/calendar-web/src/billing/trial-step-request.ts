@@ -1,8 +1,5 @@
 import { track } from "@web/auth/posthog/track";
-import {
-  getBillingWriteLockStatus,
-  isBillingWriteLocked,
-} from "@web/billing/billing-write-lock";
+import { isAwaitingCheckoutWriteLocked } from "@web/billing/billing-write-lock";
 import { openStartTrialStepModal } from "@web/components/AuthModal/auth-modal-runtime";
 
 export type TrialGateTrigger = "write" | "banner";
@@ -34,8 +31,7 @@ export async function requestTrialStep(options: {
   trigger: TrialGateTrigger;
   eventAction?: TrialGateEventAction;
 }): Promise<boolean> {
-  if (!isBillingWriteLocked()) return false;
-  if (getBillingWriteLockStatus() !== "awaiting_checkout") return false;
+  if (!isAwaitingCheckoutWriteLocked()) return false;
 
   pendingTrigger = options.trigger;
   track("trial_gate_triggered", {
@@ -47,5 +43,17 @@ export async function requestTrialStep(options: {
     surface: options.trigger === "write" ? "write_attempt" : "explore_banner",
   });
   await openStartTrialStepModal();
+  return true;
+}
+
+/**
+ * Blocks an event write for `awaiting_checkout` and opens the trial step.
+ * Returns true when the write must not proceed.
+ */
+export function blockAwaitingCheckoutEventWrite(
+  eventAction: TrialGateEventAction,
+): boolean {
+  if (!isAwaitingCheckoutWriteLocked()) return false;
+  void requestTrialStep({ trigger: "write", eventAction });
   return true;
 }

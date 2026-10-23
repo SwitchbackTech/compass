@@ -3,6 +3,7 @@ import {
   setBillingWriteLock,
 } from "@web/billing/billing-write-lock";
 import {
+  blockAwaitingCheckoutEventWrite,
   consumeTrialStepTrigger,
   requestTrialStep,
   resetTrialStepRequestForTests,
@@ -79,6 +80,38 @@ describe("requestTrialStep", () => {
     });
 
     expect(opened).toBe(false);
+    expect(openStartTrialStepModal).not.toHaveBeenCalled();
+  });
+});
+
+describe("blockAwaitingCheckoutEventWrite", () => {
+  const track = spyOn(trackModule, "track");
+
+  beforeEach(() => {
+    openStartTrialStepModal.mockClear();
+    track.mockClear();
+    resetBillingWriteLockForTests();
+    resetTrialStepRequestForTests();
+  });
+
+  afterEach(() => {
+    resetBillingWriteLockForTests();
+    resetTrialStepRequestForTests();
+  });
+
+  it("blocks create and opens the trial step with event_action", () => {
+    setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+    expect(blockAwaitingCheckoutEventWrite("create")).toBe(true);
+    expect(openStartTrialStepModal).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith("trial_gate_triggered", {
+      source: "write",
+      event_action: "create",
+    });
+  });
+
+  it("does not block when billing is open", () => {
+    expect(blockAwaitingCheckoutEventWrite("create")).toBe(false);
     expect(openStartTrialStepModal).not.toHaveBeenCalled();
   });
 });

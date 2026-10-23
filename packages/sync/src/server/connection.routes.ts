@@ -8,6 +8,7 @@ import {
   oauthCallbackFailureReason,
   type SyncOAuthCallbackOutcome,
 } from "@core/analytics/oauth-callback.analytics";
+import { OAUTH_CALLBACK_EVENT } from "@core/analytics/oauth-signup.events";
 import { Status } from "@core/errors/status.codes";
 import {
   captureSafely,
@@ -113,7 +114,6 @@ import { randomUUID } from "node:crypto";
 
 const logger = Logger("sync:connection.routes");
 
-const OAUTH_CALLBACK_EVENT = "oauth_callback";
 const CONNECT_CORRELATION_QUERY = "cid";
 const CONNECT_INTENT_QUERY = "intent";
 const CONNECT_CORRELATION_ID_LENGTH = 8;

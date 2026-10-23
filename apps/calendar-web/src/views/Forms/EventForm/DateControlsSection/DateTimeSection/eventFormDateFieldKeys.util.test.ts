@@ -3,6 +3,8 @@ import { formatEventFormDateLabel } from "@web/views/Forms/EventForm/DateControl
 import {
   calendarAction,
   closedFieldAction,
+  isEventFormDateCalendarKey,
+  isEventFormDateFieldClosedKey,
   movePickerCursor,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateFieldKeys.util";
 import { describe, expect, it } from "bun:test";
@@ -62,6 +64,15 @@ describe("closedFieldAction", () => {
         committedDate: committed,
       }),
     ).toEqual({ kind: "ignore" });
+  });
+});
+
+describe("date field key guards", () => {
+  it("classifies closed-field and open-calendar keys", () => {
+    expect(isEventFormDateFieldClosedKey("Enter")).toBe(true);
+    expect(isEventFormDateFieldClosedKey("Escape")).toBe(false);
+    expect(isEventFormDateCalendarKey("Escape")).toBe(true);
+    expect(isEventFormDateCalendarKey("Tab")).toBe(false);
   });
 });
 

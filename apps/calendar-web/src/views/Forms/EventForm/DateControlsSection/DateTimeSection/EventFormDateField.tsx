@@ -12,8 +12,8 @@ import {
 import {
   calendarAction,
   closedFieldAction,
-  type EventFormDateCalendarKey,
-  type EventFormDateFieldClosedKey,
+  isEventFormDateCalendarKey,
+  isEventFormDateFieldClosedKey,
   movePickerCursor,
 } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/eventFormDateFieldKeys.util";
 import {
@@ -159,18 +159,6 @@ export const EventFormDateField = ({
     onCalendarClose();
   };
 
-  const isClosedFieldKey = (key: string): key is EventFormDateFieldClosedKey =>
-    key === "ArrowDown" || key === "ArrowUp" || key === "Enter" || key === " ";
-
-  const isCalendarKey = (key: string): key is EventFormDateCalendarKey =>
-    key === "ArrowLeft" ||
-    key === "ArrowRight" ||
-    key === "ArrowUp" ||
-    key === "ArrowDown" ||
-    key === "Enter" ||
-    key === " " ||
-    key === "Escape";
-
   const handleKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
@@ -179,15 +167,12 @@ export const EventFormDateField = ({
     if (!(target instanceof HTMLInputElement)) return;
 
     if (isOpen) {
-      if (!isCalendarKey(event.key)) return;
-
-      const action = calendarAction(event.key);
-      if (!action) return;
-
+      if (!isEventFormDateCalendarKey(event.key)) return;
       // Left and right stay native so the caret can move inside the input.
       if (event.key === "ArrowLeft" || event.key === "ArrowRight") return;
 
       consume(event);
+      const action = calendarAction(event.key);
 
       switch (action.kind) {
         case "moveCursor": {
@@ -218,7 +203,7 @@ export const EventFormDateField = ({
       return;
     }
 
-    if (!isClosedFieldKey(event.key)) {
+    if (!isEventFormDateFieldClosedKey(event.key)) {
       if (event.key === "Escape") {
         revertInput(target);
         event.stopPropagation();
@@ -241,12 +226,6 @@ export const EventFormDateField = ({
         consume(event);
         commitOrRevert(target);
       }
-      return;
-    }
-
-    if (event.key === "Enter" && modKey) {
-      const parsed = parseUserDate(target.value, dayjs());
-      if (parsed) onCommit(parsed.startOf("day").toDate());
       return;
     }
 
