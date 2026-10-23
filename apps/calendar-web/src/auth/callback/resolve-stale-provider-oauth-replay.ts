@@ -4,6 +4,7 @@ import {
   oauthCallbackSearchHasParams,
   oauthCallbackSearchParams,
 } from "@web/auth/callback/strip-oauth-callback-url";
+import { readAuthenticated } from "@web/auth/compass/session/auth-session.store";
 import { session } from "@web/auth/compass/session/Session";
 import { readProviderAuthorizationIntent } from "@web/auth/providers/authorization/provider-authorization.storage";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
@@ -15,6 +16,13 @@ export type ResolveStaleProviderOAuthReplayOptions = {
   hasSession?: () => Promise<boolean>;
 };
 
+async function defaultHasSession(): Promise<boolean> {
+  if (readAuthenticated()) {
+    return true;
+  }
+  return session.doesSessionExist();
+}
+
 /**
  * A replayed callback after sign-in already finished: intent was consumed on
  * the first pass but the URL still carries `state`/`code`, or the user backed
@@ -25,7 +33,7 @@ export async function resolveStaleProviderOAuthReplay({
   provider,
   search,
   pathname,
-  hasSession = () => session.doesSessionExist(),
+  hasSession = defaultHasSession,
 }: ResolveStaleProviderOAuthReplayOptions): Promise<string | null> {
   const onCallbackPath =
     (pathname !== undefined &&

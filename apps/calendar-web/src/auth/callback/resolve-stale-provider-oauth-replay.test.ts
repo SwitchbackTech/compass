@@ -1,10 +1,15 @@
 import { resolveStaleProviderOAuthReplay } from "@web/auth/callback/resolve-stale-provider-oauth-replay";
+import { setAuthSessionAuthenticated } from "@web/auth/compass/session/auth-session.store";
 import { writeProviderAuthorizationIntent } from "@web/auth/providers/authorization/provider-authorization.storage";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("resolveStaleProviderOAuthReplay", () => {
   beforeEach(() => {
     sessionStorage.clear();
+  });
+
+  afterEach(() => {
+    setAuthSessionAuthenticated(false);
   });
 
   it("returns null when there is no session", async () => {
@@ -31,6 +36,17 @@ describe("resolveStaleProviderOAuthReplay", () => {
         hasSession: mock(async () => true),
       }),
     ).resolves.toBeNull();
+  });
+
+  it("treats the in-memory session flag as signed in", async () => {
+    setAuthSessionAuthenticated(true);
+
+    await expect(
+      resolveStaleProviderOAuthReplay({
+        provider: "google",
+        search: "?state=consumed&code=auth-code",
+      }),
+    ).resolves.toBe("/week");
   });
 
   it("returns the default calendar route for a replayed callback", async () => {

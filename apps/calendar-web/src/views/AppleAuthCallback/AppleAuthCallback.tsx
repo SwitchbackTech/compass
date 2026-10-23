@@ -33,7 +33,9 @@ export async function completeAppleAuthCallback({
   navigate,
   search,
 }: CompleteAppleAuthCallbackOptions): Promise<void> {
-  stripOAuthCallbackQueryFromHistory();
+  stripOAuthCallbackQueryFromHistory((path) =>
+    navigate(path, { replace: true }),
+  );
 
   const staleReturnPath = await resolveStaleProviderOAuthReplay({
     provider: "apple",
