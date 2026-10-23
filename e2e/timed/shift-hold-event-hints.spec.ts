@@ -7,6 +7,7 @@ import {
   getVisibleDayDates,
   openTimedEventFormWithKeyboard,
   prepareTimedCalendarPage,
+  pressShortcut,
 } from "../utils/event-test-utils";
 
 type CalendarPage = Parameters<typeof prepareTimedCalendarPage>[0];
@@ -119,6 +120,8 @@ test("tap f shows day-prefix jump keys and focuses the assigned event", async ({
   await page.keyboard.down("2");
   await page.keyboard.up("2");
 
+  await page.clock.fastForward(500);
+
   await expect(secondButton).toBeFocused();
   // Mode stays on after a digit focus so another index can be typed.
   await expect(shiftHintOverlay(page)).toHaveCount(1);
@@ -210,10 +213,12 @@ test("lowercase day prefix plus digit targets an event without a typed-time draf
     const title = createEventTitle(`Ordinal Jump ${index + 1}`);
     titles.push(title);
     await createTimedEventOffsetBy(page, title, index);
+    await expectTimedEventVisible(page, title);
   }
 
   await blurActive(page);
-  await page.keyboard.press("f");
+  await page.keyboard.press("Escape");
+  await pressShortcut(page, "f");
 
   const overlay = shiftHintOverlay(page);
   await expect(overlay.locator(":scope > span")).toHaveCount(4);
@@ -226,20 +231,27 @@ test("lowercase day prefix plus digit targets an event without a typed-time draf
   expect(labels.every((label) => label === label.toLowerCase())).toBe(true);
 
   const fourthLabel = labels.find((label) => label.endsWith("4")) ?? labels[3]!;
-  const fourthTitle = titles[3]!;
+  const events = await Promise.all(
+    titles.map(async (title) => {
+      const [event] = await getSavedEventsByTitle(page, title);
+      return { title, start: event.startDate };
+    }),
+  );
+  const fourthTitle = events.sort((a, b) => a.start.localeCompare(b.start))[3]!
+    .title;
   const fourthButton = page
     .locator("#mainGrid")
     .getByRole("button", { name: fourthTitle });
 
+  await page.locator("#mainGrid").focus();
   for (const char of fourthLabel) {
-    await page.keyboard.press(char);
+    await pressShortcut(page, char);
   }
+  // prepareTimedCalendarPage pins the browser clock; jump focus commits on a
+  // real setTimeout(DIGIT_AMBIGUOUS_COMMIT_MS).
+  await page.clock.fastForward(500);
 
-  await expect
-    .poll(async () =>
-      fourthButton.evaluate((el) => el === document.activeElement),
-    )
-    .toBe(true);
+  await expect(fourthButton).toBeFocused({ timeout: 5000 });
 });
 
 test("fast Shift+J does not toggle event jump keys", async ({ page }) => {

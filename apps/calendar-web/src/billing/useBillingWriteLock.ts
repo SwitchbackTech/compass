@@ -44,6 +44,9 @@ export function useSyncBillingWriteLock(): void {
     if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
       window.__COMPASS_E2E_BILLING_WRITE_LOCK__ = { locked, status };
     }
+  }, [locked, status]);
+
+  useEffect(() => {
     return () => {
       setBillingWriteLock({ locked: false, status: null });
       if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
@@ -53,5 +56,5 @@ export function useSyncBillingWriteLock(): void {
         };
       }
     };
-  }, [locked, status]);
+  }, []);
 }

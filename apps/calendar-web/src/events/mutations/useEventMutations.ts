@@ -1316,6 +1316,13 @@ export function useEventMutations(
         opportunity: RecurrenceScopeOpportunity,
         scope: RecurrenceScopePromotion,
       ) => {
+        const writeAction =
+          opportunity.kind === "replace" ? "replace" : "delete";
+        if (blockAwaitingCheckoutEventWrite(writeAction)) {
+          dismissRecurrenceScopeToast(opportunity.id);
+          recurrenceScopeOpportunityActions.complete(opportunity.id);
+          return;
+        }
         const id = opportunity.original.id as EventId;
         if (opportunity.source !== source) {
           dismissRecurrenceScopeToast(opportunity.id);

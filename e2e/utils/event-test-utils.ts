@@ -79,7 +79,7 @@ const FORM_TIMEOUT = 10000;
  * swallowed by Chromium chrome; this matches the app's pressKey utility and
  * the `]` sidebar helper that already works in e2e.
  */
-const pressShortcut = async (
+export const pressShortcut = async (
   page: Page,
   key: string,
   modifiers: {

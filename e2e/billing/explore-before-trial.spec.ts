@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
+  dispatchDocumentKey,
   getViewSwitcherButton,
-  openTimedEventFormWithKeyboard,
 } from "../utils/event-test-utils";
 import { E2E_APP_CONFIG_VERSION } from "../utils/test-constants";
 
@@ -230,6 +230,8 @@ test("opening settings does not open the trial step", async ({ page }) => {
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
 });
 
 test("event create opens the draft without the trial step", async ({
@@ -241,10 +243,20 @@ test("event create opens the draft without the trial step", async ({
   await expect(
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
-  await openTimedEventFormWithKeyboard(page);
-
+  await page.waitForFunction(() => {
+    const lock = (
+      window as Window & {
+        __COMPASS_E2E_BILLING_WRITE_LOCK__?: {
+          locked: boolean;
+          status: string | null;
+        };
+      }
+    ).__COMPASS_E2E_BILLING_WRITE_LOCK__;
+    return lock?.locked === true && lock.status === "awaiting_checkout";
+  });
+  await dispatchDocumentKey(page, "c");
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
+  await expect(titleInput).toBeVisible({ timeout: 15000 });
   await expect(
     page.getByRole("dialog", { name: "Start your 7-day free trial" }),
   ).toHaveCount(0);
@@ -254,6 +266,8 @@ test("event create opens the draft without the trial step", async ({
     path: "/opt/cursor/artifacts/explore-draft-open-before-save.png",
     fullPage: true,
   });
+  await page.keyboard.press("Escape");
+  await expect(titleInput).toHaveCount(0);
 });
 
 test("save opens the trial step and closing keeps the draft without a ghost event", async ({
@@ -269,8 +283,7 @@ test("save opens the trial step and closing keeps the draft without a ghost even
     page.getByText("Start your 7-day free trial to plan your week."),
   ).toBeVisible({ timeout: 15000 });
   await calendarsLoaded;
-  await page.locator("#mainGrid").focus();
-  await page.keyboard.press("c");
+  await dispatchDocumentKey(page, "c");
   const draftTitle = "Explore gate on save";
   const titleInput = page.getByRole("form").getByPlaceholder("Title");
   await expect(titleInput).toBeVisible({ timeout: 15000 });
