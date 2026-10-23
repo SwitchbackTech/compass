@@ -68,6 +68,9 @@ final class NoticeEngagementTests: XCTestCase {
     }
 
     func testTimezoneMismatchOffersSwitchAndKeep() async throws {
+        try XCTSkipIf(
+            TimeZoneFormatting.isUtcLikeTimeZone(TimeZone.current.identifier),
+            "Mismatch banner is hidden when the device zone is UTC-like")
         let model = try await makeModel()
         let device = model.viewStore.browserTimeZone
         let other = device == "Europe/Paris" ? "Asia/Tokyo" : "Europe/Paris"

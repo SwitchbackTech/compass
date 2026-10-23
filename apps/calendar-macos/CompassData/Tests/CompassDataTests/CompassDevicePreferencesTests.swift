@@ -45,9 +45,13 @@ final class CompassDevicePreferencesTests: XCTestCase {
         XCTAssertNil(CompassDevicePreferences.readPinnedTimeZone(from: defaults))
     }
 
-    func testReadPinnedTimeZoneKeepsUtcPinWhenMismatchSnoozedForDeviceZone() {
+    func testReadPinnedTimeZoneKeepsUtcPinWhenMismatchSnoozedForDeviceZone() throws {
+        let device = TimeZone.current.identifier
+        try XCTSkipIf(
+            TimeZoneFormatting.isUtcLikeTimeZone(device),
+            "Deliberate UTC pins are cleared when the device zone is UTC-like")
         XCTAssertTrue(CompassDevicePreferences.writePinnedTimeZone("UTC", to: defaults))
-        defaults.set(TimeZone.current.identifier, forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
+        defaults.set(device, forKey: CompassStorageKeys.timezoneMismatchSnoozedBrowser)
         XCTAssertEqual(
             CompassDevicePreferences.readPinnedTimeZoneResolvingAccidentalUtc(from: defaults),
             "UTC")
