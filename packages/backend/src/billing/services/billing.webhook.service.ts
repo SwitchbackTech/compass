@@ -22,6 +22,8 @@ const HANDLED_TYPES = new Set<Stripe.Event.Type>([
   "customer.subscription.updated",
   "customer.subscription.deleted",
   "customer.subscription.trial_will_end",
+  "invoice.payment_succeeded",
+  "invoice.payment_failed",
 ]);
 
 const toDate = (unixSeconds: number | null | undefined): Date | undefined =>
@@ -247,6 +249,51 @@ async function handleEvent(
   if (!HANDLED_TYPES.has(event.type)) return;
 
   const eventCreatedAt = toDate(event.created) ?? new Date();
+
+  if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const userId = await findUserIdByStripeCustomerId(
+      stripeExpandableId(invoice.customer),
+    );
+    if (!userId) {
+      logger.warn(
+        `No Compass user for invoice.payment_succeeded ${invoice.id}`,
+      );
+      return;
+    }
+    await billingAnalytics.capture({
+      event: "payment_succeeded",
+      userId,
+      properties: {
+        invoice_id: invoice.id,
+        amount_paid: invoice.amount_paid ?? 0,
+        currency: invoice.currency ?? "unknown",
+      },
+    });
+    return;
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object as Stripe.Invoice;
+    const userId = await findUserIdByStripeCustomerId(
+      stripeExpandableId(invoice.customer),
+    );
+    if (!userId) {
+      logger.warn(`No Compass user for invoice.payment_failed ${invoice.id}`);
+      return;
+    }
+    await billingAnalytics.capture({
+      event: "payment_failed",
+      userId,
+      properties: {
+        invoice_id: invoice.id,
+        amount_due: invoice.amount_due ?? 0,
+        currency: invoice.currency ?? "unknown",
+        attempt_count: invoice.attempt_count ?? 0,
+      },
+    });
+    return;
+  }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;

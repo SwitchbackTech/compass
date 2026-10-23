@@ -5,6 +5,10 @@
  */
 export const NATIVE_PRODUCT_EVENT_CALL_SITES = [
   "login_completed",
+  "signup_completed",
+  "signup_started",
+  "logout_completed",
+  "account_deleted",
   "shortcut_invoked",
   "shortcut_level_up",
   "shortcut_level_badge_toggled",

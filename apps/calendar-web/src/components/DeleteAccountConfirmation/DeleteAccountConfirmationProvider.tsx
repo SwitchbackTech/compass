@@ -3,6 +3,7 @@ import { UserApi } from "@web/api/user.api";
 import { isSessionLevelError } from "@web/api/util/api.util";
 import { getLastKnownEmail } from "@web/auth/compass/state/auth.state.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
+import { track } from "@web/auth/posthog/track";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
 import { DeleteAccountConfirmationDialog } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationDialog";
@@ -30,6 +31,7 @@ export function DeleteAccountConfirmationProvider({
 
     try {
       await UserApi.deleteAccount();
+      track("account_deleted");
     } catch (e) {
       console.error("Failed to delete account", e);
       setStatusMessage(null);

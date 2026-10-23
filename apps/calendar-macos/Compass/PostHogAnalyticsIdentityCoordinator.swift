@@ -17,6 +17,10 @@ actor PostHogAnalyticsIdentityCoordinator: AnalyticsIdentityCoordinator {
         }
     }
 
+    func setPostHogEnvironment(hostname: String?) async {
+        await PostHogCapture.shared.setEnvironment(hostname: hostname)
+    }
+
     func identify(userId: String) async {
         await PostHogCapture.shared.identify(distinctId: userId)
     }
@@ -25,7 +29,11 @@ actor PostHogAnalyticsIdentityCoordinator: AnalyticsIdentityCoordinator {
         await PostHogCapture.shared.resetIdentity()
     }
 
-    func trackLoginCompleted() async {
-        analytics.track(.loginCompleted, properties: [:])
+    func trackLoginCompleted(method: String) async {
+        analytics.track(.loginCompleted, properties: ["method": .string(method)])
+    }
+
+    func trackSignupCompleted(method: String) async {
+        analytics.track(.signupCompleted, properties: ["method": .string(method)])
     }
 }

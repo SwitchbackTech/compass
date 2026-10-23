@@ -19,6 +19,7 @@ const setAuthenticated = mock();
 const mockUseSession = mock();
 const clearAccountScopedClientState = mock();
 const posthogReset = mock();
+const track = mock();
 let signOut = spyOn(session, "signOut");
 
 // bun's mock.module is global and leaks into every other test file in the
@@ -35,6 +36,7 @@ const actualLogoutTeardown = {
 const actualPosthogBootstrap = {
   ...(await import("@web/auth/posthog/posthog.bootstrap")),
 };
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
 let isLogoutMocked = true;
 
 mockModuleForFile("@web/auth/compass/session/useSession", realUsesession, {
@@ -65,6 +67,17 @@ mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
       : actualPosthogBootstrap.getPosthogClient(),
 }));
 
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (
+    event: Parameters<typeof actualTrack.track>[0],
+    properties?: Parameters<typeof actualTrack.track>[1],
+  ) =>
+    isLogoutMocked
+      ? track(event, properties)
+      : actualTrack.track(event, properties),
+}));
+
 afterAll(() => {
   isLogoutMocked = false;
 });
@@ -77,6 +90,7 @@ describe("useLogout", () => {
     clearAuthenticationState.mockClear();
     clearAccountScopedClientState.mockClear();
     posthogReset.mockClear();
+    track.mockClear();
     setAuthenticated.mockClear();
     mockUseSession.mockReset();
     mockUseSession.mockReturnValue({
@@ -102,6 +116,9 @@ describe("useLogout", () => {
     expect(clearAuthenticationState).toHaveBeenCalledTimes(1);
     expect(clearAccountScopedClientState).toHaveBeenCalledTimes(1);
     expect(posthogReset).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith("logout_completed", {
+      signed_out_remotely: true,
+    });
     expect(setAuthenticated).toHaveBeenCalledWith(false);
   });
 

@@ -874,6 +874,55 @@ describe("Stripe webhook", () => {
     ).toBe(1);
   });
 
+  it("captures payment_failed for invoice.payment_failed", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "billing@example.com",
+      name: "Billing",
+      firstName: "Billing",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_bill",
+        stripeSubscriptionId: "sub_bill",
+      },
+    });
+    const capture = spyOn(billingAnalytics, "capture").mockResolvedValue(true);
+    const stripe = stubBillingGateway({});
+
+    await processStripeEvent(
+      {
+        id: "evt_invoice_failed_1",
+        type: "invoice.payment_failed",
+        created: 1_775_000_100,
+        data: {
+          object: {
+            id: "in_failed",
+            customer: "cus_bill",
+            amount_due: 1200,
+            currency: "usd",
+            attempt_count: 2,
+          },
+        },
+      } as unknown as Stripe.Event,
+      stripe,
+    );
+
+    expect(capture).toHaveBeenCalledWith({
+      event: "payment_failed",
+      userId: userId.toString(),
+      properties: {
+        invoice_id: "in_failed",
+        amount_due: 1200,
+        currency: "usd",
+        attempt_count: 2,
+      },
+    });
+  });
+
   describe("setup-mode checkout.session.completed", () => {
     const seedCustomer = async (billing: Record<string, unknown> = {}) => {
       const userId = mongoService.objectId();

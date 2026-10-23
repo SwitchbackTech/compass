@@ -8,7 +8,12 @@ actor PostHogCapture {
     private var client = PostHogBatchClient(configuration: nil)
     private var activeDistinctId: String?
     private var flushTask: Task<Void, Never>?
+    private var environmentLabel = PosthogEnvironment.resolve(hostname: nil)
     private let lib = "compass-macos"
+
+    func setEnvironment(hostname: String?) {
+        environmentLabel = PosthogEnvironment.resolve(hostname: hostname)
+    }
 
     func configure(posthog: AppConfigPosthog?) {
         guard let posthog else {
@@ -49,8 +54,12 @@ actor PostHogCapture {
     }
 
     func capture(_ event: ProductEvent, properties: ProductEventProperties = [:]) {
+        _ = ensureDistinctId()
+        var merged = properties
+        merged["environment"] = .string(environmentLabel)
+        merged["version"] = .string(AppBuildInfo.marketingVersion)
         do {
-            try client.enqueue(event: event.rawValue, properties: properties)
+            try client.enqueue(event: event.rawValue, properties: merged)
             scheduleFlush()
         } catch {
             // Analytics must never interrupt product actions.
