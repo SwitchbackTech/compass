@@ -79,6 +79,7 @@ describe("connection-report CLI args", () => {
           count: 2,
           oldestUpdatedAt: "2026-08-01T00:00:00.000Z",
           newestUpdatedAt: "2026-09-01T00:00:00.000Z",
+          activeLast1Day: 0,
           activeLast30Days: 1,
           activeLast90Days: 2,
         },

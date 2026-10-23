@@ -38,6 +38,10 @@ import {
 } from "@sync/domain/connection-retention.service";
 import { BOOTSTRAP_STALLED_AFTER_MS } from "@sync/domain/connection-state";
 import {
+  CONNECTION_STATE_REFRESH_STALE_AFTER_MS,
+  refreshStaleConnectionStates,
+} from "@sync/domain/connection-state-refresh.sweep";
+import {
   FAILED_JOB_MAX_REQUEUES,
   requeueFailedJobs,
 } from "@sync/domain/failed-job-requeue.service";
@@ -307,6 +311,12 @@ async function start(): Promise<void> {
     );
     credentialUsableReconcile.start();
 
+    const connectionStateRefresh = buildConnectionStateRefreshSweep(mongo);
+    service.shutdown.register("connectionStateRefresh", () =>
+      connectionStateRefresh.stop(),
+    );
+    connectionStateRefresh.start();
+
     // Sanitized sync_health_snapshot every five minutes (S44). Runs in passive
     // mode too so the heartbeat stays alive before provider work is enabled.
     const registry = buildProviderRegistry(config);
@@ -376,6 +386,7 @@ const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
 // Drift self-heal for sync_resources.credentialUsable. Primary-key batched;
 // cheap at a few thousand rows and avoids a credentials-led full scan.
 const CREDENTIAL_USABLE_RECONCILE_INTERVAL_MS = 6 * 60 * 60_000;
+const CONNECTION_STATE_REFRESH_INTERVAL_MS = 10 * 60_000;
 // A connection whose calendar list has not been fully re-discovered within
 // this window is swept: a calendar deleted or unshared at the provider is
 // otherwise never retired, because calendarListSync only ever runs once, at
@@ -496,6 +507,42 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
       windowMs: -CONNECTION_CACHE_RETENTION_MS,
       onError: (error) =>
         logSyncLoopError("Sync disconnect retention sweep failed", error),
+    },
+  );
+}
+
+function buildConnectionStateRefreshSweep(
+  mongo: SyncMongoService,
+): SweepScheduler {
+  const repos = syncRepositories(mongo);
+  const refreshDeps = {
+    connections: repos.connections,
+    calendars: repos.calendars,
+    resources: repos.syncResources,
+    credentials: repos.credentials,
+    jobs: repos.jobs,
+  };
+  return new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const result = await refreshStaleConnectionStates(refreshDeps, {
+          before,
+        });
+        if (result.changed > 0) {
+          logger.info(
+            `Sync connection-state refresh re-derived ${result.changed} of ${result.scanned} stale connection(s)`,
+          );
+        }
+        return result.changed;
+      },
+    },
+    {
+      intervalMs: CONNECTION_STATE_REFRESH_INTERVAL_MS,
+      windowMs: -CONNECTION_STATE_REFRESH_STALE_AFTER_MS,
+      jitterRatio: 0.05,
+      startupJitterMs: STARTUP_SWEEP_JITTER_MS,
+      onError: (error) =>
+        logSyncLoopError("Sync connection-state refresh sweep failed", error),
     },
   );
 }
