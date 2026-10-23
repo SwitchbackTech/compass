@@ -98,10 +98,16 @@ export type BookingOperationRecord = z.infer<
   typeof BookingOperationRecordSchema
 >;
 
+/** Overlap arbitration: exhausted `failed` ops must not block new bookings. */
 export const BOOKING_OPERATION_IN_FLIGHT_STATUSES = [
   "pending",
   "submitted",
   "compensating",
+] as const satisfies readonly BookingOperationStatus[];
+
+/** Guest create idempotency: same intent can resume after a transient `failed`. */
+export const BOOKING_OPERATION_RESUMABLE_CREATE_STATUSES = [
+  ...BOOKING_OPERATION_IN_FLIGHT_STATUSES,
   "failed",
 ] as const satisfies readonly BookingOperationStatus[];
 

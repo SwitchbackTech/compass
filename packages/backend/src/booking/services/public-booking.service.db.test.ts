@@ -2951,6 +2951,41 @@ describe("PublicBookingService", () => {
     expect(createBookingEvent).toHaveBeenCalledTimes(2);
   });
 
+  it("does not block a new guest when an exhausted failed create overlaps the slot", async () => {
+    const { slug, pageId, userId, calendarId } = await enableBookingPage();
+    const slotStart = new Date(`${BOOKING_MONDAY}T10:00:00.000Z`);
+    const slotEnd = new Date(`${BOOKING_MONDAY}T10:30:00.000Z`);
+    const failed = await bookingOperationRepository.insertCreate({
+      _id: new ObjectId("000000000000000000000001"),
+      kind: "create",
+      status: "pending",
+      pageId,
+      userId,
+      calendarId,
+      eventId: new ObjectId().toHexString(),
+      reservationId: new ObjectId(),
+      slotStart,
+      slotEnd,
+      guestName: "Stale Guest",
+      guestEmail: "stale@example.com",
+      notes: null,
+      guestTimeZone: "UTC",
+      cancelToken: "stale-token",
+    });
+    await bookingOperationRepository.markFailed(failed._id, "PROVIDER_FAILURE");
+
+    const created = await service.createReservation(slug, {
+      slotStart: `${BOOKING_MONDAY}T10:00:00.000Z`,
+      guestName: "New Guest",
+      guestEmail: "new@example.com",
+      guestTimeZone: "Europe/London",
+      durationMinutes: 30,
+    });
+
+    expect(created.reservationId).toBeTruthy();
+    expect(createBookingEvent).toHaveBeenCalledTimes(1);
+  });
+
   it("retries failed create compensation from the persisted operation", async () => {
     const { slug, pageId } = await enableBookingPage();
     createBookingEvent.mockImplementation(

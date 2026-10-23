@@ -180,13 +180,11 @@ const scheduleOperationRetry = async (
 
 /**
  * Statuses a resume can no longer carry forward: the operation is already
- * being undone, was undone, or exhausted its attempts. Resuming one of these
- * compensates and refuses instead of submitting again.
+ * being undone or was undone. `failed` stays resumable so a guest retry or
+ * recovery worker can submit again; overlap scans ignore failed ops.
  */
 const operationIsSpent = (operation: BookingOperationRecord): boolean =>
-  operation.status === "compensating" ||
-  operation.status === "compensated" ||
-  operation.status === "failed";
+  operation.status === "compensating" || operation.status === "compensated";
 
 /**
  * Advance an operation to `submitted` and keep reading from the stored record,

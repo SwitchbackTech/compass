@@ -6,6 +6,7 @@ import { bookingLifecycleAnalytics } from "@backend/booking/booking-lifecycle.an
 import {
   BOOKING_OPERATION_IN_FLIGHT_STATUSES,
   BOOKING_OPERATION_RECOVERABLE_STATUSES,
+  BOOKING_OPERATION_RESUMABLE_CREATE_STATUSES,
   type BookingOperationRecord,
   BookingOperationRecordSchema,
   type BookingOperationStatus,
@@ -157,7 +158,7 @@ class BookingOperationRepository {
       pageId,
       slotStart,
       guestEmail,
-      status: { $in: [...BOOKING_OPERATION_IN_FLIGHT_STATUSES] },
+      status: { $in: [...BOOKING_OPERATION_RESUMABLE_CREATE_STATUSES] },
     });
     if (!record) return null;
     return CreateBookingOperationRecordSchema.parse(record);
