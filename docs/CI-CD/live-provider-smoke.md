@@ -5,12 +5,11 @@ against real Google, Microsoft, and Apple test accounts. It never runs on
 pull requests. Workflow: [`.github/workflows/live-provider-smoke.yml`](../../.github/workflows/live-provider-smoke.yml).
 
 The job uses GitHub Environment `provider-smoke`. It does not read staging
-or production deploy secrets. A provider whose secrets are absent is skipped
-and emitted as a `::warning::`. If that provider is listed in
-`SMOKE_EXPECTED_PROVIDERS`, the job then fails and posts to the Discord errors
-webhook, same as a failed run. Unexpected skips still leave the job green.
-The summary line (`live-provider-smoke passed=... skipped=... failed=...`) is
-printed and appended to the GitHub Actions step summary.
+or production deploy secrets. A provider whose secrets are absent fails the
+job with a clear error (for example a missing `SMOKE_GOOGLE_REFRESH_TOKEN`),
+and posts to the Discord errors webhook. The summary line
+(`live-provider-smoke passed=... failed=...`) is printed and appended to the
+GitHub Actions step summary.
 
 Events are created only on a calendar named `compass-smoke`. Every created
 event's description carries the GitHub run id. A teardown step deletes
