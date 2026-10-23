@@ -378,9 +378,20 @@ describe("useEditSequenceShortcut", () => {
       expect(onSequence).toHaveBeenCalledWith("title");
     });
 
-    it("does not arm while billing is write-locked", () => {
+    it("arms edit sequences while awaiting checkout (gate deferred to commit)", () => {
       const onSequence = mock(() => {});
       setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
+
+      renderHook(() => useEditSequenceShortcut({ onSequence }));
+      pressKey("e");
+      pressKey("t");
+
+      expect(onSequence).toHaveBeenCalledWith("title");
+    });
+
+    it("does not arm while expired billing is write-locked", () => {
+      const onSequence = mock(() => {});
+      setBillingWriteLock({ locked: true, status: "expired" });
 
       renderHook(() => useEditSequenceShortcut({ onSequence }));
       pressKey("e");

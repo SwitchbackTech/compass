@@ -104,6 +104,7 @@ const renderGate = (options?: { authenticated?: boolean }) => {
           isOpen: false,
           currentView: "login",
           openModal: mock(),
+          openStartTrialStep: mock(),
           closeModal: mock(),
           setView: mock(),
         }}

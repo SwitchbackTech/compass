@@ -16,8 +16,8 @@ export const AuthModalProvider: FC<AuthModalProviderProps> = ({ children }) => {
   const value = useAuthModalState();
 
   useEffect(() => {
-    registerOpenStartTrialStep(() => value.openModal("startTrial"));
-  }, [value.openModal]);
+    registerOpenStartTrialStep((options) => value.openStartTrialStep(options));
+  }, [value.openStartTrialStep]);
 
   return (
     <AuthModalContext.Provider value={value}>

@@ -18,9 +18,12 @@ import {
   spyOn,
 } from "bun:test";
 
-const openStartTrialStepModal = mock(() => Promise.resolve());
+const openStartTrialStepModal = mock((_options?: { replace?: boolean }) =>
+  Promise.resolve(),
+);
 mock.module("@web/components/AuthModal/auth-modal-runtime", () => ({
-  openStartTrialStepModal: () => openStartTrialStepModal(),
+  openStartTrialStepModal: (options?: { replace?: boolean }) =>
+    openStartTrialStepModal(options),
   registerOpenStartTrialStep: () => {},
   resetOpenStartTrialStepForTests: () => {},
 }));
@@ -104,6 +107,7 @@ describe("blockAwaitingCheckoutEventWrite", () => {
 
     expect(blockAwaitingCheckoutEventWrite("create")).toBe(true);
     expect(openStartTrialStepModal).toHaveBeenCalledTimes(1);
+    expect(openStartTrialStepModal).toHaveBeenCalledWith({ replace: true });
     expect(track).toHaveBeenCalledWith("trial_gate_triggered", {
       source: "write",
       event_action: "create",

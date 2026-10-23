@@ -58,6 +58,7 @@ const renderPrompt = () =>
             isOpen: false,
             currentView: "login",
             openModal: mockOpenModal,
+            openStartTrialStep: mock(),
             closeModal: mock(),
             setView: mock(),
           }}

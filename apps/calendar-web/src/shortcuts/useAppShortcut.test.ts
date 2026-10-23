@@ -224,7 +224,7 @@ describe("useAppShortcut", () => {
     });
   });
 
-  it("opens the trial step instead of running a write shortcut", async () => {
+  it("runs create shortcuts while awaiting checkout (gate defers to save)", async () => {
     const requestTrialStep = spyOn(
       TrialStepRequest,
       "requestTrialStep",
@@ -236,13 +236,22 @@ describe("useAppShortcut", () => {
     dispatchKeyEvent("c", "keydown");
 
     await waitFor(() => {
-      expect(mockHandler).not.toHaveBeenCalled();
-      expect(requestTrialStep).toHaveBeenCalledWith({
-        trigger: "write",
-        eventAction: "create",
-      });
+      expect(mockHandler).toHaveBeenCalledTimes(1);
     });
+    expect(requestTrialStep).not.toHaveBeenCalled();
     requestTrialStep.mockRestore();
+  });
+
+  it("still blocks write shortcuts when the subscription is expired", async () => {
+    setBillingWriteLock({ locked: true, status: "expired" });
+
+    renderHook(() => useAppShortcut("C", mockHandler, WRITE_CREATE_SHORTCUT));
+
+    dispatchKeyEvent("c", "keydown");
+
+    await waitFor(() => {
+      expect(mockHandler).not.toHaveBeenCalled();
+    });
   });
 
   it("does not prompt while the billing gate owns the screen", async () => {
@@ -344,12 +353,8 @@ describe("useAppShortcut", () => {
       track.mockRestore();
     });
 
-    it("records billing_locked in look-around, where no lock is held", async () => {
+    it("does not record billing_locked for awaiting_checkout create intent", async () => {
       const track = spyOn(Track, "track");
-      const requestTrialStep = spyOn(
-        TrialStepRequest,
-        "requestTrialStep",
-      ).mockResolvedValue(true);
       setBillingWriteLock({ locked: true, status: "awaiting_checkout" });
 
       renderHook(() =>
@@ -361,20 +366,9 @@ describe("useAppShortcut", () => {
       dispatchKeyEvent("c", "keydown");
 
       await waitFor(() => {
-        expect(attempts(track)).toHaveLength(1);
-        expect(requestTrialStep).toHaveBeenCalledWith({
-          trigger: "write",
-          eventAction: "create",
-        });
+        expect(mockHandler).toHaveBeenCalledTimes(1);
       });
-      requestTrialStep.mockRestore();
-      expect(track).toHaveBeenCalledWith(
-        "shortcut_unavailable_attempt",
-        expect.objectContaining({
-          context: "unknown",
-          reason_code: "billing_locked",
-        }),
-      );
+      expect(attempts(track)).toHaveLength(0);
       track.mockRestore();
     });
 

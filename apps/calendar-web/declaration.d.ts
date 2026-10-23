@@ -69,4 +69,9 @@ interface Window {
   __COMPASS_E2E_HOOKS__?: {
     setAuthenticated: (value: boolean) => void;
   };
+  /** Mirrors `useSyncBillingWriteLock` for billing e2e waits. */
+  __COMPASS_E2E_BILLING_WRITE_LOCK__?: {
+    locked: boolean;
+    status: string | null;
+  };
 }

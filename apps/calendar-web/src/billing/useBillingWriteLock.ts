@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { defersAwaitingCheckoutGateToCommit } from "@web/billing/awaiting-checkout-explore.util";
 import {
   isWriteLockedAccess,
   setBillingWriteLock,
@@ -19,6 +20,12 @@ export function useShortcutWriteLocked(): boolean {
   return isWriteLockedAccess(access) && !isCelebrating;
 }
 
+/** Write-locked for UI that blocks before intent (shortcuts, palette). */
+export function useShortcutWriteLockedAtIntent(): boolean {
+  const locked = useShortcutWriteLocked();
+  return locked && !defersAwaitingCheckoutGateToCommit();
+}
+
 /**
  * Mirrors read-only billing onto a module flag that keyboard handlers can
  * read without subscribing. Mount once from RootShell.
@@ -34,6 +41,17 @@ export function useSyncBillingWriteLock(): void {
 
   useEffect(() => {
     setBillingWriteLock({ locked, status });
-    return () => setBillingWriteLock({ locked: false, status: null });
+    if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
+      window.__COMPASS_E2E_BILLING_WRITE_LOCK__ = { locked, status };
+    }
+    return () => {
+      setBillingWriteLock({ locked: false, status: null });
+      if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
+        window.__COMPASS_E2E_BILLING_WRITE_LOCK__ = {
+          locked: false,
+          status: null,
+        };
+      }
+    };
   }, [locked, status]);
 }

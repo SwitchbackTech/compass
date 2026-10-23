@@ -42,7 +42,9 @@ export async function requestTrialStep(options: {
     status: "awaiting_checkout",
     surface: options.trigger === "write" ? "write_attempt" : "explore_banner",
   });
-  await openStartTrialStepModal();
+  await openStartTrialStepModal({
+    replace: options.trigger === "write",
+  });
   return true;
 }
 
