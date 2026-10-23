@@ -948,6 +948,12 @@ export function useEventMutations(
             coalesce: !variables.originalOverride && !variables.input.restore,
           },
         );
+        if (wrote && !variables.input.restore) {
+          track("event_edited", {
+            event_source: source,
+            scope: variables.input.scope,
+          });
+        }
         return wrote ? completedEventWrite : skippedEventWrite;
       },
       ({ id, input, originalOverride }) => {
@@ -1040,6 +1046,12 @@ export function useEventMutations(
             !variables.skipRepository && precedingCreateOk(preceding),
           () => repository.delete(variables.id, variables.scope),
         );
+        if (wrote && !variables.skipRepository) {
+          track("event_deleted", {
+            event_source: source,
+            scope: variables.scope,
+          });
+        }
         return wrote ? completedEventWrite : skippedEventWrite;
       },
       ({ id, scope, originalOverride }) => {

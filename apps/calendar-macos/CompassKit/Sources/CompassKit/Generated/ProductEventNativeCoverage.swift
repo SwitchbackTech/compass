@@ -6,6 +6,10 @@ public enum ProductEventNativeCoverage: Sendable {
     /// Events emitted from the native macOS app (see native-product-events.manifest.ts).
     public static let nativeCallSites: Set<ProductEvent> = [
         .loginCompleted,
+        .signupCompleted,
+        .signupStarted,
+        .logoutCompleted,
+        .accountDeleted,
         .shortcutInvoked,
         .shortcutLevelUp,
         .shortcutLevelBadgeToggled
@@ -16,9 +20,7 @@ public enum ProductEventNativeCoverage: Sendable {
         .welcomeModalShown,
         .welcomeModalDismissed,
         .welcomeStepViewed,
-        .signupStarted,
         .localModeSelected,
-        .signupCompleted,
         .oauthRedirectStarted,
         .oauthCallbackReceived,
         .oauthFailed,
@@ -26,6 +28,8 @@ public enum ProductEventNativeCoverage: Sendable {
         .signupStepViewed,
         .signupFailed,
         .eventCreated,
+        .eventEdited,
+        .eventDeleted,
         .calendarConnected,
         .shortcutShowcaseStarted,
         .shortcutShowcaseSkipped,

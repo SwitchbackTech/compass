@@ -123,6 +123,42 @@ describe("processEmailWebhookEvent db", () => {
     expect(row?.status).toBe("canceled");
   });
 
+  it("records email_delayed without sending mail", async () => {
+    const userId = new ObjectId();
+    const now = new Date();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "guest@example.com",
+      firstName: "Guest",
+      lastName: "User",
+      name: "Guest User",
+      locale: "en",
+    });
+    await emailSendRepository.insertMany([
+      {
+        _id: `${userId.toHexString()}:cmd-k`,
+        userId,
+        sequence: "welcome",
+        stepKey: "cmd-k",
+        status: "sent",
+        sendAt: now,
+        nextAttemptAt: now,
+        providerMessageId: "msg-delayed",
+        sentAt: now,
+      },
+    ]);
+
+    await processEmailWebhookEvent(
+      {
+        type: "email.delayed",
+        data: { email_id: "msg-delayed", to: ["guest@example.com"] },
+      },
+      "evt-delayed",
+    );
+
+    expect(await mongoService.emailEvent.countDocuments()).toBe(1);
+  });
+
   it("ignores replayed webhook events", async () => {
     const userId = new ObjectId();
     const now = new Date();

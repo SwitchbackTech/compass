@@ -145,7 +145,7 @@ public final class SyncConnectionsStore {
 
     private func applyOutcome(_ outcome: OAuthAuthorizationOutcome, fallback: String) {
         switch outcome {
-        case .completed:
+        case .completed(isNewUser: _):
             lastError = nil
             Task { await reloadFromMetadata() }
         case .userCancelled:

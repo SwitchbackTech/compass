@@ -10,6 +10,7 @@ import { Collections } from "@backend/common/constants/collections";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 
 const STALE_IMPORTING_MS = 60 * 60 * 1000;
+const ACTIVITY_WINDOW_1_MS = 24 * 60 * 60 * 1000;
 const ACTIVITY_WINDOW_30_MS = 30 * 24 * 60 * 60 * 1000;
 const ACTIVITY_WINDOW_90_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -26,6 +27,7 @@ export const ConnectionReportRowSchema = z.object({
   count: z.number().int().nonnegative(),
   oldestUpdatedAt: DateTimeSchema,
   newestUpdatedAt: DateTimeSchema,
+  activeLast1Day: z.number().int().nonnegative().nullable(),
   activeLast30Days: z.number().int().nonnegative().nullable(),
   activeLast90Days: z.number().int().nonnegative().nullable(),
 });
@@ -175,11 +177,14 @@ function toReportRow(
   if (!(group.oldestUpdatedAt instanceof Date)) return null;
   if (!(group.newestUpdatedAt instanceof Date)) return null;
 
+  let activeLast1Day: number | null = null;
   let activeLast30Days: number | null = null;
   let activeLast90Days: number | null = null;
   if (activityAvailable && lastSeenByPrincipal) {
+    const window1 = now.getTime() - ACTIVITY_WINDOW_1_MS;
     const window30 = now.getTime() - ACTIVITY_WINDOW_30_MS;
     const window90 = now.getTime() - ACTIVITY_WINDOW_90_MS;
+    activeLast1Day = 0;
     activeLast30Days = 0;
     activeLast90Days = 0;
     for (const value of group.principalIds) {
@@ -189,6 +194,7 @@ function toReportRow(
       const at = seen.getTime();
       if (at >= window90) activeLast90Days += 1;
       if (at >= window30) activeLast30Days += 1;
+      if (at >= window1) activeLast1Day += 1;
     }
   }
 
@@ -199,6 +205,7 @@ function toReportRow(
     count: group.count,
     oldestUpdatedAt: DateTimeSchema.parse(group.oldestUpdatedAt.toISOString()),
     newestUpdatedAt: DateTimeSchema.parse(group.newestUpdatedAt.toISOString()),
+    activeLast1Day,
     activeLast30Days,
     activeLast90Days,
   };
@@ -247,6 +254,7 @@ export function formatConnectionReport(
       pad("count", 8),
       pad("oldestUpdatedAt", 25),
       pad("newestUpdatedAt", 25),
+      pad("active1d", 10),
       pad("active30d", 11),
       "active90d",
     ].join(""),
@@ -264,6 +272,7 @@ export function formatConnectionReport(
           pad(String(row.count), 8),
           pad(row.oldestUpdatedAt, 25),
           pad(row.newestUpdatedAt, 25),
+          pad(formatActivityCount(row.activeLast1Day), 10),
           pad(formatActivityCount(row.activeLast30Days), 11),
           formatActivityCount(row.activeLast90Days),
         ].join(""),

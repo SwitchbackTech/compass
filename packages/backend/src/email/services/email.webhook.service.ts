@@ -1,4 +1,5 @@
 import { type ObjectId } from "mongodb";
+import { type EmailSendServerEvent } from "@core/types/email-lifecycle.contracts";
 import { normalizeEmail } from "@core/util/email.util";
 import { isDuplicateKeyError } from "@core/util/mongo-duplicate-key.util";
 import mongoService from "@backend/common/services/mongo.service";
@@ -52,6 +53,21 @@ async function resolveUserForWebhookEvent(
     return null;
   }
   return { userId: user._id, recipient: user.email };
+}
+
+async function captureWebhookLifecycleEvent(
+  data: Record<string, unknown>,
+  event: EmailSendServerEvent,
+): Promise<void> {
+  const resolved = await resolveUserForWebhookEvent(data);
+  if (!resolved) {
+    return;
+  }
+  void emailAnalytics.capture({
+    event,
+    userId: resolved.userId.toHexString(),
+    step: await emailSendRepository.findLastSentStepKey(resolved.userId),
+  });
 }
 
 async function handleDelivered(data: Record<string, unknown>): Promise<void> {
@@ -114,6 +130,15 @@ export async function processEmailWebhookEvent(
         break;
       case "email.complained":
         await handleSuppression(data, "email.complained");
+        break;
+      case "email.failed":
+        await captureWebhookLifecycleEvent(data, "email_failed");
+        break;
+      case "email.delayed":
+        await captureWebhookLifecycleEvent(data, "email_delayed");
+        break;
+      case "email.suppressed":
+        await captureWebhookLifecycleEvent(data, "email_suppressed");
         break;
       default:
         break;

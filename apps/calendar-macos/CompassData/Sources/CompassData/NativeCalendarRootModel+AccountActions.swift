@@ -42,6 +42,7 @@ extension NativeCalendarRootModel {
         isLoggingOut = true
         defer { isLoggingOut = false }
         do {
+            environment.productAnalytics.track(.logoutCompleted, properties: [:])
             try await signOut()
             pendingLogoutConfirmation = false
         } catch {
@@ -71,6 +72,7 @@ extension NativeCalendarRootModel {
         }
         do {
             try await UserAPI(client: environment.apiClient).deleteAccount()
+            environment.productAnalytics.track(.accountDeleted, properties: [:])
             pendingDeleteAccountConfirmation = false
             try await signOut()
         } catch {

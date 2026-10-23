@@ -219,6 +219,30 @@ export class ProviderConnectionRepository {
     return ProviderConnectionReadSchema.parse(record);
   }
 
+  // Live connections whose stored state has not been re-derived recently.
+  // Global scan for the connection-state refresh sweep. Prefer rows stuck on
+  // importing, then the oldest updatedAt, so health snapshots converge.
+  async listForDerivedStateRefresh(
+    updatedBefore: Date,
+    limit: number,
+    filter: { state?: ConnectionState; excludeState?: ConnectionState } = {},
+  ): Promise<ProviderConnectionRecord[]> {
+    const query: Record<string, unknown> = {
+      disconnectedAt: null,
+      updatedAt: { $lt: updatedBefore },
+    };
+    if (filter.state) query["state"] = filter.state;
+    if (filter.excludeState) {
+      query["state"] = { $ne: filter.excludeState };
+    }
+    const records = await this.collection
+      .find(query)
+      .sort({ updatedAt: 1 })
+      .limit(limit)
+      .toArray();
+    return Promise.all(records.map((r) => this.parseRecord(r)));
+  }
+
   // Soft-disconnected connections whose disconnectedAt is strictly before
   // `before`, oldest first. Global scan for the retention sweeper (system
   // liveness, not a user request); each row carries its own owner ids.
