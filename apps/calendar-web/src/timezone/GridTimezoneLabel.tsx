@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import {
+  getPinnedTimeZone,
   refreshEffectiveTimeZoneFromBrowser,
   useEffectiveTimeZone,
 } from "@web/timezone/effective-timezone.store";
@@ -27,10 +28,13 @@ export const GridTimezoneLabel = ({
   const now = useMinuteTick();
 
   // There is no timezonechange event. Poll so Auto mode follows an OS change
-  // without a tab blur. Do not refresh on mount — that would wipe a test pin
-  // before Auto-gating can keep it. DST abbreviation flips still use `now`
-  // from the minute tick.
+  // without a tab blur. Refresh once on mount in Auto mode so the grid does
+  // not stick to a stale browser zone captured at module load. DST
+  // abbreviation flips still use `now` from the minute tick.
   useEffect(() => {
+    if (getPinnedTimeZone() === null) {
+      refreshEffectiveTimeZoneFromBrowser();
+    }
     const id = setInterval(
       refreshEffectiveTimeZoneFromBrowser,
       BROWSER_ZONE_POLL_MS,

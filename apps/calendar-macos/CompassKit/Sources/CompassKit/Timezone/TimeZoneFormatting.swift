@@ -1,6 +1,14 @@
 import Foundation
 
 public enum TimeZoneFormatting {
+    private static let utcLikeTimeZoneIds: Set<String> = [
+        "UTC", "Etc/UTC", "Etc/GMT", "GMT",
+    ]
+
+    public static func isUtcLikeTimeZone(_ identifier: String) -> Bool {
+        utcLikeTimeZoneIds.contains(identifier)
+    }
+
     public static func isValidTimeZone(_ identifier: String) -> Bool {
         TimeZone(identifier: identifier) != nil
     }
