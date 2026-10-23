@@ -29,6 +29,29 @@ export async function markUserUnsubscribed(userId: ObjectId): Promise<void> {
   });
 }
 
+export async function markBookingHostEmailDisabled(
+  userId: ObjectId,
+): Promise<void> {
+  await mongoService.user.updateOne(
+    { _id: userId },
+    {
+      $set: {
+        "emailPreferences.bookingHostEmailDisabledAt": new Date(),
+      },
+    },
+  );
+  await emailSendRepository.cancelQueuedForUserBySequence(
+    userId,
+    "booking-host",
+  );
+  void emailAnalytics.capture({
+    event: "email_unsubscribed",
+    userId: userId.toHexString(),
+    step: await emailSendRepository.findLastSentStepKey(userId),
+    properties: { sequence: "booking-host" },
+  });
+}
+
 export async function markUserSuppressed(userId: ObjectId): Promise<void> {
   await stampEmailPreference(userId, "suppressedAt");
 }

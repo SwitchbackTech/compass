@@ -191,6 +191,18 @@ class EmailSendRepository {
     return result.modifiedCount;
   }
 
+  async cancelQueuedForUserBySequence(
+    userId: ObjectId,
+    sequence: EmailSendRecord["sequence"],
+  ): Promise<number> {
+    const now = new Date();
+    const result = await mongoService.emailSend.updateMany(
+      { userId, sequence, status: "queued" },
+      { $set: { status: "canceled", updatedAt: now } },
+    );
+    return result.modifiedCount;
+  }
+
   async findByProviderMessageId(
     providerMessageId: string,
   ): Promise<EmailSendRecord | null> {

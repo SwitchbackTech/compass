@@ -77,6 +77,8 @@ export interface Schema_User {
     unsubscribedAt?: Date;
     /** The provider reported a hard bounce or complaint. */
     suppressedAt?: Date;
+    /** Host opted out of booking guest-action alert emails only. */
+    bookingHostEmailDisabledAt?: Date;
   };
   /**
    * Automation / journey test account. Excluded from billing funnels and

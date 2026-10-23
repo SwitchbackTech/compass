@@ -82,6 +82,7 @@ supertokens:
 #   unsubscribeSecret: REPLACE_WITH_EMAIL_UNSUBSCRIBE_SECRET # openssl rand -base64 32
 #   scheduleProfile: real # real | fast — fast is rejected when runtime.nodeEnv is production
 #   allowlist: []
+#   bookingHostEmailEnabled: true # or env BOOKING_HOST_EMAIL_ENABLED=false to kill-switch host booking alerts
 # Omit the whole block to keep email off (no enrollment, poller, or send routes).
 # provider resend requires apiKey, from, webhookSecret, and unsubscribeSecret together.
 

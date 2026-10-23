@@ -96,6 +96,7 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
+import { enqueueBookingHostEmail } from "@backend/email/booking-host-email.enrollment";
 import { EventMutationException } from "@backend/event/event.error";
 
 const logger = Logger("app:booking.public");
@@ -398,6 +399,18 @@ const resolveReservationPublicPage = async (
     throw reservationNotFound();
   }
   return { ...page, bookingSlug: page.bookingSlug };
+};
+
+const notifyHostByEmail = async (
+  page: BookingPageRecord,
+  reservationId: ObjectId,
+): Promise<void> => {
+  const reservation =
+    await bookingReservationRepository.findById(reservationId);
+  if (!reservation) {
+    return;
+  }
+  await enqueueBookingHostEmail(page, reservation);
 };
 
 const presentReservation = async (
@@ -1401,6 +1414,7 @@ export class PublicBookingService {
         throw reservationConflict();
       }
       await bookingOperationRepository.markStatus(current._id, "confirmed");
+      await notifyHostByEmail(page, updated._id);
       return presentRescheduled(updated, page, hostDisplayName);
     } catch (error) {
       if (isDuplicateKeyError(error)) {
@@ -1620,6 +1634,7 @@ export class PublicBookingService {
     }
 
     await bookingOperationRepository.markStatus(current._id, "confirmed");
+    await notifyHostByEmail(page, current.reservationId);
     return this.toCreateResponse(current);
   }
 
@@ -1720,6 +1735,7 @@ export class PublicBookingService {
     });
     await bookingReservationRepository.clearCalendarEventId(reservation._id);
     await bookingOperationRepository.markStatus(operation._id, "confirmed");
+    await notifyHostByEmail(page, reservation._id);
   }
 }
 

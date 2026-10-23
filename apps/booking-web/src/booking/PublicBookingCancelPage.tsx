@@ -22,6 +22,7 @@ import { ROOT_ROUTES } from "@booking-web/common/constants/routes";
 import { useBookingShortcut } from "@booking-web/shortcuts/useBookingShortcut";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { track } from "@web/auth/posthog/track";
 
 type CancelActionState =
   | "idle"
@@ -96,6 +97,9 @@ export function PublicBookingCancelPage() {
 
     try {
       await PublicBookingApi.cancelReservation(reservationId, { token });
+      track("booking_reservation_cancelled", {
+        duration_minutes: reservationQuery.data?.durationMinutes ?? 0,
+      });
       setAction("cancelled");
     } catch (error) {
       if (getErrorStatus(error) === 404) {
@@ -105,7 +109,7 @@ export function PublicBookingCancelPage() {
       inFlightRef.current = false;
       setAction("error");
     }
-  }, [reservationId, token]);
+  }, [reservationId, token, reservationQuery.data?.durationMinutes]);
 
   useEffect(() => {
     if (!canLoad || action !== "idle") {

@@ -30,7 +30,7 @@ describe("EmailUnsubscribeController", () => {
     await emailUnsubscribeController.showConfirmation(req, res as never);
 
     expect(res.status).toHaveBeenCalledWith(Status.OK);
-    expect(body).toContain("Confirm unsubscribe");
+    expect(body).toContain("Unsubscribe from Compass emails");
   });
 
   it("renders a friendly page for an invalid token", async () => {
