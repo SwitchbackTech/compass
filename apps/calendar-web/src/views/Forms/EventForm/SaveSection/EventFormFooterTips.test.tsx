@@ -28,6 +28,7 @@ describe("EventFormFooterTips", () => {
     const tips = screen.getByTestId("event-form-footer-tips");
     expect(tips.textContent).toContain("between fields");
     expect(tips.textContent).toContain("0 for actions");
+    expect(screen.queryByRole("button", { name: "Hide tips" })).toBeNull();
   });
 
   it("hides tab navigation when an overlay traps Tab", () => {
