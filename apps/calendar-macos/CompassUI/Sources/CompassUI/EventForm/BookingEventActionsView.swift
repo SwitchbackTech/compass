@@ -21,6 +21,10 @@ struct BookingEventActionsView: View {
                 Task { await model.triggerBookedMeetingCancellation() }
                 return .handled
             }
+            .onKeyPress(.space) {
+                Task { await model.triggerBookedMeetingCancellation() }
+                return .handled
+            }
             .accessibilityLabel(model.isConfirmingBookingCancellation ? "Confirm cancel" : "Cancel meeting")
             .help(model.isConfirmingBookingCancellation ? "Press again to cancel this meeting and email the guest." : "Cancel meeting (⌘ ⇧ X)")
             Button { model.rescheduleBookedMeeting() } label: {
@@ -31,6 +35,10 @@ struct BookingEventActionsView: View {
             .focusable()
             .focused($focusedAction, equals: "Reschedule")
             .onKeyPress(.return) {
+                model.rescheduleBookedMeeting()
+                return .handled
+            }
+            .onKeyPress(.space) {
                 model.rescheduleBookedMeeting()
                 return .handled
             }

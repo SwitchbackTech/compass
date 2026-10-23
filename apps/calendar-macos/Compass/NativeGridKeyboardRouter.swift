@@ -560,6 +560,7 @@ final class NativeGridKeyboardRouter {
         // reaches edit-open below and saves instead of pressing the button.
         if model.isEventFormActionFocused {
             if keyEvent.key == .named(.enter), keyEvent.modifiers.isEmpty { return false }
+            if keyEvent.modifiers.isEmpty, isSpaceKey(keyEvent.key) { return false }
             if keyEvent.key == .named(.tab), keyEvent.modifiers.isEmpty || keyEvent.modifiers == [.shift] {
                 return false
             }
@@ -1016,6 +1017,15 @@ final class NativeGridKeyboardRouter {
         }
         performUndo()
         return true
+    }
+
+    private func isSpaceKey(_ key: KeyToken) -> Bool {
+        switch key {
+        case .character(" "), .punctuation(" "):
+            true
+        default:
+            false
+        }
     }
 
 }

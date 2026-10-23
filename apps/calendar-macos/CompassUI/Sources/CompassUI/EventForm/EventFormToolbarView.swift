@@ -88,6 +88,10 @@ struct EventFormToolbarView: View {
             action()
             return .handled
         }
+        .onKeyPress(.space) {
+            action()
+            return .handled
+        }
         .overlay {
             if focusedAction == label {
                 RoundedRectangle(cornerRadius: NativeWebLayoutTokens.radiusDefault)
