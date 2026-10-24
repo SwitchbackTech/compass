@@ -27,6 +27,7 @@ import {
   allDayGridSchedule,
   createGridEventDraft,
   editGridEventDraft,
+  replaceGridDraftSchedule,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { hiddenEventsQueryKeys } from "@web/events/hidden/hidden-events.query";
@@ -426,6 +427,55 @@ describe("Week calendar accessibility", () => {
 });
 
 describe("saved Week event ownership", () => {
+  it("lays a duplicated event at full width after the draft moves it to another day", () => {
+    const thursdayStart = "2024-01-18T22:00:00.000Z";
+    const thursdayEnd = "2024-01-18T23:00:00.000Z";
+    const fridayStart = "2024-01-19T22:00:00.000Z";
+    const fridayEnd = "2024-01-19T23:00:00.000Z";
+
+    const original = createSavedEvent({
+      endDate: thursdayEnd,
+      startDate: thursdayStart,
+      title: "Hang art original",
+    });
+    const copy = createSavedEvent({
+      endDate: thursdayEnd,
+      startDate: thursdayStart,
+      title: "Hang art copy",
+    });
+    seedGrid([original, copy]);
+    seedEditDraft(copy);
+
+    const { gridDraft } = useDraftStore.getState();
+    if (!gridDraft) {
+      throw new Error("expected an edit draft");
+    }
+    useDraftStore.setState({
+      gridDraft: replaceGridDraftSchedule(
+        gridDraft,
+        timedGridSchedule(new Date(fridayStart), new Date(fridayEnd)),
+      ),
+    });
+
+    render(
+      <Provider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
+      </Provider>,
+    );
+
+    const copyCard = screen.getByRole("button", { name: /hang art copy/i });
+    const originalCard = screen.getByRole("button", {
+      name: /hang art original/i,
+    });
+
+    expect(parseFloat(copyCard.style.width)).toBeGreaterThan(
+      parseFloat(originalCard.style.width) * 0.95,
+    );
+  });
+
   it("lays overlapping saved timed events out as a left-anchored deck", () => {
     seedGrid([
       createSavedEvent({
