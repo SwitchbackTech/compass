@@ -705,7 +705,9 @@ test("a read-only event blocks a drag attempt", async ({ page }) => {
   await card.focus();
   await page.keyboard.press("Shift+ArrowDown");
   await page.keyboard.press("Shift+ArrowRight");
-  await page.waitForTimeout(150);
+  await expect
+    .poll(() => harness.mutationRequests.length, { timeout: 3_000 })
+    .toBe(0);
 
   expect(harness.mutationRequests).toHaveLength(0);
   await expect(card).toBeVisible();
