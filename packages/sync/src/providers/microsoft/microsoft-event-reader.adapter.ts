@@ -115,6 +115,7 @@ export class MicrosoftEventReaderAdapter implements ProviderEventReader {
         events.push(
           normalizeMicrosoftEvent(item, input.colorLabels ?? new Map(), {
             graphPreferTimeZone: "UTC",
+            fallbackIanaTimeZone: input.fallbackIanaTimeZone,
           }),
         );
       } catch (error) {

@@ -1,4 +1,5 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
+import { enrichProviderEventReadInput } from "@sync/domain/enrich-provider-event-read-input";
 import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
@@ -13,12 +14,14 @@ import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.c
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 export interface CalendarPullDeps {
   events: EventRepository;
   occurrences: EventOccurrenceRepository;
   resources: SyncResourceRepository;
+  connections?: ProviderConnectionRepository;
   commands: CommandRepository;
   reader: ProviderEventReader;
   custody: AccessTokenSource;
@@ -137,7 +140,7 @@ export async function pullCalendarChanges(
       const read = await listEventPageWithAuthRetry(
         deps,
         calendar.connectionId,
-        {
+        await enrichProviderEventReadInput(deps.connections, calendar, {
           accessToken,
           calendarId: calendar.providerCalendarId,
           // The cursor applies only to the first request of a batch; paging then
@@ -146,7 +149,7 @@ export async function pullCalendarChanges(
           pageToken,
           colorLabels,
           calendarDefaultPopupReminderMinutes,
-        },
+        }),
       );
       page = read.page;
       accessToken = read.accessToken;

@@ -1,4 +1,5 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
+import { enrichProviderEventReadInput } from "@sync/domain/enrich-provider-event-read-input";
 import { syncHorizon } from "@sync/domain/horizon";
 import { listEventPageWithAuthRetry } from "@sync/domain/list-event-page-with-auth-retry";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
@@ -11,12 +12,14 @@ import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-ca
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 export interface CalendarImportDeps {
   events: EventRepository;
   occurrences: EventOccurrenceRepository;
   resources: SyncResourceRepository;
+  connections?: ProviderConnectionRepository;
   reader: ProviderEventReader;
   custody: AccessTokenSource;
 }
@@ -208,15 +211,19 @@ class ImportRun {
       const read = await listEventPageWithAuthRetry(
         this.deps,
         this.calendar.connectionId,
-        {
-          accessToken: this.#accessToken,
-          calendarId: this.calendar.providerCalendarId,
-          window: options.window ?? null,
-          pageToken,
-          colorLabels: toColorLabelMap(this.calendar.eventLabels),
-          calendarDefaultPopupReminderMinutes:
-            this.calendar.defaultPopupReminderMinutes ?? [],
-        },
+        await enrichProviderEventReadInput(
+          this.deps.connections,
+          this.calendar,
+          {
+            accessToken: this.#accessToken,
+            calendarId: this.calendar.providerCalendarId,
+            window: options.window ?? null,
+            pageToken,
+            colorLabels: toColorLabelMap(this.calendar.eventLabels),
+            calendarDefaultPopupReminderMinutes:
+              this.calendar.defaultPopupReminderMinutes ?? [],
+          },
+        ),
       );
       this.#accessToken = read.accessToken;
       const page = read.page;

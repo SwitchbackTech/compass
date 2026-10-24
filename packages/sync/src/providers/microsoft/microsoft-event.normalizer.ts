@@ -9,6 +9,7 @@ import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
 import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
+import { cancelledOccurrencesToExdateRules } from "@sync/providers/microsoft/microsoft-cancelled-occurrences";
 import { outlookCategoryNameToSlot } from "@sync/providers/microsoft/microsoft-event-category.map";
 import { toRRule } from "@sync/providers/microsoft/microsoft-recurrence";
 import { UnsupportedRecurrenceError } from "@sync/providers/microsoft/microsoft-recurrence.error";
@@ -36,6 +37,8 @@ export interface NormalizeMicrosoftEventOptions {
   readonly allowOccurrence?: boolean;
   /** Matches Prefer outlook.timezone on Graph reads (see event reader adapter). */
   readonly graphPreferTimeZone?: string;
+  /** When Graph returns UTC without recurrence/original zones (mailbox fallback). */
+  readonly fallbackIanaTimeZone?: string;
 }
 
 export interface GraphDateTimeTimeZone {
@@ -85,6 +88,7 @@ export interface GraphEvent {
   readonly originalStart?: string;
   readonly originalStartTimeZone?: string;
   readonly originalEndTimeZone?: string;
+  readonly cancelledOccurrences?: readonly string[];
   readonly onlineMeeting?: GraphOnlineMeeting;
   readonly onlineMeetingProvider?: string;
   readonly categories?: readonly string[];
@@ -123,6 +127,7 @@ export function normalizeMicrosoftEvent(
   }
 
   const providerVersion = requireVersion(item);
+  const schedule = mapSchedule(item, options);
 
   return {
     kind: "event",
@@ -130,7 +135,7 @@ export function normalizeMicrosoftEvent(
     providerVersion,
     providerUpdatedAt: item.lastModifiedDateTime ?? null,
     content: mapContent(item, masterCategories),
-    schedule: mapSchedule(item, options),
+    schedule,
     busy: item.showAs !== "free",
     ...(item.iCalUId ? { icalUid: item.iCalUId } : {}),
     recurrence: mapRecurrence(item),
@@ -303,6 +308,7 @@ function mapSchedule(
       item,
       startFieldZone,
       graphPreferTimeZone,
+      options.fallbackIanaTimeZone,
     );
     return parseSchedule({
       kind: "timed",
@@ -338,6 +344,7 @@ function resolveTimedEventTimeZone(
   item: GraphEvent,
   startFieldZone: string,
   graphPreferTimeZone: string,
+  fallbackIanaTimeZone?: string,
 ): string {
   const recurrenceZone = item.recurrence?.range?.recurrenceTimeZone
     ? toIanaTimeZone(item.recurrence.range.recurrenceTimeZone)
@@ -345,14 +352,19 @@ function resolveTimedEventTimeZone(
   const originalStartZone = item.originalStartTimeZone
     ? toIanaTimeZone(item.originalStartTimeZone)
     : null;
+  const fallbackZone =
+    fallbackIanaTimeZone && fallbackIanaTimeZone !== "UTC"
+      ? fallbackIanaTimeZone
+      : null;
   if (graphPreferTimeZone === "UTC" && startFieldZone === "UTC") {
     if (recurrenceZone && recurrenceZone !== "UTC") return recurrenceZone;
     if (originalStartZone && originalStartZone !== "UTC") {
       return originalStartZone;
     }
+    if (fallbackZone) return fallbackZone;
   }
   if (startFieldZone !== "UTC") return startFieldZone;
-  return recurrenceZone ?? originalStartZone ?? startFieldZone;
+  return recurrenceZone ?? originalStartZone ?? fallbackZone ?? startFieldZone;
 }
 
 function parseSchedule(candidate: unknown) {
@@ -370,7 +382,11 @@ function parseSchedule(candidate: unknown) {
 function mapRecurrence(item: GraphEvent): ProviderEventRecurrence {
   if (item.type === "seriesMaster" && item.recurrence) {
     try {
-      return { kind: "seriesMaster", rules: toRRule(item.recurrence) };
+      const rules = [
+        ...toRRule(item.recurrence),
+        ...cancelledOccurrencesToExdateRules(item.cancelledOccurrences),
+      ];
+      return { kind: "seriesMaster", rules };
     } catch (error) {
       if (error instanceof UnsupportedRecurrenceError) {
         throw new ProviderEventError(

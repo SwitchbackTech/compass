@@ -200,6 +200,20 @@ describe("normalizeMicrosoftEvent Microsoft time zones", () => {
     ]);
   });
 
+  it("uses fallbackIanaTimeZone when Graph omits recurrence and original zones", () => {
+    const read = normalizeMicrosoftEvent(
+      unwindGraphEvent({ startEndTimeZone: "UTC" }),
+      undefined,
+      {
+        graphPreferTimeZone: "UTC",
+        fallbackIanaTimeZone: DENVER,
+      },
+    );
+    const schedule = asTimedSchedule(read);
+    expect(schedule.timeZone).toBe(DENVER);
+    expect(schedule.start).toBe("2025-10-19T19:00:00-06:00");
+  });
+
   it("projects the same Denver slots when the host reports UTC", () => {
     const previousTz = process.env.TZ;
     process.env.TZ = "UTC";
