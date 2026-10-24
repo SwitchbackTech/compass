@@ -27,7 +27,7 @@ assert_contains() {
   local haystack=$1
   local needle=$2
   local name=$3
-  if printf '%s' "$haystack" | grep -Fq "$needle"; then
+  if grep -Fq -- "$needle" <<<"$haystack"; then
     echo "ok ${name}"
     PASS=$((PASS + 1))
   else
@@ -40,7 +40,7 @@ assert_not_contains() {
   local haystack=$1
   local needle=$2
   local name=$3
-  if printf '%s' "$haystack" | grep -Fq "$needle"; then
+  if grep -Fq -- "$needle" <<<"$haystack"; then
     echo "FAIL ${name}: unexpectedly found '${needle}' in:${haystack}" >&2
     FAIL=$((FAIL + 1))
   else
