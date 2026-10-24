@@ -857,9 +857,9 @@ describe("parseUserDate", () => {
   const ymd = (value: Dayjs | null) => value?.format(YEAR_MONTH_DAY_FORMAT);
 
   it.each(
-    GO_TO_DATE_PARSE_VECTORS.filter(
-      ({ expectedYmd }) => expectedYmd !== null,
-    ).map(({ input, expectedYmd }) => [input, expectedYmd] as const),
+    GO_TO_DATE_PARSE_VECTORS.flatMap(({ input, expectedYmd }) =>
+      expectedYmd === null ? [] : [[input, expectedYmd] as const],
+    ),
   )("parses %s", (input, expected) => {
     expect(ymd(parseUserDate(input, now))).toBe(expected);
   });
