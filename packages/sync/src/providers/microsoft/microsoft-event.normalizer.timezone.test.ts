@@ -9,10 +9,20 @@ import {
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 
 const DENVER = "America/Denver" as TimeZone;
+const UNWIND_BYDAY = "BYDAY=SU,TU,FR,SA";
 
-const unwindGraphEvent = (
-  startEndTimeZone: "Mountain Standard Time" | "UTC",
-): GraphEvent => ({
+type UnwindZoneFixture = {
+  readonly label: string;
+  readonly startEndTimeZone: "Mountain Standard Time" | "UTC";
+  readonly recurrenceTimeZone?: string;
+  readonly originalStartTimeZone?: string;
+};
+
+const unwindGraphEvent = ({
+  startEndTimeZone,
+  recurrenceTimeZone,
+  originalStartTimeZone,
+}: Omit<UnwindZoneFixture, "label">): GraphEvent => ({
   id: "unwind-series",
   "@odata.etag": 'W/"unwind"',
   type: "seriesMaster",
@@ -25,6 +35,7 @@ const unwindGraphEvent = (
     dateTime: "2025-10-20T02:00:00.0000000",
     timeZone: startEndTimeZone,
   },
+  ...(originalStartTimeZone ? { originalStartTimeZone } : {}),
   recurrence: {
     pattern: {
       type: "weekly",
@@ -35,7 +46,7 @@ const unwindGraphEvent = (
     range: {
       type: "noEnd",
       startDate: "2025-10-19",
-      recurrenceTimeZone: "Mountain Standard Time",
+      ...(recurrenceTimeZone ? { recurrenceTimeZone } : {}),
     },
   },
 });
@@ -44,6 +55,13 @@ const asTimedSchedule = (read: ReturnType<typeof normalizeMicrosoftEvent>) => {
   if (read.kind !== "event") throw new Error("expected event");
   if (read.schedule.kind !== "timed") throw new Error("expected timed");
   return read.schedule;
+};
+
+const asSeriesMaster = (read: ReturnType<typeof normalizeMicrosoftEvent>) => {
+  if (read.kind !== "event" || read.recurrence.kind !== "seriesMaster") {
+    throw new Error("expected series master");
+  }
+  return read.recurrence;
 };
 
 const toEventRecord = (
@@ -95,29 +113,54 @@ const projectedLocalSlots = (
 };
 
 describe("normalizeMicrosoftEvent Microsoft time zones", () => {
-  it.each([
-    ["Mountain Standard Time on start/end", "Mountain Standard Time"],
-    ["UTC start/end with recurrenceTimeZone", "UTC"],
-  ] as const)(
-    "maps Unwind (%s) to 7 PM Denver wall time",
-    (_label, startEndTimeZone) => {
-      const schedule = asTimedSchedule(
-        normalizeMicrosoftEvent(unwindGraphEvent(startEndTimeZone)),
+  const zoneFixtures: readonly UnwindZoneFixture[] = [
+    {
+      label: "Mountain Standard Time on start/end",
+      startEndTimeZone: "Mountain Standard Time",
+    },
+    {
+      label: "UTC start/end with recurrenceTimeZone",
+      startEndTimeZone: "UTC",
+      recurrenceTimeZone: "Mountain Standard Time",
+    },
+    {
+      label: "UTC start/end with originalStartTimeZone only",
+      startEndTimeZone: "UTC",
+      originalStartTimeZone: "Mountain Standard Time",
+    },
+  ];
+
+  it.each(zoneFixtures)(
+    "maps Unwind ($label) to Denver wall time and weekly BYDAY",
+    (fixture) => {
+      const read = normalizeMicrosoftEvent(
+        unwindGraphEvent(fixture),
+        undefined,
+        {
+          graphPreferTimeZone: "UTC",
+        },
       );
+      const schedule = asTimedSchedule(read);
+      const recurrence = asSeriesMaster(read);
 
       expect(schedule.timeZone).toBe(DENVER);
       expect(schedule.start).toBe("2025-10-19T19:00:00-06:00");
       expect(schedule.end).toBe("2025-10-19T20:00:00-06:00");
+      expect(recurrence.rules[0]).toContain("FREQ=WEEKLY");
+      expect(recurrence.rules[0]).toContain(UNWIND_BYDAY);
     },
   );
 
   it("projects Sun/Tue/Fri/Sat at 7 PM Denver for the Oct 25 week", () => {
-    const read = normalizeMicrosoftEvent(unwindGraphEvent("UTC"));
-    if (read.kind !== "event" || read.recurrence.kind !== "seriesMaster") {
-      throw new Error("expected series master");
-    }
-
-    const event = toEventRecord(read.schedule, read.recurrence.rules);
+    const read = normalizeMicrosoftEvent(
+      unwindGraphEvent({
+        startEndTimeZone: "UTC",
+        recurrenceTimeZone: "Mountain Standard Time",
+      }),
+      undefined,
+      { graphPreferTimeZone: "UTC" },
+    );
+    const event = toEventRecord(read.schedule, asSeriesMaster(read).rules);
     const slots = projectedLocalSlots(
       event,
       "2025-10-25T06:00:00.000Z",
@@ -133,12 +176,15 @@ describe("normalizeMicrosoftEvent Microsoft time zones", () => {
   });
 
   it("keeps 7 PM local on the Denver fall-back week (Nov 1 DST end)", () => {
-    const read = normalizeMicrosoftEvent(unwindGraphEvent("UTC"));
-    if (read.kind !== "event" || read.recurrence.kind !== "seriesMaster") {
-      throw new Error("expected series master");
-    }
-
-    const event = toEventRecord(read.schedule, read.recurrence.rules);
+    const read = normalizeMicrosoftEvent(
+      unwindGraphEvent({
+        startEndTimeZone: "UTC",
+        originalStartTimeZone: "Mountain Standard Time",
+      }),
+      undefined,
+      { graphPreferTimeZone: "UTC" },
+    );
+    const event = toEventRecord(read.schedule, asSeriesMaster(read).rules);
     const slots = projectedLocalSlots(
       event,
       "2025-11-01T06:00:00.000Z",
@@ -160,13 +206,11 @@ describe("normalizeMicrosoftEvent Microsoft time zones", () => {
 
     try {
       const read = normalizeMicrosoftEvent(
-        unwindGraphEvent("Mountain Standard Time"),
+        unwindGraphEvent({ startEndTimeZone: "Mountain Standard Time" }),
+        undefined,
+        { graphPreferTimeZone: "UTC" },
       );
-      if (read.kind !== "event" || read.recurrence.kind !== "seriesMaster") {
-        throw new Error("expected series master");
-      }
-
-      const event = toEventRecord(read.schedule, read.recurrence.rules);
+      const event = toEventRecord(read.schedule, asSeriesMaster(read).rules);
       const slots = projectedLocalSlots(
         event,
         "2025-10-25T06:00:00.000Z",
