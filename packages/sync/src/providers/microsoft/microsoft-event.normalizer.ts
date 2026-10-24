@@ -83,6 +83,8 @@ export interface GraphEvent {
   readonly recurrence?: GraphPatternedRecurrence;
   readonly seriesMasterId?: string;
   readonly originalStart?: string;
+  readonly originalStartTimeZone?: string;
+  readonly originalEndTimeZone?: string;
   readonly onlineMeeting?: GraphOnlineMeeting;
   readonly onlineMeetingProvider?: string;
   readonly categories?: readonly string[];
@@ -340,16 +342,17 @@ function resolveTimedEventTimeZone(
   const recurrenceZone = item.recurrence?.range?.recurrenceTimeZone
     ? toIanaTimeZone(item.recurrence.range.recurrenceTimeZone)
     : null;
-  if (
-    graphPreferTimeZone === "UTC" &&
-    startFieldZone === "UTC" &&
-    recurrenceZone &&
-    recurrenceZone !== "UTC"
-  ) {
-    return recurrenceZone;
+  const originalStartZone = item.originalStartTimeZone
+    ? toIanaTimeZone(item.originalStartTimeZone)
+    : null;
+  if (graphPreferTimeZone === "UTC" && startFieldZone === "UTC") {
+    if (recurrenceZone && recurrenceZone !== "UTC") return recurrenceZone;
+    if (originalStartZone && originalStartZone !== "UTC") {
+      return originalStartZone;
+    }
   }
   if (startFieldZone !== "UTC") return startFieldZone;
-  return recurrenceZone ?? startFieldZone;
+  return recurrenceZone ?? originalStartZone ?? startFieldZone;
 }
 
 function parseSchedule(candidate: unknown) {

@@ -23,6 +23,8 @@ export const MICROSOFT_EVENT_SELECT = [
   "recurrence",
   "seriesMasterId",
   "originalStart",
+  "originalStartTimeZone",
+  "originalEndTimeZone",
   "organizer",
   "attendees",
   "location",
