@@ -1,5 +1,11 @@
-import { EventScheduleSchema } from "@core/types/event.contracts";
-import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
+import {
+  type EventSchedule,
+  EventScheduleSchema,
+} from "@core/types/event.contracts";
+import {
+  type SyncEventContent,
+  SyncEventContentSchema,
+} from "@core/types/sync/event.contracts";
 import { appleLiveFactory } from "@sync/providers/__contract__/apple-contract.factory";
 import { googleLiveFactory } from "@sync/providers/__contract__/google-contract.factory";
 import { microsoftLiveFactory } from "@sync/providers/__contract__/microsoft-contract.factory";
@@ -84,20 +90,23 @@ export async function ensureAppleLiveSession(
   return { accessToken: refreshed.accessToken, calendarId };
 }
 
-export async function runMicrosoftLiveSmoke(input: {
+interface LiveSmokeCreatedEvent {
+  readonly created: ProviderWriteResult;
+  readonly content: SyncEventContent;
+  readonly schedule: EventSchedule;
+}
+
+async function setupAndCreateLiveSmokeEvent(input: {
+  readonly adapters: ProviderAdapters;
+  readonly accessToken: string;
+  readonly calendarId: string;
   readonly runId: string;
-  readonly refreshToken: string;
-}): Promise<void> {
-  const { accessToken, calendarId } = await ensureMicrosoftLiveSession(
-    input.refreshToken,
-  );
-
-  const adapters = microsoftLiveFactory("");
-
+  readonly provider: string;
+}): Promise<LiveSmokeCreatedEvent> {
   await teardownStaleSmokeEvents(
-    adapters,
-    accessToken,
-    calendarId,
+    input.adapters,
+    input.accessToken,
+    input.calendarId,
     input.runId,
   );
 
@@ -123,9 +132,9 @@ export async function runMicrosoftLiveSmoke(input: {
 
   let created: ProviderWriteResult;
   try {
-    created = await adapters.writer.createEvent({
-      accessToken,
-      calendarId,
+    created = await input.adapters.writer.createEvent({
+      accessToken: input.accessToken,
+      calendarId: input.calendarId,
       providerEventId: eventId,
       content,
       schedule,
@@ -134,11 +143,32 @@ export async function runMicrosoftLiveSmoke(input: {
     });
   } catch (error) {
     throw new LiveSmokeError(
-      "microsoft",
+      input.provider,
       "create",
       error instanceof Error ? error.message : String(error),
     );
   }
+
+  return { created, content, schedule };
+}
+
+export async function runMicrosoftLiveSmoke(input: {
+  readonly runId: string;
+  readonly refreshToken: string;
+}): Promise<void> {
+  const { accessToken, calendarId } = await ensureMicrosoftLiveSession(
+    input.refreshToken,
+  );
+
+  const adapters = microsoftLiveFactory("");
+
+  const { created, content, schedule } = await setupAndCreateLiveSmokeEvent({
+    adapters,
+    accessToken,
+    calendarId,
+    runId: input.runId,
+    provider: "microsoft",
+  });
 
   try {
     const readBack = await adapters.writer.fetchEvent({
@@ -248,51 +278,13 @@ export async function runAppleLiveSmoke(input: {
 
   const adapters = appleLiveFactory("");
 
-  await teardownStaleSmokeEvents(
+  const { created, content, schedule } = await setupAndCreateLiveSmokeEvent({
     adapters,
     accessToken,
     calendarId,
-    input.runId,
-  );
-
-  const eventId = randomBytes(12).toString("hex");
-  const createdAt = new Date().toISOString();
-  const description = `${SMOKE_DESCRIPTION_PREFIX} run=${input.runId} created=${createdAt}`;
-  const start = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  const end = new Date(start.getTime() + 30 * 60 * 1000);
-  const schedule = EventScheduleSchema.parse({
-    kind: "timed",
-    start: start.toISOString(),
-    end: end.toISOString(),
-    timeZone: "UTC",
+    runId: input.runId,
+    provider: "apple",
   });
-  const content = SyncEventContentSchema.parse({
-    title: `compass-smoke ${input.runId}`,
-    description,
-    location: null,
-    organizer: null,
-    attendees: [],
-    conference: null,
-  });
-
-  let created: ProviderWriteResult;
-  try {
-    created = await adapters.writer.createEvent({
-      accessToken,
-      calendarId,
-      providerEventId: eventId,
-      content,
-      schedule,
-      recurrence: { kind: "single" },
-      invitation: "none",
-    });
-  } catch (error) {
-    throw new LiveSmokeError(
-      "apple",
-      "create",
-      error instanceof Error ? error.message : String(error),
-    );
-  }
 
   try {
     const readBack = await adapters.writer.fetchEvent({
@@ -386,51 +378,13 @@ export async function runGoogleLiveSmoke(input: {
 
   const adapters = googleLiveFactory("");
 
-  await teardownStaleSmokeEvents(
+  const { created, content, schedule } = await setupAndCreateLiveSmokeEvent({
     adapters,
     accessToken,
     calendarId,
-    input.runId,
-  );
-
-  const eventId = randomBytes(12).toString("hex");
-  const createdAt = new Date().toISOString();
-  const description = `${SMOKE_DESCRIPTION_PREFIX} run=${input.runId} created=${createdAt}`;
-  const start = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  const end = new Date(start.getTime() + 30 * 60 * 1000);
-  const schedule = EventScheduleSchema.parse({
-    kind: "timed",
-    start: start.toISOString(),
-    end: end.toISOString(),
-    timeZone: "UTC",
+    runId: input.runId,
+    provider: "google",
   });
-  const content = SyncEventContentSchema.parse({
-    title: `compass-smoke ${input.runId}`,
-    description,
-    location: null,
-    organizer: null,
-    attendees: [],
-    conference: null,
-  });
-
-  let created: ProviderWriteResult;
-  try {
-    created = await adapters.writer.createEvent({
-      accessToken,
-      calendarId,
-      providerEventId: eventId,
-      content,
-      schedule,
-      recurrence: { kind: "single" },
-      invitation: "none",
-    });
-  } catch (error) {
-    throw new LiveSmokeError(
-      "google",
-      "create",
-      error instanceof Error ? error.message : String(error),
-    );
-  }
 
   try {
     const readBack = await adapters.writer.fetchEvent({
