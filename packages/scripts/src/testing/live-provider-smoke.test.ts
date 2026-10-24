@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test";
 import { spawnSync } from "node:child_process";
 
-describe("live-provider-smoke missing credentials", () => {
-  it("fails when credentials are absent and runs bun when ready", () => {
+describe("live-provider-smoke expected providers", () => {
+  it("fails when an expected provider lacks creds and skips others", () => {
     const result = spawnSync(
       "bash",
       [".github/scripts/live-provider-smoke.test.sh"],
@@ -10,10 +10,10 @@ describe("live-provider-smoke missing credentials", () => {
     );
 
     expect(result.status, result.stderr + result.stdout).toBe(0);
-    expect(result.stdout).toContain("all missing creds exits 1");
+    expect(result.stdout).toContain("expected missing creds exits 1");
     expect(result.stdout).toContain(
-      "partial ready exits 1 when any provider failed",
+      "expected ready providers exit 0 when bun passes",
     );
-    expect(result.stdout).toContain("all ready exits 0 when bun passes");
+    expect(result.stdout).toContain("nothing expected and all skipped exits 0");
   });
 });
