@@ -22,18 +22,6 @@ export function shouldShowTimezoneMismatch(
   );
 }
 
-export function isTimezoneMismatchBannerActive(
-  pinnedTimeZone: string | null,
-  browserTimeZone: string,
-  snoozedForBrowser: string | null,
-): boolean {
-  return shouldShowTimezoneMismatch(
-    pinnedTimeZone,
-    browserTimeZone,
-    snoozedForBrowser,
-  );
-}
-
 function readSnoozedBrowser(): string | null {
   return persistentBrowserStore.get(
     STORAGE_KEYS.TIMEZONE_MISMATCH_SNOOZED_BROWSER,

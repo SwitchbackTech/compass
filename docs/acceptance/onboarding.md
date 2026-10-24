@@ -165,16 +165,16 @@ levels. **Newcomer** browsers (level 1) re-rank tips every 60 seconds and
 prefer tips that match pointer intents detected this session
 (`rankShortcutHints` + `detectedIntents()`).
 
-**Hide tips** on the tip mutes sidebar tips, palette pills, and pointer-intent
-pills via `compass.shortcuts.tips-muted`. The command palette exposes **Hide
-shortcut tips** / **Show shortcut tips**.
+Mute is via the command palette **Hide shortcut tips** / **Show shortcut
+tips**. Sidebar tips, palette pills, and pointer-intent pills share
+`compass.shortcuts.tips-muted`.
 
 ### Steps
 
 1. Load `/week` after welcome and showcase flags are set (signed-in or
    explore-without-account with sample events).
 2. Open the sidebar if collapsed; note the tip in the status bar.
-3. Click **Hide tips** on the tip (or Tab to it and press Enter).
+3. Open the command palette and run **Hide shortcut tips**.
 4. Open the command palette, run **Create event**, and confirm no **Next time,
    press …** pill appears.
 5. Click an event card and confirm no pointer-intent pill appears either.

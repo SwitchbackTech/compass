@@ -1,10 +1,12 @@
 import { type FC, useCallback, useState } from "react";
+import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { track } from "@web/auth/posthog/track";
 import {
   dismissAwaitingCheckoutBannerForSession,
   isAwaitingCheckoutBannerDismissedForSession,
 } from "@web/billing/awaiting-checkout-banner.util";
 import { BillingBanner } from "@web/billing/BillingBanner";
+import { TRIAL_START_PRIMARY_LABEL } from "@web/billing/TrialStartAsk";
 import { requestTrialStep } from "@web/billing/trial-step-request";
 import { START_TRIAL_SHORTCUT_KEY } from "@web/shortcuts/notice-focus/useNoticeActionShortcut";
 
@@ -29,9 +31,9 @@ export const BillingAwaitingCheckoutBanner: FC = () => {
 
   return (
     <BillingBanner
-      ctaLabel="Start free trial"
+      ctaLabel={TRIAL_START_PRIMARY_LABEL}
       dismissLabel="Dismiss"
-      message="Start your 7-day free trial to plan your week."
+      message={`Start your ${BILLING_PLAN.TRIAL_LENGTH_DAYS}-day free trial to plan your week.`}
       onCta={() => {
         track("billing_gate_cta_clicked", { cta: "explore_banner" });
         void requestTrialStep({ trigger: "banner" });
