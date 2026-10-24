@@ -9,6 +9,7 @@ import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
 import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
+import { cancelledOccurrencesToExdateRules } from "@sync/providers/microsoft/microsoft-cancelled-occurrences";
 import { outlookCategoryNameToSlot } from "@sync/providers/microsoft/microsoft-event-category.map";
 import { toRRule } from "@sync/providers/microsoft/microsoft-recurrence";
 import { UnsupportedRecurrenceError } from "@sync/providers/microsoft/microsoft-recurrence.error";
@@ -85,6 +86,8 @@ export interface GraphEvent {
   readonly originalStart?: string;
   readonly originalStartTimeZone?: string;
   readonly originalEndTimeZone?: string;
+  readonly cancelledOccurrences?: readonly string[];
+  readonly exceptionOccurrences?: readonly GraphEvent[];
   readonly onlineMeeting?: GraphOnlineMeeting;
   readonly onlineMeetingProvider?: string;
   readonly categories?: readonly string[];
@@ -123,6 +126,7 @@ export function normalizeMicrosoftEvent(
   }
 
   const providerVersion = requireVersion(item);
+  const schedule = mapSchedule(item, options);
 
   return {
     kind: "event",
@@ -130,10 +134,10 @@ export function normalizeMicrosoftEvent(
     providerVersion,
     providerUpdatedAt: item.lastModifiedDateTime ?? null,
     content: mapContent(item, masterCategories),
-    schedule: mapSchedule(item, options),
+    schedule,
     busy: item.showAs !== "free",
     ...(item.iCalUId ? { icalUid: item.iCalUId } : {}),
-    recurrence: mapRecurrence(item),
+    recurrence: mapRecurrence(item, schedule),
   };
 }
 
@@ -367,10 +371,21 @@ function parseSchedule(candidate: unknown) {
   return parsed.data;
 }
 
-function mapRecurrence(item: GraphEvent): ProviderEventRecurrence {
+function mapRecurrence(
+  item: GraphEvent,
+  schedule: ReturnType<typeof mapSchedule>,
+): ProviderEventRecurrence {
   if (item.type === "seriesMaster" && item.recurrence) {
     try {
-      return { kind: "seriesMaster", rules: toRRule(item.recurrence) };
+      const rules = [
+        ...toRRule(item.recurrence),
+        ...cancelledOccurrencesToExdateRules(
+          item.cancelledOccurrences,
+          item,
+          schedule,
+        ),
+      ];
+      return { kind: "seriesMaster", rules };
     } catch (error) {
       if (error instanceof UnsupportedRecurrenceError) {
         throw new ProviderEventError(
