@@ -13,10 +13,14 @@ line (`live-provider-smoke passed=... skipped=... failed=...`) is printed
 and appended to the GitHub Actions step summary. Failures post to the Discord
 errors webhook.
 
-Events are created only on a calendar named `compass-smoke`. Every created
-event's description carries the GitHub run id. A teardown step deletes
-leftovers older than one day. Failure posts to the Discord errors webhook
-with the provider name.
+Events are created only on a calendar named `compass-smoke`. The smoke suite
+discovers that calendar at runtime (no `LIVE_CALENDAR_ID` secret). The shared
+adapter contract file in the same job skips live replay unless
+`LIVE_CALENDAR_ID` points at a calendar seeded with the recorded fixture
+events; recorded contract coverage runs in ordinary CI via
+`*.contract.test.ts`. Every created event's description carries the GitHub
+run id. A teardown step deletes leftovers older than one day. Failure posts to
+the Discord errors webhook with the provider name.
 
 ## Create the Environment
 
