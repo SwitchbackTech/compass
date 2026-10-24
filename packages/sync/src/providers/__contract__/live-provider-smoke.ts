@@ -32,22 +32,67 @@ export class LiveSmokeError extends Error {
   }
 }
 
+export interface LiveProviderSession {
+  readonly accessToken: string;
+  readonly calendarId: string;
+}
+
+export async function ensureMicrosoftLiveSession(
+  refreshToken: string,
+): Promise<LiveProviderSession> {
+  const adapters = microsoftLiveFactory("");
+  const refreshed = await adapters.auth.refreshAccessToken({ refreshToken });
+  const calendarId = await findSmokeCalendar(
+    adapters,
+    refreshed.accessToken,
+    "microsoft",
+  );
+  process.env["LIVE_ACCESS_TOKEN"] = refreshed.accessToken;
+  process.env["LIVE_CALENDAR_ID"] = calendarId;
+  return { accessToken: refreshed.accessToken, calendarId };
+}
+
+export async function ensureGoogleLiveSession(
+  refreshToken: string,
+): Promise<LiveProviderSession> {
+  const adapters = googleLiveFactory("");
+  const refreshed = await adapters.auth.refreshAccessToken({ refreshToken });
+  const calendarId = await findSmokeCalendar(
+    adapters,
+    refreshed.accessToken,
+    "google",
+  );
+  process.env["LIVE_ACCESS_TOKEN"] = refreshed.accessToken;
+  process.env["LIVE_CALENDAR_ID"] = calendarId;
+  return { accessToken: refreshed.accessToken, calendarId };
+}
+
+export async function ensureAppleLiveSession(
+  appPassword: string,
+): Promise<LiveProviderSession> {
+  const adapters = appleLiveFactory("");
+  const refreshed = await adapters.auth.refreshAccessToken({
+    refreshToken: appPassword,
+  });
+  const calendarId = await findSmokeCalendar(
+    adapters,
+    refreshed.accessToken,
+    "apple",
+  );
+  process.env["LIVE_ACCESS_TOKEN"] = refreshed.accessToken;
+  process.env["LIVE_CALENDAR_ID"] = calendarId;
+  return { accessToken: refreshed.accessToken, calendarId };
+}
+
 export async function runMicrosoftLiveSmoke(input: {
   readonly runId: string;
   readonly refreshToken: string;
 }): Promise<void> {
-  const adapters = microsoftLiveFactory("");
-  const refreshed = await adapters.auth.refreshAccessToken({
-    refreshToken: input.refreshToken,
-  });
-  const accessToken = refreshed.accessToken;
-  const calendarId = await findSmokeCalendar(
-    adapters,
-    accessToken,
-    "microsoft",
+  const { accessToken, calendarId } = await ensureMicrosoftLiveSession(
+    input.refreshToken,
   );
-  process.env["LIVE_ACCESS_TOKEN"] = accessToken;
-  process.env["LIVE_CALENDAR_ID"] = calendarId;
+
+  const adapters = microsoftLiveFactory("");
 
   await teardownStaleSmokeEvents(
     adapters,
@@ -197,14 +242,11 @@ export async function runAppleLiveSmoke(input: {
   readonly email: string;
   readonly appPassword: string;
 }): Promise<void> {
+  const { accessToken, calendarId } = await ensureAppleLiveSession(
+    input.appPassword,
+  );
+
   const adapters = appleLiveFactory("");
-  const refreshed = await adapters.auth.refreshAccessToken({
-    refreshToken: input.appPassword,
-  });
-  const accessToken = refreshed.accessToken;
-  const calendarId = await findSmokeCalendar(adapters, accessToken, "apple");
-  process.env["LIVE_ACCESS_TOKEN"] = accessToken;
-  process.env["LIVE_CALENDAR_ID"] = calendarId;
 
   await teardownStaleSmokeEvents(
     adapters,
@@ -338,14 +380,11 @@ export async function runGoogleLiveSmoke(input: {
   readonly runId: string;
   readonly refreshToken: string;
 }): Promise<void> {
+  const { accessToken, calendarId } = await ensureGoogleLiveSession(
+    input.refreshToken,
+  );
+
   const adapters = googleLiveFactory("");
-  const refreshed = await adapters.auth.refreshAccessToken({
-    refreshToken: input.refreshToken,
-  });
-  const accessToken = refreshed.accessToken;
-  const calendarId = await findSmokeCalendar(adapters, accessToken, "google");
-  process.env["LIVE_ACCESS_TOKEN"] = accessToken;
-  process.env["LIVE_CALENDAR_ID"] = calendarId;
 
   await teardownStaleSmokeEvents(
     adapters,

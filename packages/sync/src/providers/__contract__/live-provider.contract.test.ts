@@ -9,13 +9,17 @@ import {
   hasGoogleLiveCredentials,
 } from "@sync/providers/__contract__/google-contract.factory";
 import {
+  ensureAppleLiveSession,
+  ensureGoogleLiveSession,
+  ensureMicrosoftLiveSession,
+} from "@sync/providers/__contract__/live-provider-smoke";
+import {
   hasMicrosoftLiveCredentials,
   microsoftLiveFactory,
 } from "@sync/providers/__contract__/microsoft-contract.factory";
 import { describe, it } from "bun:test";
 
 const liveKind = process.env["LIVE_PROVIDER"];
-const calendarId = process.env["LIVE_CALENDAR_ID"];
 
 const failLiveSetup = (kind: string, message: string): void => {
   describe(`live provider contract (${kind})`, () => {
@@ -40,15 +44,15 @@ if (!liveKind) {
       "google",
       "Google OAuth client id/secret missing (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in provider-smoke).",
     );
-  } else if (!calendarId) {
-    failLiveSetup(
-      "google",
-      "LIVE_CALENDAR_ID is unset. Set it to the compass-smoke calendar id for the Google test account.",
-    );
   } else {
+    const refreshToken = process.env["SMOKE_GOOGLE_REFRESH_TOKEN"];
+    const { calendarId } = await ensureGoogleLiveSession(refreshToken);
     describeProviderContract("google", googleLiveFactory, {
       calendarId,
-      refreshToken: process.env["SMOKE_GOOGLE_REFRESH_TOKEN"],
+      refreshToken,
+      skipAuthExchange: true,
+      skipAuthRevoked: true,
+      skipWatch: true,
     });
   }
 } else if (liveKind === "microsoft") {
@@ -62,15 +66,15 @@ if (!liveKind) {
       "microsoft",
       "Microsoft OAuth client id/secret missing (MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET in provider-smoke).",
     );
-  } else if (!calendarId) {
-    failLiveSetup(
-      "microsoft",
-      "LIVE_CALENDAR_ID is unset. Set it to the compass-smoke calendar id for the Microsoft test account.",
-    );
   } else {
+    const refreshToken = process.env["SMOKE_MICROSOFT_REFRESH_TOKEN"];
+    const { calendarId } = await ensureMicrosoftLiveSession(refreshToken);
     describeProviderContract("microsoft", microsoftLiveFactory, {
       calendarId,
-      refreshToken: process.env["SMOKE_MICROSOFT_REFRESH_TOKEN"],
+      refreshToken,
+      skipAuthExchange: true,
+      skipAuthRevoked: true,
+      skipWatch: true,
       skipNotifications: true,
     });
   }
@@ -80,21 +84,25 @@ if (!liveKind) {
       "apple",
       "SMOKE_APPLE_EMAIL or SMOKE_APPLE_APP_PASSWORD is missing. Add both to the provider-smoke GitHub Environment secrets.",
     );
-  } else if (!calendarId) {
-    failLiveSetup(
-      "apple",
-      "LIVE_CALENDAR_ID is unset. Set it to the compass-smoke calendar id for the Apple test account.",
-    );
   } else {
-    describeProviderContract("apple", appleLiveFactory, {
-      calendarId,
-      accessToken: smokeAppleAppPassword(),
-      skipAuthExchange: true,
-      skipAuthRevoked: true,
-      skipWatch: true,
-      skipNotifications: true,
-      skipNormalizerRoundTrip: true,
-    });
+    const appPassword = smokeAppleAppPassword();
+    if (!appPassword) {
+      failLiveSetup(
+        "apple",
+        "SMOKE_APPLE_APP_PASSWORD is missing. Add it to the provider-smoke GitHub Environment secrets.",
+      );
+    } else {
+      const { calendarId } = await ensureAppleLiveSession(appPassword);
+      describeProviderContract("apple", appleLiveFactory, {
+        calendarId,
+        accessToken: appPassword,
+        skipAuthExchange: true,
+        skipAuthRevoked: true,
+        skipWatch: true,
+        skipNotifications: true,
+        skipNormalizerRoundTrip: true,
+      });
+    }
   }
 } else {
   failLiveSetup(
