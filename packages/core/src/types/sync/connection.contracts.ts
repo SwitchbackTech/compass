@@ -10,7 +10,6 @@ import {
   ProviderKindSchema,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
-import { TimezoneSchema } from "@core/types/type.utils";
 
 // HTTP responses (and nested objects they contain) use z.object so a rolling
 // deploy cannot 502 on a field the other side has not seen yet. Request
@@ -53,9 +52,6 @@ export const ProviderAccountFactsSchema = z.object({
   providerAccountId: ProviderAccountIdSchema,
   email: z.string().trim().min(1).max(320).nullable(),
   displayName: z.string().trim().min(1).max(256).nullable(),
-  // Microsoft mailbox default zone (IANA), captured at connect for recurring
-  // events whose Graph payload omits recurrence/original zones.
-  mailboxTimeZone: TimezoneSchema.nullable().optional(),
 });
 export type ProviderAccountFacts = z.infer<typeof ProviderAccountFactsSchema>;
 

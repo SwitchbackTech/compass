@@ -2,7 +2,6 @@ import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
 import { MICROSOFT_SCOPES } from "@core/providers/microsoft.scopes";
 import { ProviderAccountFactsSchema } from "@core/types/sync/connection.contracts";
 import { isMicrosoftConsentRequired } from "@sync/providers/microsoft/microsoft-consent";
-import { fetchMicrosoftMailboxIanaTimeZone } from "@sync/providers/microsoft/microsoft-mailbox-settings";
 import {
   type ProviderAuthAdapter,
   ProviderAuthError,
@@ -170,14 +169,10 @@ export class MicrosoftAuthAdapter implements ProviderAuthAdapter {
       );
     }
 
-    const mailboxTimeZone = response.access_token
-      ? await fetchMicrosoftMailboxIanaTimeZone(response.access_token)
-      : null;
     const account = ProviderAccountFactsSchema.parse({
       providerAccountId: claims.oid,
       email: claims.preferred_username || claims.email || null,
       displayName: claims.name || null,
-      ...(mailboxTimeZone ? { mailboxTimeZone } : {}),
     });
 
     return {

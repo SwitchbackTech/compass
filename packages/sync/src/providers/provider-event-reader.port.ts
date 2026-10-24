@@ -39,8 +39,6 @@ export interface ProviderEventReadInput {
   readonly colorLabels?: ReadonlyMap<string, string>;
   /** Calendar default popup offsets for resolving `reminders.useDefault`. */
   readonly calendarDefaultPopupReminderMinutes?: readonly number[];
-  /** Microsoft: mailbox/calendar fallback when Graph omits recurrence zones. */
-  readonly fallbackIanaTimeZone?: string;
 }
 
 // A provider-neutral event read port. One call reads one page; the caller

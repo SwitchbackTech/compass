@@ -37,8 +37,6 @@ export interface NormalizeMicrosoftEventOptions {
   readonly allowOccurrence?: boolean;
   /** Matches Prefer outlook.timezone on Graph reads (see event reader adapter). */
   readonly graphPreferTimeZone?: string;
-  /** When Graph returns UTC without recurrence/original zones (mailbox fallback). */
-  readonly fallbackIanaTimeZone?: string;
 }
 
 export interface GraphDateTimeTimeZone {
@@ -89,6 +87,7 @@ export interface GraphEvent {
   readonly originalStartTimeZone?: string;
   readonly originalEndTimeZone?: string;
   readonly cancelledOccurrences?: readonly string[];
+  readonly exceptionOccurrences?: readonly GraphEvent[];
   readonly onlineMeeting?: GraphOnlineMeeting;
   readonly onlineMeetingProvider?: string;
   readonly categories?: readonly string[];
@@ -138,7 +137,7 @@ export function normalizeMicrosoftEvent(
     schedule,
     busy: item.showAs !== "free",
     ...(item.iCalUId ? { icalUid: item.iCalUId } : {}),
-    recurrence: mapRecurrence(item),
+    recurrence: mapRecurrence(item, schedule),
   };
 }
 
@@ -308,7 +307,6 @@ function mapSchedule(
       item,
       startFieldZone,
       graphPreferTimeZone,
-      options.fallbackIanaTimeZone,
     );
     return parseSchedule({
       kind: "timed",
@@ -344,7 +342,6 @@ function resolveTimedEventTimeZone(
   item: GraphEvent,
   startFieldZone: string,
   graphPreferTimeZone: string,
-  fallbackIanaTimeZone?: string,
 ): string {
   const recurrenceZone = item.recurrence?.range?.recurrenceTimeZone
     ? toIanaTimeZone(item.recurrence.range.recurrenceTimeZone)
@@ -352,19 +349,14 @@ function resolveTimedEventTimeZone(
   const originalStartZone = item.originalStartTimeZone
     ? toIanaTimeZone(item.originalStartTimeZone)
     : null;
-  const fallbackZone =
-    fallbackIanaTimeZone && fallbackIanaTimeZone !== "UTC"
-      ? fallbackIanaTimeZone
-      : null;
   if (graphPreferTimeZone === "UTC" && startFieldZone === "UTC") {
     if (recurrenceZone && recurrenceZone !== "UTC") return recurrenceZone;
     if (originalStartZone && originalStartZone !== "UTC") {
       return originalStartZone;
     }
-    if (fallbackZone) return fallbackZone;
   }
   if (startFieldZone !== "UTC") return startFieldZone;
-  return recurrenceZone ?? originalStartZone ?? fallbackZone ?? startFieldZone;
+  return recurrenceZone ?? originalStartZone ?? startFieldZone;
 }
 
 function parseSchedule(candidate: unknown) {
@@ -379,12 +371,19 @@ function parseSchedule(candidate: unknown) {
   return parsed.data;
 }
 
-function mapRecurrence(item: GraphEvent): ProviderEventRecurrence {
+function mapRecurrence(
+  item: GraphEvent,
+  schedule: ReturnType<typeof mapSchedule>,
+): ProviderEventRecurrence {
   if (item.type === "seriesMaster" && item.recurrence) {
     try {
       const rules = [
         ...toRRule(item.recurrence),
-        ...cancelledOccurrencesToExdateRules(item.cancelledOccurrences),
+        ...cancelledOccurrencesToExdateRules(
+          item.cancelledOccurrences,
+          item,
+          schedule,
+        ),
       ];
       return { kind: "seriesMaster", rules };
     } catch (error) {

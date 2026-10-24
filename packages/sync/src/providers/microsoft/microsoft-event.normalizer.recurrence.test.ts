@@ -1,4 +1,4 @@
-import { type EventSchedule } from "@core/types/event.contracts";
+import { type DateTime } from "@core/types/domain-primitives";
 import { type TimeZone } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { projectOccurrences } from "@sync/domain/occurrence-projection";
@@ -10,11 +10,14 @@ import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 
 const DENVER = "America/Denver" as TimeZone;
 
-const unwindDailyMaster = (
+const OID = (date: string) => `OID.AAMkAGI2TG93AAA=.${date}`;
+
+/** Real Graph shape: daily UTC series, explicit recurrence/original zones. */
+const unwindUtcDailyMaster = (
   overrides: Partial<GraphEvent> = {},
 ): GraphEvent => ({
-  id: "unwind-daily",
-  "@odata.etag": 'W/"unwind-daily"',
+  id: "unwind-daily-utc",
+  "@odata.etag": 'W/"unwind-daily-utc"',
   type: "seriesMaster",
   subject: "Unwind",
   start: {
@@ -25,45 +28,49 @@ const unwindDailyMaster = (
     dateTime: "2025-10-20T02:00:00.0000000",
     timeZone: "UTC",
   },
+  originalStartTimeZone: "UTC",
+  originalEndTimeZone: "UTC",
   recurrence: {
     pattern: { type: "daily", interval: 1 },
-    range: { type: "noEnd", startDate: "2025-10-19" },
+    range: {
+      type: "noEnd",
+      startDate: "2025-10-19",
+      recurrenceTimeZone: "UTC",
+    },
   },
   cancelledOccurrences: [
-    "2025-10-21T01:00:00.0000000Z",
-    "2025-10-23T01:00:00.0000000Z",
-    "2025-10-24T01:00:00.0000000Z",
-    "2025-10-28T01:00:00.0000000Z",
-    "2025-10-30T01:00:00.0000000Z",
-    "2025-10-31T01:00:00.0000000Z",
-    "2025-11-04T02:00:00.0000000Z",
-    "2025-11-06T02:00:00.0000000Z",
-    "2025-11-07T02:00:00.0000000Z",
+    OID("2025-10-21"),
+    OID("2025-10-22"),
+    OID("2025-10-23"),
+    OID("2025-10-24"),
+    OID("2025-10-25"),
+    OID("2025-10-26"),
+    OID("2025-10-28"),
+    OID("2025-10-29"),
+    OID("2025-10-30"),
+    OID("2025-10-31"),
+    OID("2025-11-04"),
+    OID("2025-11-06"),
+    OID("2025-11-07"),
   ],
   ...overrides,
 });
 
-const unwindWeeklyMaster = (): GraphEvent => ({
-  id: "unwind-weekly",
-  "@odata.etag": 'W/"unwind-weekly"',
-  type: "seriesMaster",
+const oct17DenverException = (): GraphEvent => ({
+  id: "unwind-oct17-exception",
+  "@odata.etag": 'W/"unwind-oct17-exception"',
+  type: "exception",
   subject: "Unwind",
+  seriesMasterId: "unwind-daily-utc",
+  originalStart: "2025-10-18T01:00:00.0000000Z",
+  originalStartTimeZone: "UTC",
   start: {
-    dateTime: "2025-10-20T01:00:00.0000000",
+    dateTime: "2025-10-18T02:15:00.0000000",
     timeZone: "UTC",
   },
   end: {
-    dateTime: "2025-10-20T02:00:00.0000000",
+    dateTime: "2025-10-18T03:00:00.0000000",
     timeZone: "UTC",
-  },
-  recurrence: {
-    pattern: {
-      type: "daily",
-      interval: 1,
-      daysOfWeek: ["sunday", "tuesday", "friday", "saturday"],
-      firstDayOfWeek: "sunday",
-    },
-    range: { type: "noEnd", startDate: "2025-10-19" },
   },
 });
 
@@ -74,15 +81,14 @@ const asSeriesMaster = (read: ReturnType<typeof normalizeMicrosoftEvent>) => {
   return read.recurrence;
 };
 
-const toEventRecord = (
-  schedule: EventSchedule,
-  rules: readonly string[],
+const toMasterRecord = (
+  read: Extract<ReturnType<typeof normalizeMicrosoftEvent>, { kind: "event" }>,
 ): EventRecord =>
   ({
-    _id: "event-id",
+    _id: "master-id",
     calendarId: "cal-id",
     connectionId: "conn-id",
-    providerEventId: "provider-id",
+    providerEventId: read.providerEventId,
     version: 1,
     content: {
       title: "Unwind",
@@ -92,159 +98,159 @@ const toEventRecord = (
       attendees: [],
       conference: null,
     },
-    schedule,
-    recurrence: { kind: "seriesMaster", rules },
+    schedule: read.schedule,
+    recurrence: asSeriesMaster(read),
   }) as EventRecord;
 
-const projectedUtcStarts = (
-  event: EventRecord,
-  horizonStart: string,
-  horizonEnd: string,
-) => {
-  const horizon = {
-    start: new Date(horizonStart),
-    end: new Date(horizonEnd),
-  };
-  return projectOccurrences(event, horizon)
-    .filter((occ) => occ.schedule.kind === "timed")
-    .map(
-      (occ) =>
-        (occ.schedule as Extract<EventSchedule, { kind: "timed" }>).start,
-    );
-};
-
-describe("normalizeMicrosoftEvent Microsoft recurring Unwind shapes", () => {
-  it("shape A: daily master with cancelledOccurrences maps EXDATE and mailbox fallback tz", () => {
-    const read = normalizeMicrosoftEvent(unwindDailyMaster(), undefined, {
+describe("normalizeMicrosoftEvent Microsoft recurring Unwind (UTC daily)", () => {
+  it("keeps UTC when Graph declares UTC on the series and maps OID cancelledOccurrences to EXDATE", () => {
+    const read = normalizeMicrosoftEvent(unwindUtcDailyMaster(), undefined, {
       graphPreferTimeZone: "UTC",
-      fallbackIanaTimeZone: DENVER,
     });
     const master = asSeriesMaster(read);
 
     expect(read.schedule.kind).toBe("timed");
     if (read.schedule.kind !== "timed") return;
-    expect(read.schedule.timeZone).toBe(DENVER);
+    expect(read.schedule.timeZone).toBe("UTC");
     expect(master.rules[0]).toContain("FREQ=DAILY");
-    expect(master.rules.some((line) => line.startsWith("EXDATE:"))).toBe(true);
-    expect(master.rules).toHaveLength(10);
+    const exdates = master.rules.filter((line) => line.startsWith("EXDATE:"));
+    expect(exdates).toHaveLength(13);
+    expect(exdates).toContain("EXDATE:20251021T010000Z");
+    expect(exdates).toContain("EXDATE:20251107T010000Z");
   });
 
-  it("shape A: projects Sun/Tue/Fri/Sat at 7 PM Denver with correct UTC instants across DST", () => {
-    const read = normalizeMicrosoftEvent(unwindDailyMaster(), undefined, {
+  it("does not project occurrences on cancelled UTC dates", () => {
+    const read = normalizeMicrosoftEvent(unwindUtcDailyMaster(), undefined, {
       graphPreferTimeZone: "UTC",
-      fallbackIanaTimeZone: DENVER,
     });
-    const event = toEventRecord(read.schedule, asSeriesMaster(read).rules);
-
-    const beforeDstEnd = projectedUtcStarts(
-      event,
-      "2025-10-25T06:00:00.000Z",
-      "2025-11-01T06:00:00.000Z",
+    const master = toMasterRecord(read);
+    const horizon = {
+      start: new Date("2025-10-19T00:00:00.000Z"),
+      end: new Date("2025-11-10T00:00:00.000Z"),
+    };
+    const starts = projectOccurrences(master, horizon).map((occ) =>
+      dayjs(occ.startAt).utc().format("YYYY-MM-DD"),
     );
-    expect(beforeDstEnd).toEqual([
-      "2025-10-25T19:00:00-06:00",
-      "2025-10-26T19:00:00-06:00",
-      "2025-10-28T19:00:00-06:00",
-      "2025-10-31T19:00:00-06:00",
-    ]);
-
-    const afterDstEnd = projectedUtcStarts(
-      event,
-      "2025-11-01T06:00:00.000Z",
-      "2025-11-09T07:00:00.000Z",
-    );
-    expect(afterDstEnd).toEqual([
-      "2025-11-01T19:00:00-06:00",
-      "2025-11-02T19:00:00-07:00",
-      "2025-11-04T19:00:00-07:00",
-      "2025-11-07T19:00:00-07:00",
-      "2025-11-08T19:00:00-07:00",
-    ]);
-
-    for (const iso of beforeDstEnd) {
-      expect(dayjs(iso).utc().format("HH:mm")).toBe("01:00");
-    }
-    for (const iso of afterDstEnd.slice(1)) {
-      expect(dayjs(iso).utc().format("HH:mm")).toBe("02:00");
-    }
+    expect(starts).not.toContain("2025-10-21");
+    expect(starts).not.toContain("2025-10-24");
+    expect(starts).not.toContain("2025-11-07");
+    expect(starts).toContain("2025-10-20");
+    expect(starts).toContain("2025-10-27");
   });
 
-  it("shape B: daily pattern with daysOfWeek normalizes to weekly BYDAY", () => {
-    const read = normalizeMicrosoftEvent(unwindWeeklyMaster(), undefined, {
-      graphPreferTimeZone: "UTC",
-      fallbackIanaTimeZone: DENVER,
-    });
-    const master = asSeriesMaster(read);
-
-    expect(read.schedule.timeZone).toBe(DENVER);
-    expect(master.rules[0]).toContain("FREQ=WEEKLY");
-    expect(master.rules[0]).toContain("BYDAY=SU,TU,FR,SA");
-  });
-
-  it("does not dedupe occurrences across two series with different ids", () => {
-    const first = normalizeMicrosoftEvent(
-      unwindDailyMaster({ id: "series-a" }),
+  it("renders edited Oct 17 occurrence at 8:15 PM Denver without duplicating the series slot", () => {
+    const masterRead = normalizeMicrosoftEvent(
+      unwindUtcDailyMaster(),
       undefined,
       {
         graphPreferTimeZone: "UTC",
-        fallbackIanaTimeZone: DENVER,
       },
+    );
+    const exceptionRead = normalizeMicrosoftEvent(
+      oct17DenverException(),
+      undefined,
+      {
+        graphPreferTimeZone: "UTC",
+      },
+    );
+    expect(exceptionRead.kind).toBe("event");
+    if (exceptionRead.kind !== "event") return;
+    expect(exceptionRead.schedule.kind).toBe("timed");
+    if (exceptionRead.schedule.kind !== "timed") return;
+    expect(
+      dayjs(exceptionRead.schedule.start).tz(DENVER).format("MMM D h:mm A"),
+    ).toBe("Oct 17 8:15 PM");
+
+    const master = toMasterRecord(masterRead);
+    const recurrenceId =
+      exceptionRead.recurrence.kind === "instance"
+        ? exceptionRead.recurrence.recurrenceId
+        : null;
+    expect(recurrenceId).toBeTruthy();
+
+    const horizon = {
+      start: new Date("2025-10-17T00:00:00.000Z"),
+      end: new Date("2025-10-19T00:00:00.000Z"),
+    };
+    const masterOccs = projectOccurrences(master, horizon, [
+      recurrenceId as DateTime,
+    ]);
+    expect(masterOccs.map((o) => o.startAt.toISOString())).not.toContain(
+      "2025-10-18T01:00:00.000Z",
+    );
+
+    const exceptionRecord = {
+      ...master,
+      _id: "exception-id",
+      providerEventId: exceptionRead.providerEventId,
+      schedule: exceptionRead.schedule,
+      recurrence: {
+        kind: "exception" as const,
+        seriesId: master._id,
+        recurrenceId: recurrenceId as DateTime,
+        cancelled: false,
+      },
+    } as EventRecord;
+    const exceptionOccs = projectOccurrences(exceptionRecord, horizon);
+    expect(exceptionOccs).toHaveLength(1);
+    expect(
+      dayjs(exceptionOccs[0]!.startAt).tz(DENVER).format("MMM D h:mm A"),
+    ).toBe("Oct 17 8:15 PM");
+
+    const merged = [...masterOccs, ...exceptionOccs].map((o) =>
+      o.startAt.getTime(),
+    );
+    expect(new Set(merged).size).toBe(merged.length);
+  });
+
+  it("does not dedupe occurrences across two series masters with different ids", () => {
+    const horizon = {
+      start: new Date("2025-10-24T00:00:00.000Z"),
+      end: new Date("2025-10-28T00:00:00.000Z"),
+    };
+    const first = normalizeMicrosoftEvent(
+      unwindUtcDailyMaster({
+        id: "series-a",
+        cancelledOccurrences: [OID("2025-10-26")],
+      }),
+      undefined,
+      { graphPreferTimeZone: "UTC" },
     );
     const second = normalizeMicrosoftEvent(
-      unwindDailyMaster({
+      unwindUtcDailyMaster({
         id: "series-b",
         iCalUId: "other-ical-uid",
+        cancelledOccurrences: [OID("2025-10-25")],
       }),
       undefined,
-      {
-        graphPreferTimeZone: "UTC",
-        fallbackIanaTimeZone: DENVER,
-      },
+      { graphPreferTimeZone: "UTC" },
     );
-    const eventA = toEventRecord(first.schedule, asSeriesMaster(first).rules);
-    const eventB = toEventRecord(second.schedule, asSeriesMaster(second).rules);
-    const horizon = {
-      start: new Date("2025-10-25T06:00:00.000Z"),
-      end: new Date("2025-11-01T06:00:00.000Z"),
-    };
-    expect(projectOccurrences(eventA, horizon)).toHaveLength(4);
-    expect(projectOccurrences(eventB, horizon)).toHaveLength(4);
-    expect(
-      projectOccurrences(eventA, horizon).every((occ, index) => {
-        const b = projectOccurrences(eventB, horizon)[index];
-        return (
-          occ.schedule.kind === "timed" &&
-          b?.schedule.kind === "timed" &&
-          occ.schedule.start === b.schedule.start
-        );
-      }),
-    ).toBe(true);
-  });
+    const eventA = toMasterRecord(first);
+    const eventB = toMasterRecord(second);
 
-  it("local wall clock stays 7 PM across the fall-back week", () => {
-    const read = normalizeMicrosoftEvent(unwindDailyMaster(), undefined, {
-      graphPreferTimeZone: "UTC",
-      fallbackIanaTimeZone: DENVER,
-    });
-    const event = toEventRecord(read.schedule, asSeriesMaster(read).rules);
-    const horizon = {
-      start: new Date("2025-11-01T06:00:00.000Z"),
-      end: new Date("2025-11-09T07:00:00.000Z"),
-    };
-    const localTimes = projectOccurrences(event, horizon)
-      .filter((occ) => occ.schedule.kind === "timed")
-      .map((occ) => {
-        const start = (
-          occ.schedule as Extract<EventSchedule, { kind: "timed" }>
-        ).start;
-        return dayjs(start).tz(DENVER).format("ddd h:mm A");
-      });
-    expect(localTimes).toEqual([
-      "Sat 7:00 PM",
-      "Sun 7:00 PM",
-      "Tue 7:00 PM",
-      "Fri 7:00 PM",
-      "Sat 7:00 PM",
-    ]);
+    const startsA = projectOccurrences(eventA, horizon).map((o) =>
+      dayjs(o.startAt).utc().format("YYYY-MM-DD"),
+    );
+    const startsB = projectOccurrences(eventB, horizon).map((o) =>
+      dayjs(o.startAt).utc().format("YYYY-MM-DD"),
+    );
+
+    expect(startsA).not.toContain("2025-10-26");
+    expect(startsB).not.toContain("2025-10-25");
+    expect(startsA).toContain("2025-10-25");
+    expect(startsB).toContain("2025-10-26");
+    expect(startsA.length).toBe(3);
+    expect(startsB.length).toBe(3);
+
+    const overlapDay = "2025-10-27";
+    expect(startsA).toContain(overlapDay);
+    expect(startsB).toContain(overlapDay);
+    const aAt = projectOccurrences(eventA, horizon).find(
+      (o) => dayjs(o.startAt).utc().format("YYYY-MM-DD") === overlapDay,
+    )!;
+    const bAt = projectOccurrences(eventB, horizon).find(
+      (o) => dayjs(o.startAt).utc().format("YYYY-MM-DD") === overlapDay,
+    )!;
+    expect(aAt.startAt.getTime()).toBe(bAt.startAt.getTime());
   });
 });
