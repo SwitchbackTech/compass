@@ -84,10 +84,53 @@ interface ParsedRRuleParts {
 export function toRRule(
   recurrence: GraphPatternedRecurrence,
 ): readonly [string] {
-  const patternParts = patternToParts(recurrence.pattern);
-  const rangeParts = rangeToParts(recurrence.range);
+  const normalized = normalizeGraphRecurrence(recurrence);
+  const patternParts = patternToParts(normalized.pattern);
+  const rangeParts = rangeToParts(normalized.range);
   const rule = serializeRRule({ ...patternParts, ...rangeParts });
   return [rule];
+}
+
+function normalizeGraphRecurrence(
+  recurrence: GraphPatternedRecurrence,
+): GraphPatternedRecurrence {
+  return { ...recurrence, pattern: normalizeGraphPattern(recurrence.pattern) };
+}
+
+function normalizeGraphPattern(
+  pattern: GraphRecurrencePattern,
+): GraphRecurrencePattern {
+  const interval = pattern.interval ?? 1;
+  const daysOfWeek = pattern.daysOfWeek?.map(normalizeGraphDayOfWeek);
+  const firstDayOfWeek = pattern.firstDayOfWeek
+    ? normalizeGraphDayOfWeek(pattern.firstDayOfWeek)
+    : pattern.firstDayOfWeek;
+
+  let type = pattern.type;
+  if (
+    type === "daily" &&
+    daysOfWeek &&
+    daysOfWeek.length > 0 &&
+    interval === 1
+  ) {
+    type = "weekly";
+  }
+
+  return {
+    ...pattern,
+    type,
+    interval,
+    ...(daysOfWeek ? { daysOfWeek } : {}),
+    ...(firstDayOfWeek ? { firstDayOfWeek } : {}),
+  };
+}
+
+function normalizeGraphDayOfWeek(day: string): GraphDayOfWeek {
+  const normalized = day.toLowerCase() as GraphDayOfWeek;
+  if (!GRAPH_TO_RRULE_DAY[normalized]) {
+    throw new UnsupportedRecurrenceError(`Unknown weekday: ${day}`);
+  }
+  return normalized;
 }
 
 export function fromRRule(
@@ -103,7 +146,7 @@ export function fromRRule(
 function patternToParts(
   pattern: GraphRecurrencePattern,
 ): Omit<ParsedRRuleParts, "count" | "until"> {
-  const interval = pattern.interval;
+  const interval = pattern.interval ?? 1;
   switch (pattern.type) {
     case "daily":
       return {

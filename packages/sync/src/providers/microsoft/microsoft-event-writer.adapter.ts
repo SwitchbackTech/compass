@@ -202,7 +202,9 @@ export class MicrosoftEventWriter implements ProviderEventWriter {
     const api = this.#makeApi(input.accessToken);
     try {
       const event = await api.get({ eventId: input.providerEventId });
-      return normalizeMicrosoftEvent(event);
+      return normalizeMicrosoftEvent(event, undefined, {
+        graphPreferTimeZone: "UTC",
+      });
     } catch (error) {
       if (isNotFound(error)) return null;
       throw classifyWriteError(error);
@@ -226,6 +228,7 @@ export class MicrosoftEventWriter implements ProviderEventWriter {
       if (!match) return null;
       return normalizeMicrosoftEvent(match, undefined, {
         allowOccurrence: true,
+        graphPreferTimeZone: "UTC",
       });
     } catch (error) {
       if (isNotFound(error)) return null;
