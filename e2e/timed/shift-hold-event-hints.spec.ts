@@ -263,7 +263,7 @@ test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
 
   await page.keyboard.down("Shift");
   await page.keyboard.down("j");
-  await page.waitForTimeout(250);
+  await page.clock.runFor(250);
   await page.keyboard.up("j");
   await page.keyboard.up("Shift");
 
