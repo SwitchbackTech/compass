@@ -84,9 +84,7 @@ public enum GridLayoutSnapshotBuilder {
             )
         }
 
-        let deckInputs = scenario.timedEvents.map {
-            TimedDeckEventInput(id: $0.eventId, startDate: $0.startDate, endDate: $0.endDate)
-        }
+        let deckInputs = timedDeckInputs(for: scenario)
         let deckLayout = TimedDeckLayoutEngine.createTimedEventLayout(
             events: deckInputs,
             hiddenEventIds: scenario.hiddenEventIds
@@ -94,6 +92,9 @@ public enum GridLayoutSnapshotBuilder {
         let deckById = Dictionary(uniqueKeysWithValues: deckLayout.map { ($0.eventId, $0) })
 
         for timed in scenario.timedEvents {
+            if shouldRenderDraftOverlayCard(for: timed.eventId, scenario: scenario) {
+                continue
+            }
             guard let deckItem = deckById[timed.eventId] else { continue }
             let columnIndex = columnIndexForEvent(
                 calendarId: timed.calendarId,
@@ -252,6 +253,34 @@ public enum GridLayoutSnapshotBuilder {
                 )
             }
         }
+    }
+
+    private static func timedDeckInputs(for scenario: GridLayoutScenario) -> [TimedDeckEventInput] {
+        scenario.timedEvents.map { timed in
+            if let draft = scenario.draftOverlay,
+               draft.eventId == timed.eventId,
+               draft.schedule.kind == .timed
+            {
+                return TimedDeckEventInput(
+                    id: timed.eventId,
+                    startDate: CompassDateParsing.formatLikeDayjs(draft.schedule.start),
+                    endDate: CompassDateParsing.formatLikeDayjs(draft.schedule.end)
+                )
+            }
+            return TimedDeckEventInput(
+                id: timed.eventId,
+                startDate: timed.startDate,
+                endDate: timed.endDate
+            )
+        }
+    }
+
+    private static func shouldRenderDraftOverlayCard(
+        for eventId: String,
+        scenario: GridLayoutScenario
+    ) -> Bool {
+        guard let draft = scenario.draftOverlay else { return false }
+        return draft.eventId == eventId && draft.schedule.kind == .timed
     }
 
     private static func columnIndexForEvent(

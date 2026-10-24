@@ -6,6 +6,7 @@ import { isEventIdHidden } from "@web/events/hidden/hidden-event-id";
 import { useHiddenEventIds } from "@web/events/hidden/hidden-events.query";
 import {
   mergeGridEventWithDraftOverlay,
+  timedEventsForDeckLayout,
   useGridDraftOverlay,
 } from "@web/events/hooks/useGridDraftOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -83,8 +84,12 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     ],
   );
   const timedEventItems = useMemo(
-    () => createTimedEventLayout(visibleTimedEvents, hiddenEventIds),
-    [hiddenEventIds, visibleTimedEvents],
+    () =>
+      createTimedEventLayout(
+        timedEventsForDeckLayout(visibleTimedEvents, draftOverlay),
+        hiddenEventIds,
+      ),
+    [draftOverlay, hiddenEventIds, visibleTimedEvents],
   );
   // Resolved once per event here (not inside each card) and kept referentially
   // stable across renders where neither the events nor the calendars changed,
