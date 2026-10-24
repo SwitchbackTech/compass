@@ -43,6 +43,9 @@ final class GuestEmailSubmissionTests: XCTestCase {
         title.click()
         title.typeKey(.return, modifierFlags: [])
         let invitations = window.staticTexts["Send invitation emails?"]
+        XCTAssertTrue(form.buttons["compass-event-form-save"].exists)
+        XCTAssertFalse(invitations.exists)
+        title.typeKey(.return, modifierFlags: [.command])
         XCTAssertTrue(invitations.waitForExistence(timeout: 8))
         window.typeKey(.escape, modifierFlags: [])
         XCTAssertTrue(invitations.waitForNonExistence(timeout: 8))
