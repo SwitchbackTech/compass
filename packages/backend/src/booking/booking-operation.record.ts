@@ -111,8 +111,6 @@ export const BOOKING_OPERATION_RESUMABLE_CREATE_STATUSES = [
   "failed",
 ] as const satisfies readonly BookingOperationStatus[];
 
-export const BOOKING_OPERATION_RECOVERABLE_STATUSES = [
-  "pending",
-  "submitted",
-  "compensating",
-] as const satisfies readonly BookingOperationStatus[];
+/** Heartbeat and claim: same in-flight set as overlap arbitration. */
+export const BOOKING_OPERATION_RECOVERABLE_STATUSES =
+  BOOKING_OPERATION_IN_FLIGHT_STATUSES;

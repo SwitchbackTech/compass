@@ -5,11 +5,9 @@ import {
 import { type BillingSubscriptionResponse } from "@core/types/billing.types";
 import { formatBillingMoney } from "@web/billing/billing-display";
 
-export type ResolvedBillingPrice = BillingDisplayPrice;
-
 export function resolveBillingDisplayPrice(
   subscriptionPrice: BillingSubscriptionResponse["price"] | null | undefined,
-): ResolvedBillingPrice {
+): BillingDisplayPrice {
   if (subscriptionPrice) {
     return subscriptionPrice;
   }
@@ -27,7 +25,7 @@ export type TrialStartPriceLineContext = "default" | "settings";
 
 /** Trial ask copy: "$12/mo after 7 days. Cancel anytime in Settings." */
 export function formatTrialStartPriceLine(
-  price: ResolvedBillingPrice,
+  price: BillingDisplayPrice,
   trialLengthDays: number = BILLING_PLAN.TRIAL_LENGTH_DAYS,
   context: TrialStartPriceLineContext = "default",
 ): string {

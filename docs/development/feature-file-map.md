@@ -158,7 +158,7 @@ Product rules (hold-Mod discovery, "chip the field", typing always types):
 - Sidebar next-shortcut selector: `apps/calendar-web/src/shortcuts/tips/selectShortcutHint.ts`
 - What counts as a hint impression: `apps/calendar-web/src/shortcuts/tips/shortcut-telemetry.ts`
 - Sidebar tip progress (demonstrated primitives): `apps/calendar-web/src/shortcuts/tips/shortcut-tips.progress.store.ts`
-- Sidebar tip mute (`compass.shortcuts.tips-muted`): `apps/calendar-web/src/shortcuts/tips/shortcut-tips-muted.store.ts`, `ShortcutTipIndicator.tsx`
+- Sidebar tip mute (`compass.shortcuts.tips-muted`): `apps/calendar-web/src/shortcuts/tips/shortcut-tips-muted.store.ts`, `useShortcutTipsCmdItems.ts`
 - Global shell shortcuts (sidebar `]`, palette, settings, navigation): `apps/calendar-web/src/shortcuts/useGlobalShortcuts.ts`
 - Event-jump chips (`F`): `apps/calendar-web/src/shortcuts/shift-hint/`
 - Hide/show focused event (`x`): `apps/calendar-web/src/shortcuts/hide-event/useHideEventShortcut.ts`
